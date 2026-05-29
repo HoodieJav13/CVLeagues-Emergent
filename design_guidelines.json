@@ -1,0 +1,90 @@
+{
+  "project_name": "CVF Sports MVP",
+  "theme": "Dark Theme Native",
+  "archetype": "2 - Performance Pro",
+  "colors": {
+    "background": "#0f0f0f",
+    "surface": "#1a1a1a",
+    "surface_hover": "#262626",
+    "primary": "#22d3ee",
+    "primary_hover": "#06b6d4",
+    "accent_red": "#ef4444",
+    "accent_yellow": "#facc15",
+    "text_primary": "#ffffff",
+    "text_secondary": "#a1a1aa",
+    "border": "rgba(255, 255, 255, 0.1)"
+  },
+  "typography": {
+    "headings": {
+      "family": "Barlow Condensed",
+      "weight": "800",
+      "tracking": "tracking-tighter",
+      "case": "uppercase"
+    },
+    "body": {
+      "family": "DM Sans",
+      "weight": "400",
+      "tracking": "tracking-normal"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "usage": "Scoreboards and timestamps"
+    }
+  },
+  "layout": {
+    "spacing_scale": "generous",
+    "mobile_first": true,
+    "navigation": "Sticky bottom nav with backdrop-blur-xl bg-[#0f0f0f]/80 and border-t border-white/10 for mobile. Top app bar for desktop.",
+    "cards": "Flat solid surfaces (bg-[#1a1a1a]), 1px border-white/10, rounded-xl. Hover state: border-cyan-400/50, -translate-y-1, shadow-[0_4px_20px_rgba(34,211,238,0.15)]",
+    "bento_grid": "Tight gap-4 for dashboards. Elements span columns based on priority."
+  },
+  "components": {
+    "buttons": "rounded-lg font-bold uppercase tracking-widest text-sm transition-all duration-200. Primary: bg-cyan-400 text-black hover:bg-cyan-500. Ghost: border border-white/10 text-white hover:border-cyan-400",
+    "bottom_nav": "Fixed bottom-0 left-0 right-0 h-16 bg-[#0f0f0f]/90 backdrop-blur-md border-t border-white/10 flex justify-around items-center z-40",
+    "role_preview_switcher": "Fixed bottom-20 right-4 z-50 bg-white text-black p-3 rounded-full shadow-lg border border-black/10 flex items-center gap-2 font-medium hover:scale-105 transition-transform",
+    "data_testids": "MANDATORY. e.g., data-testid='role-switcher', data-testid='home-schedule-tab'"
+  },
+  "media": {
+    "logos": [
+      {
+        "url": "https://customer-assets.emergentagent.com/job_25817560-5d06-4585-aa10-457413ce1b96/artifacts/r9hewz9k_3.png",
+        "category": "Primary Brand Logo",
+        "description": "CVF Sports / Zia Symbol Logo"
+      },
+      {
+        "url": "https://customer-assets.emergentagent.com/job_25817560-5d06-4585-aa10-457413ce1b96/artifacts/sdjud2d1_8.png",
+        "category": "Secondary Brand Logo",
+        "description": "CVF Text Logo"
+      }
+    ],
+    "hero_backgrounds": [
+      {
+        "url": "https://static.prod-images.emergentagent.com/jobs/25817560-5d06-4585-aa10-457413ce1b96/images/5975b05bd9b283882601199015cdf7faad4a29e64dcb2ad8f71963db8ff92f37.png",
+        "category": "Home Hero Background",
+        "description": "Dark stadium lights, athletic texture. Use with a gradient overlay (bg-gradient-to-t from-[#0f0f0f] to-transparent)."
+      }
+    ],
+    "action_shots": [
+      {
+        "url": "https://images.unsplash.com/photo-1489358921548-9b3f69a1eb4a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwxfHxmbGFnJTIwZm9vdGJhbGwlMjBhY3Rpb24lMjBnYW1lfGVufDB8fHx8MTc4MDA5NDU0MHww&ixlib=rb-4.1.0&q=85",
+        "category": "Flag Football Feature",
+        "description": "Men playing football. Use for Flag Football sport selection card."
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxraWNrYmFsbCUyMGFjdGlvbiUyMGdhbWV8ZW58MHx8fHwxNzgwMDk0NTQwfDA&ixlib=rb-4.1.0&q=85",
+        "category": "Kickball Feature",
+        "description": "Man kicking ball on green turf. Use for Kickball sport selection card."
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "Build as a mobile-first web app using Shadcn UI and Tailwind CSS. Use .js extensions.",
+    "Install and use Phosphor Icons (yarn add @phosphor-icons/react) for a high-end athletic feel.",
+    "Install fonts: Barlow Condensed, DM Sans, and JetBrains Mono via Google Fonts in index.html.",
+    "Do not implement youth sports aesthetics. It must feel like a pro app (e.g., Nike Run Club, GameChanger).",
+    "Add 'data-testid' to ALL interactive elements, e.g., data-testid='team-registration-button'.",
+    "Always use the provided media URLs in the media section. Never use generic placeholders.",
+    "For the bottom mobile nav, implement a sticky bar with Home, Schedule, Standings, Profile.",
+    "The Demo Role Preview Switcher MUST be a floating persistent element in the bottom right corner."
+  ]
+}
