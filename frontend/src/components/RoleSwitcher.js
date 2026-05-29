@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
-import { Eye, CaretUp, Check } from "@phosphor-icons/react";
+import { Eye, CaretUp, Check, ArrowCounterClockwise } from "@phosphor-icons/react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -9,6 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "../components/ui/dropdown-menu";
 import { useRole } from "../context/RoleContext";
+import { useApp } from "../context/AppStateContext";
 import { ROLES, ROLE_ORDER } from "../lib/roles";
 
 /* ============================================================================
@@ -23,6 +25,7 @@ import { ROLES, ROLE_ORDER } from "../lib/roles";
 
 export const RoleSwitcher = () => {
   const { role, setRole, roleMeta } = useRole();
+  const { resetState } = useApp();
   const navigate = useNavigate();
 
   const handleSelect = (id) => {
@@ -100,6 +103,15 @@ export const RoleSwitcher = () => {
               </DropdownMenuItem>
             );
           })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            data-testid="reset-demo-data"
+            onClick={() => { resetState(); toast.success("Demo data reset to defaults"); navigate("/"); }}
+            className="flex items-center gap-2.5 cursor-pointer py-2.5 focus:bg-white/5"
+          >
+            <ArrowCounterClockwise size={15} weight="bold" className="text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Reset demo data</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

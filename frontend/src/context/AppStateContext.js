@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from "react";
+import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { initialState } from "../data/seed";
 
 /* ============================================================================
@@ -16,11 +16,31 @@ import { initialState } from "../data/seed";
 
 const AppStateContext = createContext(null);
 
+// Lightweight localStorage persistence so the demo survives page refreshes.
+// PHASE 2: this entire layer is replaced by Supabase queries + realtime.
+const STORAGE_KEY = "cvf_app_state_v1";
+const loadState = () => {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : initialState;
+  } catch {
+    return initialState;
+  }
+};
+
 let idCounter = 1000;
 const newId = (prefix) => `${prefix}_${Date.now()}_${idCounter++}`;
 
 export function AppStateProvider({ children }) {
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState(loadState);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [state]);
 
   /* ----------------------- SCORE ENTRY (core loop) ---------------------- */
   // Updates a game to completed, stores period scores, and replaces the
@@ -136,6 +156,12 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
+  // Restore the original seed data (clears any demo edits).
+  const resetState = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEY);
+    setState(initialState);
+  }, []);
+
   const value = {
     state,
     submitScore,
@@ -149,6 +175,7 @@ export function AppStateProvider({ children }) {
     toggleRegistration,
     assignTempAdmin,
     resendInvite,
+    resetState,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
