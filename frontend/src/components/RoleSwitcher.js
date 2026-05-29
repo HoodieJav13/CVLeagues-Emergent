@@ -1,0 +1,107 @@
+import { useNavigate } from "react-router-dom";
+import { Eye, CaretUp, Check } from "@phosphor-icons/react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "../components/ui/dropdown-menu";
+import { useRole } from "../context/RoleContext";
+import { ROLES, ROLE_ORDER } from "../lib/roles";
+
+/* ============================================================================
+ * DEMO ROLE PREVIEW SWITCHER  —  ADMIN-ONLY TESTING TOOL.
+ * ----------------------------------------------------------------------------
+ * Exists ONLY because this MVP has no real authentication. It lets us preview
+ * exactly what each role sees. It is intentionally styled as an injected dev
+ * tool (light pill) and is NOT a production user-facing feature.
+ *
+ * PHASE 2: remove this entirely. Role comes from the authenticated session.
+ * ========================================================================== */
+
+export const RoleSwitcher = () => {
+  const { role, setRole, roleMeta } = useRole();
+  const navigate = useNavigate();
+
+  const handleSelect = (id) => {
+    setRole(id);
+    // Send the previewer somewhere sensible for the newly selected role.
+    if (id === "admin") navigate("/admin");
+    else if (id === "temp_admin") navigate("/score-entry");
+    else if (id === "captain") navigate("/free-agents");
+    else if (id === "player") navigate("/profile/me");
+    else navigate("/");
+  };
+
+  return (
+    <div className="fixed z-50 left-4 bottom-20 md:left-6 md:bottom-6">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            data-testid="role-switcher"
+            className="flex items-center gap-2 bg-white text-black pl-3 pr-3.5 py-2 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.4)] ring-2 ring-primary/40 hover:scale-105 active:scale-95 transition-transform"
+          >
+            <Eye size={16} weight="bold" />
+            <span className="flex flex-col items-start leading-none">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-black/50">
+                Demo Preview
+              </span>
+              <span
+                className="text-sm font-bold uppercase tracking-tight font-display"
+                style={{ color: "#0f0f0f" }}
+              >
+                {roleMeta.short}
+              </span>
+            </span>
+            <CaretUp size={14} weight="bold" className="text-black/50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          side="top"
+          align="start"
+          data-testid="role-switcher-menu"
+          className="w-72 bg-card border-border"
+        >
+          <DropdownMenuLabel className="text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <Eye size={14} weight="bold" className="text-primary" />
+              <span className="uppercase tracking-widest text-[11px]">Demo Role Preview</span>
+            </div>
+            <p className="text-[11px] font-normal normal-case mt-1 text-muted-foreground/80">
+              Testing tool only — preview what each role sees. Not a production feature.
+            </p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {ROLE_ORDER.map((id) => {
+            const r = ROLES[id];
+            const active = id === role;
+            return (
+              <DropdownMenuItem
+                key={id}
+                data-testid={`role-option-${id}`}
+                onClick={() => handleSelect(id)}
+                className="flex items-start gap-2.5 cursor-pointer py-2.5 focus:bg-white/5"
+              >
+                <span
+                  className="w-2.5 h-2.5 rounded-full mt-1 shrink-0"
+                  style={{ backgroundColor: r.color }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-display uppercase tracking-tight text-sm text-white">
+                      {r.label}
+                    </span>
+                    {active && <Check size={14} weight="bold" className="text-primary" />}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-snug">{r.description}</p>
+                </div>
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};

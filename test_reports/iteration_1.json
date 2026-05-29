@@ -1,0 +1,46 @@
+{
+  "summary": "Frontend-only smoke + critical-flow test of CVF Sports MVP. Verified the PRIMARY 8-step success test (admin enters score on upcoming kickball game g4 -> result propagates to game detail, schedule, standings, both team pages, player profile (public + private), and leaderboards). All shared-state propagation works correctly. Also validated role-gated access, captain free-agent invite, team registration, and free agent signup flows.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "RoleContext and AppStateContext both use in-memory useState with no persistence (localStorage/sessionStorage). A browser reload or hard navigation wipes the demo state, including any score the admin just entered. For a demo this is acceptable, but it makes the app feel buggy if a user refreshes mid-demo. Consider adding lightweight localStorage persistence for both contexts so demo data survives reloads.",
+    "ScoreEntry useEffect dependency array is `[gameId]` only with eslint-disable - if the underlying `game` object's stat rows change while the user is editing the same game, the form won't re-prefill. Minor.",
+    "Admin Free Agents tab uses a different data-testid than the convention `admin-tab-freeagents` (this testid doesn't exist). The 'FREE AGENTS' tab is present and visually works, but tests that try `admin-tab-freeagents` will fail. Recommend standardizing on `admin-tab-free-agents` or `admin-tab-freeagents` and aligning across the codebase.",
+    "GameDetail page does not appear to render a visible 'Final' word/badge in the main content area when status=completed (the inning table + Edit Score button is shown for admin). Schedule card and toast correctly show Final. Consider adding a 'FINAL' badge on the game detail header for consistency with the schedule card."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100% (primary 8-step + all secondary flows passed)"},
+  "test_credentials": "None - no auth in app. Role switcher (data-testid=role-switcher) used to swap demo roles.",
+  "seed_data_creation": "Created in-memory only during test runs: TEST Squad team registration, TEST FreeAgent free agent signup, and submitted a score for game g4 (Sandia Sluggers 6 @ Rio Grande Rollers 3 with stats for player p1 Marcus Trujillo: 2 HR, 4 RBI, 3 R). None persisted (state is in-memory by design).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "IMPORTANT: AppStateContext and RoleContext are in-memory only. ANY page.goto() (full navigation) resets the entire app state including role and submitted scores. To test shared-state propagation across pages, you MUST use SPA navigation (history.pushState + popstate event) rather than page.goto(). See iteration_1 script for the goto_spa() helper pattern. Game g4 baseline: home t2 Rio Grande Rollers, away t1 Sandia Sluggers, upcoming kickball; before score entry t1=2-0 t2=0-2; after submitting away wins 6-3 t1=3-0 t2=0-3.",
+  "primary_8_step_test_results": {
+    "step_a_role_admin_navigates_to_admin": "PASS - role-switcher and role-option-admin work; URL became /admin",
+    "step_b_score_entry_g4_with_stats": "PASS - score-game-select listed all 12 games, g4 selectable, period inputs and player toggle (p1) + score-stat-p1-homeRuns/runs/rbis worked, save button worked",
+    "step_c_navigates_to_game_g4_final": "PASS - After save URL=/game/g4, toast 'Sandia Sluggers 6 - 3 Rio Grande Rollers saved!' shown, inning table shows 6 vs 3 totals, player stat row shows Marcus 2 HR 4 RBI 3 R",
+    "step_d_schedule_filter_completed": "PASS - schedule-filter-status dropdown works, game-card-g4 visible with 'Final' badge and 6-3 score",
+    "step_e_standings_updated": "PASS - Sandia Sluggers moved to 3-0 (21 PF, +9), Rio Grande Rollers to 0-3 (11 PF, -8), standings re-sorted",
+    "step_f_team_pages_updated": "PASS - /team/t1 shows 3-0 record, 21 PF, +9 DIFF, updated stat leaders (Marcus 4 HR, 10 RBI, 7 R). /team/t2 shows 0-3, 11 PF, -8 DIFF",
+    "step_g_player_profile_updated": "PASS - /profile/p1: public tab visible, private tab enabled for admin. Season Highlights show 4 HR, 10 RBI, 7 R (up from 2/6/4). Private tab shows full stats incl career totals (Home Runs 4 season / 13 career) and game log includes 'Jun 23 vs Rio Grande Rollers - 2 Home, 4 RBIs, 3 Runs'",
+    "step_h_leaderboards_updated": "PASS - Marcus #1 in Season HR with 4 (up from 2). leaderboard-stat-select works, leaderboard-scope-season/career toggle works, career view shows Marcus updated to 13 HR"
+  },
+  "secondary_test_results": {
+    "anon_admin_gate": "PASS - role-gate-denied shown on /admin and /free-agents for anonymous",
+    "anon_score_entry_gate": "PASS - role-gate-denied shown on /score-entry for anonymous",
+    "anon_profile_private_tab_disabled": "PASS - profile-tab-private has disabled attribute when role is anonymous",
+    "captain_free_agents_access": "PASS - captain role auto-navigates to /free-agents, 8 fa-invite-* buttons rendered",
+    "captain_send_invite": "PASS - clicking fa-invite-<id> flips label from 'Send Invite' to 'Invite Sent' and shows toast",
+    "team_registration_flow": "PASS - reg-team-name/sport/captain-name/captain-email/player-name-0..4/submit all work; registration-success shown; TEST Squad appears as Pending Registration in admin Teams tab",
+    "free_agent_signup_flow": "PASS - fa-name/email/sport-kickball/experience/submit work; free-agent-success shown"
+  }
+}
