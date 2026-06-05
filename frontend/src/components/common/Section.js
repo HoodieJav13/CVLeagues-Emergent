@@ -1,11 +1,14 @@
 // Small reusable section heading with an accent rule.
 export const SectionHeading = ({ title, subtitle, action, className = "" }) => (
-  <div className={`flex items-end justify-between gap-4 mb-4 ${className}`}>
+  <div className={`flex items-end justify-between gap-4 mb-5 ${className}`}>
     <div>
-      <h2 className="font-display font-extrabold uppercase tracking-tighter text-2xl md:text-3xl text-white leading-none">
-        {title}
-      </h2>
-      {subtitle && <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>}
+      <div className="flex items-center gap-2.5 mb-0.5">
+        <span className="w-1 h-5 rounded-full bg-primary shrink-0" />
+        <h2 className="font-display font-extrabold uppercase tracking-tighter text-2xl md:text-3xl text-white leading-none">
+          {title}
+        </h2>
+      </div>
+      {subtitle && <p className="text-sm text-muted-foreground mt-1 ml-[14px]">{subtitle}</p>}
     </div>
     {action}
   </div>

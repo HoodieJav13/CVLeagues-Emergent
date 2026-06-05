@@ -41,8 +41,10 @@ export const BottomNav = () => {
             end={item.to === "/"}
             data-testid={`navmobile-${item.label.toLowerCase()}`}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 flex-1 transition-colors ${
-                isActive ? "text-primary" : "text-muted-foreground"
+              `flex flex-col items-center justify-center gap-0.5 flex-1 transition-all duration-200 relative pt-0.5 ${
+                isActive
+                  ? "text-primary after:absolute after:top-0 after:inset-x-3 after:h-0.5 after:rounded-b-full after:bg-primary"
+                  : "text-muted-foreground hover:text-white/70"
               }`
             }
           >

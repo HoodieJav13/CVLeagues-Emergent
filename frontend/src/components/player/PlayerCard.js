@@ -7,7 +7,7 @@ export const PlayerCard = ({ profile, jersey, position, isCaptain }) => (
   <Link
     to={`/profile/${profile.id}`}
     data-testid={`player-card-${profile.id}`}
-    className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5"
+    className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 shadow-card transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 hover:shadow-card-hover"
   >
     <Avatar name={profile.name} color={profile.avatarColor} size={42} />
     <div className="min-w-0 flex-1">

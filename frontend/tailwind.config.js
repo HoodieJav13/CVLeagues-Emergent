@@ -79,8 +79,14 @@ module.exports = {
                 },
                 animation: {
                         'accordion-down': 'accordion-down 0.2s ease-out',
-                        'accordion-up': 'accordion-up 0.2s ease-out'
-                }
+                        'accordion-up': 'accordion-up 0.2s ease-out',
+                },
+                boxShadow: {
+                        'glow-cyan': '0 0 20px rgba(34,211,238,0.25), 0 4px 20px rgba(34,211,238,0.12)',
+                        'glow-cyan-sm': '0 0 12px rgba(34,211,238,0.18)',
+                        'card-hover': '0 4px 20px rgba(34,211,238,0.15)',
+                        'card': '0 1px 8px rgba(0,0,0,0.4)',
+                },
         }
   },
   plugins: [require("tailwindcss-animate")],

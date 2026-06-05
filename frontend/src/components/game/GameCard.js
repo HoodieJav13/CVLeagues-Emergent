@@ -48,7 +48,7 @@ export const GameCard = ({ game, className = "" }) => {
     <Link
       to={`/game/${game.id}`}
       data-testid={`game-card-${game.id}`}
-      className={`block bg-card border border-border rounded-xl p-4 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(34,211,238,0.12)] ${className}`}
+      className={`block bg-card border border-border rounded-xl p-4 shadow-card transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 hover:shadow-card-hover ${className}`}
     >
       <div className="flex items-center justify-between mb-3">
         <SportBadge sport={game.sport} />

@@ -14,7 +14,8 @@ export const Avatar = ({ name = "?", color = "#22d3ee", size = 44, className = "
         height: size,
         backgroundColor: `${color}1f`,
         color,
-        border: `1.5px solid ${color}66`,
+        border: `2px solid ${color}55`,
+        boxShadow: `0 0 8px ${color}22`,
         fontSize: size * 0.38,
       }}
     >
