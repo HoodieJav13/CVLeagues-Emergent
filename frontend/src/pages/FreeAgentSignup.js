@@ -13,26 +13,68 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 
+// Configurable availability slots — update this list to add/remove options.
+const AVAILABILITY_OPTIONS = [
+  { id: "sunday_morning", label: "Sunday Morning" },
+  { id: "sunday_night", label: "Sunday Night" },
+  { id: "monday_night", label: "Monday Night" },
+];
+
 export default function FreeAgentSignup() {
   const { addFreeAgent } = useApp();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", experience: "", notes: "" });
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    displayName: "",
+    email: "",
+    phone: "",
+    experience: "",
+    preferredPosition: "",
+    emergencyContactName: "",
+    emergencyContactPhone: "",
+    notes: "",
+  });
   const [sports, setSports] = useState([]);
+  const [availability, setAvailability] = useState([]);
+  const [consentToContact, setConsentToContact] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const toggleSport = (id) => setSports((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
+  const toggleSport = (id) => setSports((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+  const toggleAvail = (id) => setAvailability((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
+
+  const validate = () => {
+    const e = {};
+    if (!form.firstName.trim()) e.firstName = "First name is required";
+    if (!form.lastName.trim()) e.lastName = "Last name is required";
+    if (!form.phone.trim() && !form.email.trim()) e.contact = "Phone or email is required";
+    if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Enter a valid email address";
+    if (!sports.length) e.sports = "Select at least one sport";
+    if (!consentToContact) e.consent = "You must agree to be contacted";
+    return e;
+  };
 
   const submit = () => {
-    const e = {};
-    if (!form.name.trim()) e.name = "Name is required";
-    if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Valid email required";
-    if (!sports.length) e.sports = "Pick at least one sport";
-    if (!form.experience) e.experience = "Select your experience level";
+    const e = validate();
     setErrors(e);
     if (Object.keys(e).length) { toast.error("Please fix the highlighted fields"); return; }
-    addFreeAgent({ name: form.name.trim(), email: form.email.trim(), phone: form.phone.trim(), sports, experience: form.experience, notes: form.notes.trim() });
-    // PHASE 2: POST to /free_agents + notify captains looking for that sport.
+    addFreeAgent({
+      firstName: form.firstName.trim(),
+      lastName: form.lastName.trim(),
+      displayName: form.displayName.trim() || null,
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      sports,
+      experience: form.experience || null,
+      preferredPosition: form.preferredPosition.trim() || null,
+      availability,
+      emergencyContactName: form.emergencyContactName.trim() || null,
+      emergencyContactPhone: form.emergencyContactPhone.trim() || null,
+      consentToContact: true,
+      notes: form.notes.trim() || null,
+    });
+    // PHASE 2: POST to /free_agents + notify captains watching for that sport.
     setSubmitted(true);
     toast.success("You're in the free agent pool! Captains can now find you.");
   };
@@ -44,9 +86,13 @@ export default function FreeAgentSignup() {
           <CheckCircle size={34} weight="fill" className="text-primary" />
         </div>
         <h1 className="font-display uppercase tracking-tight text-2xl text-white">You're in the Pool!</h1>
-        <p className="text-muted-foreground mt-2 text-sm">Captains looking for players can now send you an invite. Keep an eye on your inbox.</p>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Captains looking for players can now find you. Keep an eye on your inbox.
+        </p>
         <div className="flex gap-3 justify-center mt-6">
-          <Link to="/" className="bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl">Back Home</Link>
+          <Link to="/" className="bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl">
+            Back Home
+          </Link>
         </div>
       </div>
     );
@@ -55,48 +101,139 @@ export default function FreeAgentSignup() {
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-up">
       <SectionHeading title="Free Agent Sign-Up" subtitle="No team? Get found by captains." />
+
+      {/* Personal info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <Field label="Full Name" error={errors.name}>
-          <Input data-testid="fa-name" value={form.name} onChange={(e) => set("name", e.target.value)} className="bg-[#0f0f0f] border-border" />
-        </Field>
+        <p className="font-display uppercase tracking-tight text-white text-sm">Your Info</p>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="Email" error={errors.email}>
-            <Input data-testid="fa-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} className="bg-[#0f0f0f] border-border" />
+          <Field label="First Name" required error={errors.firstName}>
+            <Input data-testid="fa-first-name" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-[#0f0f0f] border-border" />
           </Field>
-          <Field label="Phone (optional)">
-            <Input data-testid="fa-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} className="bg-[#0f0f0f] border-border" />
+          <Field label="Last Name" required error={errors.lastName}>
+            <Input data-testid="fa-last-name" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-[#0f0f0f] border-border" />
           </Field>
         </div>
-        <Field label="Preferred Sports" error={errors.sports}>
+        <Field label="Display Name" optional>
+          <Input data-testid="fa-display-name" value={form.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname or preferred name" className="bg-[#0f0f0f] border-border" />
+        </Field>
+        <Field label="Contact" required error={errors.contact || errors.email} hint="At least one of phone or email is required">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Input data-testid="fa-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Phone" className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className="bg-[#0f0f0f] border-border" />
+          </div>
+        </Field>
+      </div>
+
+      {/* Sport & availability */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <p className="font-display uppercase tracking-tight text-white text-sm">Sport & Availability</p>
+        <Field label="Sport Interest" required error={errors.sports}>
           <div className="flex flex-wrap gap-2 mt-1">
             {SPORTS.map((s) => (
-              <label key={s.id} data-testid={`fa-sport-${s.id}`} className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${sports.includes(s.id) ? "border-primary bg-primary/10" : "border-border"}`}>
+              <label
+                key={s.id}
+                data-testid={`fa-sport-${s.id}`}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
+                  sports.includes(s.id) ? "border-primary bg-primary/10" : "border-border"
+                }`}
+              >
                 <Checkbox checked={sports.includes(s.id)} onCheckedChange={() => toggleSport(s.id)} />
                 <span className="text-sm text-white">{s.name}</span>
               </label>
             ))}
           </div>
         </Field>
-        <Field label="Experience Level" error={errors.experience}>
-          <Select value={form.experience} onValueChange={(v) => set("experience", v)}>
-            <SelectTrigger data-testid="fa-experience" className="bg-[#0f0f0f] border-border h-10"><SelectValue placeholder="Select level" /></SelectTrigger>
-            <SelectContent>{LEVELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}</SelectContent>
-          </Select>
+        <Field label="Availability" optional>
+          <div className="flex flex-wrap gap-2 mt-1">
+            {AVAILABILITY_OPTIONS.map((opt) => (
+              <label
+                key={opt.id}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
+                  availability.includes(opt.id) ? "border-primary bg-primary/10" : "border-border"
+                }`}
+              >
+                <Checkbox checked={availability.includes(opt.id)} onCheckedChange={() => toggleAvail(opt.id)} />
+                <span className="text-sm text-white">{opt.label}</span>
+              </label>
+            ))}
+          </div>
         </Field>
-        <Field label="Notes (optional)">
-          <Textarea data-testid="fa-notes" value={form.notes} onChange={(e) => set("notes", e.target.value)} placeholder="Positions, availability, anything captains should know…" className="bg-[#0f0f0f] border-border" />
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Experience Level" optional>
+            <Select value={form.experience} onValueChange={(v) => set("experience", v)}>
+              <SelectTrigger data-testid="fa-experience" className="bg-[#0f0f0f] border-border h-10">
+                <SelectValue placeholder="Select level" />
+              </SelectTrigger>
+              <SelectContent>
+                {LEVELS.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field label="Preferred Position" optional>
+            <Input data-testid="fa-position" value={form.preferredPosition} onChange={(e) => set("preferredPosition", e.target.value)} placeholder="e.g. Pitcher, WR…" className="bg-[#0f0f0f] border-border" />
+          </Field>
+        </div>
+      </div>
+
+      {/* Emergency contact */}
+      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
+        <p className="font-display uppercase tracking-tight text-white text-sm">
+          Emergency Contact <span className="text-muted-foreground font-normal normal-case tracking-normal text-xs">(optional)</span>
+        </p>
+        <div className="grid sm:grid-cols-2 gap-4">
+          <Field label="Contact Name" optional>
+            <Input data-testid="fa-ec-name" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} className="bg-[#0f0f0f] border-border" />
+          </Field>
+          <Field label="Contact Phone" optional>
+            <Input data-testid="fa-ec-phone" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} className="bg-[#0f0f0f] border-border" />
+          </Field>
+        </div>
+      </div>
+
+      {/* Notes */}
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <Field label="Notes" optional>
+          <Textarea
+            data-testid="fa-notes"
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            placeholder="Anything captains should know — schedule notes, positions, etc."
+            className="bg-[#0f0f0f] border-border"
+          />
         </Field>
       </div>
-      <button onClick={submit} data-testid="fa-submit" className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-[#06b6d4] transition-colors">
+
+      {/* Consent */}
+      <div className="bg-card border border-border rounded-2xl p-5">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <Checkbox data-testid="fa-consent" checked={consentToContact} onCheckedChange={setConsentToContact} className="mt-0.5" />
+          <span className="text-sm text-muted-foreground leading-snug">
+            I consent to be contacted by CVF Sports by phone, text, or email regarding league participation.{" "}
+            <span className="text-destructive font-bold">*</span>
+          </span>
+        </label>
+        {errors.consent && <p className="text-xs text-destructive mt-2 ml-7">{errors.consent}</p>}
+      </div>
+
+      <button
+        onClick={submit}
+        data-testid="fa-submit"
+        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-[#06b6d4] transition-colors"
+      >
         Join Free Agent Pool
       </button>
     </div>
   );
 }
 
-const Field = ({ label, error, children }) => (
+const Field = ({ label, required, optional, error, hint, children }) => (
   <div>
-    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 block">{label}</Label>
+    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
+      {label}
+      {required && <span className="text-destructive">*</span>}
+      {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
+    </Label>
+    {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
     {children}
     {error && <p className="text-xs text-destructive mt-1">{error}</p>}
   </div>
