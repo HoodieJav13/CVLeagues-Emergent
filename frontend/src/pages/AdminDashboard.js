@@ -5,6 +5,7 @@ import {
   Plus, Trash, PencilSimple, CheckCircle, Power, CalendarX,
   Gauge, ClipboardText, Signature, ChartBar,
   Archive, NotePencil, Phone, LockSimple, LockSimpleOpen, ClockCounterClockwise, UserPlus,
+  CaretRight, Flag, LinkSimple,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
@@ -14,7 +15,7 @@ import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "../components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -37,6 +38,7 @@ export default function AdminDashboard() {
 
 function Dashboard() {
   const app = useApp();
+  const [tab, setTab] = useState("overview"); // controlled so Overview cards can deep-link to sections
   const tabs = [
     { id: "overview", label: "Overview", icon: Gauge },
     { id: "players", label: "Players", icon: UserCircle },
@@ -58,7 +60,7 @@ function Dashboard() {
         </div>
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">Season 1 · Demo Data</span>
       </header>
-      <Tabs defaultValue="overview">
+      <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-card border border-border w-full flex overflow-x-auto h-auto p-1 justify-start">
           {tabs.map((t) => (
             <TabsTrigger key={t.id} value={t.id} data-testid={`admin-tab-${t.id}`} className="data-[state=active]:bg-primary data-[state=active]:text-black uppercase text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5">
@@ -66,11 +68,11 @@ function Dashboard() {
             </TabsTrigger>
           ))}
         </TabsList>
-        <TabsContent value="overview" className="mt-3"><OverviewTab /></TabsContent>
+        <TabsContent value="overview" className="mt-3"><OverviewTab app={app} onNavigate={setTab} /></TabsContent>
         <TabsContent value="players" className="mt-3"><PlayersTab app={app} /></TabsContent>
         <TabsContent value="registrations" className="mt-3"><RegistrationsTab app={app} /></TabsContent>
         <TabsContent value="agents" className="mt-3"><AgentsTab app={app} /></TabsContent>
-        <TabsContent value="waivers" className="mt-3"><WaiversTab /></TabsContent>
+        <TabsContent value="waivers" className="mt-3"><WaiversTab app={app} /></TabsContent>
         <TabsContent value="teams" className="mt-3"><TeamsTab app={app} /></TabsContent>
         <TabsContent value="leagues" className="mt-3"><LeaguesTab app={app} /></TabsContent>
         <TabsContent value="games" className="mt-3"><GamesTab app={app} /></TabsContent>
@@ -80,20 +82,99 @@ function Dashboard() {
   );
 }
 
-/* -------------------- scaffold-only sections (Stage 1) ------------------- */
-const SectionShell = ({ id, title, note }) => (
-  <div data-testid={`admin-section-${id}`} className="bg-card border border-border rounded-xl p-4">
-    <p className="font-display uppercase tracking-tight text-white">{title}</p>
-    <p className="text-xs text-muted-foreground mt-1">{note}</p>
-    <p className="text-[11px] text-muted-foreground/70 mt-3">Scaffold — tooling for this section ships in a later stage.</p>
+/* ------------------------------ OVERVIEW ---------------------------------- */
+// Operational queues, ordered by urgency. Counts derive from existing state.
+const QueueCard = ({ count, title, desc, cta, onClick, testid, muted }) => (
+  <div data-testid={testid} className="bg-card border border-border rounded-xl p-4 flex flex-col">
+    <p className={`font-mono-score text-3xl font-bold ${muted || count === 0 ? "text-muted-foreground" : "text-primary"}`}>{count}</p>
+    <p className="font-display uppercase tracking-tight text-white mt-1">{title}</p>
+    <p className="text-xs text-muted-foreground mt-0.5 flex-1">{desc}</p>
+    <button onClick={onClick} className="mt-3 self-start flex items-center gap-1 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-1.5 hover:bg-primary/10 transition-colors">
+      {cta} <CaretRight size={12} weight="bold" />
+    </button>
   </div>
 );
-const OverviewTab = () => (
-  <SectionShell id="overview" title="Overview" note="Operational summary: pending scores, new registrations, free agent intake, waiver verification queue." />
-);
-const WaiversTab = () => (
-  <SectionShell id="waivers" title="Waivers" note="Waiver verification queue — append-only signed records, version history, eligibility review." />
-);
+
+function OverviewTab({ app, onNavigate }) {
+  const { state } = app;
+  const waivers = state.waivers || [];
+  const scoresNeeded = state.games.filter((g) => g.score_status === "pending" || g.score_status === "submitted").length;
+  const regsToTriage = state.registrations.filter((r) => r.status === "new" || r.status === "contacted").length;
+  const agentsToReview = state.freeAgents.filter((a) => a.status === "new" || a.status === "contacted").length;
+  // Placeholder until real waiver submissions exist: profiles with no waiver record linked.
+  const missingWaivers = state.profiles.filter((p) => !waivers.some((w) => w.profileId === p.id)).length;
+  const lockedGames = state.games.filter((g) => g.locked).length;
+  // FINAL DRAFT: duplicate-profile detection ships at final-draft review — placeholder 0.
+  const possibleDuplicates = 0;
+
+  const cards = [
+    { count: scoresNeeded, title: "Games Needing Scores", desc: "Enter, review and lock final scores. Pending have no score; submitted await Mark Final.", cta: "Scores/Stats", tab: "scores", testid: "admin-overview-scores" },
+    { count: regsToTriage, title: "Registrations to Triage", desc: "Team interest submissions awaiting contact or approval.", cta: "Registrations", tab: "registrations", testid: "admin-overview-registrations" },
+    { count: agentsToReview, title: "Free Agents to Review", desc: "Intake submissions awaiting contact or team assignment.", cta: "Free Agents", tab: "agents", testid: "admin-overview-agents" },
+    { count: missingWaivers, title: "Players Missing Waivers", desc: "Profiles with no waiver record on file (mock count until the backend ships).", cta: "Waivers", tab: "waivers", testid: "admin-overview-waivers" },
+    { count: lockedGames, title: "Locked / Final Games", desc: "Season games marked final and locked against edits.", cta: "Scores/Stats", tab: "scores", testid: "admin-overview-locked", muted: true },
+    { count: possibleDuplicates, title: "Possible Duplicate Profiles", desc: "Duplicate detection ships at final-draft review.", cta: "Players", tab: "players", testid: "admin-overview-duplicates", muted: true },
+  ];
+
+  return (
+    <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {cards.map((c) => (
+        <QueueCard key={c.testid} count={c.count} title={c.title} desc={c.desc} cta={c.cta} onClick={() => onNavigate(c.tab)} testid={c.testid} muted={c.muted} />
+      ))}
+    </div>
+  );
+}
+
+/* ------------------------------- WAIVERS ---------------------------------- */
+// Mock waiver verification queue (real submission flow ships with the
+// backend). Submitted ≠ eligible: eligibility = admin verification +
+// team/season assignment. Records are append-only — re-signing adds a row.
+function WaiversTab({ app }) {
+  const { state, updateEntity } = app;
+  const waivers = state.waivers || [];
+  return (
+    <div className="space-y-3">
+      <div className="bg-card border border-primary/30 rounded-xl p-4">
+        <p className="font-display uppercase tracking-tight text-white">Waiver Verification Queue</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          Waiver submission flow ships with the backend — these are mock records. Records are append-only: re-signing creates a new row.
+          A submitted waiver does <span className="text-white font-semibold">not</span> equal eligibility — eligibility requires admin verification plus team/season assignment.
+        </p>
+      </div>
+      <SectionTitle title="Waiver Records" count={waivers.length} />
+      <AdminTable testid="admin-waivers-table" head={["Signed Name", "Contact", "Submitted", "Waiver Version", "Verification", "Player Record", ""]}>
+        {waivers.length === 0 ? (
+          <EmptyRow colSpan={7}>No waiver records yet.</EmptyRow>
+        ) : waivers.map((w) => {
+          const profile = w.profileId ? getProfile(state, w.profileId) : null;
+          return (
+            <TableRow key={w.id} data-testid={`admin-waiver-${w.id}`} className="border-border">
+              <TableCell className="font-medium text-white whitespace-nowrap">{w.signed_name}</TableCell>
+              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{w.email}{w.phone ? ` · ${w.phone}` : ""}</TableCell>
+              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtTs(w.signed_at)}</TableCell>
+              <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">{w.waiver_version}</TableCell>
+              <TableCell><StatusBadge status={w.verification_status} /></TableCell>
+              <TableCell className="text-xs whitespace-nowrap">
+                {profile ? (
+                  <Link to={`/profile/${profile.id}`} className="text-white hover:text-primary">{profile.name}</Link>
+                ) : (
+                  <span className="text-muted-foreground/60">Unlinked</span>
+                )}
+              </TableCell>
+              <TableCell>
+                <div className="flex items-center justify-end whitespace-nowrap">
+                  <IconBtn onClick={() => { updateEntity("waivers", w.id, { verification_status: "verified" }); toast.success("Waiver verified — eligibility still requires team/season assignment"); }} icon={CheckCircle} title="Mark verified" testid={`admin-waiver-verify-${w.id}`} disabled={w.verification_status === "verified"} />
+                  <IconBtn onClick={() => { updateEntity("waivers", w.id, { verification_status: "pending" }); toast("Waiver flagged for review"); }} icon={Flag} title="Needs review" testid={`admin-waiver-review-${w.id}`} disabled={w.verification_status === "pending"} />
+                  <IconBtn icon={LinkSimple} title="Link to player record — ships with the backend" testid={`admin-waiver-link-${w.id}`} disabled />
+                </div>
+              </TableCell>
+            </TableRow>
+          );
+        })}
+      </AdminTable>
+    </div>
+  );
+}
 
 /* ---------- shared table & button primitives ---------- */
 const IconBtn = ({ onClick, icon: Icon, testid, danger, title, disabled }) => (
@@ -540,7 +621,7 @@ function GamesTab({ app }) {
       <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
         <DialogContent className="bg-card border-border" data-testid="admin-reschedule-modal">
           <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">Postpone or Cancel Game</DialogTitle></DialogHeader>
-          <p className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</p>
+          <DialogDescription className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</DialogDescription>
           <DialogFooter>
             <button onClick={() => setRescheduleFor(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-white">Back</button>
             <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="px-4 py-2 rounded-lg border border-[#facc15]/40 text-[#facc15] font-bold uppercase text-sm">Postpone</button>
@@ -741,9 +822,11 @@ function AgentsTab({ app }) {
 }
 
 /* ------------------------------ modal ------------------------------------ */
+// aria-describedby={undefined} per Radix docs: descriptions are passed as
+// visible children here, so suppress the missing-Description warning once.
 const Modal = ({ open, onClose, title, onSave, children }) => (
   <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-    <DialogContent className="bg-card border-border" data-testid="admin-modal">
+    <DialogContent className="bg-card border-border" data-testid="admin-modal" aria-describedby={undefined}>
       <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">{title}</DialogTitle></DialogHeader>
       <div className="space-y-3 py-2">{children}</div>
       <DialogFooter>

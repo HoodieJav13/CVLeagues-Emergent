@@ -270,6 +270,23 @@ export const registrations = [
   { id: "reg1", teamName: "Westside Warriors", sport: "kickball", captainName: "Felix Ortega", captainEmail: "felix.o@cvf.demo", captainPhone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "new", submittedDate: "2026-06-04" },
 ];
 
+/* ------------------------------- WAIVERS ---------------------------------- */
+// MOCK records shaped per the CLAUDE.md waiver model (real submission flow
+// ships with the backend). APPEND-ONLY in production: a re-sign creates a new
+// row, never an edit — w3/w4 below show one player's superseded + re-signed
+// pair. A submitted waiver does NOT equal eligibility; eligibility = admin
+// verification + team/season assignment.
+// verification_status: 'pending' | 'verified' | 'rejected' | 'duplicate'
+export const WAIVER_VERSION = "CVF-WAIVER-2026-06-04-v1";
+export const waivers = [
+  { id: "w1", profileId: "p1", signed_name: "Marcus Trujillo", email: "marcus.t@cvf.demo", phone: "505-555-0101", signed_at: "2026-06-05T17:42:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "174.56.20.18", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "verified" },
+  { id: "w2", profileId: "p6", signed_name: "Jessica Martinez", email: "jess.m@cvf.demo", phone: "505-555-0106", signed_at: "2026-06-05T19:03:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "98.60.142.77", user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", verification_status: "verified" },
+  { id: "w3", profileId: "p4", signed_name: "Tyler Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", signed_at: "2026-06-06T15:11:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: false, ip_address: "70.171.33.204", user_agent: "Mozilla/5.0 (Linux; Android 14)", verification_status: "duplicate" },
+  { id: "w4", profileId: "p4", signed_name: "Tyler J. Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", signed_at: "2026-06-08T20:27:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "70.171.33.204", user_agent: "Mozilla/5.0 (Linux; Android 14)", verification_status: "pending" },
+  { id: "w5", profileId: "p8", signed_name: "C. Vigil", email: "crystal.v@cvf.demo", phone: "505-555-0108", signed_at: "2026-06-07T16:48:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: false, media_consent: false, ip_address: "166.70.21.9", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)", verification_status: "rejected" },
+  { id: "w6", profileId: null, signed_name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", signed_at: "2026-06-09T18:35:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "97.123.88.40", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "pending" },
+];
+
 /* ------------------------------ SETTINGS --------------------------------- */
 export const settings = {
   currentSeason: CURRENT_SEASON,
@@ -287,5 +304,6 @@ export const initialState = {
   careerBaselines,
   freeAgents,
   registrations,
+  waivers,
   settings,
 };

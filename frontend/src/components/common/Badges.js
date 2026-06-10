@@ -39,6 +39,9 @@ export const StatusBadge = ({ status, className = "" }) => {
     // entity lifecycle (teams & leagues)
     draft: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Draft" },
     active: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Active" },
+    // waiver verification (pending/rejected shared with the entries above)
+    verified: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Verified" },
+    duplicate: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Duplicate" },
     // legacy demo values kept for FINAL DRAFT (dormant) account features
     rejected: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Rejected" },
     invited: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Invited" },

@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
+import logoSrc from "../../assets/cvf-logo-transparent.png";
 
-// Primary brand logo (uploaded CVF / Core Value Fitness hex mark).
-const LOGO_URL =
-  "https://customer-assets.emergentagent.com/job_25817560-5d06-4585-aa10-457413ce1b96/artifacts/r9hewz9k_3.png";
+// Primary brand logo (local asset — the old remote Emergent URL is dead).
+const LOGO_URL = logoSrc;
 
 export const Logo = ({ size = 36, withWord = true, className = "" }) => (
   <Link

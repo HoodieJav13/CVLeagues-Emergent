@@ -32,6 +32,8 @@ const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
 const FA_STATUS_MAP = { available: "new", invited: "contacted" };
 const migrateState = (s) => ({
   ...s,
+  // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
+  waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, adminNotes: r.adminNotes || [] })),
   freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, adminNotes: f.adminNotes || [], assignedTeamId: f.assignedTeamId ?? null })),
   games: (s.games || []).map((g) => ({
