@@ -131,23 +131,25 @@ export const teamPlayers = [
 
 /* ------------------------------- GAMES ----------------------------------- */
 // status: 'upcoming' | 'completed'. periods holds per-inning/per-quarter scores.
+// score_status: 'pending' | 'submitted' | 'approved' | 'disputed' | 'final'
+// (CLAUDE.md data model) — lives ALONGSIDE status, which is kept as-is.
 export const games = [
   // --- Kickball completed ---
-  { id: "g1", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t2", date: "2026-06-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", homeScore: 7, awayScore: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, tempAdminId: null },
-  { id: "g2", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t3", date: "2026-06-11", time: "7:30 PM", location: "Los Altos Park, Field 1", status: "completed", homeScore: 4, awayScore: 6, periods: { home: [1, 2, 0, 1, 0], away: [0, 3, 1, 2, 0] }, tempAdminId: null },
-  { id: "g3", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t3", date: "2026-06-16", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", homeScore: 8, awayScore: 5, periods: { home: [3, 1, 2, 0, 2], away: [1, 0, 1, 2, 1] }, tempAdminId: null },
+  { id: "g1", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t2", date: "2026-06-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "final", homeScore: 7, awayScore: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, tempAdminId: null },
+  { id: "g2", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t3", date: "2026-06-11", time: "7:30 PM", location: "Los Altos Park, Field 1", status: "completed", score_status: "final", homeScore: 4, awayScore: 6, periods: { home: [1, 2, 0, 1, 0], away: [0, 3, 1, 2, 0] }, tempAdminId: null },
+  { id: "g3", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t3", date: "2026-06-16", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "final", homeScore: 8, awayScore: 5, periods: { home: [3, 1, 2, 0, 2], away: [1, 0, 1, 2, 1] }, tempAdminId: null },
   // --- Kickball upcoming ---
-  { id: "g4", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t1", date: "2026-06-23", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
-  { id: "g5", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t1", date: "2026-06-25", time: "7:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
-  { id: "g6", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t2", date: "2026-06-30", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
+  { id: "g4", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t1", date: "2026-06-23", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
+  { id: "g5", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t1", date: "2026-06-25", time: "7:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
+  { id: "g6", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t2", date: "2026-06-30", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
   // --- Flag football completed ---
-  { id: "g7", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t5", date: "2026-06-07", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", homeScore: 21, awayScore: 14, periods: { home: [7, 6, 0, 8], away: [0, 7, 7, 0] }, tempAdminId: null },
-  { id: "g8", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t6", date: "2026-06-14", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", homeScore: 13, awayScore: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, tempAdminId: null },
-  { id: "g9", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t6", date: "2026-06-21", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", homeScore: 21, awayScore: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, tempAdminId: null },
+  { id: "g7", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t5", date: "2026-06-07", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "final", homeScore: 21, awayScore: 14, periods: { home: [7, 6, 0, 8], away: [0, 7, 7, 0] }, tempAdminId: null },
+  { id: "g8", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t6", date: "2026-06-14", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "final", homeScore: 13, awayScore: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, tempAdminId: null },
+  { id: "g9", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t6", date: "2026-06-21", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "final", homeScore: 21, awayScore: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, tempAdminId: null },
   // --- Flag football upcoming ---
-  { id: "g10", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t4", date: "2026-06-28", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
-  { id: "g11", leagueId: "l2", sport: "flag_football", homeTeamId: "t6", awayTeamId: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
-  { id: "g12", leagueId: "l2", sport: "flag_football", homeTeamId: "t6", awayTeamId: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
+  { id: "g10", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t4", date: "2026-06-28", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
+  { id: "g11", leagueId: "l2", sport: "flag_football", homeTeamId: "t6", awayTeamId: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
+  { id: "g12", leagueId: "l2", sport: "flag_football", homeTeamId: "t6", awayTeamId: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null },
 ];
 
 /* ---------------------------- PLAYER_STATS ------------------------------- */
@@ -250,19 +252,19 @@ export const careerBaselines = {
 
 /* ----------------------------- FREE_AGENTS ------------------------------- */
 export const freeAgents = [
-  { id: "fa1", name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", sports: ["kickball"], experience: "Intermediate", notes: "Played college softball. Looking for a competitive squad.", status: "available", createdDate: "2026-05-28" },
-  { id: "fa2", name: "Ben Carrillo", email: "ben.c@cvf.demo", phone: "505-555-0202", sports: ["flag_football"], experience: "Advanced", notes: "Former HS QB. Can also play safety.", status: "available", createdDate: "2026-05-29" },
-  { id: "fa3", name: "Hannah Esquibel", email: "hannah.e@cvf.demo", phone: "", sports: ["kickball", "flag_football"], experience: "Beginner", notes: "New to leagues, eager to learn and have fun!", status: "available", createdDate: "2026-05-30" },
-  { id: "fa4", name: "Marcus Tenorio", email: "marcus.te@cvf.demo", phone: "505-555-0204", sports: ["flag_football"], experience: "Intermediate", notes: "Speedy receiver, available weeknights.", status: "available", createdDate: "2026-06-01" },
-  { id: "fa5", name: "Gabriela Rael", email: "gabriela.r@cvf.demo", phone: "505-555-0205", sports: ["kickball"], experience: "Advanced", notes: "Big bat, plays anywhere in the field.", status: "available", createdDate: "2026-06-02" },
-  { id: "fa6", name: "Tyler Madrid", email: "tyler.ma@cvf.demo", phone: "505-555-0206", sports: ["kickball", "flag_football"], experience: "Intermediate", notes: "Two-sport guy looking to stay busy this summer.", status: "available", createdDate: "2026-06-03" },
-  { id: "fa7", name: "Sophia Lucero", email: "sophia.l@cvf.demo", phone: "", sports: ["kickball"], experience: "Beginner", notes: "Just moved to ABQ, want to meet people.", status: "available", createdDate: "2026-06-04" },
-  { id: "fa8", name: "Andrew Sena", email: "andrew.s@cvf.demo", phone: "505-555-0208", sports: ["flag_football"], experience: "Advanced", notes: "Pass rusher / edge. Played 4 seasons of flag.", status: "available", createdDate: "2026-06-05" },
+  { id: "fa1", name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", sports: ["kickball"], experience: "Intermediate", notes: "Played college softball. Looking for a competitive squad.", status: "new", createdDate: "2026-05-28" },
+  { id: "fa2", name: "Ben Carrillo", email: "ben.c@cvf.demo", phone: "505-555-0202", sports: ["flag_football"], experience: "Advanced", notes: "Former HS QB. Can also play safety.", status: "new", createdDate: "2026-05-29" },
+  { id: "fa3", name: "Hannah Esquibel", email: "hannah.e@cvf.demo", phone: "", sports: ["kickball", "flag_football"], experience: "Beginner", notes: "New to leagues, eager to learn and have fun!", status: "new", createdDate: "2026-05-30" },
+  { id: "fa4", name: "Marcus Tenorio", email: "marcus.te@cvf.demo", phone: "505-555-0204", sports: ["flag_football"], experience: "Intermediate", notes: "Speedy receiver, available weeknights.", status: "new", createdDate: "2026-06-01" },
+  { id: "fa5", name: "Gabriela Rael", email: "gabriela.r@cvf.demo", phone: "505-555-0205", sports: ["kickball"], experience: "Advanced", notes: "Big bat, plays anywhere in the field.", status: "new", createdDate: "2026-06-02" },
+  { id: "fa6", name: "Tyler Madrid", email: "tyler.ma@cvf.demo", phone: "505-555-0206", sports: ["kickball", "flag_football"], experience: "Intermediate", notes: "Two-sport guy looking to stay busy this summer.", status: "new", createdDate: "2026-06-03" },
+  { id: "fa7", name: "Sophia Lucero", email: "sophia.l@cvf.demo", phone: "", sports: ["kickball"], experience: "Beginner", notes: "Just moved to ABQ, want to meet people.", status: "new", createdDate: "2026-06-04" },
+  { id: "fa8", name: "Andrew Sena", email: "andrew.s@cvf.demo", phone: "505-555-0208", sports: ["flag_football"], experience: "Advanced", notes: "Pass rusher / edge. Played 4 seasons of flag.", status: "new", createdDate: "2026-06-05" },
 ];
 
 /* ---------------------------- REGISTRATIONS ------------------------------ */
 export const registrations = [
-  { id: "reg1", teamName: "Westside Warriors", sport: "kickball", captainName: "Felix Ortega", captainEmail: "felix.o@cvf.demo", captainPhone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "pending", submittedDate: "2026-06-04" },
+  { id: "reg1", teamName: "Westside Warriors", sport: "kickball", captainName: "Felix Ortega", captainEmail: "felix.o@cvf.demo", captainPhone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "new", submittedDate: "2026-06-04" },
 ];
 
 /* ------------------------------ SETTINGS --------------------------------- */

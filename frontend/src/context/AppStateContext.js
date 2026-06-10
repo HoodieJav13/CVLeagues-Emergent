@@ -19,10 +19,25 @@ const AppStateContext = createContext(null);
 // Lightweight localStorage persistence so the demo survives page refreshes.
 // PHASE 2: this entire layer is replaced by Supabase queries + realtime.
 const STORAGE_KEY = "cvf_app_state_v1";
+
+// Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
+// predate the rename, so legacy values are remapped on load:
+//   registrations: pending→new, rejected→archived
+//   free agents:   available→new, invited→contacted
+//   games:         score_status added alongside status (upcoming→pending, completed→final)
+const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
+const FA_STATUS_MAP = { available: "new", invited: "contacted" };
+const migrateState = (s) => ({
+  ...s,
+  registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status })),
+  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status })),
+  games: (s.games || []).map((g) => ({ ...g, score_status: g.score_status || (g.status === "completed" ? "final" : "pending") })),
+});
+
 const loadState = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : initialState;
+    return migrateState(raw ? JSON.parse(raw) : initialState);
   } catch {
     return initialState;
   }
@@ -49,7 +64,7 @@ export function AppStateProvider({ children }) {
     setState((prev) => {
       const games = prev.games.map((g) =>
         g.id === gameId
-          ? { ...g, status: "completed", homeScore: Number(homeScore), awayScore: Number(awayScore), periods: periods || g.periods }
+          ? { ...g, status: "completed", score_status: "final", homeScore: Number(homeScore), awayScore: Number(awayScore), periods: periods || g.periods }
           : g
       );
       // Drop any existing stat rows for this game, then add the new ones.
@@ -75,7 +90,7 @@ export function AppStateProvider({ children }) {
       ...prev,
       registrations: [
         ...prev.registrations,
-        { id: newId("reg"), status: "pending", submittedDate: new Date().toISOString().slice(0, 10), ...reg },
+        { id: newId("reg"), status: "new", submittedDate: new Date().toISOString().slice(0, 10), ...reg },
       ],
     }));
   }, []);
@@ -93,7 +108,7 @@ export function AppStateProvider({ children }) {
       ...prev,
       freeAgents: [
         ...prev.freeAgents,
-        { id: newId("fa"), status: "available", createdDate: new Date().toISOString().slice(0, 10), ...agent },
+        { id: newId("fa"), status: "new", createdDate: new Date().toISOString().slice(0, 10), ...agent },
       ],
     }));
   }, []);

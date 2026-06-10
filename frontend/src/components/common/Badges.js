@@ -20,12 +20,25 @@ export const SportBadge = ({ sport, className = "" }) => {
 
 export const StatusBadge = ({ status, className = "" }) => {
   const map = {
+    // game status
     completed: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Final" },
     upcoming: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "Upcoming" },
+    // game score_status (pending/submitted/approved/disputed/final)
     pending: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Pending" },
+    submitted: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "Submitted" },
     approved: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Approved" },
+    disputed: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Disputed" },
+    final: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Final" },
+    // intake triage (registrations & free agents)
+    new: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "New" },
+    contacted: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Contacted" },
+    assigned: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Assigned" },
+    archived: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Archived" },
+    // entity lifecycle (teams & leagues)
+    draft: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Draft" },
+    active: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Active" },
+    // legacy demo values kept for FINAL DRAFT (dormant) account features
     rejected: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Rejected" },
-    available: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Available" },
     invited: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Invited" },
   };
   const s = map[status] || map.pending;

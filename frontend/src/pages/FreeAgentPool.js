@@ -26,7 +26,7 @@ function Pool() {
   const agents = state.freeAgents.filter((a) => filter === "all" || a.sports.includes(filter));
 
   const invite = (a) => {
-    setFreeAgentStatus(a.id, "invited");
+    setFreeAgentStatus(a.id, "contacted");
     // PHASE 2: send a real invite email + create a pending roster request.
     toast.success(`Invite sent to ${a.name}`, { description: roleMeta.teamId ? "They'll receive an email to join your team." : "Mock invite — wired for Phase 2 email." });
   };
@@ -66,11 +66,11 @@ function Pool() {
               </div>
               <button
                 onClick={() => invite(a)}
-                disabled={a.status === "invited"}
+                disabled={a.status !== "new"}
                 data-testid={`fa-invite-${a.id}`}
                 className="mt-3 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs py-2.5 rounded-xl hover:bg-[#06b6d4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <PaperPlaneTilt size={14} weight="bold" /> {a.status === "invited" ? "Invite Sent" : "Send Invite"}
+                <PaperPlaneTilt size={14} weight="bold" /> {a.status === "contacted" ? "Invite Sent" : a.status === "new" ? "Send Invite" : a.status === "assigned" ? "Assigned" : "Archived"}
               </button>
             </div>
           ))}
