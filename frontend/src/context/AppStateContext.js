@@ -24,14 +24,22 @@ const STORAGE_KEY = "cvf_app_state_v1";
 // predate the rename, so legacy values are remapped on load:
 //   registrations: pending→new, rejected→archived
 //   free agents:   available→new, invited→contacted
-//   games:         score_status added alongside status (upcoming→pending, completed→final)
+//   games:         score_status added alongside status (upcoming→pending,
+//                  completed→approved). "final" now strictly means LOCKED via
+//                  Mark Final, so legacy "final" records get locked: true.
+//                  locked / editHistory / adminNotes backfilled when missing.
 const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
 const FA_STATUS_MAP = { available: "new", invited: "contacted" };
 const migrateState = (s) => ({
   ...s,
-  registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status })),
-  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status })),
-  games: (s.games || []).map((g) => ({ ...g, score_status: g.score_status || (g.status === "completed" ? "final" : "pending") })),
+  registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, adminNotes: r.adminNotes || [] })),
+  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, adminNotes: f.adminNotes || [], assignedTeamId: f.assignedTeamId ?? null })),
+  games: (s.games || []).map((g) => ({
+    ...g,
+    score_status: g.score_status || (g.status === "completed" ? "approved" : "pending"),
+    locked: g.locked ?? g.score_status === "final",
+    editHistory: g.editHistory || [],
+  })),
 });
 
 const loadState = () => {
@@ -45,6 +53,9 @@ const loadState = () => {
 
 let idCounter = 1000;
 const newId = (prefix) => `${prefix}_${Date.now()}_${idCounter++}`;
+
+// One entry in a game's mock audit log (Stage 3 — real audit table in Phase 2).
+const logEntry = (action, reason) => ({ action, timestamp: new Date().toISOString(), ...(reason ? { reason } : {}) });
 
 export function AppStateProvider({ children }) {
   const [state, setState] = useState(loadState);
@@ -60,11 +71,21 @@ export function AppStateProvider({ children }) {
   /* ----------------------- SCORE ENTRY (core loop) ---------------------- */
   // Updates a game to completed, stores period scores, and replaces the
   // per-player stat rows for that game. Everything downstream re-derives.
+  // score_status goes to "submitted" — admin promotes to "final" (locked)
+  // via the Mark Final action. Every save appends to the edit history.
   const submitScore = useCallback(({ gameId, homeScore, awayScore, periods, statsByPlayer }) => {
     setState((prev) => {
       const games = prev.games.map((g) =>
         g.id === gameId
-          ? { ...g, status: "completed", score_status: "final", homeScore: Number(homeScore), awayScore: Number(awayScore), periods: periods || g.periods }
+          ? {
+              ...g,
+              status: "completed",
+              score_status: "submitted",
+              homeScore: Number(homeScore),
+              awayScore: Number(awayScore),
+              periods: periods || g.periods,
+              editHistory: [...(g.editHistory || []), logEntry(g.status === "completed" ? "Score edited" : "Score saved")],
+            }
           : g
       );
       // Drop any existing stat rows for this game, then add the new ones.
@@ -160,6 +181,53 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
+  /* ------------- ADMIN: TRIAGE NOTES & GAME LOCK (Stage 3) -------------- */
+  // Append a timestamped admin note to a registration or free agent record.
+  const appendAdminNote = useCallback((collection, id, text) => {
+    setState((prev) => ({
+      ...prev,
+      [collection]: prev[collection].map((e) =>
+        e.id === id ? { ...e, adminNotes: [...(e.adminNotes || []), { text, timestamp: new Date().toISOString() }] } : e
+      ),
+    }));
+  }, []);
+
+  // Mark Final: score becomes final AND the game locks against edits.
+  const lockGame = useCallback((gameId) => {
+    setState((prev) => ({
+      ...prev,
+      games: prev.games.map((g) =>
+        g.id === gameId
+          ? { ...g, score_status: "final", locked: true, editHistory: [...(g.editHistory || []), logEntry("Marked final")] }
+          : g
+      ),
+    }));
+  }, []);
+
+  // Deliberate unlock — requires a reason, which is recorded in the history.
+  const unlockGame = useCallback((gameId, reason) => {
+    setState((prev) => ({
+      ...prev,
+      games: prev.games.map((g) =>
+        g.id === gameId
+          ? { ...g, score_status: "approved", locked: false, editHistory: [...(g.editHistory || []), logEntry("Unlocked", reason)] }
+          : g
+      ),
+    }));
+  }, []);
+
+  // Postpone / cancel a scheduled game (the UI blocks this on locked games).
+  const setGameStatus = useCallback((gameId, status) => {
+    setState((prev) => ({
+      ...prev,
+      games: prev.games.map((g) =>
+        g.id === gameId
+          ? { ...g, status, editHistory: [...(g.editHistory || []), logEntry(`Game ${status}`)] }
+          : g
+      ),
+    }));
+  }, []);
+
   // Resend mock invite — flips a profile's claimed flag display intent only.
   // PHASE 2: trigger a real invite email via backend (e.g. Resend/Supabase).
   const resendInvite = useCallback((profileId) => {
@@ -189,6 +257,10 @@ export function AppStateProvider({ children }) {
     deleteEntity,
     toggleRegistration,
     assignTempAdmin,
+    appendAdminNote,
+    lockGame,
+    unlockGame,
+    setGameStatus,
     resendInvite,
     resetState,
   };

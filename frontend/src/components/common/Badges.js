@@ -23,6 +23,8 @@ export const StatusBadge = ({ status, className = "" }) => {
     // game status
     completed: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Final" },
     upcoming: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "Upcoming" },
+    postponed: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Postponed" },
+    canceled: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Canceled" },
     // game score_status (pending/submitted/approved/disputed/final)
     pending: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Pending" },
     submitted: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "Submitted" },

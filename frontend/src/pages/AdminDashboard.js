@@ -4,6 +4,7 @@ import {
   Trophy, UsersThree, UserCircle, CalendarBlank, PencilSimpleLine, PaperPlaneTilt,
   Plus, Trash, PencilSimple, CheckCircle, Power, CalendarX,
   Gauge, ClipboardText, Signature, ChartBar,
+  Archive, NotePencil, Phone, LockSimple, LockSimpleOpen, ClockCounterClockwise, UserPlus,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
@@ -94,12 +95,9 @@ const WaiversTab = () => (
   <SectionShell id="waivers" title="Waivers" note="Waiver verification queue — append-only signed records, version history, eligibility review." />
 );
 
-/* ---------- shared row, table & button primitives ---------- */
-const Row = ({ children, testid }) => (
-  <div data-testid={testid} className="flex items-center gap-3 bg-card border border-border rounded-xl p-3.5">{children}</div>
-);
-const IconBtn = ({ onClick, icon: Icon, testid, danger, title }) => (
-  <button onClick={onClick} title={title} data-testid={testid} className={`p-2 rounded-lg hover:bg-white/10 transition-colors ${danger ? "text-destructive" : "text-muted-foreground hover:text-white"}`}>
+/* ---------- shared table & button primitives ---------- */
+const IconBtn = ({ onClick, icon: Icon, testid, danger, title, disabled }) => (
+  <button onClick={onClick} disabled={disabled} title={title} data-testid={testid} className={`p-2 rounded-lg transition-colors ${disabled ? "text-muted-foreground/30 cursor-not-allowed" : danger ? "text-destructive hover:bg-white/10" : "text-muted-foreground hover:text-white hover:bg-white/10"}`}>
     <Icon size={16} weight="bold" />
   </button>
 );
@@ -108,11 +106,28 @@ const AddBtn = ({ onClick, label, testid }) => (
     <Plus size={15} weight="bold" /> {label}
   </button>
 );
-// Disabled stand-in for actions that ship in a later stage.
-const PlaceholderBtn = ({ icon: Icon, label, testid }) => (
-  <button disabled title={`${label} — ships in a later stage`} aria-label={label} data-testid={testid} className="p-2 rounded-lg text-muted-foreground/30 cursor-not-allowed">
-    <Icon size={16} weight="bold" />
-  </button>
+const fmtTs = (ts) => new Date(ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+// Timestamped admin notes on a triage record, newest first.
+const NotesList = ({ notes }) =>
+  notes?.length ? (
+    <div className="mt-2.5 pt-2.5 border-t border-border space-y-1">
+      {[...notes].reverse().map((n, i) => (
+        <p key={i} className="text-xs text-muted-foreground">
+          <span className="text-muted-foreground/60">{fmtTs(n.timestamp)}</span> — {n.text}
+        </p>
+      ))}
+    </div>
+  ) : null;
+
+const NoteModal = ({ noteFor, setNoteFor, onSave }) => (
+  <Modal open={!!noteFor} onClose={() => setNoteFor(null)} title="Add Admin Note" onSave={onSave}>
+    {noteFor && (
+      <ModalField label="Note">
+        <Textarea data-testid="admin-note-text" value={noteFor.text} onChange={(e) => setNoteFor({ ...noteFor, text: e.target.value })} className="bg-[#0f0f0f] border-border" />
+      </ModalField>
+    )}
+  </Modal>
 );
 
 const SectionTitle = ({ title, count, action }) => (
@@ -404,14 +419,23 @@ function PlayersTab({ app }) {
 }
 
 /* -------------------------- REGISTRATIONS -------------------------------- */
-// Team Interest submissions. Status vocabulary per CLAUDE.md:
+// Team Interest triage. Status vocabulary per CLAUDE.md:
 // new / contacted / approved / archived.
 // FINAL DRAFT: approving should eventually auto-create the team record —
 // for Season 1, approval is a status change only (review at final draft).
 function RegistrationsTab({ app }) {
-  const { state, updateRegistrationStatus } = app;
+  const { state, updateRegistrationStatus, appendAdminNote } = app;
   const regs = state.registrations;
   const newCount = regs.filter((r) => r.status === "new").length;
+  const [noteFor, setNoteFor] = useState(null); // {id, text}
+
+  const setStatus = (r, status, msg) => { updateRegistrationStatus(r.id, status); toast.success(msg); };
+  const saveNote = () => {
+    if (!noteFor.text?.trim()) return toast.error("Note text required");
+    appendAdminNote("registrations", noteFor.id, noteFor.text.trim());
+    toast.success("Note added");
+    setNoteFor(null);
+  };
 
   return (
     <div className="space-y-3">
@@ -421,32 +445,34 @@ function RegistrationsTab({ app }) {
           No team registrations yet. Team Interest submissions land here for triage.
         </div>
       ) : regs.map((r) => (
-        <Row key={r.id} testid={`admin-registration-${r.id}`}>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate">{r.teamName}</p>
-            <p className="text-xs text-muted-foreground truncate">{r.captainName} · {r.captainEmail || r.captainPhone} · submitted {r.submittedDate}</p>
+        <div key={r.id} data-testid={`admin-registration-${r.id}`} className="bg-card border border-border rounded-xl p-3.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-white truncate">{r.teamName}</p>
+              <p className="text-xs text-muted-foreground truncate">{r.captainName} · {r.captainEmail || r.captainPhone} · submitted {r.submittedDate}</p>
+            </div>
+            <SportBadge sport={r.sport} />
+            <StatusBadge status={r.status} />
+            <div className="flex items-center">
+              <IconBtn onClick={() => setStatus(r, "contacted", "Marked contacted")} icon={Phone} title="Mark contacted" testid={`admin-reg-contact-${r.id}`} disabled={r.status === "contacted"} />
+              <IconBtn onClick={() => setStatus(r, "approved", `${r.teamName} approved`)} icon={CheckCircle} title="Approve" testid={`admin-reg-approve-${r.id}`} disabled={r.status === "approved"} />
+              <IconBtn onClick={() => setStatus(r, "archived", "Registration archived")} icon={Archive} title="Archive" testid={`admin-reg-archive-${r.id}`} disabled={r.status === "archived"} />
+              <IconBtn onClick={() => setNoteFor({ id: r.id, text: "" })} icon={NotePencil} title="Add note" testid={`admin-reg-note-${r.id}`} />
+            </div>
           </div>
-          <SportBadge sport={r.sport} />
-          <StatusBadge status={r.status} />
-          <Select value={r.status} onValueChange={(v) => { updateRegistrationStatus(r.id, v); toast.success("Registration status updated"); }}>
-            <SelectTrigger data-testid={`admin-reg-status-${r.id}`} className="bg-[#0f0f0f] border-border h-9 w-32 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </Row>
+          <NotesList notes={r.adminNotes} />
+        </div>
       ))}
+      <NoteModal noteFor={noteFor} setNoteFor={setNoteFor} onSave={saveNote} />
     </div>
   );
 }
 
 /* -------------------------- SCHEDULE / GAMES ------------------------------ */
 function GamesTab({ app }) {
-  const { state, assignTempAdmin, updateEntity } = app;
+  const { state, assignTempAdmin, updateEntity, lockGame, setGameStatus } = app;
   const [modal, setModal] = useState(null); // {id, date, time, location}
+  const [rescheduleFor, setRescheduleFor] = useState(null); // gameId
 
   const save = () => {
     if (!modal.date || !modal.time?.trim()) return toast.error("Date and time required");
@@ -471,16 +497,27 @@ function GamesTab({ app }) {
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{league ? `${league.name} · ${league.season}` : "—"}</TableCell>
               <TableCell className="whitespace-nowrap"><Link to={`/game/${g.id}`} className="text-white font-medium hover:text-primary">{a.name} @ {h.name}</Link></TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{g.location}</TableCell>
-              <TableCell><StatusBadge status={g.status} /></TableCell>
+              <TableCell>
+                <div className="flex items-center gap-1.5">
+                  <StatusBadge status={g.status} />
+                  {g.locked && <LockSimple size={14} weight="bold" className="text-[#facc15]" title="Locked" />}
+                </div>
+              </TableCell>
               <TableCell><StatusBadge status={g.score_status || "pending"} /></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-0.5 whitespace-nowrap">
-                  <IconBtn onClick={() => setModal({ id: g.id, date: g.date, time: g.time, location: g.location })} icon={PencilSimple} title="Edit game" testid={`admin-edit-game-${g.id}`} />
-                  <Link to="/score-entry" state={{ gameId: g.id }} title="Enter score" data-testid={`admin-game-enter-score-${g.id}`} className="p-2 rounded-lg text-primary hover:bg-white/10 transition-colors inline-flex">
-                    <PencilSimpleLine size={16} weight="bold" />
-                  </Link>
-                  <PlaceholderBtn icon={CheckCircle} label="Mark Final" testid={`admin-mark-final-${g.id}`} />
-                  <PlaceholderBtn icon={CalendarX} label="Postpone / Cancel" testid={`admin-postpone-${g.id}`} />
+                  <IconBtn onClick={() => setModal({ id: g.id, date: g.date, time: g.time, location: g.location })} icon={PencilSimple} title={g.locked ? "Locked — unlock in Scores/Stats to edit" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
+                  {g.locked ? (
+                    <span title="Locked — unlock in Scores/Stats to edit" data-testid={`admin-game-enter-score-${g.id}`} className="p-2 inline-flex text-muted-foreground/30 cursor-not-allowed">
+                      <LockSimple size={16} weight="bold" />
+                    </span>
+                  ) : (
+                    <Link to="/score-entry" state={{ gameId: g.id }} title="Enter score" data-testid={`admin-game-enter-score-${g.id}`} className="p-2 rounded-lg text-primary hover:bg-white/10 transition-colors inline-flex">
+                      <PencilSimpleLine size={16} weight="bold" />
+                    </Link>
+                  )}
+                  <IconBtn onClick={() => { lockGame(g.id); toast.success("Game marked final & locked"); }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-game-${g.id}`} disabled={!canMarkFinal(g)} />
+                  <IconBtn onClick={() => setRescheduleFor(g.id)} icon={CalendarX} title={g.locked ? "Locked — unlock in Scores/Stats first" : "Postpone / cancel"} testid={`admin-postpone-${g.id}`} disabled={g.locked} />
                   {/* FINAL DRAFT: temp-admin score-keepers are non-admin logins —
                       out of scope for admin-only Season 1, hidden until review. */}
                   {FINAL_DRAFT && (
@@ -498,7 +535,19 @@ function GamesTab({ app }) {
           );
         })}
       </AdminTable>
-      <p className="text-[11px] text-muted-foreground">Actions: edit game · enter score · mark final (later stage) · postpone/cancel (later stage).</p>
+      <p className="text-[11px] text-muted-foreground">Actions: edit game · enter score · mark final & lock · postpone/cancel. Locked games must be unlocked in Scores/Stats before editing.</p>
+
+      <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
+        <DialogContent className="bg-card border-border" data-testid="admin-reschedule-modal">
+          <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">Postpone or Cancel Game</DialogTitle></DialogHeader>
+          <p className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</p>
+          <DialogFooter>
+            <button onClick={() => setRescheduleFor(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-white">Back</button>
+            <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="px-4 py-2 rounded-lg border border-[#facc15]/40 text-[#facc15] font-bold uppercase text-sm">Postpone</button>
+            <button onClick={() => { setGameStatus(rescheduleFor, "canceled"); toast.success("Game canceled"); setRescheduleFor(null); }} data-testid="admin-confirm-cancel" className="px-4 py-2 rounded-lg border border-destructive/40 text-destructive font-bold uppercase text-sm">Cancel Game</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Modal open={!!modal} onClose={() => setModal(null)} title="Edit Game" onSave={save}>
         {modal && (
@@ -513,28 +562,101 @@ function GamesTab({ app }) {
   );
 }
 
-/* ------------------------------ SCORES ----------------------------------- */
+/* --------------------------- SCORES / STATS ------------------------------- */
+// Operational score flow: pending → submitted (score saved) → final (Mark
+// Final, which LOCKS the game). Unlock is deliberate: confirm + required
+// reason, recorded in the game's edit history (mock audit log).
+const canMarkFinal = (g) => !g.locked && (g.score_status === "submitted" || g.score_status === "approved");
+
 function ScoresTab({ app }) {
-  const { state } = app;
-  return (
-    <div className="space-y-2">
-      <p className="text-xs text-muted-foreground mb-1">Enter or edit final scores. Updates standings, records, stats & leaderboards instantly.</p>
-      {state.games.map((g) => {
-        const a = getTeam(state, g.awayTeamId), h = getTeam(state, g.homeTeamId);
-        const done = g.status === "completed";
-        return (
-          <Row key={g.id} testid={`admin-score-${g.id}`}>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium text-white truncate">{a.name} @ {h.name}</p>
-              <p className="text-xs text-muted-foreground">{done ? `Final · ${g.awayScore}-${g.homeScore}` : "Not played"}</p>
-            </div>
-            <SportBadge sport={g.sport} />
-            <Link to="/score-entry" state={{ gameId: g.id }} data-testid={`admin-enter-score-${g.id}`} className="flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2">
+  const { state, lockGame, unlockGame } = app;
+  const [unlockFor, setUnlockFor] = useState(null); // {id, reason}
+  const [openHistory, setOpenHistory] = useState({});
+
+  const needs = state.games
+    .filter((g) => g.score_status === "pending" || g.score_status === "submitted")
+    .sort((x, y) => x.date.localeCompare(y.date));
+
+  const doUnlock = () => {
+    if (!unlockFor.reason?.trim()) return toast.error("A reason is required to unlock");
+    unlockGame(unlockFor.id, unlockFor.reason.trim());
+    toast.success("Game unlocked — further edits will be recorded");
+    setUnlockFor(null);
+  };
+
+  const renderRow = (g, prefix) => {
+    const a = getTeam(state, g.awayTeamId), h = getTeam(state, g.homeTeamId);
+    const done = g.status === "completed";
+    const hist = g.editHistory || [];
+    return (
+      <div key={g.id} data-testid={`${prefix}-${g.id}`} className="bg-card border border-border rounded-xl p-3.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-white truncate flex items-center gap-1.5">
+              {g.locked && <LockSimple size={14} weight="bold" className="text-[#facc15] shrink-0" />}
+              {a.name} @ {h.name}
+            </p>
+            <p className="text-xs text-muted-foreground">{fmtDate(g.date)} · {done ? `${g.awayScore}-${g.homeScore}` : "Not played"}</p>
+          </div>
+          <SportBadge sport={g.sport} />
+          <StatusBadge status={g.score_status || "pending"} />
+          {g.locked ? (
+            <button disabled title="Locked — unlock to edit" data-testid={`${prefix}-enter-${g.id}`} className="flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground/40 border border-border rounded-lg px-3 py-2 cursor-not-allowed">
+              <LockSimple size={14} weight="bold" /> Locked
+            </button>
+          ) : (
+            <Link to="/score-entry" state={{ gameId: g.id }} data-testid={`${prefix}-enter-${g.id}`} className="flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2">
               <PencilSimpleLine size={14} weight="bold" /> {done ? "Edit" : "Enter"}
             </Link>
-          </Row>
-        );
-      })}
+          )}
+          {g.locked ? (
+            <IconBtn onClick={() => setUnlockFor({ id: g.id, reason: "" })} icon={LockSimpleOpen} title="Unlock game" testid={`admin-unlock-${g.id}`} />
+          ) : (
+            <IconBtn onClick={() => { lockGame(g.id); toast.success("Game marked final & locked"); }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-${g.id}`} disabled={!canMarkFinal(g)} />
+          )}
+          {hist.length > 0 && (
+            <button onClick={() => setOpenHistory((o) => ({ ...o, [g.id]: !o[g.id] }))} data-testid={`admin-history-${g.id}`} title="Edit history" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white px-1.5 py-1">
+              <ClockCounterClockwise size={14} weight="bold" /> {hist.length}
+            </button>
+          )}
+        </div>
+        {openHistory[g.id] && hist.length > 0 && (
+          <div data-testid={`admin-history-list-${g.id}`} className="mt-2.5 pt-2.5 border-t border-border space-y-1">
+            {[...hist].reverse().map((e, i) => (
+              <p key={i} className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground/60">{fmtTs(e.timestamp)}</span> — <span className="text-white">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="bg-card border border-[#facc15]/30 rounded-xl p-4">
+        <p className="font-display uppercase tracking-tight text-white mb-1">Games Needing Scores ({needs.length})</p>
+        <p className="text-xs text-muted-foreground mb-3">Pending — no score yet · Submitted — awaiting Mark Final.</p>
+        {needs.length === 0 ? (
+          <p className="text-xs text-muted-foreground">All caught up — every game is approved or final.</p>
+        ) : (
+          <div className="space-y-2">{needs.map((g) => renderRow(g, "admin-needs"))}</div>
+        )}
+      </div>
+      <SectionTitle title="All Games" count={state.games.length} />
+      {state.games.map((g) => renderRow(g, "admin-score"))}
+
+      <Modal open={!!unlockFor} onClose={() => setUnlockFor(null)} title="Unlock Game" onSave={doUnlock}>
+        {unlockFor && (
+          <>
+            <p className="text-sm text-muted-foreground">Unlocking allows score edits. This will be recorded in the game's edit history.</p>
+            <ModalField label="Reason (required)">
+              <Textarea data-testid="admin-unlock-reason" value={unlockFor.reason} onChange={(e) => setUnlockFor({ ...unlockFor, reason: e.target.value })} className="bg-[#0f0f0f] border-border" />
+            </ModalField>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
@@ -542,33 +664,78 @@ function ScoresTab({ app }) {
 /* ---------------------------- FREE AGENTS -------------------------------- */
 // Intake triage. Status vocabulary per CLAUDE.md: new / contacted / assigned / archived.
 function AgentsTab({ app }) {
-  const { state, setFreeAgentStatus } = app;
+  const { state, setFreeAgentStatus, updateEntity, appendAdminNote } = app;
+  const [noteFor, setNoteFor] = useState(null); // {id, text}
+  const [assignFor, setAssignFor] = useState(null); // {id, teamId}
+
+  const setStatus = (a, status, msg) => { setFreeAgentStatus(a.id, status); toast.success(msg); };
+  const saveNote = () => {
+    if (!noteFor.text?.trim()) return toast.error("Note text required");
+    appendAdminNote("freeAgents", noteFor.id, noteFor.text.trim());
+    toast.success("Note added");
+    setNoteFor(null);
+  };
+
+  const assignAgent = assignFor && state.freeAgents.find((a) => a.id === assignFor.id);
+  const eligibleTeams = assignAgent ? state.teams.filter((t) => assignAgent.sports.includes(t.sport)) : [];
+  const saveAssign = () => {
+    if (!assignFor.teamId) return toast.error("Select a team");
+    // PHASE 2: real assignment creates a team_players record AFTER waiver
+    // verification. For now we only record the intended team on the agent —
+    // it does NOT add them to the team roster.
+    updateEntity("freeAgents", assignFor.id, { assignedTeamId: assignFor.teamId, status: "assigned" });
+    toast.success("Free agent assigned");
+    setAssignFor(null);
+  };
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {state.freeAgents.length === 0 && (
         <div className="bg-card border border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
           No free agent submissions yet. Free Agent intake lands here for triage.
         </div>
       )}
       {state.freeAgents.map((a) => (
-        <Row key={a.id} testid={`admin-agent-${a.id}`}>
-          <Avatar name={a.name} color="#22d3ee" size={36} />
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate">{a.name}</p>
-            <p className="text-xs text-muted-foreground truncate">{a.experience} · {a.sports.map(sportName).join(", ")}</p>
+        <div key={a.id} data-testid={`admin-agent-${a.id}`} className="bg-card border border-border rounded-xl p-3.5">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Avatar name={a.name} color="#22d3ee" size={36} />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium text-white truncate">{a.name}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {a.experience} · {a.sports.map(sportName).join(", ")}
+                {a.assignedTeamId && <span className="text-primary"> → {getTeam(state, a.assignedTeamId)?.name || "Unknown team"}</span>}
+              </p>
+            </div>
+            <StatusBadge status={a.status} />
+            <div className="flex items-center">
+              <IconBtn onClick={() => setStatus(a, "contacted", "Marked contacted")} icon={Phone} title="Mark contacted" testid={`admin-agent-contact-${a.id}`} disabled={a.status === "contacted"} />
+              <IconBtn onClick={() => setAssignFor({ id: a.id, teamId: a.assignedTeamId || "" })} icon={UserPlus} title="Assign to team" testid={`admin-agent-assign-${a.id}`} />
+              <IconBtn onClick={() => setStatus(a, "archived", "Free agent archived")} icon={Archive} title="Archive" testid={`admin-agent-archive-${a.id}`} disabled={a.status === "archived"} />
+              <IconBtn onClick={() => setNoteFor({ id: a.id, text: "" })} icon={NotePencil} title="Add note" testid={`admin-agent-note-${a.id}`} />
+            </div>
           </div>
-          <StatusBadge status={a.status} />
-          <Select value={a.status} onValueChange={(v) => { setFreeAgentStatus(a.id, v); toast.success("Status updated"); }}>
-            <SelectTrigger data-testid={`admin-agent-status-${a.id}`} className="bg-[#0f0f0f] border-border h-9 w-32 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="new">New</SelectItem>
-              <SelectItem value="contacted">Contacted</SelectItem>
-              <SelectItem value="assigned">Assigned</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </Row>
+          <NotesList notes={a.adminNotes} />
+        </div>
       ))}
+
+      <NoteModal noteFor={noteFor} setNoteFor={setNoteFor} onSave={saveNote} />
+      <Modal open={!!assignFor} onClose={() => setAssignFor(null)} title="Assign to Team" onSave={saveAssign}>
+        {assignFor && (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Records the intended team on this free agent. Roster placement happens through waiver verification — this does not add them to the roster.
+            </p>
+            <ModalField label={`Team (${assignAgent?.sports.map(sportName).join(" / ")})`}>
+              <Select value={assignFor.teamId} onValueChange={(v) => setAssignFor({ ...assignFor, teamId: v })}>
+                <SelectTrigger data-testid="admin-assign-team" className="bg-[#0f0f0f] border-border"><SelectValue placeholder="Select team" /></SelectTrigger>
+                <SelectContent>
+                  {eligibleTeams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name} ({sportName(t.sport)})</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </ModalField>
+          </>
+        )}
+      </Modal>
     </div>
   );
 }
