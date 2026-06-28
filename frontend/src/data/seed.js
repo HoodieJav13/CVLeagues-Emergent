@@ -136,15 +136,21 @@ export const teamPlayers = [
 // (CLAUDE.md data model) — lives ALONGSIDE status, which is kept as-is.
 // 'final' means LOCKED (locked: true, set via the admin Mark Final action);
 // editHistory is the mock audit log: { action, timestamp, reason? }.
+//
+// SEASON-IN-PROGRESS ANCHOR: this mock season is read as if "today" is
+// 2026-06-27. Every game dated on/before the anchor is completed (with scores
+// + playerStats); every game dated after it is upcoming (pending, no scores).
+// Keep this invariant when editing: standings + leaderboards derive from
+// completed games only, so a future-dated game must never carry a result.
 export const games = [
   // --- Kickball completed ---
   { id: "g1", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t2", date: "2026-06-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", homeScore: 7, awayScore: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, tempAdminId: null, locked: false, editHistory: [] },
   { id: "g2", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t3", date: "2026-06-11", time: "7:30 PM", location: "Los Altos Park, Field 1", status: "completed", score_status: "approved", homeScore: 4, awayScore: 6, periods: { home: [1, 2, 0, 1, 0], away: [0, 3, 1, 2, 0] }, tempAdminId: null, locked: false, editHistory: [] },
   { id: "g3", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t3", date: "2026-06-16", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", homeScore: 8, awayScore: 5, periods: { home: [3, 1, 2, 0, 2], away: [1, 0, 1, 2, 1] }, tempAdminId: null, locked: false, editHistory: [] },
   // --- Kickball upcoming ---
-  { id: "g4", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t1", date: "2026-06-23", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g5", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t1", date: "2026-06-25", time: "7:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g6", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t2", date: "2026-06-30", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g4", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t1", date: "2026-06-30", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g5", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t1", date: "2026-07-02", time: "7:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g6", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t2", date: "2026-07-07", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
   // --- Flag football completed ---
   { id: "g7", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t5", date: "2026-06-07", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", homeScore: 21, awayScore: 14, periods: { home: [7, 6, 0, 8], away: [0, 7, 7, 0] }, tempAdminId: null, locked: false, editHistory: [] },
   { id: "g8", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t6", date: "2026-06-14", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "approved", homeScore: 13, awayScore: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, tempAdminId: null, locked: false, editHistory: [] },

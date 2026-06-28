@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { getTeam, getProfile, getLeague, computeTeamRecord, claimStats } from "../lib/selectors";
 import { SPORTS, sportName } from "../lib/statsConfig";
+import { freeAgentName } from "../lib/utils";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { RoleGate } from "../components/layout/RoleGate";
@@ -779,9 +780,9 @@ function AgentsTab({ app }) {
       {state.freeAgents.map((a) => (
         <div key={a.id} data-testid={`admin-agent-${a.id}`} className="bg-card border border-border rounded-xl p-3.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <Avatar name={a.name} color="#22d3ee" size={36} />
+            <Avatar name={freeAgentName(a)} color="#22d3ee" size={36} />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-white truncate">{a.name}</p>
+              <p className="font-medium text-white truncate">{freeAgentName(a)}</p>
               <p className="text-xs text-muted-foreground truncate">
                 {a.experience} · {a.sports.map(sportName).join(", ")}
                 {a.assignedTeamId && <span className="text-primary"> → {getTeam(state, a.assignedTeamId)?.name || "Unknown team"}</span>}

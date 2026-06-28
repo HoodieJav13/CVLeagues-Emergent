@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { initialState } from "../data/seed";
+import { freeAgentName } from "../lib/utils";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -23,7 +24,9 @@ const STORAGE_KEY = "cvf_app_state_v1";
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
 //   registrations: pending→new, rejected→archived
-//   free agents:   available→new, invited→contacted
+//   free agents:   available→new, invited→contacted; `name` backfilled from
+//                  the firstName/lastName/displayName shape the intake form
+//                  writes, so both legacy and new-shape records still display.
 //   games:         score_status added alongside status (upcoming→pending,
 //                  completed→approved). "final" now strictly means LOCKED via
 //                  Mark Final, so legacy "final" records get locked: true.
@@ -35,7 +38,7 @@ const migrateState = (s) => ({
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, adminNotes: r.adminNotes || [] })),
-  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, adminNotes: f.adminNotes || [], assignedTeamId: f.assignedTeamId ?? null })),
+  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, name: freeAgentName(f), adminNotes: f.adminNotes || [], assignedTeamId: f.assignedTeamId ?? null })),
   games: (s.games || []).map((g) => ({
     ...g,
     score_status: g.score_status || (g.status === "completed" ? "approved" : "pending"),

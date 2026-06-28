@@ -16,6 +16,7 @@ import FreeAgentSignup from "./pages/FreeAgentSignup";
 import FreeAgentPool from "./pages/FreeAgentPool";
 import AdminDashboard from "./pages/AdminDashboard";
 import ScoreEntry from "./pages/ScoreEntry";
+import NotFound from "./pages/NotFound";
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
               <Route path="/free-agents" element={<FreeAgentPool />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/score-entry" element={<ScoreEntry />} />
+              <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
         </BrowserRouter>

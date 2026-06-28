@@ -209,7 +209,7 @@ function Entry() {
       </div>
 
       <button onClick={save} data-testid="score-save" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-[#06b6d4] transition-colors sticky bottom-20 md:bottom-6">
-        <FloppyDisk size={18} weight="bold" /> Save Final & Mark Completed
+        <FloppyDisk size={18} weight="bold" /> Submit Score
       </button>
     </div>
   );

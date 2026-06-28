@@ -9,6 +9,7 @@ import { Avatar } from "../components/common/Avatar";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { SPORTS, sportName } from "../lib/statsConfig";
+import { freeAgentName } from "../lib/utils";
 
 export default function FreeAgentPool() {
   return (
@@ -28,7 +29,7 @@ function Pool() {
   const invite = (a) => {
     setFreeAgentStatus(a.id, "contacted");
     // PHASE 2: send a real invite email + create a pending roster request.
-    toast.success(`Invite sent to ${a.name}`, { description: roleMeta.teamId ? "They'll receive an email to join your team." : "Mock invite — wired for Phase 2 email." });
+    toast.success(`Invite sent to ${freeAgentName(a)}`, { description: roleMeta.teamId ? "They'll receive an email to join your team." : "Mock invite — wired for Phase 2 email." });
   };
 
   return (
@@ -49,10 +50,10 @@ function Pool() {
           {agents.map((a) => (
             <div key={a.id} data-testid={`free-agent-${a.id}`} className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-start gap-3">
-                <Avatar name={a.name} color="#22d3ee" size={44} />
+                <Avatar name={freeAgentName(a)} color="#22d3ee" size={44} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-display uppercase tracking-tight text-white truncate text-base">{a.name}</p>
+                    <p className="font-display uppercase tracking-tight text-white truncate text-base">{freeAgentName(a)}</p>
                     <StatusBadge status={a.status} />
                   </div>
                   <p className="text-xs text-muted-foreground">{a.experience}</p>
