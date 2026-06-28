@@ -68,7 +68,16 @@ export const profiles = [
   { id: "p28", firstName: "Joseph", lastName: "Cordova", email: "joseph.c@cvf.demo", phone: "505-555-0128", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
   { id: "p29", firstName: "Robert", lastName: "Mondragon", email: "robert.m@cvf.demo", phone: "505-555-0129", sports: ["flag_football"], experience: "Intermediate", claimed: false, bio: "" },
   { id: "p30", firstName: "Patrick", lastName: "Bustamante", email: "patrick.b@cvf.demo", phone: "505-555-0130", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Sack artist." },
-].map((p, i) => ({ ...p, name: `${p.firstName} ${p.lastName}`, avatarColor: color(i) }));
+].map((p, i) => ({
+  ...p,
+  name: `${p.firstName} ${p.lastName}`,
+  avatarColor: color(i),
+  // Informational eligibility flag (Flow C-lite). Seeded as a MIX so the
+  // <EligibilityIndicator> shows both states out of the box. NEVER gates
+  // anything — the admin enforces eligibility in real life.
+  // PHASE 2: this flag is replaced by real waiver verification status.
+  eligibilityStatus: i % 3 === 0 ? "verified" : "not_verified",
+}));
 
 /* ------------------------------ LEAGUES ---------------------------------- */
 export const leagues = [
@@ -88,6 +97,9 @@ export const teams = [
 
 /* --------------------------- TEAM_PLAYERS -------------------------------- */
 // Join table. A player can appear on multiple teams across sports (cross-sport).
+// Each assignment is stamped with the active `season` (auto-set on assignment).
+// PHASE 2: gains a roster_status (pending_waiver/eligible/inactive/removed)
+// driven by the waiver flow against the real team_players table.
 export const teamPlayers = [
   // t1 Sandia Sluggers (kickball)
   { id: "tp1", teamId: "t1", playerId: "p1", jersey: 7, position: "Pitcher" },
@@ -127,7 +139,7 @@ export const teamPlayers = [
   { id: "tp30", teamId: "t6", playerId: "p28", jersey: 32, position: "RB / WR" },
   { id: "tp31", teamId: "t6", playerId: "p29", jersey: 25, position: "Safety" },
   { id: "tp32", teamId: "t6", playerId: "p30", jersey: 99, position: "Rusher" },
-];
+].map((tp) => ({ season: CURRENT_SEASON, ...tp }));
 
 /* ------------------------------- GAMES ----------------------------------- */
 // status: 'upcoming' | 'completed' | 'postponed' | 'canceled'.

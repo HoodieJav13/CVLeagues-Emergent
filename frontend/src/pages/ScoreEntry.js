@@ -9,6 +9,7 @@ import { STAT_GROUPS, HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
 import { SectionHeading } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
+import { EligibilityIndicator } from "../components/common/EligibilityIndicator";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 
@@ -173,7 +174,10 @@ function Entry() {
                     >
                       <Avatar name={r.profile.name} color={r.profile.avatarColor} size={34} />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate">{r.profile.name}</p>
+                        <p className="font-medium text-white truncate flex items-center gap-1.5">
+                          <span className="truncate">{r.profile.name}</span>
+                          <EligibilityIndicator status={r.profile.eligibilityStatus} />
+                        </p>
                         <p className="text-[11px] text-muted-foreground font-mono">{summary}</p>
                       </div>
                       <CaretDown size={16} weight="bold" className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />

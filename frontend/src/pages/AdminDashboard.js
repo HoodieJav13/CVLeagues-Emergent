@@ -5,15 +5,17 @@ import {
   Plus, Trash, PencilSimple, CheckCircle, Power, CalendarX,
   Gauge, ClipboardText, Signature, ChartBar,
   Archive, NotePencil, Phone, LockSimple, LockSimpleOpen, ClockCounterClockwise, UserPlus,
-  CaretRight, Flag, LinkSimple,
+  CaretRight, Flag, LinkSimple, X,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
-import { getTeam, getProfile, getLeague, computeTeamRecord, claimStats } from "../lib/selectors";
+import { getTeam, getProfile, getLeague, computeTeamRecord, claimStats, teamRoster } from "../lib/selectors";
 import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
+import { EligibilityIndicator } from "../components/common/EligibilityIndicator";
+import { Checkbox } from "../components/ui/checkbox";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
@@ -330,6 +332,8 @@ function LeaguesTab({ app }) {
 function TeamsTab({ app }) {
   const { state, createEntity, updateEntity, deleteEntity } = app;
   const [modal, setModal] = useState(null);
+  const [rosterFor, setRosterFor] = useState(null); // teamId whose roster is open
+  const rosterTeam = rosterFor && getTeam(state, rosterFor);
 
   const save = () => {
     if (!modal.name?.trim() || !modal.sport || !modal.leagueId) return toast.error("Name, sport & league required");
@@ -373,6 +377,7 @@ function TeamsTab({ app }) {
               <TableCell><StatusBadge status={t.status || "active"} /></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end">
+                  <IconBtn onClick={() => setRosterFor(t.id)} icon={UsersThree} title="Manage roster" testid={`admin-roster-team-${t.id}`} />
                   <IconBtn onClick={() => setModal({ id: t.id, name: t.name, sport: t.sport, leagueId: t.leagueId, captainId: t.captainId, logoColor: t.logoColor, founded: t.founded })} icon={PencilSimple} title="Edit team" testid={`admin-edit-team-${t.id}`} />
                   <IconBtn onClick={() => { deleteEntity("teams", t.id); toast.success("Team deleted"); }} icon={Trash} title="Delete team" testid={`admin-delete-team-${t.id}`} danger />
                 </div>
@@ -407,14 +412,101 @@ function TeamsTab({ app }) {
           </>
         )}
       </Modal>
+
+      {/* Roster management — same team_players relationship as the player modal.
+          Changes apply immediately; "Done" just closes. */}
+      <Dialog open={!!rosterFor} onOpenChange={(o) => !o && setRosterFor(null)}>
+        <DialogContent className="bg-card border-border" data-testid="admin-roster-modal" aria-describedby={undefined}>
+          <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">{rosterTeam ? `${rosterTeam.name} · Roster` : "Roster"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2">
+            {rosterFor && <AssignmentEditor app={app} mode="team" teamId={rosterFor} />}
+          </div>
+          <DialogFooter>
+            <button onClick={() => setRosterFor(null)} data-testid="admin-roster-done" className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-sm">Done</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
 /* ----------------------------- PLAYERS ----------------------------------- */
+// Reusable roster-assignment editor. The SAME team_players relationship is
+// read/written from two entry points — the player modal (mode="player", pick a
+// team) and the team roster view (mode="team", pick a player) — so there is one
+// source of truth, not two parallel systems. Assignment NEVER touches
+// eligibility. Season is auto-stamped from the team's active league season.
+// PHASE 2: these become real team_players rows; intake-conversion is built then.
+function AssignmentEditor({ app, mode, playerId, teamId }) {
+  const { state, assignPlayerToTeam, removePlayerFromTeam } = app;
+  const [sel, setSel] = useState("");
+  const [jersey, setJersey] = useState("");
+
+  const rows = state.teamPlayers.filter((tp) => (mode === "player" ? tp.playerId === playerId : tp.teamId === teamId));
+  const assignedIds = new Set(rows.map((tp) => (mode === "player" ? tp.teamId : tp.playerId)));
+  const options = mode === "player"
+    ? state.teams.filter((t) => !assignedIds.has(t.id))
+    : state.profiles.filter((p) => !assignedIds.has(p.id));
+
+  const seasonFor = (tId) => {
+    const team = getTeam(state, tId);
+    const league = team ? getLeague(state, team.leagueId) : null;
+    return league?.season || state.settings.currentSeason;
+  };
+  const pendingSeason = mode === "player" ? (sel ? seasonFor(sel) : null) : seasonFor(teamId);
+
+  const add = () => {
+    if (!sel) return toast.error(mode === "player" ? "Select a team" : "Select a player");
+    assignPlayerToTeam(mode === "player" ? { playerId, teamId: sel, jersey } : { playerId: sel, teamId, jersey });
+    toast.success("Assignment added");
+    setSel(""); setJersey("");
+  };
+
+  return (
+    <div className="space-y-2" data-testid={`assignment-editor-${mode}`}>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No team assignments yet.</p>
+      ) : rows.map((tp) => {
+        const team = getTeam(state, tp.teamId);
+        const prof = getProfile(state, tp.playerId);
+        return (
+          <div key={tp.id} data-testid={`assignment-${tp.id}`} className="flex items-center gap-2 bg-[#0f0f0f] border border-border rounded-lg px-2.5 py-2">
+            <div className="flex-1 min-w-0 flex items-center gap-1.5">
+              {mode === "team" && prof && <EligibilityIndicator status={prof.eligibilityStatus} />}
+              <span className="text-sm text-white truncate">{mode === "player" ? (team?.name || "Unknown team") : (prof?.name || "Unknown player")}</span>
+              {mode === "player" && team && <SportBadge sport={team.sport} />}
+            </div>
+            <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">{tp.jersey != null ? `#${tp.jersey}` : "—"} · {tp.season}</span>
+            <IconBtn onClick={() => { removePlayerFromTeam(tp.id); toast.success("Assignment removed"); }} icon={X} title="Remove assignment" testid={`assignment-remove-${tp.id}`} danger />
+          </div>
+        );
+      })}
+      {options.length > 0 && (
+        <div className="flex items-end gap-2 pt-1">
+          <div className="flex-1 min-w-0">
+            <Select value={sel} onValueChange={setSel}>
+              <SelectTrigger data-testid="assignment-select" className="bg-[#0f0f0f] border-border h-9"><SelectValue placeholder={mode === "player" ? "Add to team…" : "Add player…"} /></SelectTrigger>
+              <SelectContent>
+                {options.map((o) => <SelectItem key={o.id} value={o.id}>{mode === "player" ? `${o.name} (${sportName(o.sport)})` : o.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <Input type="number" min="0" value={jersey} onChange={(e) => setJersey(e.target.value)} placeholder="#" data-testid="assignment-jersey" className="w-16 bg-[#0f0f0f] border-border h-9 text-center" />
+          <button onClick={add} data-testid="assignment-add" className="h-9 px-3 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-xs whitespace-nowrap">Add</button>
+        </div>
+      )}
+      {pendingSeason && (
+        <p className="text-[10px] text-muted-foreground">Season auto-stamped: <span className="text-white">{pendingSeason}</span></p>
+      )}
+    </div>
+  );
+}
+
+const blankPlayer = () => ({ firstName: "", lastName: "", displayName: "", email: "", phone: "", dob: "", age_confirmed: false, emergencyContactName: "", emergencyContactPhone: "", adminNotes: "", eligibilityStatus: "not_verified" });
+
 function PlayersTab({ app }) {
-  const { state, updateEntity, resendInvite } = app;
-  const [modal, setModal] = useState(null); // {id, email, phone, adminNotes}
+  const { state, updateEntity, createPlayer, resendInvite } = app;
+  const [modal, setModal] = useState(null);
   const counts = claimStats(state);
 
   const teamsFor = (playerId) => {
@@ -422,11 +514,29 @@ function PlayersTab({ app }) {
     return state.teams.filter((t) => ids.includes(t.id));
   };
 
+  const openEdit = (p) => setModal({
+    id: p.id, firstName: p.firstName || "", lastName: p.lastName || "", displayName: p.displayName || "",
+    email: p.email || "", phone: p.phone || "", dob: p.dob || "", age_confirmed: !!p.age_confirmed,
+    emergencyContactName: p.emergencyContactName || "", emergencyContactPhone: p.emergencyContactPhone || "",
+    adminNotes: typeof p.adminNotes === "string" ? p.adminNotes : "", eligibilityStatus: p.eligibilityStatus || "not_verified",
+  });
+
   const save = () => {
-    updateEntity("profiles", modal.id, { email: modal.email, phone: modal.phone, adminNotes: modal.adminNotes });
-    toast.success("Player record updated");
+    if (!modal.firstName.trim() || !modal.lastName.trim()) return toast.error("First and last name are required");
+    const display = modal.displayName.trim();
+    const data = {
+      firstName: modal.firstName.trim(), lastName: modal.lastName.trim(), displayName: display || null,
+      name: display || `${modal.firstName.trim()} ${modal.lastName.trim()}`.trim(),
+      email: modal.email.trim(), phone: modal.phone.trim(), dob: modal.dob || null, age_confirmed: !!modal.age_confirmed,
+      emergencyContactName: modal.emergencyContactName.trim() || null, emergencyContactPhone: modal.emergencyContactPhone.trim() || null,
+      adminNotes: modal.adminNotes, eligibilityStatus: modal.eligibilityStatus,
+    };
+    if (modal.id) { updateEntity("profiles", modal.id, data); toast.success("Player record updated"); }
+    else { createPlayer(data); toast.success("Player created"); }
     setModal(null);
   };
+
+  const set = (k, v) => setModal((m) => ({ ...m, [k]: v }));
 
   return (
     <div className="space-y-3">
@@ -443,10 +553,10 @@ function PlayersTab({ app }) {
         </div>
       )}
 
-      <SectionTitle title="Player Records" count={state.profiles.length} />
-      <AdminTable testid="admin-players-table" head={["Player", "Email", "Phone", "Sports", "Team(s)", "Season", "Waiver", "Eligibility", "Notes", ""]}>
+      <SectionTitle title="Player Records" count={state.profiles.length} action={<AddBtn onClick={() => setModal(blankPlayer())} label="Add Player" testid="admin-add-player" />} />
+      <AdminTable testid="admin-players-table" head={["Player", "Email", "Phone", "Sports", "Team(s)", "Season", "Eligibility", "Notes", ""]}>
         {state.profiles.length === 0 ? (
-          <EmptyRow colSpan={10}>No player records yet. Profiles are added by the admin or via intake forms.</EmptyRow>
+          <EmptyRow colSpan={9}>No player records yet. Use “Add Player” to create one.</EmptyRow>
         ) : state.profiles.map((p) => {
           const pTeams = teamsFor(p.id);
           return (
@@ -457,18 +567,23 @@ function PlayersTab({ app }) {
                   <Link to={`/profile/${p.id}`} className="font-medium text-white hover:text-primary">{p.name}</Link>
                 </div>
               </TableCell>
-              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.email}</TableCell>
-              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.phone}</TableCell>
-              <TableCell><div className="flex gap-1">{p.sports.map((s) => <SportBadge key={s} sport={s} />)}</div></TableCell>
+              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.email || "—"}</TableCell>
+              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.phone || "—"}</TableCell>
+              <TableCell><div className="flex gap-1">{(p.sports || []).map((s) => <SportBadge key={s} sport={s} />)}</div></TableCell>
               <TableCell className="text-xs text-white whitespace-nowrap">{pTeams.length ? pTeams.map((t) => t.name).join(", ") : <span className="text-muted-foreground/60">Unassigned</span>}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{state.settings.currentSeason}</TableCell>
-              {/* Waiver & eligibility are placeholder fields until waiver records exist (later stage). */}
-              <TableCell className="text-xs text-muted-foreground/60">{p.waiverStatus || "—"}</TableCell>
-              <TableCell className="text-xs text-muted-foreground/60">{p.eligibilityStatus || "—"}</TableCell>
+              {/* Eligibility is purely INFORMATIONAL (CLAUDE.md) — it gates nothing.
+                  PHASE 2: this flag becomes real waiver verification status. */}
+              <TableCell>
+                <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
+                  <EligibilityIndicator status={p.eligibilityStatus} />
+                  {p.eligibilityStatus === "verified" ? "Verified" : "Not verified"}
+                </span>
+              </TableCell>
               <TableCell className="text-xs text-muted-foreground max-w-[180px] truncate">{p.adminNotes || "—"}</TableCell>
               <TableCell>
                 <div className="flex items-center justify-end whitespace-nowrap">
-                  <IconBtn onClick={() => setModal({ id: p.id, email: p.email, phone: p.phone, adminNotes: p.adminNotes || "" })} icon={PencilSimple} title="Edit player record" testid={`admin-edit-player-${p.id}`} />
+                  <IconBtn onClick={() => openEdit(p)} icon={PencilSimple} title="Edit player record" testid={`admin-edit-player-${p.id}`} />
                   {/* FINAL DRAFT: resend-invite / mark-claimed are account features — no player accounts in Season 1. */}
                   {FINAL_DRAFT && !p.claimed && (
                     <button onClick={() => { resendInvite(p.id); toast.success(`Invite resent to ${p.name}`); }} data-testid={`admin-resend-${p.id}`} className="flex items-center gap-1 text-xs font-semibold text-primary border border-primary/40 rounded-lg px-2.5 py-1.5">
@@ -487,12 +602,48 @@ function PlayersTab({ app }) {
         })}
       </AdminTable>
 
-      <Modal open={!!modal} onClose={() => setModal(null)} title="Edit Player Record" onSave={save}>
+      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.id ? "Edit Player Record" : "Add Player"} onSave={save}>
         {modal && (
           <>
-            <ModalField label="Email"><Input data-testid="admin-player-email" value={modal.email} onChange={(e) => setModal({ ...modal, email: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
-            <ModalField label="Phone"><Input data-testid="admin-player-phone" value={modal.phone} onChange={(e) => setModal({ ...modal, phone: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
-            <ModalField label="Admin Notes"><Textarea data-testid="admin-player-notes" value={modal.adminNotes} onChange={(e) => setModal({ ...modal, adminNotes: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
+            <div className="grid grid-cols-2 gap-3">
+              <ModalField label="First Name"><Input data-testid="admin-player-first" value={modal.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="Last Name"><Input data-testid="admin-player-last" value={modal.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+            </div>
+            <ModalField label="Display Name (optional)"><Input data-testid="admin-player-display" value={modal.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname / preferred name" className="bg-[#0f0f0f] border-border" /></ModalField>
+            <div className="grid grid-cols-2 gap-3">
+              <ModalField label="Email"><Input data-testid="admin-player-email" value={modal.email} onChange={(e) => set("email", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="Phone"><Input data-testid="admin-player-phone" value={modal.phone} onChange={(e) => set("phone", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+            </div>
+            <div className="grid grid-cols-2 gap-3 items-end">
+              <ModalField label="Date of Birth (optional)"><Input type="date" data-testid="admin-player-dob" value={modal.dob || ""} onChange={(e) => set("dob", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+              <label className="flex items-center gap-2 h-10 cursor-pointer">
+                <Checkbox data-testid="admin-player-age" checked={modal.age_confirmed} onCheckedChange={(v) => set("age_confirmed", !!v)} />
+                <span className="text-sm text-white">Confirmed 18+</span>
+              </label>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <ModalField label="Emergency Contact"><Input data-testid="admin-player-ec-name" value={modal.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Name" className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="Emergency Phone"><Input data-testid="admin-player-ec-phone" value={modal.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="Phone" className="bg-[#0f0f0f] border-border" /></ModalField>
+            </div>
+            <ModalField label="Eligibility (informational — never blocks play)">
+              <Select value={modal.eligibilityStatus} onValueChange={(v) => set("eligibilityStatus", v)}>
+                <SelectTrigger data-testid="admin-player-eligibility" className="bg-[#0f0f0f] border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="not_verified">Not verified</SelectItem>
+                  <SelectItem value="verified">Verified</SelectItem>
+                </SelectContent>
+              </Select>
+            </ModalField>
+            <ModalField label="Admin Notes"><Textarea data-testid="admin-player-notes" value={modal.adminNotes} onChange={(e) => set("adminNotes", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+
+            {/* Team assignments are a RELATIONSHIP, not a profile field. They are
+                independent of eligibility and apply immediately (no Save needed). */}
+            <div className="pt-1 border-t border-border">
+              <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 mt-3 block">Team Assignments</Label>
+              {modal.id
+                ? <AssignmentEditor app={app} mode="player" playerId={modal.id} />
+                : <p className="text-xs text-muted-foreground">Save this player first, then reopen to assign teams.</p>}
+            </div>
           </>
         )}
       </Modal>

@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Crown } from "@phosphor-icons/react";
 import { Avatar } from "../common/Avatar";
+import { EligibilityIndicator } from "../common/EligibilityIndicator";
 
 // Compact roster player card linking to athlete profile.
 export const PlayerCard = ({ profile, jersey, position, isCaptain }) => (
@@ -16,6 +17,7 @@ export const PlayerCard = ({ profile, jersey, position, isCaptain }) => (
           {profile.name}
         </span>
         {isCaptain && <Crown size={14} weight="fill" className="text-[#facc15] shrink-0" />}
+        <EligibilityIndicator status={profile.eligibilityStatus} />
       </div>
       <p className="text-xs text-muted-foreground truncate">
         {position}
