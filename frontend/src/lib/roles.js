@@ -58,8 +58,10 @@ export const ROLE_ORDER = ["anonymous", "player", "captain", "admin", "temp_admi
 export const can = {
   // Full admin CRUD over everything
   manageAll: (role) => role === "admin",
-  // Captains + admins can view the free agent pool & send invites
-  viewFreeAgentPool: (role) => role === "captain" || role === "admin",
+  // The free-agent POOL is the captain's browse-and-invite tool. Admins manage
+  // free agents in ONE place — the Admin dashboard's Free Agents tab — so the
+  // pool stays captain-only to avoid two parallel management surfaces.
+  viewFreeAgentPool: (role) => role === "captain",
   manageRoster: (role) => role === "captain" || role === "admin",
   // Score entry: admin (any game) or temp_admin (their assigned game only)
   enterScores: (role) => role === "admin" || role === "temp_admin",

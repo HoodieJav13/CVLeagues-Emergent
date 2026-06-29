@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, CaretUp, Check, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -9,6 +10,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "../components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "../components/ui/alert-dialog";
 import { useRole } from "../context/RoleContext";
 import { useApp } from "../context/AppStateContext";
 import { ROLES, ROLE_ORDER } from "../lib/roles";
@@ -27,6 +38,7 @@ export const RoleSwitcher = () => {
   const { role, setRole, roleMeta } = useRole();
   const { resetState } = useApp();
   const navigate = useNavigate();
+  const [confirmReset, setConfirmReset] = useState(false);
 
   const handleSelect = (id) => {
     setRole(id);
@@ -106,7 +118,7 @@ export const RoleSwitcher = () => {
           <DropdownMenuSeparator />
           <DropdownMenuItem
             data-testid="reset-demo-data"
-            onClick={() => { resetState(); toast.success("Demo data reset to defaults"); navigate("/"); }}
+            onSelect={(e) => { e.preventDefault(); setConfirmReset(true); }}
             className="flex items-center gap-2.5 cursor-pointer py-2.5 focus:bg-white/5"
           >
             <ArrowCounterClockwise size={15} weight="bold" className="text-muted-foreground" />
@@ -114,6 +126,28 @@ export const RoleSwitcher = () => {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Destructive: clears all demo edits back to seed defaults. Confirm first. */}
+      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+        <AlertDialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto" data-testid="reset-confirm">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display uppercase tracking-tight text-white">Reset demo data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This clears every change made in this demo — scores, players, rosters, triage — and restores the original seed data. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="reset-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="reset-confirm-accept"
+              onClick={() => { resetState(); toast.success("Demo data reset to defaults"); navigate("/"); }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Reset data
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

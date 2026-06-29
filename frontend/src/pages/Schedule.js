@@ -31,6 +31,22 @@ export default function Schedule() {
       .sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [state.games, sport, leagueId, teamId, status]);
 
+  // Group the already-filtered games by their week (Sunday start). Because groups
+  // are built from the filtered list, a fully-filtered-out week never renders —
+  // no empty headers. Insertion order is chronological (games are sorted asc).
+  const weekGroups = useMemo(() => {
+    const map = new Map();
+    for (const g of games) {
+      const d = new Date(g.date + "T00:00:00");
+      d.setDate(d.getDate() - d.getDay()); // back to the week's Sunday
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const label = `Week of ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+      if (!map.has(key)) map.set(key, { key, label, games: [] });
+      map.get(key).games.push(g);
+    }
+    return [...map.values()];
+  }, [games]);
+
   return (
     <div className="space-y-5 animate-fade-up">
       <SectionHeading title="Schedule" subtitle={`${state.settings.currentSeason} · all matchups`} />
@@ -56,8 +72,15 @@ export default function Schedule() {
       </div>
 
       {games.length ? (
-        <div className="grid sm:grid-cols-2 gap-3">
-          {games.map((g) => <GameCard key={g.id} game={g} />)}
+        <div className="space-y-6">
+          {weekGroups.map((grp) => (
+            <section key={grp.key} data-testid={`schedule-week-${grp.key}`}>
+              <h3 className="font-display uppercase tracking-tight text-sm text-muted-foreground mb-2.5">{grp.label}</h3>
+              <div className="grid sm:grid-cols-2 gap-3">
+                {grp.games.map((g) => <GameCard key={g.id} game={g} />)}
+              </div>
+            </section>
+          ))}
         </div>
       ) : (
         <EmptyState icon={CalendarX} title="No games found" message="Try adjusting your filters." />

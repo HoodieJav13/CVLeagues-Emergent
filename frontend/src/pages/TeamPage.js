@@ -75,11 +75,17 @@ export default function TeamPage() {
       {/* Roster */}
       <section>
         <SectionHeading title="Roster" subtitle={`${roster.length} players`} />
-        <div className="grid sm:grid-cols-2 gap-3">
-          {roster.map((r) => (
-            <PlayerCard key={r.id} profile={r.profile} jersey={r.jersey} position={r.position} isCaptain={team.captainId === r.playerId} />
-          ))}
-        </div>
+        {roster.length === 0 ? (
+          <div className="bg-card border border-border rounded-xl p-6 text-center text-sm text-muted-foreground">
+            No players on the roster yet.
+          </div>
+        ) : (
+          <div className="grid sm:grid-cols-2 gap-3">
+            {roster.map((r) => (
+              <PlayerCard key={r.id} profile={r.profile} jersey={r.jersey} position={r.position} isCaptain={team.captainId === r.playerId} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Upcoming */}

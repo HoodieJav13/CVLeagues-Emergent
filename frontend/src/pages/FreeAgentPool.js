@@ -12,8 +12,10 @@ import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
 
 export default function FreeAgentPool() {
+  // Captain-only browse-and-invite tool. Admins manage free agents in the Admin
+  // dashboard's Free Agents tab (one management surface, not two).
   return (
-    <RoleGate allow={["captain", "admin"]} title="Free Agent Pool">
+    <RoleGate allow={["captain"]} title="Free Agent Pool">
       <Pool />
     </RoleGate>
   );

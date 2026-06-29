@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
+import { Ranking } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { computeStandings } from "../lib/selectors";
-import { SectionHeading } from "../components/common/Section";
+import { SectionHeading, EmptyState } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
 
 export default function Standings() {
@@ -9,6 +10,9 @@ export default function Standings() {
   return (
     <div className="space-y-8 animate-fade-up">
       <SectionHeading title="Standings" subtitle={`${state.settings.currentSeason} · sorted by wins, then point diff`} />
+      {state.leagues.length === 0 && (
+        <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
+      )}
       {state.leagues.map((league) => {
         const rows = computeStandings(state, league.id);
         return (
@@ -26,6 +30,9 @@ export default function Standings() {
                 <span className="text-center">PF</span>
                 <span className="text-center">DIFF</span>
               </div>
+              {rows.length === 0 && (
+                <p className="px-3 py-6 text-center text-sm text-muted-foreground">No teams in this league yet.</p>
+              )}
               {rows.map(({ team, record, rank }) => (
                 <Link
                   key={team.id}

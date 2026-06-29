@@ -19,6 +19,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "../components/ui/alert-dialog";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -107,8 +108,6 @@ function OverviewTab({ app, onNavigate }) {
   // Placeholder until real waiver submissions exist: profiles with no waiver record linked.
   const missingWaivers = state.profiles.filter((p) => !waivers.some((w) => w.profileId === p.id)).length;
   const lockedGames = state.games.filter((g) => g.locked).length;
-  // FINAL DRAFT: duplicate-profile detection ships at final-draft review — placeholder 0.
-  const possibleDuplicates = 0;
 
   const cards = [
     { count: scoresNeeded, title: "Games Needing Scores", desc: "Enter, review and lock final scores. Pending have no score; submitted await Mark Final.", cta: "Scores/Stats", tab: "scores", testid: "admin-overview-scores" },
@@ -116,7 +115,9 @@ function OverviewTab({ app, onNavigate }) {
     { count: agentsToReview, title: "Free Agents to Review", desc: "Intake submissions awaiting contact or team assignment.", cta: "Free Agents", tab: "agents", testid: "admin-overview-agents" },
     { count: missingWaivers, title: "Players Missing Waivers", desc: "Profiles with no waiver record on file (mock count until the backend ships).", cta: "Waivers", tab: "waivers", testid: "admin-overview-waivers" },
     { count: lockedGames, title: "Locked / Final Games", desc: "Season games marked final and locked against edits.", cta: "Scores/Stats", tab: "scores", testid: "admin-overview-locked", muted: true },
-    { count: possibleDuplicates, title: "Possible Duplicate Profiles", desc: "Duplicate detection ships at final-draft review.", cta: "Players", tab: "players", testid: "admin-overview-duplicates", muted: true },
+    // FINAL DRAFT: duplicate-profile detection ships at final-draft review.
+    // Hidden until then rather than showing a permanently-zero placeholder card.
+    ...(FINAL_DRAFT ? [{ count: 0, title: "Possible Duplicate Profiles", desc: "Duplicate detection ships at final-draft review.", cta: "Players", tab: "players", testid: "admin-overview-duplicates", muted: true }] : []),
   ];
 
   return (
@@ -192,6 +193,33 @@ const AddBtn = ({ onClick, label, testid }) => (
 );
 const fmtTs = (ts) => new Date(ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
+// Confirmation gate for destructive actions. Controlled via a `confirm` object
+// { title, message, confirmLabel, onConfirm }; null when closed.
+const ConfirmDialog = ({ confirm, onClose }) => (
+  <AlertDialog open={!!confirm} onOpenChange={(o) => !o && onClose()}>
+    <AlertDialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto" data-testid="admin-confirm">
+      {confirm && (
+        <>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display uppercase tracking-tight text-white">{confirm.title}</AlertDialogTitle>
+            <AlertDialogDescription>{confirm.message}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="admin-confirm-cancel">Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              data-testid="admin-confirm-accept"
+              onClick={() => { confirm.onConfirm(); onClose(); }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {confirm.confirmLabel || "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </>
+      )}
+    </AlertDialogContent>
+  </AlertDialog>
+);
+
 // Timestamped admin notes on a triage record, newest first.
 const NotesList = ({ notes }) =>
   notes?.length ? (
@@ -249,6 +277,7 @@ const fmtDate = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-US", { m
 function LeaguesTab({ app }) {
   const { state, createEntity, updateEntity, deleteEntity, toggleRegistration } = app;
   const [modal, setModal] = useState(null); // {id?, name, sport, description}
+  const [confirm, setConfirm] = useState(null);
 
   const save = () => {
     if (!modal.name?.trim() || !modal.sport) return toast.error("Name and sport required");
@@ -303,7 +332,7 @@ function LeaguesTab({ app }) {
             <TableCell>
               <div className="flex items-center justify-end">
                 <IconBtn onClick={() => setModal({ id: l.id, name: l.name, sport: l.sport, description: l.description })} icon={PencilSimple} title="Edit league" testid={`admin-edit-league-${l.id}`} />
-                <IconBtn onClick={() => { deleteEntity("leagues", l.id); toast.success("League deleted"); }} icon={Trash} title="Delete league" testid={`admin-delete-league-${l.id}`} danger />
+                <IconBtn onClick={() => setConfirm({ title: "Delete league?", message: `Delete “${l.name}”? Its ${teamsIn(l.id).length} team(s) and games stay in the data but lose their league link. This cannot be undone.`, onConfirm: () => { deleteEntity("leagues", l.id); toast.success("League deleted"); } })} icon={Trash} title="Delete league" testid={`admin-delete-league-${l.id}`} danger />
               </div>
             </TableCell>
           </TableRow>
@@ -324,6 +353,8 @@ function LeaguesTab({ app }) {
           </>
         )}
       </Modal>
+
+      <ConfirmDialog confirm={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }
@@ -333,6 +364,7 @@ function TeamsTab({ app }) {
   const { state, createEntity, updateEntity, deleteEntity } = app;
   const [modal, setModal] = useState(null);
   const [rosterFor, setRosterFor] = useState(null); // teamId whose roster is open
+  const [confirm, setConfirm] = useState(null);
   const rosterTeam = rosterFor && getTeam(state, rosterFor);
 
   const save = () => {
@@ -379,7 +411,7 @@ function TeamsTab({ app }) {
                 <div className="flex items-center justify-end">
                   <IconBtn onClick={() => setRosterFor(t.id)} icon={UsersThree} title="Manage roster" testid={`admin-roster-team-${t.id}`} />
                   <IconBtn onClick={() => setModal({ id: t.id, name: t.name, sport: t.sport, leagueId: t.leagueId, captainId: t.captainId, logoColor: t.logoColor, founded: t.founded })} icon={PencilSimple} title="Edit team" testid={`admin-edit-team-${t.id}`} />
-                  <IconBtn onClick={() => { deleteEntity("teams", t.id); toast.success("Team deleted"); }} icon={Trash} title="Delete team" testid={`admin-delete-team-${t.id}`} danger />
+                  <IconBtn onClick={() => setConfirm({ title: "Delete team?", message: `Delete “${t.name}”? The team record is removed; its ${rosterCount(t.id)} roster assignment(s) and any games stay in the data but lose their team link. This cannot be undone.`, onConfirm: () => { deleteEntity("teams", t.id); toast.success("Team deleted"); } })} icon={Trash} title="Delete team" testid={`admin-delete-team-${t.id}`} danger />
                 </div>
               </TableCell>
             </TableRow>
@@ -416,16 +448,19 @@ function TeamsTab({ app }) {
       {/* Roster management — same team_players relationship as the player modal.
           Changes apply immediately; "Done" just closes. */}
       <Dialog open={!!rosterFor} onOpenChange={(o) => !o && setRosterFor(null)}>
-        <DialogContent className="bg-card border-border" data-testid="admin-roster-modal" aria-describedby={undefined}>
-          <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">{rosterTeam ? `${rosterTeam.name} · Roster` : "Roster"}</DialogTitle></DialogHeader>
-          <div className="space-y-3 py-2">
+        {/* Long rosters scroll internally so the Done action stays pinned. */}
+        <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col" data-testid="admin-roster-modal" aria-describedby={undefined}>
+          <DialogHeader className="shrink-0"><DialogTitle className="font-display uppercase tracking-tight text-white">{rosterTeam ? `${rosterTeam.name} · Roster` : "Roster"}</DialogTitle></DialogHeader>
+          <div className="space-y-3 py-2 flex-1 overflow-y-auto min-h-0">
             {rosterFor && <AssignmentEditor app={app} mode="team" teamId={rosterFor} />}
           </div>
-          <DialogFooter>
+          <DialogFooter className="shrink-0">
             <button onClick={() => setRosterFor(null)} data-testid="admin-roster-done" className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-sm">Done</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog confirm={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
 }
@@ -771,7 +806,7 @@ function GamesTab({ app }) {
       <p className="text-[11px] text-muted-foreground">Actions: edit game · enter score · mark final & lock · postpone/cancel. Locked games must be unlocked in Scores/Stats before editing.</p>
 
       <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
-        <DialogContent className="bg-card border-border" data-testid="admin-reschedule-modal">
+        <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto" data-testid="admin-reschedule-modal">
           <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">Postpone or Cancel Game</DialogTitle></DialogHeader>
           <DialogDescription className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</DialogDescription>
           <DialogFooter>
@@ -878,7 +913,13 @@ function ScoresTab({ app }) {
         )}
       </div>
       <SectionTitle title="All Games" count={state.games.length} />
-      {state.games.map((g) => renderRow(g, "admin-score"))}
+      {state.games.length === 0 ? (
+        <div className="bg-card border border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
+          No games scheduled yet. Games appear here once a schedule is created.
+        </div>
+      ) : (
+        state.games.map((g) => renderRow(g, "admin-score"))
+      )}
 
       <Modal open={!!unlockFor} onClose={() => setUnlockFor(null)} title="Unlock Game" onSave={doUnlock}>
         {unlockFor && (
@@ -978,10 +1019,11 @@ function AgentsTab({ app }) {
 // visible children here, so suppress the missing-Description warning once.
 const Modal = ({ open, onClose, title, onSave, children }) => (
   <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-    <DialogContent className="bg-card border-border" data-testid="admin-modal" aria-describedby={undefined}>
-      <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">{title}</DialogTitle></DialogHeader>
-      <div className="space-y-3 py-2">{children}</div>
-      <DialogFooter>
+    {/* Capped at the viewport: body scrolls internally so Save/Cancel stay pinned and reachable. */}
+    <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col" data-testid="admin-modal" aria-describedby={undefined}>
+      <DialogHeader className="shrink-0"><DialogTitle className="font-display uppercase tracking-tight text-white">{title}</DialogTitle></DialogHeader>
+      <div className="space-y-3 py-2 flex-1 overflow-y-auto min-h-0">{children}</div>
+      <DialogFooter className="shrink-0">
         <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-white">Cancel</button>
         <button onClick={onSave} data-testid="admin-modal-save" className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-sm">Save</button>
       </DialogFooter>

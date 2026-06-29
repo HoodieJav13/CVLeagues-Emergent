@@ -72,22 +72,26 @@ export default function AthleteProfile() {
               <ShareNetwork size={15} weight="bold" /> Share profile
             </button>
           </div>
-          {sports.map((sport) => {
+          <SportTabs sports={sports} testid="profile-public-sport" render={(sport) => {
             const season = playerSeasonStats(state, profile.id, sport);
             return (
-              <div key={sport} className="bg-card border border-border rounded-2xl p-5">
+              <div className="bg-card border border-border rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-4"><SportBadge sport={sport} /><span className="text-xs text-muted-foreground uppercase">Season Highlights</span></div>
-                <div className="grid grid-cols-3 gap-3">
-                  {HIGHLIGHT_STATS[sport].map((key) => (
-                    <div key={key} className="text-center bg-[#0f0f0f]/60 rounded-xl p-3 border border-border">
-                      <p className="font-mono-score text-2xl font-bold text-primary leading-none">{season[key] || 0}</p>
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
-                    </div>
-                  ))}
-                </div>
+                {hasAnyStat(season) ? (
+                  <div className="grid grid-cols-3 gap-3">
+                    {HIGHLIGHT_STATS[sport].map((key) => (
+                      <div key={key} className="text-center bg-[#0f0f0f]/60 rounded-xl p-3 border border-border">
+                        <p className="font-mono-score text-2xl font-bold text-primary leading-none">{season[key] || 0}</p>
+                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground" data-testid="profile-public-nostats">No stats recorded yet for this season.</p>
+                )}
               </div>
             );
-          })}
+          }} />
           <TeamHistory teams={teams} />
         </TabsContent>
 
@@ -95,9 +99,9 @@ export default function AthleteProfile() {
         <TabsContent value="private" className="space-y-6 mt-4" data-testid="profile-private-content">
           {canViewPrivate ? (
             <>
-              {sports.map((sport) => (
-                <PrivateSport key={sport} state={state} profile={profile} sport={sport} />
-              ))}
+              <SportTabs sports={sports} testid="profile-private-sport" render={(sport) => (
+                <PrivateSport state={state} profile={profile} sport={sport} />
+              )} />
               <TeamHistory teams={teams} />
               <ComingSoon label="Photo Upload" />
             </>
@@ -109,6 +113,30 @@ export default function AthleteProfile() {
     </div>
   );
 }
+
+// True when a stat object has at least one non-zero value.
+const hasAnyStat = (statsObj) => Object.values(statsObj || {}).some((v) => Number(v) > 0);
+
+// Renders sport stats behind toggle tabs when a player has more than one sport;
+// for a single sport it shows the content directly with no tabs. Structural only.
+const SportTabs = ({ sports, render, testid }) => {
+  if (!sports.length) return null;
+  if (sports.length === 1) return <div data-testid={`${testid}-single`}>{render(sports[0])}</div>;
+  return (
+    <Tabs defaultValue={sports[0]}>
+      <TabsList className="bg-card border border-border h-10">
+        {sports.map((s) => (
+          <TabsTrigger key={s} value={s} data-testid={`${testid}-${s}`} className="data-[state=active]:bg-secondary uppercase text-xs font-semibold tracking-wide">
+            {sportName(s)}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      {sports.map((s) => (
+        <TabsContent key={s} value={s} className="mt-4">{render(s)}</TabsContent>
+      ))}
+    </Tabs>
+  );
+};
 
 const TeamHistory = ({ teams }) => (
   <div className="bg-card border border-border rounded-2xl p-5">
@@ -133,11 +161,16 @@ const PrivateSport = ({ state, profile, sport }) => {
   const career = playerCareerStats(state, profile.id, sport);
   const log = playerGameLog(state, profile.id, sport);
   const keys = LEADERBOARD_CATEGORIES[sport].map((c) => c.key);
+  const empty = !hasAnyStat(season) && !hasAnyStat(career) && log.length === 0;
 
   return (
     <div className="bg-card border border-border rounded-2xl p-5">
       <div className="flex items-center gap-2 mb-4"><SportBadge sport={sport} /><span className="text-xs text-muted-foreground uppercase">Full Statistics</span></div>
 
+      {empty ? (
+        <p className="text-sm text-muted-foreground" data-testid="profile-private-nostats">No stats recorded yet for this season.</p>
+      ) : (
+      <>
       {/* season vs career table */}
       <div className="overflow-x-auto mb-5">
         <table className="w-full text-sm">
@@ -173,6 +206,8 @@ const PrivateSport = ({ state, profile, sport }) => {
           );
         }) : <p className="text-sm text-muted-foreground">No games logged.</p>}
       </div>
+      </>
+      )}
     </div>
   );
 };
