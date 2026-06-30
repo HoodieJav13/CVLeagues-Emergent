@@ -85,7 +85,7 @@ export default function FreeAgentSignup() {
         <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={34} weight="fill" className="text-primary" />
         </div>
-        <h1 className="font-display uppercase tracking-tight text-2xl text-white">You're in the Pool!</h1>
+        <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">You're in the Pool!</h1>
         <p className="text-muted-foreground mt-2 text-sm">
           Captains looking for players can now find you. Keep an eye on your inbox.
         </p>
@@ -104,29 +104,29 @@ export default function FreeAgentSignup() {
 
       {/* Personal info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-white text-sm">Your Info</p>
+        <p className="font-display uppercase tracking-tight text-foreground text-sm">Your Info</p>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="First Name" required error={errors.firstName}>
-            <Input data-testid="fa-first-name" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-first-name" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
           <Field label="Last Name" required error={errors.lastName}>
-            <Input data-testid="fa-last-name" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-last-name" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
         </div>
         <Field label="Display Name" optional>
-          <Input data-testid="fa-display-name" value={form.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname or preferred name" className="bg-[#0f0f0f] border-border" />
+          <Input data-testid="fa-display-name" value={form.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname or preferred name" className="bg-surface-sunken border-border" />
         </Field>
         <Field label="Contact" required error={errors.contact || errors.email} hint="At least one of phone or email is required">
           <div className="grid sm:grid-cols-2 gap-3">
-            <Input data-testid="fa-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Phone" className="bg-[#0f0f0f] border-border" />
-            <Input data-testid="fa-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
+            <Input data-testid="fa-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
       </div>
 
       {/* Sport & availability */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-white text-sm">Sport & Availability</p>
+        <p className="font-display uppercase tracking-tight text-foreground text-sm">Sport & Availability</p>
         <Field label="Sport Interest" required error={errors.sports}>
           <div className="flex flex-wrap gap-2 mt-1">
             {SPORTS.map((s) => (
@@ -138,7 +138,7 @@ export default function FreeAgentSignup() {
                 }`}
               >
                 <Checkbox checked={sports.includes(s.id)} onCheckedChange={() => toggleSport(s.id)} />
-                <span className="text-sm text-white">{s.name}</span>
+                <span className="text-sm text-foreground">{s.name}</span>
               </label>
             ))}
           </div>
@@ -153,7 +153,7 @@ export default function FreeAgentSignup() {
                 }`}
               >
                 <Checkbox checked={availability.includes(opt.id)} onCheckedChange={() => toggleAvail(opt.id)} />
-                <span className="text-sm text-white">{opt.label}</span>
+                <span className="text-sm text-foreground">{opt.label}</span>
               </label>
             ))}
           </div>
@@ -161,7 +161,7 @@ export default function FreeAgentSignup() {
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Experience Level" optional>
             <Select value={form.experience} onValueChange={(v) => set("experience", v)}>
-              <SelectTrigger data-testid="fa-experience" className="bg-[#0f0f0f] border-border h-10">
+              <SelectTrigger data-testid="fa-experience" className="bg-surface-sunken border-border h-10">
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
@@ -170,22 +170,22 @@ export default function FreeAgentSignup() {
             </Select>
           </Field>
           <Field label="Preferred Position" optional>
-            <Input data-testid="fa-position" value={form.preferredPosition} onChange={(e) => set("preferredPosition", e.target.value)} placeholder="e.g. Pitcher, WR…" className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-position" value={form.preferredPosition} onChange={(e) => set("preferredPosition", e.target.value)} placeholder="e.g. Pitcher, WR…" className="bg-surface-sunken border-border" />
           </Field>
         </div>
       </div>
 
       {/* Emergency contact */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-white text-sm">
+        <p className="font-display uppercase tracking-tight text-foreground text-sm">
           Emergency Contact <span className="text-muted-foreground font-normal normal-case tracking-normal text-xs">(optional)</span>
         </p>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Contact Name" optional>
-            <Input data-testid="fa-ec-name" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-ec-name" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
           <Field label="Contact Phone" optional>
-            <Input data-testid="fa-ec-phone" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="fa-ec-phone" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
         </div>
       </div>
@@ -198,7 +198,7 @@ export default function FreeAgentSignup() {
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             placeholder="Anything captains should know — schedule notes, positions, etc."
-            className="bg-[#0f0f0f] border-border"
+            className="bg-surface-sunken border-border"
           />
         </Field>
       </div>
@@ -218,7 +218,7 @@ export default function FreeAgentSignup() {
       <button
         onClick={submit}
         data-testid="fa-submit"
-        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-[#06b6d4] transition-colors"
+        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-teal-deep transition-colors"
       >
         Join Free Agent Pool
       </button>

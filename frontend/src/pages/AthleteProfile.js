@@ -23,7 +23,7 @@ export default function AthleteProfile() {
   if (!profile) {
     return (
       <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-md mx-auto mt-8">
-        <p className="font-display uppercase text-white text-lg">No profile available</p>
+        <p className="font-display uppercase text-foreground text-lg">No profile available</p>
         <p className="text-sm text-muted-foreground mt-1">
           {id === "me" ? "Switch to the Player or Captain demo role to view a personal profile." : "This athlete could not be found."}
         </p>
@@ -45,7 +45,7 @@ export default function AthleteProfile() {
         <div className="flex items-center gap-4">
           <Avatar name={profile.name} color={profile.avatarColor} size={72} />
           <div className="min-w-0">
-            <h1 className="font-display font-extrabold uppercase tracking-tighter text-3xl text-white leading-none">{profile.name}</h1>
+            <h1 className="font-display font-extrabold uppercase tracking-tighter text-display-lg text-foreground leading-none">{profile.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {sports.map((s) => <SportBadge key={s} sport={s} />)}
               <span className="text-xs text-muted-foreground">{profile.experience}</span>
@@ -80,7 +80,7 @@ export default function AthleteProfile() {
                 {hasAnyStat(season) ? (
                   <div className="grid grid-cols-3 gap-3">
                     {HIGHLIGHT_STATS[sport].map((key) => (
-                      <div key={key} className="text-center bg-[#0f0f0f]/60 rounded-xl p-3 border border-border">
+                      <div key={key} className="text-center bg-[#0F1416]/60 rounded-xl p-3 border border-border">
                         <p className="font-mono-score text-2xl font-bold text-primary leading-none">{season[key] || 0}</p>
                         <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
                       </div>
@@ -140,13 +140,13 @@ const SportTabs = ({ sports, render, testid }) => {
 
 const TeamHistory = ({ teams }) => (
   <div className="bg-card border border-border rounded-2xl p-5">
-    <p className="font-display uppercase tracking-tight text-white mb-3">Team History</p>
+    <p className="font-display uppercase tracking-tight text-foreground mb-3">Team History</p>
     <div className="space-y-2">
       {teams.map((t) => (
         <Link key={t.id} to={`/team/${t.team.id}`} className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.team.logoColor }} />
-            <span className="font-medium text-white truncate">{t.team.name}</span>
+            <span className="font-medium text-foreground truncate">{t.team.name}</span>
             <SportBadge sport={t.team.sport} />
           </div>
           <span className="text-xs font-mono-score text-muted-foreground">#{t.jersey} · {t.record.wins}-{t.record.losses}</span>
@@ -184,7 +184,7 @@ const PrivateSport = ({ state, profile, sport }) => {
           <tbody>
             {keys.map((k) => (
               <tr key={k} className="border-t border-border">
-                <td className="py-2 text-white">{statLabel(sport, k)}</td>
+                <td className="py-2 text-foreground">{statLabel(sport, k)}</td>
                 <td className="py-2 px-3 text-right font-mono-score text-primary">{season[k] || 0}</td>
                 <td className="py-2 text-right font-mono-score text-muted-foreground">{career[k] || 0}</td>
               </tr>

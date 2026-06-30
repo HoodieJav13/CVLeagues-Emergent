@@ -52,10 +52,10 @@ function Pool() {
           {agents.map((a) => (
             <div key={a.id} data-testid={`free-agent-${a.id}`} className="bg-card border border-border rounded-2xl p-4">
               <div className="flex items-start gap-3">
-                <Avatar name={freeAgentName(a)} color="#22d3ee" size={44} />
+                <Avatar name={freeAgentName(a)} color="#5BB8CC" size={44} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-display uppercase tracking-tight text-white truncate text-base">{freeAgentName(a)}</p>
+                    <p className="font-display uppercase tracking-tight text-foreground truncate text-base">{freeAgentName(a)}</p>
                     <StatusBadge status={a.status} />
                   </div>
                   <p className="text-xs text-muted-foreground">{a.experience}</p>
@@ -71,7 +71,7 @@ function Pool() {
                 onClick={() => invite(a)}
                 disabled={a.status !== "new"}
                 data-testid={`fa-invite-${a.id}`}
-                className="mt-3 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs py-2.5 rounded-xl hover:bg-[#06b6d4] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-3 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs py-2.5 rounded-xl hover:bg-teal-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <PaperPlaneTilt size={14} weight="bold" /> {a.status === "contacted" ? "Invite Sent" : a.status === "new" ? "Send Invite" : a.status === "assigned" ? "Assigned" : "Archived"}
               </button>

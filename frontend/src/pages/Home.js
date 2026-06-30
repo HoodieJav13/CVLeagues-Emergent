@@ -47,12 +47,12 @@ export default function Home() {
       {/* HERO */}
       <section className="relative overflow-hidden rounded-3xl border border-border">
         <img src={HERO_BG} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-[#0F1416]/70 to-transparent" />
         <div className="relative px-6 py-12 md:px-12 md:py-20 max-w-2xl">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-semibold uppercase tracking-widest">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> {state.settings.currentSeason} · Live
           </span>
-          <h1 className="mt-4 font-display font-extrabold uppercase tracking-tighter text-white text-4xl sm:text-5xl lg:text-6xl leading-[0.95]">
+          <h1 className="mt-4 font-display font-extrabold uppercase tracking-tighter text-foreground text-display-xl sm:text-5xl lg:text-6xl leading-[0.95]">
             Adult Rec Leagues.<br />
             <span className="text-primary">Player First.</span> Always Free.
           </h1>
@@ -64,14 +64,14 @@ export default function Home() {
             <Link
               to="/register-team"
               data-testid="hero-register-team"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:bg-[#06b6d4] transition-colors"
+              className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:bg-teal-deep transition-colors"
             >
               Register a Team <ArrowRight size={16} weight="bold" />
             </Link>
             <Link
               to="/free-agent-signup"
               data-testid="hero-free-agent"
-              className="inline-flex items-center gap-2 border border-white/15 text-white font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors"
+              className="inline-flex items-center gap-2 border border-white/15 text-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors"
             >
               Join as Free Agent
             </Link>
@@ -135,7 +135,7 @@ export default function Home() {
         ].map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-2xl p-4">
             <s.icon size={20} weight="duotone" className="text-primary mb-2" />
-            <p className="font-display font-extrabold text-2xl text-white leading-none">{s.value}</p>
+            <p className="font-display font-extrabold text-2xl text-foreground leading-none">{s.value}</p>
             <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">{s.label}</p>
           </div>
         ))}
@@ -194,9 +194,9 @@ export default function Home() {
             className="group relative overflow-hidden rounded-2xl border border-border min-h-[180px] flex items-end"
           >
             <img src={c.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity" />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#0f0f0f] via-[#0f0f0f]/60 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-[#0F1416]/60 to-transparent" />
             <div className="relative p-5">
-              <h3 className="font-display uppercase tracking-tight text-xl text-white">{c.title}</h3>
+              <h3 className="font-display uppercase tracking-tight text-xl text-foreground">{c.title}</h3>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">{c.desc}</p>
               <span className="inline-flex items-center gap-1.5 text-primary font-semibold text-sm mt-3 group-hover:gap-2.5 transition-all">
                 {c.cta} <ArrowRight size={15} weight="bold" />

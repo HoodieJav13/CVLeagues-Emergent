@@ -60,7 +60,7 @@ function Dashboard() {
       <header className="flex items-end justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.25em] text-primary font-bold">CVF Operations</p>
-          <h1 className="font-display font-extrabold uppercase tracking-tighter text-2xl text-white leading-none mt-1">Admin Console</h1>
+          <h1 className="font-display font-extrabold uppercase tracking-tighter text-display-lg text-foreground leading-none mt-1">Admin Console</h1>
         </div>
         <span className="text-[10px] uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">Season 1 · Demo Data</span>
       </header>
@@ -91,7 +91,7 @@ function Dashboard() {
 const QueueCard = ({ count, title, desc, cta, onClick, testid, muted }) => (
   <div data-testid={testid} className="bg-card border border-border rounded-xl p-4 flex flex-col">
     <p className={`font-mono-score text-3xl font-bold ${muted || count === 0 ? "text-muted-foreground" : "text-primary"}`}>{count}</p>
-    <p className="font-display uppercase tracking-tight text-white mt-1">{title}</p>
+    <p className="font-display uppercase tracking-tight text-foreground mt-1">{title}</p>
     <p className="text-xs text-muted-foreground mt-0.5 flex-1">{desc}</p>
     <button onClick={onClick} className="mt-3 self-start flex items-center gap-1 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-1.5 hover:bg-primary/10 transition-colors">
       {cta} <CaretRight size={12} weight="bold" />
@@ -139,10 +139,10 @@ function WaiversTab({ app }) {
   return (
     <div className="space-y-3">
       <div className="bg-card border border-primary/30 rounded-xl p-4">
-        <p className="font-display uppercase tracking-tight text-white">Waiver Verification Queue</p>
+        <p className="font-display uppercase tracking-tight text-foreground">Waiver Verification Queue</p>
         <p className="text-xs text-muted-foreground mt-1">
           Waiver submission flow ships with the backend — these are mock records. Records are append-only: re-signing creates a new row.
-          A submitted waiver does <span className="text-white font-semibold">not</span> equal eligibility — eligibility requires admin verification plus team/season assignment.
+          A submitted waiver does <span className="text-foreground font-semibold">not</span> equal eligibility — eligibility requires admin verification plus team/season assignment.
         </p>
       </div>
       <SectionTitle title="Waiver Records" count={waivers.length} />
@@ -153,14 +153,14 @@ function WaiversTab({ app }) {
           const profile = w.profileId ? getProfile(state, w.profileId) : null;
           return (
             <TableRow key={w.id} data-testid={`admin-waiver-${w.id}`} className="border-border">
-              <TableCell className="font-medium text-white whitespace-nowrap">{w.signed_name}</TableCell>
+              <TableCell className="font-medium text-foreground whitespace-nowrap">{w.signed_name}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{w.email}{w.phone ? ` · ${w.phone}` : ""}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtTs(w.signed_at)}</TableCell>
               <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">{w.waiver_version}</TableCell>
               <TableCell><StatusBadge status={w.verification_status} /></TableCell>
               <TableCell className="text-xs whitespace-nowrap">
                 {profile ? (
-                  <Link to={`/profile/${profile.id}`} className="text-white hover:text-primary">{profile.name}</Link>
+                  <Link to={`/profile/${profile.id}`} className="text-foreground hover:text-primary">{profile.name}</Link>
                 ) : (
                   <span className="text-muted-foreground/60">Unlinked</span>
                 )}
@@ -182,12 +182,12 @@ function WaiversTab({ app }) {
 
 /* ---------- shared table & button primitives ---------- */
 const IconBtn = ({ onClick, icon: Icon, testid, danger, title, disabled }) => (
-  <button onClick={onClick} disabled={disabled} title={title} data-testid={testid} className={`p-2 rounded-lg transition-colors ${disabled ? "text-muted-foreground/30 cursor-not-allowed" : danger ? "text-destructive hover:bg-white/10" : "text-muted-foreground hover:text-white hover:bg-white/10"}`}>
+  <button onClick={onClick} disabled={disabled} title={title} data-testid={testid} className={`p-2 rounded-lg transition-colors ${disabled ? "text-muted-foreground/30 cursor-not-allowed" : danger ? "text-destructive hover:bg-white/10" : "text-muted-foreground hover:text-foreground hover:bg-white/10"}`}>
     <Icon size={16} weight="bold" />
   </button>
 );
 const AddBtn = ({ onClick, label, testid }) => (
-  <button onClick={onClick} data-testid={testid} className="flex items-center gap-1.5 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs px-3.5 py-2 rounded-lg hover:bg-[#06b6d4] transition-colors">
+  <button onClick={onClick} data-testid={testid} className="flex items-center gap-1.5 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs px-3.5 py-2 rounded-lg hover:bg-teal-deep transition-colors">
     <Plus size={15} weight="bold" /> {label}
   </button>
 );
@@ -201,7 +201,7 @@ const ConfirmDialog = ({ confirm, onClose }) => (
       {confirm && (
         <>
           <AlertDialogHeader>
-            <AlertDialogTitle className="font-display uppercase tracking-tight text-white">{confirm.title}</AlertDialogTitle>
+            <AlertDialogTitle className="font-display uppercase tracking-tight text-foreground">{confirm.title}</AlertDialogTitle>
             <AlertDialogDescription>{confirm.message}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -209,7 +209,7 @@ const ConfirmDialog = ({ confirm, onClose }) => (
             <AlertDialogAction
               data-testid="admin-confirm-accept"
               onClick={() => { confirm.onConfirm(); onClose(); }}
-              className="bg-destructive text-white hover:bg-destructive/90"
+              className="bg-destructive text-foreground hover:bg-destructive/90"
             >
               {confirm.confirmLabel || "Delete"}
             </AlertDialogAction>
@@ -236,7 +236,7 @@ const NoteModal = ({ noteFor, setNoteFor, onSave }) => (
   <Modal open={!!noteFor} onClose={() => setNoteFor(null)} title="Add Admin Note" onSave={onSave}>
     {noteFor && (
       <ModalField label="Note">
-        <Textarea data-testid="admin-note-text" value={noteFor.text} onChange={(e) => setNoteFor({ ...noteFor, text: e.target.value })} className="bg-[#0f0f0f] border-border" />
+        <Textarea data-testid="admin-note-text" value={noteFor.text} onChange={(e) => setNoteFor({ ...noteFor, text: e.target.value })} className="bg-surface-sunken border-border" />
       </ModalField>
     )}
   </Modal>
@@ -244,7 +244,7 @@ const NoteModal = ({ noteFor, setNoteFor, onSave }) => (
 
 const SectionTitle = ({ title, count, action }) => (
   <div className="flex justify-between items-center gap-3">
-    <p className="font-display uppercase tracking-tight text-white">
+    <p className="font-display uppercase tracking-tight text-foreground">
       {title} {count != null && <span className="text-sm text-muted-foreground font-sans normal-case tracking-normal">({count})</span>}
     </p>
     {action}
@@ -296,12 +296,12 @@ function LeaguesTab({ app }) {
   return (
     <div className="space-y-3">
       <div className="bg-card border border-border rounded-xl p-4">
-        <p className="font-display uppercase tracking-tight text-white mb-3">Registration Windows</p>
+        <p className="font-display uppercase tracking-tight text-foreground mb-3">Registration Windows</p>
         <div className="grid sm:grid-cols-2 gap-3">
           {SPORTS.map((s) => {
             const open = state.settings.registrationOpen[s.id];
             return (
-              <div key={s.id} className="flex items-center justify-between gap-3 bg-[#0f0f0f] border border-border rounded-lg p-3">
+              <div key={s.id} className="flex items-center justify-between gap-3 bg-surface-sunken border border-border rounded-lg p-3">
                 <div className="flex items-center gap-2"><SportBadge sport={s.id} /><StatusBadge status={open ? "active" : "archived"} /></div>
                 <button onClick={() => { toggleRegistration(s.id); toast.success(`${s.name} registration ${open ? "closed" : "opened"}`); }} data-testid={`admin-toggle-reg-${s.id}`} className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg ${open ? "text-destructive border border-destructive/40" : "text-primary border border-primary/40"}`}>
                   <Power size={14} weight="bold" /> {open ? "Close" : "Open"}
@@ -321,13 +321,13 @@ function LeaguesTab({ app }) {
             <TableCell className="whitespace-nowrap">
               <div className="flex items-center gap-2">
                 <Trophy size={16} weight="duotone" className="text-primary shrink-0" />
-                <span className="font-medium text-white">{l.name}</span>
+                <span className="font-medium text-foreground">{l.name}</span>
               </div>
             </TableCell>
             <TableCell><SportBadge sport={l.sport} /></TableCell>
             <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{l.season}</TableCell>
-            <TableCell className="text-xs text-white text-center">{teamsIn(l.id).length}</TableCell>
-            <TableCell className="text-xs text-white text-center">{playersIn(l.id)}</TableCell>
+            <TableCell className="text-xs text-foreground text-center">{teamsIn(l.id).length}</TableCell>
+            <TableCell className="text-xs text-foreground text-center">{playersIn(l.id)}</TableCell>
             <TableCell><StatusBadge status={l.status || "active"} /></TableCell>
             <TableCell>
               <div className="flex items-center justify-end">
@@ -342,14 +342,14 @@ function LeaguesTab({ app }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.id ? "Edit League" : "New League"} onSave={save}>
         {modal && (
           <>
-            <ModalField label="Name"><Input data-testid="admin-league-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
+            <ModalField label="Name"><Input data-testid="admin-league-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
             <ModalField label="Sport">
               <Select value={modal.sport} onValueChange={(v) => setModal({ ...modal, sport: v })}>
-                <SelectTrigger className="bg-[#0f0f0f] border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>{SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select>
             </ModalField>
-            <ModalField label="Description"><Textarea value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
+            <ModalField label="Description"><Textarea value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
           </>
         )}
       </Modal>
@@ -369,7 +369,7 @@ function TeamsTab({ app }) {
 
   const save = () => {
     if (!modal.name?.trim() || !modal.sport || !modal.leagueId) return toast.error("Name, sport & league required");
-    const data = { name: modal.name, sport: modal.sport, leagueId: modal.leagueId, captainId: modal.captainId || null, logoColor: modal.logoColor || "#22d3ee", founded: modal.founded || "2026" };
+    const data = { name: modal.name, sport: modal.sport, leagueId: modal.leagueId, captainId: modal.captainId || null, logoColor: modal.logoColor || "#5BB8CC", founded: modal.founded || "2026" };
     if (modal.id) updateEntity("teams", modal.id, data);
     else createEntity("teams", data, "t");
     toast.success(modal.id ? "Team updated" : "Team created");
@@ -381,7 +381,7 @@ function TeamsTab({ app }) {
 
   return (
     <div className="space-y-3">
-      <SectionTitle title="Teams" count={state.teams.length} action={<AddBtn onClick={() => setModal({ name: "", sport: "kickball", leagueId: "", captainId: "", logoColor: "#22d3ee", founded: "2026" })} label="New Team" testid="admin-add-team" />} />
+      <SectionTitle title="Teams" count={state.teams.length} action={<AddBtn onClick={() => setModal({ name: "", sport: "kickball", leagueId: "", captainId: "", logoColor: "#5BB8CC", founded: "2026" })} label="New Team" testid="admin-add-team" />} />
       <AdminTable testid="admin-teams-table" head={["Team", "Sport", "League / Season", "Captain", "Roster", "Waivers", "Status", ""]}>
         {state.teams.length === 0 ? (
           <EmptyRow colSpan={8}>No teams yet. Approve a registration or create one directly.</EmptyRow>
@@ -394,16 +394,16 @@ function TeamsTab({ app }) {
               <TableCell className="whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.logoColor }} />
-                  <Link to={`/team/${t.id}`} className="font-medium text-white hover:text-primary">{t.name}</Link>
+                  <Link to={`/team/${t.id}`} className="font-medium text-foreground hover:text-primary">{t.name}</Link>
                   <span className="text-[11px] text-muted-foreground">{rec.wins}-{rec.losses}</span>
                 </div>
               </TableCell>
               <TableCell><SportBadge sport={t.sport} /></TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{league ? `${league.name} · ${league.season}` : "—"}</TableCell>
               <TableCell className="text-xs whitespace-nowrap">
-                {captain ? (<><span className="text-white">{captain.name}</span><span className="text-muted-foreground"> · {captain.phone}</span></>) : <span className="text-muted-foreground/60">—</span>}
+                {captain ? (<><span className="text-foreground">{captain.name}</span><span className="text-muted-foreground"> · {captain.phone}</span></>) : <span className="text-muted-foreground/60">—</span>}
               </TableCell>
-              <TableCell className="text-xs text-white text-center">{rosterCount(t.id)}</TableCell>
+              <TableCell className="text-xs text-foreground text-center">{rosterCount(t.id)}</TableCell>
               {/* Waiver/eligibility summary is a placeholder until waiver records exist (later stage). */}
               <TableCell className="text-xs text-muted-foreground/60">—</TableCell>
               <TableCell><StatusBadge status={t.status || "active"} /></TableCell>
@@ -422,22 +422,22 @@ function TeamsTab({ app }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.id ? "Edit Team" : "New Team"} onSave={save}>
         {modal && (
           <>
-            <ModalField label="Team Name"><Input data-testid="admin-team-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
+            <ModalField label="Team Name"><Input data-testid="admin-team-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
             <ModalField label="Sport">
               <Select value={modal.sport} onValueChange={(v) => setModal({ ...modal, sport: v, leagueId: "" })}>
-                <SelectTrigger className="bg-[#0f0f0f] border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>{SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select>
             </ModalField>
             <ModalField label="League">
               <Select value={modal.leagueId} onValueChange={(v) => setModal({ ...modal, leagueId: v })}>
-                <SelectTrigger className="bg-[#0f0f0f] border-border"><SelectValue placeholder="Select league" /></SelectTrigger>
+                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue placeholder="Select league" /></SelectTrigger>
                 <SelectContent>{leaguesForSport.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
               </Select>
             </ModalField>
             <ModalField label="Captain">
               <Select value={modal.captainId || ""} onValueChange={(v) => setModal({ ...modal, captainId: v })}>
-                <SelectTrigger className="bg-[#0f0f0f] border-border"><SelectValue placeholder="Select captain" /></SelectTrigger>
+                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue placeholder="Select captain" /></SelectTrigger>
                 <SelectContent>{state.profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </ModalField>
@@ -450,7 +450,7 @@ function TeamsTab({ app }) {
       <Dialog open={!!rosterFor} onOpenChange={(o) => !o && setRosterFor(null)}>
         {/* Long rosters scroll internally so the Done action stays pinned. */}
         <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col" data-testid="admin-roster-modal" aria-describedby={undefined}>
-          <DialogHeader className="shrink-0"><DialogTitle className="font-display uppercase tracking-tight text-white">{rosterTeam ? `${rosterTeam.name} · Roster` : "Roster"}</DialogTitle></DialogHeader>
+          <DialogHeader className="shrink-0"><DialogTitle className="font-display uppercase tracking-tight text-foreground">{rosterTeam ? `${rosterTeam.name} · Roster` : "Roster"}</DialogTitle></DialogHeader>
           <div className="space-y-3 py-2 flex-1 overflow-y-auto min-h-0">
             {rosterFor && <AssignmentEditor app={app} mode="team" teamId={rosterFor} />}
           </div>
@@ -505,13 +505,13 @@ function AssignmentEditor({ app, mode, playerId, teamId }) {
         const team = getTeam(state, tp.teamId);
         const prof = getProfile(state, tp.playerId);
         return (
-          <div key={tp.id} data-testid={`assignment-${tp.id}`} className="flex items-center gap-2 bg-[#0f0f0f] border border-border rounded-lg px-2.5 py-2">
+          <div key={tp.id} data-testid={`assignment-${tp.id}`} className="flex items-center gap-2 bg-surface-sunken border border-border rounded-lg px-2.5 py-2">
             <div className="flex-1 min-w-0 flex items-center gap-1.5">
               {mode === "team" && prof && <EligibilityIndicator status={prof.eligibilityStatus} />}
-              <span className="text-sm text-white truncate">{mode === "player" ? (team?.name || "Unknown team") : (prof?.name || "Unknown player")}</span>
+              <span className="text-sm text-foreground truncate">{mode === "player" ? (team?.name || "Unknown team") : (prof?.name || "Unknown player")}</span>
               {mode === "player" && team && <SportBadge sport={team.sport} />}
             </div>
-            <span className="text-[11px] text-muted-foreground font-mono whitespace-nowrap">{tp.jersey != null ? `#${tp.jersey}` : "—"} · {tp.season}</span>
+            <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">{tp.jersey != null ? `#${tp.jersey}` : "—"} · {tp.season}</span>
             <IconBtn onClick={() => { removePlayerFromTeam(tp.id); toast.success("Assignment removed"); }} icon={X} title="Remove assignment" testid={`assignment-remove-${tp.id}`} danger />
           </div>
         );
@@ -520,18 +520,18 @@ function AssignmentEditor({ app, mode, playerId, teamId }) {
         <div className="flex items-end gap-2 pt-1">
           <div className="flex-1 min-w-0">
             <Select value={sel} onValueChange={setSel}>
-              <SelectTrigger data-testid="assignment-select" className="bg-[#0f0f0f] border-border h-9"><SelectValue placeholder={mode === "player" ? "Add to team…" : "Add player…"} /></SelectTrigger>
+              <SelectTrigger data-testid="assignment-select" className="bg-surface-sunken border-border h-9"><SelectValue placeholder={mode === "player" ? "Add to team…" : "Add player…"} /></SelectTrigger>
               <SelectContent>
                 {options.map((o) => <SelectItem key={o.id} value={o.id}>{mode === "player" ? `${o.name} (${sportName(o.sport)})` : o.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <Input type="number" min="0" value={jersey} onChange={(e) => setJersey(e.target.value)} placeholder="#" data-testid="assignment-jersey" className="w-16 bg-[#0f0f0f] border-border h-9 text-center" />
+          <Input type="number" min="0" value={jersey} onChange={(e) => setJersey(e.target.value)} placeholder="#" data-testid="assignment-jersey" className="w-16 bg-surface-sunken border-border h-9 text-center" />
           <button onClick={add} data-testid="assignment-add" className="h-9 px-3 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-xs whitespace-nowrap">Add</button>
         </div>
       )}
       {pendingSeason && (
-        <p className="text-[10px] text-muted-foreground">Season auto-stamped: <span className="text-white">{pendingSeason}</span></p>
+        <p className="text-[10px] text-muted-foreground">Season auto-stamped: <span className="text-foreground">{pendingSeason}</span></p>
       )}
     </div>
   );
@@ -579,7 +579,7 @@ function PlayersTab({ app }) {
           has no player accounts, so these stay hidden until final-draft review. */}
       {FINAL_DRAFT && (
         <div className="grid grid-cols-3 gap-3">
-          {[{ label: "Total", value: counts.total, c: "text-white" }, { label: "Claimed", value: counts.claimed, c: "text-[#10b981]" }, { label: "Unclaimed", value: counts.unclaimed, c: "text-[#facc15]" }].map((s) => (
+          {[{ label: "Total", value: counts.total, c: "text-foreground" }, { label: "Claimed", value: counts.claimed, c: "text-teal" }, { label: "Unclaimed", value: counts.unclaimed, c: "text-gold" }].map((s) => (
             <div key={s.label} className="bg-card border border-border rounded-xl p-4 text-center">
               <p className={`font-mono-score text-2xl font-bold ${s.c}`}>{s.value}</p>
               <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{s.label}</p>
@@ -599,13 +599,13 @@ function PlayersTab({ app }) {
               <TableCell className="whitespace-nowrap">
                 <div className="flex items-center gap-2">
                   <Avatar name={p.name} color={p.avatarColor} size={26} />
-                  <Link to={`/profile/${p.id}`} className="font-medium text-white hover:text-primary">{p.name}</Link>
+                  <Link to={`/profile/${p.id}`} className="font-medium text-foreground hover:text-primary">{p.name}</Link>
                 </div>
               </TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.email || "—"}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{p.phone || "—"}</TableCell>
               <TableCell><div className="flex gap-1">{(p.sports || []).map((s) => <SportBadge key={s} sport={s} />)}</div></TableCell>
-              <TableCell className="text-xs text-white whitespace-nowrap">{pTeams.length ? pTeams.map((t) => t.name).join(", ") : <span className="text-muted-foreground/60">Unassigned</span>}</TableCell>
+              <TableCell className="text-xs text-foreground whitespace-nowrap">{pTeams.length ? pTeams.map((t) => t.name).join(", ") : <span className="text-muted-foreground/60">Unassigned</span>}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{state.settings.currentSeason}</TableCell>
               {/* Eligibility is purely INFORMATIONAL (CLAUDE.md) — it gates nothing.
                   PHASE 2: this flag becomes real waiver verification status. */}
@@ -626,7 +626,7 @@ function PlayersTab({ app }) {
                     </button>
                   )}
                   {FINAL_DRAFT && (
-                    <button onClick={() => updateEntity("profiles", p.id, { claimed: !p.claimed })} data-testid={`admin-toggle-claim-${p.id}`} className="text-xs text-muted-foreground hover:text-white px-2">
+                    <button onClick={() => updateEntity("profiles", p.id, { claimed: !p.claimed })} data-testid={`admin-toggle-claim-${p.id}`} className="text-xs text-muted-foreground hover:text-foreground px-2">
                       {p.claimed ? "Unclaim" : "Mark claimed"}
                     </button>
                   )}
@@ -641,35 +641,35 @@ function PlayersTab({ app }) {
         {modal && (
           <>
             <div className="grid grid-cols-2 gap-3">
-              <ModalField label="First Name"><Input data-testid="admin-player-first" value={modal.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
-              <ModalField label="Last Name"><Input data-testid="admin-player-last" value={modal.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="First Name"><Input data-testid="admin-player-first" value={modal.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-surface-sunken border-border" /></ModalField>
+              <ModalField label="Last Name"><Input data-testid="admin-player-last" value={modal.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-surface-sunken border-border" /></ModalField>
             </div>
-            <ModalField label="Display Name (optional)"><Input data-testid="admin-player-display" value={modal.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname / preferred name" className="bg-[#0f0f0f] border-border" /></ModalField>
+            <ModalField label="Display Name (optional)"><Input data-testid="admin-player-display" value={modal.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname / preferred name" className="bg-surface-sunken border-border" /></ModalField>
             <div className="grid grid-cols-2 gap-3">
-              <ModalField label="Email"><Input data-testid="admin-player-email" value={modal.email} onChange={(e) => set("email", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
-              <ModalField label="Phone"><Input data-testid="admin-player-phone" value={modal.phone} onChange={(e) => set("phone", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="Email"><Input data-testid="admin-player-email" value={modal.email} onChange={(e) => set("email", e.target.value)} className="bg-surface-sunken border-border" /></ModalField>
+              <ModalField label="Phone"><Input data-testid="admin-player-phone" value={modal.phone} onChange={(e) => set("phone", e.target.value)} className="bg-surface-sunken border-border" /></ModalField>
             </div>
             <div className="grid grid-cols-2 gap-3 items-end">
-              <ModalField label="Date of Birth (optional)"><Input type="date" data-testid="admin-player-dob" value={modal.dob || ""} onChange={(e) => set("dob", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="Date of Birth (optional)"><Input type="date" data-testid="admin-player-dob" value={modal.dob || ""} onChange={(e) => set("dob", e.target.value)} className="bg-surface-sunken border-border" /></ModalField>
               <label className="flex items-center gap-2 h-10 cursor-pointer">
                 <Checkbox data-testid="admin-player-age" checked={modal.age_confirmed} onCheckedChange={(v) => set("age_confirmed", !!v)} />
-                <span className="text-sm text-white">Confirmed 18+</span>
+                <span className="text-sm text-foreground">Confirmed 18+</span>
               </label>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <ModalField label="Emergency Contact"><Input data-testid="admin-player-ec-name" value={modal.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Name" className="bg-[#0f0f0f] border-border" /></ModalField>
-              <ModalField label="Emergency Phone"><Input data-testid="admin-player-ec-phone" value={modal.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="Phone" className="bg-[#0f0f0f] border-border" /></ModalField>
+              <ModalField label="Emergency Contact"><Input data-testid="admin-player-ec-name" value={modal.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} placeholder="Name" className="bg-surface-sunken border-border" /></ModalField>
+              <ModalField label="Emergency Phone"><Input data-testid="admin-player-ec-phone" value={modal.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" /></ModalField>
             </div>
             <ModalField label="Eligibility (informational — never blocks play)">
               <Select value={modal.eligibilityStatus} onValueChange={(v) => set("eligibilityStatus", v)}>
-                <SelectTrigger data-testid="admin-player-eligibility" className="bg-[#0f0f0f] border-border"><SelectValue /></SelectTrigger>
+                <SelectTrigger data-testid="admin-player-eligibility" className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="not_verified">Not verified</SelectItem>
                   <SelectItem value="verified">Verified</SelectItem>
                 </SelectContent>
               </Select>
             </ModalField>
-            <ModalField label="Admin Notes"><Textarea data-testid="admin-player-notes" value={modal.adminNotes} onChange={(e) => set("adminNotes", e.target.value)} className="bg-[#0f0f0f] border-border" /></ModalField>
+            <ModalField label="Admin Notes"><Textarea data-testid="admin-player-notes" value={modal.adminNotes} onChange={(e) => set("adminNotes", e.target.value)} className="bg-surface-sunken border-border" /></ModalField>
 
             {/* Team assignments are a RELATIONSHIP, not a profile field. They are
                 independent of eligibility and apply immediately (no Save needed). */}
@@ -716,7 +716,7 @@ function RegistrationsTab({ app }) {
         <div key={r.id} data-testid={`admin-registration-${r.id}`} className="bg-card border border-border rounded-xl p-3.5">
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-white truncate">{r.teamName}</p>
+              <p className="font-medium text-foreground truncate">{r.teamName}</p>
               <p className="text-xs text-muted-foreground truncate">{r.captainName} · {r.captainEmail || r.captainPhone} · submitted {r.submittedDate}</p>
             </div>
             <SportBadge sport={r.sport} />
@@ -760,15 +760,15 @@ function GamesTab({ app }) {
           const league = getLeague(state, g.leagueId);
           return (
             <TableRow key={g.id} data-testid={`admin-game-${g.id}`} className="border-border">
-              <TableCell className="text-xs text-white whitespace-nowrap">{fmtDate(g.date)} · {g.time}</TableCell>
+              <TableCell className="text-xs text-foreground whitespace-nowrap">{fmtDate(g.date)} · {g.time}</TableCell>
               <TableCell><SportBadge sport={g.sport} /></TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{league ? `${league.name} · ${league.season}` : "—"}</TableCell>
-              <TableCell className="whitespace-nowrap"><Link to={`/game/${g.id}`} className="text-white font-medium hover:text-primary">{a.name} @ {h.name}</Link></TableCell>
+              <TableCell className="whitespace-nowrap"><Link to={`/game/${g.id}`} className="text-foreground font-medium hover:text-primary">{a.name} @ {h.name}</Link></TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{g.location}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
                   <StatusBadge status={g.status} />
-                  {g.locked && <LockSimple size={14} weight="bold" className="text-[#facc15]" title="Locked" />}
+                  {g.locked && <LockSimple size={14} weight="bold" className="text-gold" title="Locked" />}
                 </div>
               </TableCell>
               <TableCell><StatusBadge status={g.score_status || "pending"} /></TableCell>
@@ -790,7 +790,7 @@ function GamesTab({ app }) {
                       out of scope for admin-only Season 1, hidden until review. */}
                   {FINAL_DRAFT && (
                     <Select value={g.tempAdminId || "none"} onValueChange={(v) => { assignTempAdmin(g.id, v === "none" ? null : v); toast.success(v === "none" ? "Temp admin cleared" : "Temp admin assigned"); }}>
-                      <SelectTrigger data-testid={`admin-tempadmin-${g.id}`} className="bg-[#0f0f0f] border-border h-9 w-36 text-xs"><SelectValue placeholder="Temp admin" /></SelectTrigger>
+                      <SelectTrigger data-testid={`admin-tempadmin-${g.id}`} className="bg-surface-sunken border-border h-9 w-36 text-xs"><SelectValue placeholder="Temp admin" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No temp admin</SelectItem>
                         {state.profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
@@ -807,11 +807,11 @@ function GamesTab({ app }) {
 
       <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
         <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto" data-testid="admin-reschedule-modal">
-          <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-white">Postpone or Cancel Game</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display uppercase tracking-tight text-foreground">Postpone or Cancel Game</DialogTitle></DialogHeader>
           <DialogDescription className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</DialogDescription>
           <DialogFooter>
-            <button onClick={() => setRescheduleFor(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-white">Back</button>
-            <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="px-4 py-2 rounded-lg border border-[#facc15]/40 text-[#facc15] font-bold uppercase text-sm">Postpone</button>
+            <button onClick={() => setRescheduleFor(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground">Back</button>
+            <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="px-4 py-2 rounded-lg border border-[#F5B82E]/40 text-gold font-bold uppercase text-sm">Postpone</button>
             <button onClick={() => { setGameStatus(rescheduleFor, "canceled"); toast.success("Game canceled"); setRescheduleFor(null); }} data-testid="admin-confirm-cancel" className="px-4 py-2 rounded-lg border border-destructive/40 text-destructive font-bold uppercase text-sm">Cancel Game</button>
           </DialogFooter>
         </DialogContent>
@@ -820,9 +820,9 @@ function GamesTab({ app }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title="Edit Game" onSave={save}>
         {modal && (
           <>
-            <ModalField label="Date"><Input type="date" data-testid="admin-game-date" value={modal.date} onChange={(e) => setModal({ ...modal, date: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
-            <ModalField label="Time"><Input data-testid="admin-game-time" value={modal.time} onChange={(e) => setModal({ ...modal, time: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
-            <ModalField label="Location"><Input data-testid="admin-game-location" value={modal.location} onChange={(e) => setModal({ ...modal, location: e.target.value })} className="bg-[#0f0f0f] border-border" /></ModalField>
+            <ModalField label="Date"><Input type="date" data-testid="admin-game-date" value={modal.date} onChange={(e) => setModal({ ...modal, date: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            <ModalField label="Time"><Input data-testid="admin-game-time" value={modal.time} onChange={(e) => setModal({ ...modal, time: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            <ModalField label="Location"><Input data-testid="admin-game-location" value={modal.location} onChange={(e) => setModal({ ...modal, location: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
           </>
         )}
       </Modal>
@@ -860,8 +860,8 @@ function ScoresTab({ app }) {
       <div key={g.id} data-testid={`${prefix}-${g.id}`} className="bg-card border border-border rounded-xl p-3.5">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex-1 min-w-0">
-            <p className="font-medium text-white truncate flex items-center gap-1.5">
-              {g.locked && <LockSimple size={14} weight="bold" className="text-[#facc15] shrink-0" />}
+            <p className="font-medium text-foreground truncate flex items-center gap-1.5">
+              {g.locked && <LockSimple size={14} weight="bold" className="text-gold shrink-0" />}
               {a.name} @ {h.name}
             </p>
             <p className="text-xs text-muted-foreground">{fmtDate(g.date)} · {done ? `${g.awayScore}-${g.homeScore}` : "Not played"}</p>
@@ -883,7 +883,7 @@ function ScoresTab({ app }) {
             <IconBtn onClick={() => { lockGame(g.id); toast.success("Game marked final & locked"); }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-${g.id}`} disabled={!canMarkFinal(g)} />
           )}
           {hist.length > 0 && (
-            <button onClick={() => setOpenHistory((o) => ({ ...o, [g.id]: !o[g.id] }))} data-testid={`admin-history-${g.id}`} title="Edit history" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-white px-1.5 py-1">
+            <button onClick={() => setOpenHistory((o) => ({ ...o, [g.id]: !o[g.id] }))} data-testid={`admin-history-${g.id}`} title="Edit history" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-1.5 py-1">
               <ClockCounterClockwise size={14} weight="bold" /> {hist.length}
             </button>
           )}
@@ -892,7 +892,7 @@ function ScoresTab({ app }) {
           <div data-testid={`admin-history-list-${g.id}`} className="mt-2.5 pt-2.5 border-t border-border space-y-1">
             {[...hist].reverse().map((e, i) => (
               <p key={i} className="text-xs text-muted-foreground">
-                <span className="text-muted-foreground/60">{fmtTs(e.timestamp)}</span> — <span className="text-white">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
+                <span className="text-muted-foreground/60">{fmtTs(e.timestamp)}</span> — <span className="text-foreground">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
               </p>
             ))}
           </div>
@@ -903,8 +903,8 @@ function ScoresTab({ app }) {
 
   return (
     <div className="space-y-3">
-      <div className="bg-card border border-[#facc15]/30 rounded-xl p-4">
-        <p className="font-display uppercase tracking-tight text-white mb-1">Games Needing Scores ({needs.length})</p>
+      <div className="bg-card border border-[#F5B82E]/30 rounded-xl p-4">
+        <p className="font-display uppercase tracking-tight text-foreground mb-1">Games Needing Scores ({needs.length})</p>
         <p className="text-xs text-muted-foreground mb-3">Pending — no score yet · Submitted — awaiting Mark Final.</p>
         {needs.length === 0 ? (
           <p className="text-xs text-muted-foreground">All caught up — every game is approved or final.</p>
@@ -926,7 +926,7 @@ function ScoresTab({ app }) {
           <>
             <p className="text-sm text-muted-foreground">Unlocking allows score edits. This will be recorded in the game's edit history.</p>
             <ModalField label="Reason (required)">
-              <Textarea data-testid="admin-unlock-reason" value={unlockFor.reason} onChange={(e) => setUnlockFor({ ...unlockFor, reason: e.target.value })} className="bg-[#0f0f0f] border-border" />
+              <Textarea data-testid="admin-unlock-reason" value={unlockFor.reason} onChange={(e) => setUnlockFor({ ...unlockFor, reason: e.target.value })} className="bg-surface-sunken border-border" />
             </ModalField>
           </>
         )}
@@ -972,9 +972,9 @@ function AgentsTab({ app }) {
       {state.freeAgents.map((a) => (
         <div key={a.id} data-testid={`admin-agent-${a.id}`} className="bg-card border border-border rounded-xl p-3.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <Avatar name={freeAgentName(a)} color="#22d3ee" size={36} />
+            <Avatar name={freeAgentName(a)} color="#5BB8CC" size={36} />
             <div className="flex-1 min-w-0">
-              <p className="font-medium text-white truncate">{freeAgentName(a)}</p>
+              <p className="font-medium text-foreground truncate">{freeAgentName(a)}</p>
               <p className="text-xs text-muted-foreground truncate">
                 {a.experience} · {a.sports.map(sportName).join(", ")}
                 {a.assignedTeamId && <span className="text-primary"> → {getTeam(state, a.assignedTeamId)?.name || "Unknown team"}</span>}
@@ -1001,7 +1001,7 @@ function AgentsTab({ app }) {
             </p>
             <ModalField label={`Team (${assignAgent?.sports.map(sportName).join(" / ")})`}>
               <Select value={assignFor.teamId} onValueChange={(v) => setAssignFor({ ...assignFor, teamId: v })}>
-                <SelectTrigger data-testid="admin-assign-team" className="bg-[#0f0f0f] border-border"><SelectValue placeholder="Select team" /></SelectTrigger>
+                <SelectTrigger data-testid="admin-assign-team" className="bg-surface-sunken border-border"><SelectValue placeholder="Select team" /></SelectTrigger>
                 <SelectContent>
                   {eligibleTeams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name} ({sportName(t.sport)})</SelectItem>)}
                 </SelectContent>
@@ -1021,10 +1021,10 @@ const Modal = ({ open, onClose, title, onSave, children }) => (
   <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
     {/* Capped at the viewport: body scrolls internally so Save/Cancel stay pinned and reachable. */}
     <DialogContent className="bg-card border-border max-h-[90vh] flex flex-col" data-testid="admin-modal" aria-describedby={undefined}>
-      <DialogHeader className="shrink-0"><DialogTitle className="font-display uppercase tracking-tight text-white">{title}</DialogTitle></DialogHeader>
+      <DialogHeader className="shrink-0"><DialogTitle className="font-display uppercase tracking-tight text-foreground">{title}</DialogTitle></DialogHeader>
       <div className="space-y-3 py-2 flex-1 overflow-y-auto min-h-0">{children}</div>
       <DialogFooter className="shrink-0">
-        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-white">Cancel</button>
+        <button onClick={onClose} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground">Cancel</button>
         <button onClick={onSave} data-testid="admin-modal-save" className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-sm">Save</button>
       </DialogFooter>
     </DialogContent>

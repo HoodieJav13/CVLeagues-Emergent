@@ -67,13 +67,13 @@ export default function Leaderboards() {
             <div className="bg-card border border-border rounded-2xl overflow-hidden" data-testid="leaderboard-list">
               {rows.length ? rows.map((row, i) => (
                 <div key={row.profile.id} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-white/5 transition-colors">
-                  <span className={`w-7 text-center font-display font-extrabold text-lg ${i === 0 ? "text-[#facc15]" : i === 1 ? "text-[#a1a1aa]" : i === 2 ? "text-[#f97316]" : "text-muted-foreground"}`}>
+                  <span className={`w-7 text-center font-display font-extrabold text-lg ${i === 0 ? "text-gold" : i === 1 ? "text-[#a1a1aa]" : i === 2 ? "text-[#f97316]" : "text-muted-foreground"}`}>
                     {i < 3 ? <Medal size={20} weight="fill" className="inline" /> : row.rank}
                   </span>
                   <Avatar name={row.profile.name} color={row.profile.avatarColor} size={38} />
                   <div className="flex-1 min-w-0">
-                    <Link to={`/profile/${row.profile.id}`} className="font-display uppercase tracking-tight text-white hover:text-primary truncate block text-base">{row.profile.name}</Link>
-                    {row.team && <Link to={`/team/${row.team.id}`} className="text-xs text-muted-foreground hover:text-white">{row.team.name}</Link>}
+                    <Link to={`/profile/${row.profile.id}`} className="font-display uppercase tracking-tight text-foreground hover:text-primary truncate block text-base">{row.profile.name}</Link>
+                    {row.team && <Link to={`/team/${row.team.id}`} className="text-xs text-muted-foreground hover:text-foreground">{row.team.name}</Link>}
                   </div>
                   <span className="font-mono-score text-xl font-bold text-primary tabular-nums">{row.value}</span>
                 </div>

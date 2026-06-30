@@ -13,15 +13,15 @@ export const PlayerCard = ({ profile, jersey, position, isCaptain }) => (
     <Avatar name={profile.name} color={profile.avatarColor} size={42} />
     <div className="min-w-0 flex-1">
       <div className="flex items-center gap-1.5">
-        <span className="font-display uppercase tracking-tight text-white truncate text-base">
+        <span className="font-display uppercase tracking-tight text-foreground truncate text-base">
           {profile.name}
         </span>
-        {isCaptain && <Crown size={14} weight="fill" className="text-[#facc15] shrink-0" />}
+        {isCaptain && <Crown size={14} weight="fill" className="text-gold shrink-0" />}
         <EligibilityIndicator status={profile.eligibilityStatus} />
       </div>
       <p className="text-xs text-muted-foreground truncate">
         {position}
-        {jersey != null && <span className="font-mono"> · #{jersey}</span>}
+        {jersey != null && <span className="tabular-nums"> · #{jersey}</span>}
       </p>
     </div>
   </Link>

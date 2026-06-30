@@ -32,7 +32,7 @@ export default function TeamPage() {
             {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
           </span>
           <div className="min-w-0">
-            <h1 className="font-display font-extrabold uppercase tracking-tighter text-3xl text-white leading-none">{team.name}</h1>
+            <h1 className="font-display font-extrabold uppercase tracking-tighter text-display-lg text-foreground leading-none">{team.name}</h1>
             <div className="flex items-center gap-2 mt-2">
               <SportBadge sport={team.sport} />
               <span className="text-xs text-muted-foreground">{league?.name}</span>
@@ -62,7 +62,7 @@ export default function TeamPage() {
                 <>
                   <Avatar name={l.profile.name} color={l.profile.avatarColor} size={40} className="mx-auto my-2" />
                   <p className="font-mono-score text-2xl font-bold text-primary leading-none">{l.value}</p>
-                  <Link to={`/profile/${l.profile.id}`} className="text-xs text-white hover:text-primary truncate block mt-1">{l.profile.name.split(" ")[0]}</Link>
+                  <Link to={`/profile/${l.profile.id}`} className="text-xs text-foreground hover:text-primary truncate block mt-1">{l.profile.name.split(" ")[0]}</Link>
                 </>
               ) : (
                 <p className="text-muted-foreground text-sm mt-3">—</p>
@@ -108,8 +108,8 @@ export default function TeamPage() {
 }
 
 const Stat = ({ label, value, accent }) => (
-  <div className="bg-[#0f0f0f]/60 border border-border rounded-xl p-3 text-center">
-    <p className={`font-mono-score text-xl font-bold ${accent ? "text-[#10b981]" : "text-white"}`}>{value}</p>
+  <div className="bg-[#0F1416]/60 border border-border rounded-xl p-3 text-center">
+    <p className={`font-mono-score text-xl font-bold ${accent ? "text-teal" : "text-foreground"}`}>{value}</p>
     <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">{label}</p>
   </div>
 );

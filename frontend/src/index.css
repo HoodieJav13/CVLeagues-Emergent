@@ -3,33 +3,112 @@
 @tailwind utilities;
 
 /* ============================================================
-   CVF SPORTS — Dark mode native. Single theme, no toggle.
-   Background near-black #0f0f0f, cyan accent #22d3ee.
+   CVF SPORTS — Design tokens (Phase 8 brand pass).
+   Dark mode is canonical. Brand = teal action + gold emphasis
+   + Zia red (live/alert only) on a near-black, teal-cool surface.
+   Single source of truth: change a token here, it propagates
+   everywhere (CSS var() + Tailwind theme reference the same value).
    ============================================================ */
 
 @layer base {
     :root {
-        /* Mapped to CVF dark palette so shadcn components inherit dark styling */
-        --background: 0 0% 6%;            /* #0f0f0f */
-        --foreground: 0 0% 100%;          /* white */
-        --card: 0 0% 10%;                 /* #1a1a1a */
-        --card-foreground: 0 0% 100%;
-        --popover: 0 0% 10%;
-        --popover-foreground: 0 0% 100%;
-        --primary: 187 92% 53%;           /* #22d3ee cyan */
-        --primary-foreground: 0 0% 4%;
-        --secondary: 0 0% 15%;            /* #262626 */
-        --secondary-foreground: 0 0% 100%;
-        --muted: 0 0% 15%;
-        --muted-foreground: 0 0% 64%;     /* #a1a1aa */
-        --accent: 0 0% 15%;
-        --accent-foreground: 0 0% 100%;
-        --destructive: 0 84% 60%;
-        --destructive-foreground: 0 0% 100%;
-        --border: 0 0% 16%;
-        --input: 0 0% 14%;
-        --ring: 187 92% 53%;
-        --radius: 0.75rem;
+        /* ---- Brand core ---- */
+        --cvf-teal: #5BB8CC;        /* primary brand + primary action */
+        --cvf-teal-deep: #3A8A9E;   /* hover/pressed for teal */
+        --cvf-teal-tint: #10282E;   /* deep teal wash background */
+        --cvf-ink: #0F1416;         /* darkest ink — text on accent fills */
+        --cvf-zia: #FF5A6E;         /* Zia red — live/alert ONLY (brightened) */
+        --cvf-zia-deep: #C8102E;    /* hover/pressed for red */
+        --cvf-gold: #F5B82E;        /* Zia gold — emphasis/leaders */
+        --cvf-gold-deep: #D49613;   /* hover/pressed for gold */
+        --cvf-gold-tint: #2E2410;   /* deep amber wash background */
+
+        /* ---- Surfaces & neutrals (dark — canonical) ---- */
+        --surface: #0F1416;         /* page background */
+        --surface-raised: #171D20;  /* cards, modals, raised panels */
+        --surface-sunken: #0A0E10;  /* section bg, table header rows */
+        /* hairline --border (#2A3236) lives below as HSL channels for the
+           shadcn `border-border` utility; use that utility, not var(--border). */
+        --border-strong: #3C464B;   /* emphasized borders */
+        --text-primary: #F4F6F5;    /* body + heading text (off-white) */
+        --text-secondary: #A8B0AD;  /* labels, metadata, captions */
+        --text-muted: #6B7470;      /* de-emphasized / placeholder */
+        --text-on-brand: #0F1416;   /* ink text on teal/gold fills */
+
+        /* ---- Functional / status (Batch B/C own application) ---- */
+        --status-live: #FF5A6E;
+        --status-live-bg: #3A1419;
+        --status-upcoming: #6FCFE3;
+        --status-upcoming-bg: #10282E;
+        --status-final: #A8B0AD;
+        --status-final-bg: #1C2327;
+        --win: #F4F6F5;
+        --loss-text: #6B7470;
+        --leader: #F5B82E;
+        --leader-bg: #2E2410;
+
+        /* ---- Typography: families ---- */
+        --font-display: 'Oswald', 'Saira Condensed', system-ui, sans-serif;
+        --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+        /* ---- Typography: type scale (sizes; weight/line-height paired in Tailwind) ---- */
+        --text-display-xl: 2.5rem;     /* 40px / 1.05 / 700 */
+        --text-display-lg: 1.875rem;   /* 30px / 1.1  / 700 */
+        --text-heading: 1.375rem;      /* 22px / 1.2  / 600 */
+        --text-subheading: 1.0625rem;  /* 17px / 1.3  / 600 */
+        --text-body: 0.9375rem;        /* 15px / 1.5  / 400 */
+        --text-body-strong: 0.9375rem; /* 15px / 1.5  / 600 */
+        --text-label: 0.8125rem;       /* 13px / 1.4  / 500 / uppercase +0.04em */
+        --text-caption: 0.75rem;       /* 12px / 1.4  / 400 */
+        --score-figure: 1.75rem;       /* 28px / 1    / 700 (display, tabular) */
+
+        /* ---- Spacing (4px base) ---- */
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-5: 24px;
+        --space-6: 32px;
+        --space-8: 48px;
+        --space-10: 64px;
+
+        /* ---- Radius ---- */
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-full: 9999px;
+
+        /* ---- Elevation ---- */
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+        --shadow-md: 0 4px 14px rgba(0,0,0,0.50);
+        --shadow-lg: 0 14px 36px rgba(0,0,0,0.60);
+
+        /* ============================================================
+           shadcn/ui bridge — the primitives in components/ui read these
+           HSL channels. Mapped to the brand tokens above so every
+           bg-card / text-foreground / border-border / bg-primary
+           utility reskins to the CVF palette from one place.
+           ============================================================ */
+        --background: 197 19% 7%;          /* --surface */
+        --foreground: 150 10% 96%;         /* --text-primary */
+        --card: 200 16% 11%;               /* --surface-raised */
+        --card-foreground: 150 10% 96%;
+        --popover: 200 16% 11%;
+        --popover-foreground: 150 10% 96%;
+        --primary: 191 53% 58%;            /* --cvf-teal */
+        --primary-foreground: 197 19% 7%;  /* --text-on-brand */
+        --secondary: 200 14% 14%;
+        --secondary-foreground: 150 10% 96%;
+        --muted: 200 13% 14%;
+        --muted-foreground: 155 5% 67%;    /* --text-secondary */
+        --accent: 200 14% 16%;
+        --accent-foreground: 150 10% 96%;
+        --destructive: 350 85% 42%;        /* --cvf-zia-deep */
+        --destructive-foreground: 150 10% 96%;
+        --border: 200 13% 19%;             /* #2A3236 — HSL for shadcn border util */
+        --input: 200 13% 19%;
+        --ring: 191 53% 58%;               /* --cvf-teal */
+        --radius: 0.625rem;                /* 10px — matches --radius-md */
     }
 }
 
@@ -38,31 +117,33 @@
         @apply border-border;
     }
     html {
-        background-color: #0f0f0f;
+        background-color: var(--surface);
     }
     body {
         @apply bg-background text-foreground;
-        font-family: "DM Sans", system-ui, sans-serif;
+        font-family: var(--font-body);
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         margin: 0;
     }
     h1, h2, h3, h4, h5, .font-display {
-        font-family: "Barlow Condensed", system-ui, sans-serif;
+        font-family: var(--font-display);
     }
     .font-mono-score {
-        font-family: "JetBrains Mono", monospace;
+        /* Score figures: display face, tabular (replaces JetBrains Mono). */
+        font-family: var(--font-display);
+        font-variant-numeric: tabular-nums;
     }
 }
 
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #0f0f0f; }
-::-webkit-scrollbar-thumb { background: #262626; border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: #333; }
+::-webkit-scrollbar-track { background: var(--surface); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--cvf-teal-deep); }
 
 /* Selection */
-::selection { background: #22d3ee; color: #0f0f0f; }
+::selection { background: var(--cvf-teal); color: var(--cvf-ink); }
 
 /* Entrance animations */
 @keyframes cvf-fade-up {
@@ -86,19 +167,19 @@
 .delay-225 { animation-delay: 225ms; }
 .delay-300 { animation-delay: 300ms; }
 
-/* Cyan glow divider for premium section separation */
+/* Teal glow divider for premium section separation */
 .cvf-rule {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(34,211,238,0.35) 40%, rgba(34,211,238,0.35) 60%, transparent);
+    background: linear-gradient(90deg, transparent, rgba(91,184,204,0.35) 40%, rgba(91,184,204,0.35) 60%, transparent);
     border: none;
     margin: 0;
 }
 
-/* Score / stat number style */
+/* General stat figures: body face, tabular for column alignment. */
 .stat-value {
-    font-family: "JetBrains Mono", monospace;
+    font-family: var(--font-body);
     font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
 }
 
 @layer base {

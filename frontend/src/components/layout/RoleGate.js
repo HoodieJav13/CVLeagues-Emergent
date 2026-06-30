@@ -17,9 +17,9 @@ export const RoleGate = ({ allow = [], children, title = "Restricted Area" }) =>
       <div className="w-12 h-12 rounded-full bg-destructive/15 flex items-center justify-center mx-auto mb-4">
         <Lock size={22} weight="bold" className="text-destructive" />
       </div>
-      <h2 className="font-display uppercase tracking-tight text-xl text-white mb-1">{title}</h2>
+      <h2 className="font-display uppercase tracking-tight text-xl text-foreground mb-1">{title}</h2>
       <p className="text-sm text-muted-foreground">
-        This area is available to <span className="text-white font-semibold">{allowed}</span>.
+        This area is available to <span className="text-foreground font-semibold">{allowed}</span>.
         Use the Demo Preview switcher to change roles.
       </p>
       <p className="text-[11px] text-muted-foreground/70 mt-3">

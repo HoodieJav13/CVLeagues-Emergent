@@ -13,8 +13,8 @@ import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "../ui/
  * now; it becomes real waiver verification status against the backend.
  * ========================================================================== */
 const META = {
-  verified: { Icon: ShieldCheck, color: "#10b981", label: "Eligible — waiver verified" },
-  not_verified: { Icon: ShieldWarning, color: "#facc15", label: "Waiver not verified" },
+  verified: { Icon: ShieldCheck, color: "#5BB8CC", label: "Eligible — waiver verified" },
+  not_verified: { Icon: ShieldWarning, color: "#F5B82E", label: "Waiver not verified" },
 };
 
 export const EligibilityIndicator = ({ status, size = 15, className = "" }) => {

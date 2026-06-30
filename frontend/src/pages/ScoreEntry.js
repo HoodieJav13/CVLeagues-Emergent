@@ -116,7 +116,7 @@ function Entry() {
       {/* Period scores */}
       <div className="bg-card border border-border rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
-          <p className="font-display uppercase tracking-tight text-white">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
+          <p className="font-display uppercase tracking-tight text-foreground">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
           {game.sport === "kickball" && (
             <button onClick={addInning} data-testid="score-add-inning" className="text-primary text-sm font-semibold flex items-center gap-1"><Plus size={14} weight="bold" /> Extra inning</button>
           )}
@@ -133,14 +133,14 @@ function Entry() {
             <tbody>
               {[{ side: "away", team: away, total: awayTotal }, { side: "home", team: home, total: homeTotal }].map((r) => (
                 <tr key={r.side} className="border-t border-border">
-                  <td className="py-2 pr-2 font-display uppercase tracking-tight text-white whitespace-nowrap text-sm">{r.team.name}</td>
+                  <td className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm">{r.team.name}</td>
                   {periods[r.side].map((v, i) => (
                     <td key={i} className="px-1 py-2">
                       <input
                         type="number" min="0" value={v}
                         data-testid={`score-${r.side}-period-${i}`}
                         onChange={(e) => setPeriod(r.side, i, e.target.value)}
-                        className="w-11 h-10 bg-[#0f0f0f] border border-border rounded-lg text-center font-mono-score text-white focus:border-primary focus:outline-none"
+                        className="w-11 h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus:border-primary focus:outline-none"
                       />
                     </td>
                   ))}
@@ -158,7 +158,7 @@ function Entry() {
           const roster = teamRoster(state, team.id);
           return (
             <div key={team.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-              <p className="px-4 py-3 border-b border-border font-display uppercase tracking-tight text-white flex items-center gap-2">
+              <p className="px-4 py-3 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logoColor }} /> {team.name} · Player Stats
               </p>
               {roster.map((r) => {
@@ -174,11 +174,11 @@ function Entry() {
                     >
                       <Avatar name={r.profile.name} color={r.profile.avatarColor} size={34} />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium text-white truncate flex items-center gap-1.5">
+                        <p className="font-medium text-foreground truncate flex items-center gap-1.5">
                           <span className="truncate">{r.profile.name}</span>
                           <EligibilityIndicator status={r.profile.eligibilityStatus} />
                         </p>
-                        <p className="text-[11px] text-muted-foreground font-mono">{summary}</p>
+                        <p className="text-[11px] text-muted-foreground tabular-nums">{summary}</p>
                       </div>
                       <CaretDown size={16} weight="bold" className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
                     </button>
@@ -195,7 +195,7 @@ function Entry() {
                                     type="number" min="0" value={pstats[st.key] || 0}
                                     data-testid={`score-stat-${r.playerId}-${st.key}`}
                                     onChange={(e) => setStat(r.playerId, team.id, st.key, e.target.value)}
-                                    className="h-9 bg-[#0f0f0f] border border-border rounded-lg text-center font-mono-score text-sm text-white focus:border-primary focus:outline-none"
+                                    className="h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus:border-primary focus:outline-none"
                                   />
                                 </label>
                               ))}
@@ -212,7 +212,7 @@ function Entry() {
         })}
       </div>
 
-      <button onClick={save} data-testid="score-save" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-[#06b6d4] transition-colors sticky bottom-20 md:bottom-6">
+      <button onClick={save} data-testid="score-save" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-teal-deep transition-colors sticky bottom-20 md:bottom-6">
         <FloppyDisk size={18} weight="bold" /> Submit Score
       </button>
     </div>

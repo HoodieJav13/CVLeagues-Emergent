@@ -73,12 +73,12 @@ export default function TeamRegistration() {
         <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={34} weight="fill" className="text-primary" />
         </div>
-        <h1 className="font-display uppercase tracking-tight text-2xl text-white">Registration Submitted</h1>
+        <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">Registration Submitted</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          <span className="text-white font-semibold">{form.teamName}</span> is now pending admin review. You'll be notified once it's approved.
+          <span className="text-foreground font-semibold">{form.teamName}</span> is now pending admin review. You'll be notified once it's approved.
         </p>
         <div className="flex gap-3 justify-center mt-6">
-          <Link to="/" className="border border-white/15 text-white font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors">
+          <Link to="/" className="border border-white/15 text-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors">
             Home
           </Link>
           <button onClick={reset} className="bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl">
@@ -94,34 +94,34 @@ export default function TeamRegistration() {
       <SectionHeading title="Team Interest" subtitle="Tell us about your team — an admin will reach out." />
 
       {form.sport && !regOpen && (
-        <div className="flex items-center gap-2 bg-[#facc15]/10 border border-[#facc15]/30 rounded-xl p-3 text-sm text-[#facc15]">
+        <div className="flex items-center gap-2 bg-[#F5B82E]/10 border border-[#F5B82E]/30 rounded-xl p-3 text-sm text-gold">
           <Warning size={18} weight="bold" /> Registration for this sport is currently closed. You can still submit; an admin will queue it.
         </div>
       )}
 
       {/* Captain info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-white text-sm">Captain Info</p>
+        <p className="font-display uppercase tracking-tight text-foreground text-sm">Captain Info</p>
         <Field label="Legal Name" required error={errors.captainName}>
-          <Input data-testid="reg-captain-name" value={form.captainName} onChange={(e) => set("captainName", e.target.value)} placeholder="First and last name" className="bg-[#0f0f0f] border-border" />
+          <Input data-testid="reg-captain-name" value={form.captainName} onChange={(e) => set("captainName", e.target.value)} placeholder="First and last name" className="bg-surface-sunken border-border" />
         </Field>
         <Field label="Contact" required error={errors.contact || errors.captainEmail} hint="At least one of phone or email is required">
           <div className="grid sm:grid-cols-2 gap-3">
-            <Input data-testid="reg-captain-phone" value={form.captainPhone} onChange={(e) => set("captainPhone", e.target.value)} placeholder="Phone" className="bg-[#0f0f0f] border-border" />
-            <Input data-testid="reg-captain-email" type="email" value={form.captainEmail} onChange={(e) => set("captainEmail", e.target.value)} placeholder="Email" className="bg-[#0f0f0f] border-border" />
+            <Input data-testid="reg-captain-phone" value={form.captainPhone} onChange={(e) => set("captainPhone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
+            <Input data-testid="reg-captain-email" type="email" value={form.captainEmail} onChange={(e) => set("captainEmail", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
       </div>
 
       {/* Team info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-white text-sm">Team Info</p>
+        <p className="font-display uppercase tracking-tight text-foreground text-sm">Team Info</p>
         <Field label="Team Name" required error={errors.teamName}>
-          <Input data-testid="reg-team-name" value={form.teamName} onChange={(e) => set("teamName", e.target.value)} placeholder="e.g. Westside Warriors" className="bg-[#0f0f0f] border-border" />
+          <Input data-testid="reg-team-name" value={form.teamName} onChange={(e) => set("teamName", e.target.value)} placeholder="e.g. Westside Warriors" className="bg-surface-sunken border-border" />
         </Field>
         <Field label="Sport" required error={errors.sport}>
           <Select value={form.sport} onValueChange={(v) => set("sport", v)}>
-            <SelectTrigger data-testid="reg-sport" className="bg-[#0f0f0f] border-border h-10">
+            <SelectTrigger data-testid="reg-sport" className="bg-surface-sunken border-border h-10">
               <SelectValue placeholder="Choose a sport" />
             </SelectTrigger>
             <SelectContent>
@@ -139,11 +139,11 @@ export default function TeamRegistration() {
               value={form.estimatedRosterSize}
               onChange={(e) => set("estimatedRosterSize", e.target.value)}
               placeholder="e.g. 10"
-              className="bg-[#0f0f0f] border-border"
+              className="bg-surface-sunken border-border"
             />
           </Field>
           <Field label="Preferred Season" optional>
-            <Input value={state.settings.currentSeason} readOnly className="bg-[#0f0f0f] border-border opacity-60 cursor-default" />
+            <Input value={state.settings.currentSeason} readOnly className="bg-surface-sunken border-border opacity-60 cursor-default" />
           </Field>
         </div>
         <Field label="Notes" optional>
@@ -152,7 +152,7 @@ export default function TeamRegistration() {
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             placeholder="Returning team, schedule preferences, anything we should know…"
-            className="bg-[#0f0f0f] border-border"
+            className="bg-surface-sunken border-border"
           />
         </Field>
       </div>
@@ -172,7 +172,7 @@ export default function TeamRegistration() {
       <button
         onClick={submit}
         data-testid="reg-submit"
-        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-[#06b6d4] transition-colors"
+        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-teal-deep transition-colors"
       >
         Submit Team Interest
       </button>

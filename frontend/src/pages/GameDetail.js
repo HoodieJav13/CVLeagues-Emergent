@@ -47,7 +47,7 @@ export default function GameDetail() {
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <button onClick={() => navigate(-1)} data-testid="game-back" className="flex items-center gap-1.5 text-muted-foreground hover:text-white text-sm">
+      <button onClick={() => navigate(-1)} data-testid="game-back" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm">
         <ArrowLeft size={16} weight="bold" /> Back
       </button>
 
@@ -76,7 +76,7 @@ export default function GameDetail() {
             to="/score-entry"
             state={{ gameId: game.id }}
             data-testid="game-enter-score"
-            className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-4 py-2.5 rounded-xl hover:bg-[#06b6d4] transition-colors"
+            className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-4 py-2.5 rounded-xl hover:bg-teal-deep transition-colors"
           >
             <PencilSimpleLine size={16} weight="bold" /> {completed ? "Edit Score" : "Enter Score"}
           </Link>
@@ -95,15 +95,15 @@ export default function GameDetail() {
                 <tr className="text-muted-foreground">
                   <th className="text-left font-medium pb-2 pr-3"> </th>
                   {periods.map((_, i) => (
-                    <th key={i} className="text-center font-mono px-2 pb-2">{PERIOD_LABEL(game.sport, i)}</th>
+                    <th key={i} className="text-center tabular-nums px-2 pb-2">{PERIOD_LABEL(game.sport, i)}</th>
                   ))}
-                  <th className="text-center font-mono px-2 pb-2 text-primary">T</th>
+                  <th className="text-center tabular-nums px-2 pb-2 text-primary">T</th>
                 </tr>
               </thead>
               <tbody>
                 {[{ t: away, arr: game.periods.away, total: game.awayScore }, { t: home, arr: game.periods.home, total: game.homeScore }].map((row) => (
                   <tr key={row.t.id} className="border-t border-border">
-                    <td className="py-2 pr-3 font-display uppercase tracking-tight text-white whitespace-nowrap">{row.t.name}</td>
+                    <td className="py-2 pr-3 font-display uppercase tracking-tight text-foreground whitespace-nowrap">{row.t.name}</td>
                     {row.arr.map((v, i) => (
                       <td key={i} className="text-center font-mono-score px-2 text-muted-foreground">{v}</td>
                     ))}
@@ -125,7 +125,7 @@ export default function GameDetail() {
             const cols = BOX[game.sport];
             return (
               <div key={t.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                <p className="px-4 py-2.5 border-b border-border font-display uppercase tracking-tight text-white flex items-center gap-2">
+                <p className="px-4 py-2.5 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.logoColor }} /> {t.name}
                 </p>
                 <div className="overflow-x-auto">
@@ -144,7 +144,7 @@ export default function GameDetail() {
                             <td className="px-4 py-2.5">
                               <Link to={`/profile/${p.id}`} className="flex items-center gap-2 hover:text-primary">
                                 <Avatar name={p.name} color={p.avatarColor} size={28} />
-                                <span className="font-medium text-white truncate">{p.name}</span>
+                                <span className="font-medium text-foreground truncate">{p.name}</span>
                               </Link>
                             </td>
                             {cols.map((c) => (
@@ -170,7 +170,7 @@ const TeamHead = ({ team, score, completed, win, home }) => (
     <span className="w-12 h-12 rounded-2xl flex items-center justify-center font-display font-extrabold text-lg text-black mb-2" style={{ backgroundColor: team.logoColor }}>
       {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
     </span>
-    <span className="font-display uppercase tracking-tight text-white text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
+    <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
     <span className="text-[10px] text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
     {completed && (
       <span className={`mt-1 font-mono-score text-3xl font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>
