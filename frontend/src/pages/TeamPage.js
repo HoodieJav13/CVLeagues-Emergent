@@ -76,8 +76,8 @@ export default function TeamPage() {
       <section>
         <SectionHeading title="Roster" subtitle={`${roster.length} players`} />
         {roster.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-6 text-center text-sm text-muted-foreground">
-            No players on the roster yet.
+          <div className="bg-card border border-border rounded-xl p-6 text-center text-caption text-muted-foreground">
+            No players assigned to this roster yet.
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
@@ -92,7 +92,7 @@ export default function TeamPage() {
       {upcoming.length > 0 && (
         <section>
           <SectionHeading title="Upcoming" />
-          <div className="grid sm:grid-cols-2 gap-3">{upcoming.map((g) => <GameCard key={g.id} game={g} />)}</div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{upcoming.map((g) => <GameCard key={g.id} game={g} />)}</div>
         </section>
       )}
 
@@ -100,7 +100,7 @@ export default function TeamPage() {
       {recent.length > 0 && (
         <section>
           <SectionHeading title="Recent Results" />
-          <div className="grid sm:grid-cols-2 gap-3">{recent.map((g) => <GameCard key={g.id} game={g} />)}</div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{recent.map((g) => <GameCard key={g.id} game={g} />)}</div>
         </section>
       )}
     </div>

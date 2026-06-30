@@ -76,7 +76,7 @@ export default function Schedule() {
           {weekGroups.map((grp) => (
             <section key={grp.key} data-testid={`schedule-week-${grp.key}`}>
               <h3 className="font-display uppercase tracking-tight text-sm text-muted-foreground mb-2.5">{grp.label}</h3>
-              <div className="grid sm:grid-cols-2 gap-3">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {grp.games.map((g) => <GameCard key={g.id} game={g} />)}
               </div>
             </section>

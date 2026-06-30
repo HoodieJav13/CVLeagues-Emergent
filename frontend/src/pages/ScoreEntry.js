@@ -140,7 +140,7 @@ function Entry() {
                         type="number" min="0" value={v}
                         data-testid={`score-${r.side}-period-${i}`}
                         onChange={(e) => setPeriod(r.side, i, e.target.value)}
-                        className="w-11 h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus:border-primary focus:outline-none"
+                        className="w-11 h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       />
                     </td>
                   ))}
@@ -161,7 +161,11 @@ function Entry() {
               <p className="px-4 py-3 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logoColor }} /> {team.name} · Player Stats
               </p>
-              {roster.map((r) => {
+              {roster.length === 0 ? (
+                <p className="px-4 py-8 text-center text-caption text-muted-foreground">
+                  This team has no players yet. Assign players before entering a score.
+                </p>
+              ) : roster.map((r) => {
                 const open = expanded === r.playerId;
                 const pstats = statsByPlayer[r.playerId]?.stats || {};
                 const summary = HIGHLIGHT_STATS[team.sport].map((k) => `${pstats[k] || 0} ${statLabel(team.sport, k).split(" ")[0]}`).join(" · ");
@@ -195,7 +199,7 @@ function Entry() {
                                     type="number" min="0" value={pstats[st.key] || 0}
                                     data-testid={`score-stat-${r.playerId}-${st.key}`}
                                     onChange={(e) => setStat(r.playerId, team.id, st.key, e.target.value)}
-                                    className="h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus:border-primary focus:outline-none"
+                                    className="h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   />
                                 </label>
                               ))}

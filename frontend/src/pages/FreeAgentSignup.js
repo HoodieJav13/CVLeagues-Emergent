@@ -87,7 +87,7 @@ export default function FreeAgentSignup() {
         </div>
         <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">You're in the Pool!</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Captains looking for players can now find you. Keep an eye on your inbox.
+          Captains looking for players can now find you. An admin will reach out if a captain wants to add you.
         </p>
         <div className="flex gap-3 justify-center mt-6">
           <Link to="/" className="bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl">

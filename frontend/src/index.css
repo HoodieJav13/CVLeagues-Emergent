@@ -129,6 +129,15 @@
     h1, h2, h3, h4, h5, .font-display {
         font-family: var(--font-display);
     }
+    /* Global keyboard focus ring (spec §6): 2px teal at 2px offset on every
+       interactive element. Form primitives that opt out with
+       `focus-visible:outline-none` render their own teal box-shadow ring
+       instead (same 2px/2px treatment); this baseline catches links and any
+       ad-hoc control that would otherwise fall back to the browser default. */
+    :focus-visible {
+        outline: 2px solid var(--cvf-teal);
+        outline-offset: 2px;
+    }
     .font-mono-score {
         /* Score figures: display face, tabular (replaces JetBrains Mono). */
         font-family: var(--font-display);
@@ -160,6 +169,17 @@
 }
 .animate-fade-up { animation: cvf-fade-up 0.5s ease-out both; }
 .animate-fade-in { animation: cvf-fade-in 0.3s ease-out both; }
+
+/* Live status dot pulse — applied to the badge DOT only.
+   Disabled entirely under prefers-reduced-motion (accessibility floor). */
+@keyframes cvf-status-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+.cvf-status-pulse { animation: cvf-status-pulse 1.4s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+    .cvf-status-pulse { animation: none; }
+}
 
 /* Stagger delay utilities */
 .delay-75  { animation-delay: 75ms; }

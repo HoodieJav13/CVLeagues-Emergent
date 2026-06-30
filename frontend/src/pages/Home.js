@@ -66,14 +66,14 @@ export default function Home() {
               data-testid="hero-register-team"
               className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:bg-teal-deep transition-colors"
             >
-              Register a Team <ArrowRight size={16} weight="bold" />
+              Submit Team Interest <ArrowRight size={16} weight="bold" />
             </Link>
             <Link
               to="/free-agent-signup"
               data-testid="hero-free-agent"
               className="inline-flex items-center gap-2 border border-white/15 text-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors"
             >
-              Join as Free Agent
+              Join Free Agent Pool
             </Link>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function Home() {
             </Link>
           }
         />
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {upcoming.length ? (
             upcoming.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
@@ -172,7 +172,7 @@ export default function Home() {
             </Link>
           }
         />
-        <div className="grid sm:grid-cols-2 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {recent.length ? (
             recent.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
@@ -184,8 +184,8 @@ export default function Home() {
       {/* CTA CARDS */}
       <section className="grid md:grid-cols-2 gap-4">
         {[
-          { to: "/register-team", img: SPORT_IMG.kickball, title: "Register Your Team", desc: "Lock in your roster of 5–15 and claim your spot this season.", cta: "Start Registration", testid: "cta-register-team" },
-          { to: "/free-agent-signup", img: SPORT_IMG.flag_football, title: "Sign Up as Free Agent", desc: "No team? No problem. Get added to the pool and let captains find you.", cta: "Join the Pool", testid: "cta-free-agent" },
+          { to: "/register-team", img: SPORT_IMG.kickball, title: "Team Interest", desc: "Tell us about your team and an admin will reach out to get you set up.", cta: "Submit Team Interest", testid: "cta-register-team" },
+          { to: "/free-agent-signup", img: SPORT_IMG.flag_football, title: "Sign Up as Free Agent", desc: "No team? No problem. Get added to the pool and let captains find you.", cta: "Join Free Agent Pool", testid: "cta-free-agent" },
         ].map((c) => (
           <Link
             key={c.to}

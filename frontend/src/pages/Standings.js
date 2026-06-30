@@ -18,39 +18,45 @@ export default function Standings() {
         return (
           <section key={league.id} data-testid={`standings-league-${league.id}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="font-display uppercase tracking-tight text-lg text-white">{league.name}</h3>
+              <h3 className="font-display uppercase tracking-tight text-lg text-foreground">{league.name}</h3>
               <SportBadge sport={league.sport} />
             </div>
             <div className="bg-card border border-border rounded-2xl overflow-hidden">
-              <div className="grid grid-cols-[auto_1fr_repeat(4,2.6rem)] sm:grid-cols-[auto_1fr_repeat(4,3.5rem)] gap-1 px-3 py-2.5 border-b border-border text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">
+              <div className="grid grid-cols-[auto_1fr_repeat(4,2.6rem)] sm:grid-cols-[auto_1fr_repeat(4,3.5rem)] gap-1 px-3 py-2.5 bg-surface-sunken border-b border-border-strong text-label uppercase text-muted-foreground">
                 <span className="w-6 text-center">#</span>
                 <span>Team</span>
-                <span className="text-center">W</span>
-                <span className="text-center">L</span>
-                <span className="text-center">PF</span>
-                <span className="text-center">DIFF</span>
+                <span className="text-right">W</span>
+                <span className="text-right">L</span>
+                <span className="text-right">PF</span>
+                <span className="text-right">DIFF</span>
               </div>
               {rows.length === 0 && (
-                <p className="px-3 py-6 text-center text-sm text-muted-foreground">No teams in this league yet.</p>
+                <p className="px-3 py-6 text-center text-caption text-muted-foreground">No teams in this league yet.</p>
               )}
               {rows.map(({ team, record, rank }) => (
                 <Link
                   key={team.id}
                   to={`/team/${team.id}`}
                   data-testid={`standings-row-${team.id}`}
-                  className="grid grid-cols-[auto_1fr_repeat(4,2.6rem)] sm:grid-cols-[auto_1fr_repeat(4,3.5rem)] gap-1 px-3 py-3 items-center border-b border-border last:border-0 hover:bg-white/5 transition-colors"
+                  className={`grid grid-cols-[auto_1fr_repeat(4,2.6rem)] sm:grid-cols-[auto_1fr_repeat(4,3.5rem)] gap-1 px-3 py-3 items-center border-b border-border last:border-0 border-l-2 transition-colors hover:bg-white/5 ${
+                    rank === 1
+                      ? "border-l-gold bg-[var(--leader-bg)]"
+                      : rank % 2 === 0
+                      ? "border-l-transparent bg-surface"
+                      : "border-l-transparent"
+                  }`}
                 >
-                  <span className={`w-6 text-center font-display font-bold ${rank === 1 ? "text-primary" : "text-muted-foreground"}`}>
+                  <span className={`w-6 text-center font-display font-bold ${rank === 1 ? "text-leader" : "text-muted-foreground"}`}>
                     {rank}
                   </span>
                   <span className="flex items-center gap-2 min-w-0">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: team.logoColor }} />
-                    <span className="font-display uppercase tracking-tight text-white truncate text-base">{team.name}</span>
+                    <span className="font-display uppercase tracking-tight text-foreground truncate text-base">{team.name}</span>
                   </span>
-                  <span className="text-center font-mono-score font-bold text-white tabular-nums">{record.wins}</span>
-                  <span className="text-center font-mono-score text-muted-foreground tabular-nums">{record.losses}</span>
-                  <span className="text-center font-mono-score text-muted-foreground tabular-nums">{record.pointsFor}</span>
-                  <span className={`text-center font-mono-score tabular-nums ${record.diff > 0 ? "text-[#10b981]" : record.diff < 0 ? "text-[#ef4444]" : "text-muted-foreground"}`}>
+                  <span className="text-right font-mono-score font-bold text-foreground tabular-nums">{record.wins}</span>
+                  <span className="text-right font-mono-score text-muted-foreground tabular-nums">{record.losses}</span>
+                  <span className="text-right font-mono-score text-muted-foreground tabular-nums">{record.pointsFor}</span>
+                  <span className={`text-right font-mono-score tabular-nums ${record.diff > 0 ? "text-teal" : record.diff < 0 ? "text-[var(--loss-text)]" : "text-muted-foreground"}`}>
                     {record.diff > 0 ? "+" : ""}{record.diff}
                   </span>
                 </Link>

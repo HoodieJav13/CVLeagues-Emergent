@@ -1,8 +1,11 @@
 import { sportName } from "../../lib/statsConfig";
 
+// Sport chip — an OUTLINE chip (rounded-full + coloured border, no dot) to stay
+// visually distinct from the soft-filled, dotted, radius-sm status pills below.
+// Kickball = teal, flag football = gold — two distinct brand accents.
 const SPORT_STYLES = {
-  kickball: { bg: "rgba(34,211,238,0.12)", fg: "#22d3ee", border: "rgba(34,211,238,0.35)" },
-  flag_football: { bg: "rgba(249,115,22,0.12)", fg: "#fb923c", border: "rgba(249,115,22,0.35)" },
+  kickball: { bg: "var(--cvf-teal-tint)", fg: "var(--cvf-teal)", border: "var(--cvf-teal)" },
+  flag_football: { bg: "var(--cvf-gold-tint)", fg: "var(--cvf-gold)", border: "var(--cvf-gold)" },
 };
 
 export const SportBadge = ({ sport, className = "" }) => {
@@ -18,40 +21,58 @@ export const SportBadge = ({ sport, className = "" }) => {
   );
 };
 
+// Status pill (spec §5). Every status maps to a brand token pairing — text +
+// matching -bg — and carries a TEXT label plus a leading dot (never colour
+// alone). Colour categories follow the three-signal system: teal = normal/
+// positive/done, gold = needs-attention, Zia red = alert/problem, slate =
+// quiet/closed. `live` pulses on the dot only (see .cvf-status-pulse, which is
+// disabled under prefers-reduced-motion); every other status is static.
+const TEAL = { fg: "var(--status-upcoming)", bg: "var(--status-upcoming-bg)" };
+const GOLD = { fg: "var(--cvf-gold)", bg: "var(--cvf-gold-tint)" };
+const ALERT = { fg: "var(--status-live)", bg: "var(--status-live-bg)" };
+const SLATE = { fg: "var(--status-final)", bg: "var(--status-final-bg)" };
+
+const STATUS_STYLES = {
+  // game status
+  live: { ...ALERT, label: "Live", pulse: true }, // dormant: no existing data emits "live"
+  upcoming: { ...TEAL, label: "Upcoming" },
+  completed: { ...SLATE, label: "Final" },
+  postponed: { ...GOLD, label: "Postponed" },
+  canceled: { ...ALERT, label: "Canceled" },
+  // game score_status (pending/submitted/approved/disputed/final)
+  pending: { ...GOLD, label: "Pending" },
+  submitted: { ...TEAL, label: "Submitted" },
+  approved: { ...TEAL, label: "Approved" },
+  disputed: { ...ALERT, label: "Disputed" },
+  final: { ...SLATE, label: "Final" },
+  // intake triage (registrations & free agents)
+  new: { ...TEAL, label: "New" },
+  contacted: { ...GOLD, label: "Contacted" },
+  assigned: { ...TEAL, label: "Assigned" },
+  archived: { ...SLATE, label: "Archived" },
+  // entity lifecycle (teams & leagues)
+  draft: { ...SLATE, label: "Draft" },
+  active: { ...TEAL, label: "Active" },
+  // waiver verification (pending/rejected shared with the entries above)
+  verified: { ...TEAL, label: "Verified" },
+  duplicate: { ...SLATE, label: "Duplicate" },
+  // legacy demo values kept for FINAL DRAFT (dormant) account features
+  rejected: { ...ALERT, label: "Rejected" },
+  invited: { ...GOLD, label: "Invited" },
+};
+
 export const StatusBadge = ({ status, className = "" }) => {
-  const map = {
-    // game status
-    completed: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Final" },
-    upcoming: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "Upcoming" },
-    postponed: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Postponed" },
-    canceled: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Canceled" },
-    // game score_status (pending/submitted/approved/disputed/final)
-    pending: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Pending" },
-    submitted: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "Submitted" },
-    approved: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Approved" },
-    disputed: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Disputed" },
-    final: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Final" },
-    // intake triage (registrations & free agents)
-    new: { fg: "#22d3ee", bg: "rgba(34,211,238,0.12)", label: "New" },
-    contacted: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Contacted" },
-    assigned: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Assigned" },
-    archived: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Archived" },
-    // entity lifecycle (teams & leagues)
-    draft: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Draft" },
-    active: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Active" },
-    // waiver verification (pending/rejected shared with the entries above)
-    verified: { fg: "#10b981", bg: "rgba(16,185,129,0.12)", label: "Verified" },
-    duplicate: { fg: "#a1a1aa", bg: "rgba(255,255,255,0.06)", label: "Duplicate" },
-    // legacy demo values kept for FINAL DRAFT (dormant) account features
-    rejected: { fg: "#ef4444", bg: "rgba(239,68,68,0.12)", label: "Rejected" },
-    invited: { fg: "#facc15", bg: "rgba(250,204,21,0.12)", label: "Invited" },
-  };
-  const s = map[status] || map.pending;
+  const s = STATUS_STYLES[status] || STATUS_STYLES.pending;
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-cvf-sm text-label uppercase ${className}`}
       style={{ backgroundColor: s.bg, color: s.fg }}
     >
+      <span
+        className={`w-1.5 h-1.5 rounded-full shrink-0${s.pulse ? " cvf-status-pulse" : ""}`}
+        style={{ backgroundColor: s.fg }}
+        aria-hidden="true"
+      />
       {s.label}
     </span>
   );

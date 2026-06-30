@@ -73,16 +73,16 @@ export default function TeamRegistration() {
         <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={34} weight="fill" className="text-primary" />
         </div>
-        <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">Registration Submitted</h1>
+        <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">Team Interest Submitted</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          <span className="text-foreground font-semibold">{form.teamName}</span> is now pending admin review. You'll be notified once it's approved.
+          <span className="text-foreground font-semibold">{form.teamName}</span> is now pending admin review. An admin will review it and follow up about next steps.
         </p>
         <div className="flex gap-3 justify-center mt-6">
           <Link to="/" className="border border-white/15 text-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors">
             Home
           </Link>
           <button onClick={reset} className="bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl">
-            Register Another
+            Submit Another
           </button>
         </div>
       </div>
@@ -95,7 +95,7 @@ export default function TeamRegistration() {
 
       {form.sport && !regOpen && (
         <div className="flex items-center gap-2 bg-[#F5B82E]/10 border border-[#F5B82E]/30 rounded-xl p-3 text-sm text-gold">
-          <Warning size={18} weight="bold" /> Registration for this sport is currently closed. You can still submit; an admin will queue it.
+          <Warning size={18} weight="bold" /> Team interest for this sport is currently closed. You can still submit; an admin will queue it.
         </div>
       )}
 
