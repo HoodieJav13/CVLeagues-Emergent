@@ -1,16 +1,20 @@
-// Small reusable section heading with an accent rule.
+// Small reusable section heading.
 // `as` controls the heading level ("h1" for a page-level title, default "h2"
-// for sections) — semantic only, the visual treatment is identical.
-export const SectionHeading = ({ title, subtitle, action, as: Tag = "h2", className = "" }) => (
+// for sections) — semantic only.
+// `band` (public page titles only) renders the title on the ink band —
+// the logo's stencil-on-band device. Admin/ops headers never set it.
+export const SectionHeading = ({ title, subtitle, action, as: Tag = "h2", band = false, className = "" }) => (
   <div className={`flex items-end justify-between gap-4 mb-5 ${className}`}>
     <div>
-      <div className="flex items-center gap-2.5 mb-0.5">
-        <span className="w-1 h-5 rounded-full bg-primary shrink-0" />
-        <Tag className="font-display uppercase tracking-tighter text-display-lg text-foreground">
-          {title}
-        </Tag>
-      </div>
-      {subtitle && <p className="text-caption text-muted-foreground mt-1 ml-[14px]">{subtitle}</p>}
+      {band ? (
+        <Tag className="cvf-band text-display-lg">{title}</Tag>
+      ) : (
+        <div className="flex items-center gap-2.5 mb-0.5">
+          <span className="w-1 h-5 rounded-full bg-primary shrink-0" />
+          <Tag className="font-display uppercase text-display-lg text-foreground">{title}</Tag>
+        </div>
+      )}
+      {subtitle && <p className={`text-caption text-muted-foreground mt-1 ${band ? "ml-1" : "ml-[14px]"}`}>{subtitle}</p>}
     </div>
     {action}
   </div>

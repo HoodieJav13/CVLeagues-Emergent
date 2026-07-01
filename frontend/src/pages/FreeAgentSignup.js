@@ -76,7 +76,7 @@ export default function FreeAgentSignup() {
     });
     // PHASE 2: POST to /free_agents + notify captains watching for that sport.
     setSubmitted(true);
-    toast.success("You're in the free agent pool! Captains can now find you.");
+    toast.success("You're in the free agent pool. We'll reach out when a roster spot opens.");
   };
 
   if (submitted) {
@@ -85,9 +85,9 @@ export default function FreeAgentSignup() {
         <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={34} weight="fill" className="text-primary" />
         </div>
-        <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">You're in the Pool!</h1>
+        <h1 className="font-display uppercase text-display-lg text-foreground">You're in the Pool</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Captains looking for players can now find you. An admin will reach out if a captain wants to add you.
+          You're on the list. The league admin will reach out when a team needs a player — no account needed, nothing else to do.
         </p>
         <div className="flex gap-3 justify-center mt-6">
           <Link to="/" className="bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl">
@@ -100,7 +100,7 @@ export default function FreeAgentSignup() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-up">
-      <SectionHeading as="h1" title="Free Agent Sign-Up" subtitle="No team? Get found by captains." />
+      <SectionHeading as="h1" band title="Free Agent Sign-Up" subtitle="No team? No problem. Get on the list for a roster spot." />
 
       {/* Personal info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
@@ -234,12 +234,12 @@ const Field = ({ label, required, optional, error, hint, children }) => {
   const labelable = isValidElement(children) && (children.type === Input || children.type === Textarea);
   return (
     <div>
-      <Label htmlFor={labelable ? id : undefined} className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
+      <Label htmlFor={labelable ? id : undefined} className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
         {label}
         {required && <span className="text-destructive">*</span>}
-        {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
+        {optional && <span className="normal-case tracking-normal font-normal text-micro">(optional)</span>}
       </Label>
-      {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
+      {hint && <p className="text-micro text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
       {labelable ? cloneElement(children, { id }) : children}
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>

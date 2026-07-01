@@ -73,7 +73,7 @@ export default function TeamRegistration() {
         <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center mx-auto mb-4">
           <CheckCircle size={34} weight="fill" className="text-primary" />
         </div>
-        <h1 className="font-display uppercase tracking-tight text-display-lg text-foreground">Team Interest Submitted</h1>
+        <h1 className="font-display uppercase text-display-lg text-foreground">Team Interest Submitted</h1>
         <p className="text-muted-foreground mt-2 text-sm">
           <span className="text-foreground font-semibold">{form.teamName}</span> is now pending admin review. An admin will review it and follow up about next steps.
         </p>
@@ -91,10 +91,10 @@ export default function TeamRegistration() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-up">
-      <SectionHeading as="h1" title="Team Interest" subtitle="Tell us about your team — an admin will reach out." />
+      <SectionHeading as="h1" band title="Team Interest" subtitle="Tell us about your team — an admin will reach out." />
 
       {form.sport && !regOpen && (
-        <div className="flex items-center gap-2 bg-[#F5B82E]/10 border border-[#F5B82E]/30 rounded-xl p-3 text-sm text-gold">
+        <div className="flex items-center gap-2 bg-gold-tint border border-gold-deep rounded-xl p-3 text-sm text-gold">
           <Warning size={18} weight="bold" /> Team interest for this sport is currently closed. You can still submit; an admin will queue it.
         </div>
       )}
@@ -188,12 +188,12 @@ const Field = ({ label, required, optional, error, hint, children }) => {
   const labelable = isValidElement(children) && (children.type === Input || children.type === Textarea);
   return (
     <div>
-      <Label htmlFor={labelable ? id : undefined} className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
+      <Label htmlFor={labelable ? id : undefined} className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
         {label}
         {required && <span className="text-destructive">*</span>}
-        {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
+        {optional && <span className="normal-case tracking-normal font-normal text-micro">(optional)</span>}
       </Label>
-      {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
+      {hint && <p className="text-micro text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
       {labelable ? cloneElement(children, { id }) : children}
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>

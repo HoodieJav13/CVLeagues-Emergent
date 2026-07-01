@@ -45,7 +45,7 @@ export default function AthleteProfile() {
         <div className="flex items-center gap-4">
           <Avatar name={profile.name} color={profile.avatarColor} size={72} />
           <div className="min-w-0">
-            <h1 className="font-display font-extrabold uppercase tracking-tighter text-display-lg text-foreground leading-none">{profile.name}</h1>
+            <h1 className="font-display uppercase text-display-lg text-foreground">{profile.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {sports.map((s) => <SportBadge key={s} sport={s} />)}
               <span className="text-xs text-muted-foreground">{profile.experience}</span>
@@ -57,10 +57,10 @@ export default function AthleteProfile() {
 
       <Tabs defaultValue="public">
         <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-11">
-          <TabsTrigger value="public" data-testid="profile-tab-public" className="data-[state=active]:bg-primary data-[state=active]:text-black uppercase font-display tracking-tight">
+          <TabsTrigger value="public" data-testid="profile-tab-public" className="data-[state=active]:bg-primary data-[state=active]:text-ink uppercase font-display tracking-tight">
             Public
           </TabsTrigger>
-          <TabsTrigger value="private" disabled={!canViewPrivate} data-testid="profile-tab-private" className="data-[state=active]:bg-primary data-[state=active]:text-black uppercase font-display tracking-tight">
+          <TabsTrigger value="private" disabled={!canViewPrivate} data-testid="profile-tab-private" className="data-[state=active]:bg-primary data-[state=active]:text-ink uppercase font-display tracking-tight">
             {!canViewPrivate && <Lock size={13} weight="bold" className="mr-1" />} Private
           </TabsTrigger>
         </TabsList>
@@ -82,7 +82,7 @@ export default function AthleteProfile() {
                     {HIGHLIGHT_STATS[sport].map((key) => (
                       <div key={key} className="text-center bg-[#0F1416]/60 rounded-xl p-3 border border-border">
                         <p className="font-mono-score text-2xl font-bold text-primary leading-none">{season[key] || 0}</p>
-                        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
+                        <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
                       </div>
                     ))}
                   </div>
@@ -175,7 +175,7 @@ const PrivateSport = ({ state, profile, sport }) => {
       <div className="overflow-x-auto mb-5">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-muted-foreground text-[10px] uppercase tracking-widest">
+            <tr className="text-muted-foreground text-micro uppercase tracking-widest">
               <th className="text-left font-semibold py-2">Stat</th>
               <th className="text-right font-semibold py-2 px-3">Season</th>
               <th className="text-right font-semibold py-2">Career</th>
@@ -194,13 +194,13 @@ const PrivateSport = ({ state, profile, sport }) => {
       </div>
 
       {/* game log */}
-      <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-2">Game Log</p>
+      <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-2">Game Log</p>
       <div className="space-y-1.5">
         {log.length ? log.map((row) => {
           const opp = getTeam(state, row.game.homeTeamId === row.teamId ? row.game.awayTeamId : row.game.homeTeamId);
           return (
             <Link key={row.id} to={`/game/${row.game.id}`} className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg hover:bg-white/5">
-              <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-white/70">vs {opp?.name}</span></span>
+              <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-secondary">vs {opp?.name}</span></span>
               <span className="font-mono-score text-xs text-primary">{keys.slice(0, 3).map((k) => `${row.stats[k] || 0} ${statLabel(sport, k).split(" ")[0]}`).join(" · ")}</span>
             </Link>
           );

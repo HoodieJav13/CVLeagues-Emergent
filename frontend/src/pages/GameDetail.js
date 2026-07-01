@@ -53,7 +53,7 @@ export default function GameDetail() {
 
       {/* Page-level matchup title. */}
       <div data-testid="game-detail-heading">
-        <h1 className="font-display uppercase tracking-tighter text-display-lg text-foreground leading-none">
+        <h1 className="font-display uppercase text-display-lg text-foreground">
           {away?.name || "TBD"} <span className="text-muted-foreground">vs</span> {home?.name || "TBD"}
         </h1>
         <p className="text-caption text-muted-foreground mt-1">{dateStr}</p>
@@ -94,7 +94,7 @@ export default function GameDetail() {
       {/* Period breakdown */}
       {completed && periods.length > 0 && (
         <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <p className="px-4 py-2.5 border-b border-border text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
+          <p className="px-4 py-2.5 border-b border-border text-micro uppercase tracking-widest text-muted-foreground font-semibold">
             {PERIOD_HEAD(game.sport)} by {PERIOD_HEAD(game.sport).toLowerCase()}
           </p>
           <div className="p-3 overflow-x-auto">
@@ -139,7 +139,7 @@ export default function GameDetail() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="text-muted-foreground text-[11px] uppercase tracking-wide">
+                      <tr className="text-muted-foreground text-micro uppercase tracking-wide">
                         <th className="text-left font-semibold px-4 py-2">Player</th>
                         {cols.map((c) => <th key={c.key} className="text-center font-semibold px-2 py-2">{c.label}</th>)}
                       </tr>
@@ -175,11 +175,11 @@ export default function GameDetail() {
 
 const TeamHead = ({ team, score, completed, win, home }) => (
   <Link to={`/team/${team.id}`} className="flex flex-col items-center text-center group">
-    <span className="w-12 h-12 rounded-2xl flex items-center justify-center font-display font-extrabold text-lg text-black mb-2" style={{ backgroundColor: team.logoColor }}>
+    <span className="w-12 h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg text-ink mb-2" style={{ backgroundColor: team.logoColor }}>
       {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
     </span>
     <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
-    <span className="text-[10px] text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
+    <span className="text-micro text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
     {completed && (
       <span className={`mt-1 font-mono-score text-3xl font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>
     )}

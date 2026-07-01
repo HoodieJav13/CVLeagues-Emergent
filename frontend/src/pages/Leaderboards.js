@@ -27,12 +27,12 @@ export default function Leaderboards() {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <SectionHeading as="h1" title="Leaderboards" subtitle="Top performers across the league" />
+      <SectionHeading as="h1" band title="Leaderboards" subtitle="Season and career leaders across Albuquerque's leagues" />
 
       <Tabs value={sport} onValueChange={onSport}>
         <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-11">
           {SPORTS.map((s) => (
-            <TabsTrigger key={s.id} value={s.id} data-testid={`leaderboard-sport-${s.id}`} className="data-[state=active]:bg-primary data-[state=active]:text-black uppercase font-display tracking-tight">
+            <TabsTrigger key={s.id} value={s.id} data-testid={`leaderboard-sport-${s.id}`} className="data-[state=active]:bg-primary data-[state=active]:text-ink uppercase font-display tracking-tight">
               {s.name}
             </TabsTrigger>
           ))}
@@ -67,7 +67,7 @@ export default function Leaderboards() {
             <div className="bg-card border border-border rounded-2xl overflow-hidden" data-testid="leaderboard-list">
               {rows.length ? rows.map((row, i) => (
                 <div key={row.profile.id} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-white/5 transition-colors">
-                  <span className={`w-7 text-center font-display font-extrabold text-lg ${i === 0 ? "text-gold" : i === 1 ? "text-[#a1a1aa]" : i === 2 ? "text-[#f97316]" : "text-muted-foreground"}`}>
+                  <span className={`w-7 text-center font-display font-bold text-lg ${i === 0 ? "text-leader" : i === 1 ? "text-rank-silver" : i === 2 ? "text-rank-bronze" : "text-muted-foreground"}`}>
                     {i < 3 ? <Medal size={20} weight="fill" className="inline" /> : row.rank}
                   </span>
                   <Avatar name={row.profile.name} color={row.profile.avatarColor} size={38} />

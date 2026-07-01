@@ -8,14 +8,11 @@ import { SportBadge } from "../components/common/Badges";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS, sportName } from "../lib/statsConfig";
 
-const HERO_BG =
-  "https://static.prod-images.emergentagent.com/jobs/25817560-5d06-4585-aa10-457413ce1b96/images/5975b05bd9b283882601199015cdf7faad4a29e64dcb2ad8f71963db8ff92f37.png";
-const SPORT_IMG = {
-  flag_football:
-    "https://images.unsplash.com/photo-1489358921548-9b3f69a1eb4a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzOTB8MHwxfHNlYXJjaHwxfHxmbGFnJTIwZm9vdGJhbGwlMjBhY3Rpb24lMjBnYW1lfGVufDB8fHx8MTc4MDA5NDU0MHww&ixlib=rb-4.1.0&q=85",
-  kickball:
-    "https://images.unsplash.com/photo-1560272564-c83b66b1ad12?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1Mjh8MHwxfHNlYXJjaHwxfHxraWNrYmFsbCUyMGFjdGlvbiUyMGdhbWV8ZW58MHx8fHwxNzgwMDk0NTQwfDA&ixlib=rb-4.1.0&q=85",
-};
+// Sandia ridge backgrounds (brand pass) — self-contained dark dusk scenes,
+// used at full opacity. Replaces the stadium/stock photos.
+import heroBg from "../assets/backgrounds/sandia-wide-hero-bg.svg";
+import teamInterestBg from "../assets/backgrounds/sandia-team-interest-cta-bg.svg";
+import freeAgentBg from "../assets/backgrounds/sandia-free-agent-cta-bg.svg";
 
 export default function Home() {
   const { state } = useApp();
@@ -45,14 +42,14 @@ export default function Home() {
   return (
     <div className="space-y-10 animate-fade-up">
       {/* HERO */}
-      <section className="relative overflow-hidden rounded-3xl border border-border">
-        <img src={HERO_BG} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-[#0F1416]/70 to-transparent" />
+      <section className="relative overflow-hidden rounded-2xl border border-border">
+        <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
         <div className="relative px-6 py-12 md:px-12 md:py-20 max-w-2xl">
-          <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-semibold uppercase tracking-widest">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> {state.settings.currentSeason} · Live
+          <span className="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 text-primary text-xs font-semibold uppercase tracking-widest">
+            {state.settings.currentSeason} · Albuquerque, NM
           </span>
-          <h1 className="mt-4 font-display font-extrabold uppercase tracking-tighter text-foreground text-display-xl sm:text-5xl lg:text-6xl leading-[0.95]">
+          <h1 className="mt-4 font-display font-bold uppercase tracking-tight text-foreground text-display-xl sm:text-5xl lg:text-6xl">
             Adult Rec Leagues.<br />
             <span className="text-primary">Player First.</span> Always Free.
           </h1>
@@ -82,7 +79,7 @@ export default function Home() {
       {/* SELECTORS */}
       <section className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 block">
+          <label className="text-label uppercase text-muted-foreground mb-1.5 block">
             Sport
           </label>
           <Select
@@ -106,7 +103,7 @@ export default function Home() {
           </Select>
         </div>
         <div>
-          <label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 block">
+          <label className="text-label uppercase text-muted-foreground mb-1.5 block">
             League
           </label>
           <Select value={leagueId} onValueChange={setLeagueId}>
@@ -135,7 +132,7 @@ export default function Home() {
         ].map((s) => (
           <div key={s.label} className="bg-card border border-border rounded-2xl p-4">
             <s.icon size={20} weight="duotone" className="text-primary mb-2" />
-            <p className="font-display font-extrabold text-2xl text-foreground leading-none">{s.value}</p>
+            <p className="font-display font-bold text-2xl text-foreground leading-none">{s.value}</p>
             <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">{s.label}</p>
           </div>
         ))}
@@ -176,7 +173,7 @@ export default function Home() {
           {recent.length ? (
             recent.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
-            <p className="text-sm text-muted-foreground">No completed games yet.</p>
+            <p className="text-sm text-muted-foreground">No final scores yet. Results land here after the first games wrap.</p>
           )}
         </div>
       </section>
@@ -184,8 +181,8 @@ export default function Home() {
       {/* CTA CARDS */}
       <section className="grid md:grid-cols-2 gap-4">
         {[
-          { to: "/register-team", img: SPORT_IMG.kickball, title: "Team Interest", desc: "Tell us about your team and an admin will reach out to get you set up.", cta: "Submit Team Interest", testid: "cta-register-team" },
-          { to: "/free-agent-signup", img: SPORT_IMG.flag_football, title: "Sign Up as Free Agent", desc: "No team? No problem. Get added to the pool and let captains find you.", cta: "Join Free Agent Pool", testid: "cta-free-agent" },
+          { to: "/register-team", img: teamInterestBg, title: "Team Interest", desc: "Tell us about your team — an admin will reach out to get you set up.", cta: "Submit Team Interest", testid: "cta-register-team" },
+          { to: "/free-agent-signup", img: freeAgentBg, title: "Join the Free Agent Pool", desc: "No team? No problem. Get in the pool and let captains find you.", cta: "Join Free Agent Pool", testid: "cta-free-agent" },
         ].map((c) => (
           <Link
             key={c.to}
@@ -193,8 +190,8 @@ export default function Home() {
             data-testid={c.testid}
             className="group relative overflow-hidden rounded-2xl border border-border min-h-[180px] flex items-end"
           >
-            <img src={c.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-30 group-hover:opacity-40 transition-opacity" />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-[#0F1416]/60 to-transparent" />
+            <img src={c.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+            <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
             <div className="relative p-5">
               <h3 className="font-display uppercase tracking-tight text-xl text-foreground">{c.title}</h3>
               <p className="text-sm text-muted-foreground mt-1 max-w-sm">{c.desc}</p>

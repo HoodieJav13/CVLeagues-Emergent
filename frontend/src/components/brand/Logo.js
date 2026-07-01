@@ -20,10 +20,10 @@ export const Logo = ({ size = 36, withWord = true, className = "" }) => (
     />
     {withWord && (
       <div className="leading-none">
-        <span className="font-display font-extrabold uppercase tracking-tighter text-foreground text-xl block">
+        <span className="font-display font-bold uppercase tracking-tight text-foreground text-xl block">
           CVF<span className="text-primary"> Sports</span>
         </span>
-        <span className="text-[10px] text-muted-foreground tracking-widest uppercase">
+        <span className="text-micro text-muted-foreground tracking-widest uppercase">
           Albuquerque, NM
         </span>
       </div>

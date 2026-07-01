@@ -28,11 +28,11 @@ export default function TeamPage() {
       {/* Header */}
       <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${team.logoColor}22, transparent)` }}>
         <div className="flex items-center gap-4">
-          <span className="w-16 h-16 rounded-2xl flex items-center justify-center font-display font-extrabold text-2xl text-black" style={{ backgroundColor: team.logoColor }}>
+          <span className="w-16 h-16 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-ink" style={{ backgroundColor: team.logoColor }}>
             {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
           </span>
           <div className="min-w-0">
-            <h1 className="font-display font-extrabold uppercase tracking-tighter text-display-lg text-foreground leading-none">{team.name}</h1>
+            <h1 className="font-display uppercase text-display-lg text-foreground">{team.name}</h1>
             <div className="flex items-center gap-2 mt-2">
               <SportBadge sport={team.sport} />
               <span className="text-xs text-muted-foreground">{league?.name}</span>
@@ -57,7 +57,7 @@ export default function TeamPage() {
         <div className="grid grid-cols-3 gap-3">
           {leaders.map((l) => (
             <div key={l.key} className="bg-card border border-border rounded-2xl p-4 text-center">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">{statLabel(team.sport, l.key)}</p>
+              <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">{statLabel(team.sport, l.key)}</p>
               {l.profile ? (
                 <>
                   <Avatar name={l.profile.name} color={l.profile.avatarColor} size={40} className="mx-auto my-2" />
@@ -77,7 +77,7 @@ export default function TeamPage() {
         <SectionHeading title="Roster" subtitle={`${roster.length} players`} />
         {roster.length === 0 ? (
           <div className="bg-card border border-border rounded-xl p-6 text-center text-caption text-muted-foreground">
-            No players assigned to this roster yet.
+            No players on this roster yet. Names land here once the admin assigns them.
           </div>
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
@@ -110,6 +110,6 @@ export default function TeamPage() {
 const Stat = ({ label, value, accent }) => (
   <div className="bg-[#0F1416]/60 border border-border rounded-xl p-3 text-center">
     <p className={`font-mono-score text-xl font-bold ${accent ? "text-teal" : "text-foreground"}`}>{value}</p>
-    <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">{label}</p>
+    <p className="text-micro uppercase tracking-widest text-muted-foreground mt-0.5">{label}</p>
   </div>
 );

@@ -59,15 +59,15 @@ function Dashboard() {
     <div className="space-y-4 animate-fade-up">
       <header className="flex items-end justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.25em] text-primary font-bold">CVF Operations</p>
-          <h1 className="font-display font-extrabold uppercase tracking-tighter text-display-lg text-foreground leading-none mt-1">Admin Console</h1>
+          <p className="text-micro uppercase tracking-[0.25em] text-primary font-bold">CVF Operations</p>
+          <h1 className="font-display uppercase text-display-lg text-foreground mt-1">Admin Console</h1>
         </div>
-        <span className="text-[10px] uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">Season 1 · Demo Data</span>
+        <span className="text-micro uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">Season 1 · Demo Data</span>
       </header>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-card border border-border w-full flex overflow-x-auto h-auto p-1 justify-start">
           {tabs.map((t) => (
-            <TabsTrigger key={t.id} value={t.id} data-testid={`admin-tab-${t.id}`} className="data-[state=active]:bg-primary data-[state=active]:text-black uppercase text-[11px] font-semibold whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5">
+            <TabsTrigger key={t.id} value={t.id} data-testid={`admin-tab-${t.id}`} className="data-[state=active]:bg-primary data-[state=active]:text-ink uppercase text-micro font-semibold whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5">
               <t.icon size={14} weight="bold" /> {t.label}
             </TabsTrigger>
           ))}
@@ -156,7 +156,7 @@ function WaiversTab({ app }) {
               <TableCell className="font-medium text-foreground whitespace-nowrap">{w.signed_name}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{w.email}{w.phone ? ` · ${w.phone}` : ""}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtTs(w.signed_at)}</TableCell>
-              <TableCell className="text-[11px] text-muted-foreground whitespace-nowrap">{w.waiver_version}</TableCell>
+              <TableCell className="text-micro text-muted-foreground whitespace-nowrap">{w.waiver_version}</TableCell>
               <TableCell><StatusBadge status={w.verification_status} /></TableCell>
               <TableCell className="text-xs whitespace-nowrap">
                 {profile ? (
@@ -257,7 +257,7 @@ const AdminTable = ({ head, children, testid }) => (
       <TableHeader>
         <TableRow className="border-border hover:bg-transparent">
           {head.map((h, i) => (
-            <TableHead key={i} className="text-[10px] uppercase tracking-widest text-muted-foreground whitespace-nowrap h-9">{h}</TableHead>
+            <TableHead key={i} className="text-micro uppercase tracking-widest text-muted-foreground whitespace-nowrap h-9">{h}</TableHead>
           ))}
         </TableRow>
       </TableHeader>
@@ -395,7 +395,7 @@ function TeamsTab({ app }) {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: t.logoColor }} />
                   <Link to={`/team/${t.id}`} className="font-medium text-foreground hover:text-primary">{t.name}</Link>
-                  <span className="text-[11px] text-muted-foreground">{rec.wins}-{rec.losses}</span>
+                  <span className="text-micro text-muted-foreground">{rec.wins}-{rec.losses}</span>
                 </div>
               </TableCell>
               <TableCell><SportBadge sport={t.sport} /></TableCell>
@@ -511,7 +511,7 @@ function AssignmentEditor({ app, mode, playerId, teamId }) {
               <span className="text-sm text-foreground truncate">{mode === "player" ? (team?.name || "Unknown team") : (prof?.name || "Unknown player")}</span>
               {mode === "player" && team && <SportBadge sport={team.sport} />}
             </div>
-            <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">{tp.jersey != null ? `#${tp.jersey}` : "—"} · {tp.season}</span>
+            <span className="text-micro text-muted-foreground tabular-nums whitespace-nowrap">{tp.jersey != null ? `#${tp.jersey}` : "—"} · {tp.season}</span>
             <IconBtn onClick={() => { removePlayerFromTeam(tp.id); toast.success("Assignment removed"); }} icon={X} title="Remove assignment" testid={`assignment-remove-${tp.id}`} danger />
           </div>
         );
@@ -531,7 +531,7 @@ function AssignmentEditor({ app, mode, playerId, teamId }) {
         </div>
       )}
       {pendingSeason && (
-        <p className="text-[10px] text-muted-foreground">Season auto-stamped: <span className="text-foreground">{pendingSeason}</span></p>
+        <p className="text-micro text-muted-foreground">Season auto-stamped: <span className="text-foreground">{pendingSeason}</span></p>
       )}
     </div>
   );
@@ -582,7 +582,7 @@ function PlayersTab({ app }) {
           {[{ label: "Total", value: counts.total, c: "text-foreground" }, { label: "Claimed", value: counts.claimed, c: "text-teal" }, { label: "Unclaimed", value: counts.unclaimed, c: "text-gold" }].map((s) => (
             <div key={s.label} className="bg-card border border-border rounded-xl p-4 text-center">
               <p className={`font-mono-score text-2xl font-bold ${s.c}`}>{s.value}</p>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">{s.label}</p>
+              <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{s.label}</p>
             </div>
           ))}
         </div>
@@ -674,7 +674,7 @@ function PlayersTab({ app }) {
             {/* Team assignments are a RELATIONSHIP, not a profile field. They are
                 independent of eligibility and apply immediately (no Save needed). */}
             <div className="pt-1 border-t border-border">
-              <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 mt-3 block">Team Assignments</Label>
+              <Label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 mt-3 block">Team Assignments</Label>
               {modal.id
                 ? <AssignmentEditor app={app} mode="player" playerId={modal.id} />
                 : <p className="text-xs text-muted-foreground">Save this player first, then reopen to assign teams.</p>}
@@ -803,7 +803,7 @@ function GamesTab({ app }) {
           );
         })}
       </AdminTable>
-      <p className="text-[11px] text-muted-foreground">Actions: edit game · enter score · mark final & lock · postpone/cancel. Locked games must be unlocked in Scores/Stats before editing.</p>
+      <p className="text-micro text-muted-foreground">Actions: edit game · enter score · mark final & lock · postpone/cancel. Locked games must be unlocked in Scores/Stats before editing.</p>
 
       <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
         <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto" data-testid="admin-reschedule-modal">
@@ -1032,7 +1032,7 @@ const Modal = ({ open, onClose, title, onSave, children }) => (
 );
 const ModalField = ({ label, children }) => (
   <div>
-    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 block">{label}</Label>
+    <Label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 block">{label}</Label>
     {children}
   </div>
 );

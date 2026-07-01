@@ -29,7 +29,7 @@ const TeamLine = ({ team, score, isWinner, isLoser, completed }) => {
       <div className="flex items-center gap-2.5 min-w-0">
         <span
           className="w-2.5 h-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: team?.logoColor || "#555" }}
+          style={{ backgroundColor: team?.logoColor || "var(--border-strong)" }}
         />
         <span className={`font-display uppercase tracking-tight text-base sm:text-sm truncate ${nameEmphasis}`}>
           {team?.name || "TBD"}

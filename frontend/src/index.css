@@ -18,10 +18,23 @@
         --cvf-teal-tint: #10282E;   /* deep teal wash background */
         --cvf-ink: #0F1416;         /* darkest ink — text on accent fills */
         --cvf-zia: #FF5A6E;         /* Zia red — live/alert ONLY (brightened) */
-        --cvf-zia-deep: #C8102E;    /* hover/pressed for red */
-        --cvf-gold: #F5B82E;        /* Zia gold — emphasis/leaders */
+        --cvf-zia-deep: #C8102E;    /* destructive resting fill */
+        --cvf-zia-down: #A50D26;    /* hover/pressed for destructive fills (darkens — light text stays AA) */
+        --cvf-gold: #F5B82E;        /* Zia gold — achievement/emphasis ONLY */
         --cvf-gold-deep: #D49613;   /* hover/pressed for gold */
         --cvf-gold-tint: #2E2410;   /* deep amber wash background */
+
+        /* ---- Sport accents (v2) — sport identity gets its own tokens so
+           gold stays achievement-only. Kickball aliases brand teal. ---- */
+        --sport-kickball: #5BB8CC;      /* alias of --cvf-teal */
+        --sport-kickball-tint: #10282E; /* alias of --cvf-teal-tint */
+        --sport-flag: #FB923C;          /* flag football — orange, dark-tuned */
+        --sport-flag-tint: #2E1B0C;     /* deep burnt-orange wash */
+        --sport-flag-deep: #F97316;     /* hover/pressed for flag-orange */
+
+        /* ---- Rank accents (leaderboard medals; 1st place uses --leader) ---- */
+        --rank-silver: #A9B0B6;
+        --rank-bronze: #E08A4C;
 
         /* ---- Surfaces & neutrals (dark — canonical) ---- */
         --surface: #0F1416;         /* page background */
@@ -32,7 +45,7 @@
         --border-strong: #3C464B;   /* emphasized borders */
         --text-primary: #F4F6F5;    /* body + heading text (off-white) */
         --text-secondary: #A8B0AD;  /* labels, metadata, captions */
-        --text-muted: #6B7470;      /* de-emphasized / placeholder */
+        --text-muted: #7E8883;      /* de-emphasized / placeholder (v2: brightened — 4.65:1 on raised, AA) */
         --text-on-brand: #0F1416;   /* ink text on teal/gold fills */
 
         /* ---- Functional / status (Batch B/C own application) ---- */
@@ -43,7 +56,7 @@
         --status-final: #A8B0AD;
         --status-final-bg: #1C2327;
         --win: #F4F6F5;
-        --loss-text: #6B7470;
+        --loss-text: #7E8883;       /* alias of --text-muted (v2 contrast fix) */
         --leader: #F5B82E;
         --leader-bg: #2E2410;
 
@@ -51,28 +64,26 @@
         --font-display: 'Oswald', 'Saira Condensed', system-ui, sans-serif;
         --font-body: 'Inter', system-ui, -apple-system, sans-serif;
 
-        /* ---- Typography: type scale (sizes; weight/line-height paired in Tailwind) ---- */
+        /* ---- Typography: type scale (v2 — re-based onto Tailwind's grid;
+           xs/sm/base utilities remap to these tokens in tailwind.config) ---- */
         --text-display-xl: 2.5rem;     /* 40px / 1.05 / 700 */
         --text-display-lg: 1.875rem;   /* 30px / 1.1  / 700 */
         --text-heading: 1.375rem;      /* 22px / 1.2  / 600 */
-        --text-subheading: 1.0625rem;  /* 17px / 1.3  / 600 */
-        --text-body: 0.9375rem;        /* 15px / 1.5  / 400 */
-        --text-body-strong: 0.9375rem; /* 15px / 1.5  / 600 */
+        --text-subheading: 1rem;       /* 16px / 1.3  / 600 */
+        --text-body-lg: 1rem;          /* 16px / 1.5  / 400 — lead text, inputs */
+        --text-body: 0.875rem;         /* 14px / 1.5  / 400 — default reading text */
+        --text-body-strong: 0.875rem;  /* 14px / 1.5  / 600 */
         --text-label: 0.8125rem;       /* 13px / 1.4  / 500 / uppercase +0.04em */
         --text-caption: 0.75rem;       /* 12px / 1.4  / 400 */
+        --text-micro: 0.6875rem;       /* 11px / 1.35 / 500 — dense chips; HARD FLOOR */
         --score-figure: 1.75rem;       /* 28px / 1    / 700 (display, tabular) */
 
-        /* ---- Spacing (4px base) ---- */
-        --space-1: 4px;
-        --space-2: 8px;
-        --space-3: 12px;
-        --space-4: 16px;
-        --space-5: 24px;
-        --space-6: 32px;
-        --space-8: 48px;
-        --space-10: 64px;
+        /* Spacing: Tailwind's default 4px scale IS the system (v2 —
+           the old --space-* aliases collided with Tailwind numbering
+           and were never used; deleted). */
 
-        /* ---- Radius ---- */
+        /* ---- Radius (v2: cards/panels/modals = --radius-lg; Tailwind
+           xl/2xl remap to it in config) ---- */
         --radius-sm: 6px;
         --radius-md: 10px;
         --radius-lg: 16px;
@@ -186,6 +197,21 @@
 .delay-150 { animation-delay: 150ms; }
 .delay-225 { animation-delay: 225ms; }
 .delay-300 { animation-delay: 300ms; }
+
+/* Band device (v2 brand pass) — public page titles sit on an ink band,
+   echoing the logo's stencil-on-band lockup. Ink on near-ink needs edges
+   to read: hairline outline + 4px teal leading edge (replaces the old
+   floating teal tick). Public pages only; admin/ops headers stay quiet. */
+.cvf-band {
+    display: inline-block;
+    background: var(--cvf-ink);
+    border: 1px solid var(--border-strong);
+    border-left: 4px solid var(--cvf-teal);
+    padding: 0.375rem 1rem 0.375rem 0.75rem;
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    color: var(--text-primary);
+}
 
 /* Teal glow divider for premium section separation */
 .cvf-rule {

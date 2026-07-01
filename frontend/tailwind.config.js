@@ -10,35 +10,35 @@ module.exports = {
                 fontFamily: {
                         display: ['Oswald', '"Saira Condensed"', 'system-ui', 'sans-serif'],
                         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
-                        mono: ['"JetBrains Mono"', 'monospace']
                 },
-                // Type scale (Phase 8). Sizes pull from --text-* CSS vars so
-                // var(--token) and `text-*` utilities resolve to the same value.
+                // Type scale (v2). Sizes pull from --text-* CSS vars. Tailwind's
+                // default xs/sm/base are REMAPPED onto the tokens so the dev-reflex
+                // `text-sm` lands on the system (values unchanged: 12/14/16px).
                 fontSize: {
-                        'display-xl': ['var(--text-display-xl)', { lineHeight: '1.05', fontWeight: '700' }],
-                        'display-lg': ['var(--text-display-lg)', { lineHeight: '1.1', fontWeight: '700' }],
+                        'display-xl': ['var(--text-display-xl)', { lineHeight: '1.05', fontWeight: '700', letterSpacing: '-0.02em' }],
+                        'display-lg': ['var(--text-display-lg)', { lineHeight: '1.1', fontWeight: '700', letterSpacing: '-0.02em' }],
                         'heading': ['var(--text-heading)', { lineHeight: '1.2', fontWeight: '600' }],
                         'subheading': ['var(--text-subheading)', { lineHeight: '1.3', fontWeight: '600' }],
+                        'base': ['var(--text-body-lg)', { lineHeight: '1.5' }],
                         'body': ['var(--text-body)', { lineHeight: '1.5', fontWeight: '400' }],
+                        'sm': ['var(--text-body)', { lineHeight: '1.5' }],
                         'body-strong': ['var(--text-body-strong)', { lineHeight: '1.5', fontWeight: '600' }],
                         'label': ['var(--text-label)', { lineHeight: '1.4', fontWeight: '500', letterSpacing: '0.04em' }],
+                        'xs': ['var(--text-caption)', { lineHeight: '1.4' }],
                         'caption': ['var(--text-caption)', { lineHeight: '1.4', fontWeight: '400' }],
+                        'micro': ['var(--text-micro)', { lineHeight: '1.35', fontWeight: '500' }],
                         'score': ['var(--score-figure)', { lineHeight: '1', fontWeight: '700' }],
-                },
-                spacing: {
-                        's1': 'var(--space-1)',
-                        's2': 'var(--space-2)',
-                        's3': 'var(--space-3)',
-                        's4': 'var(--space-4)',
-                        's5': 'var(--space-5)',
-                        's6': 'var(--space-6)',
-                        's8': 'var(--space-8)',
-                        's10': 'var(--space-10)',
                 },
                 borderRadius: {
                         lg: 'var(--radius)',
                         md: 'calc(var(--radius) - 2px)',
                         sm: 'calc(var(--radius) - 4px)',
+                        // v2: cards/panels/modals share --radius-lg; the default
+                        // xl/2xl utilities remap so 60+ existing call sites snap
+                        // to the token with no component edits.
+                        xl: 'var(--radius-lg)',
+                        '2xl': 'var(--radius-lg)',
+                        '3xl': 'var(--radius-lg)',
                         // Named brand radii (reference the spec tokens directly)
                         'cvf-sm': 'var(--radius-sm)',
                         'cvf-md': 'var(--radius-md)',
@@ -106,7 +106,19 @@ module.exports = {
                         },
                         zia: {
                                 DEFAULT: 'var(--cvf-zia)',
-                                deep: 'var(--cvf-zia-deep)'
+                                deep: 'var(--cvf-zia-deep)',
+                                down: 'var(--cvf-zia-down)'
+                        },
+                        sport: {
+                                kickball: 'var(--sport-kickball)',
+                                'kickball-tint': 'var(--sport-kickball-tint)',
+                                flag: 'var(--sport-flag)',
+                                'flag-tint': 'var(--sport-flag-tint)',
+                                'flag-deep': 'var(--sport-flag-deep)'
+                        },
+                        rank: {
+                                silver: 'var(--rank-silver)',
+                                bronze: 'var(--rank-bronze)'
                         },
                         'text-primary': 'var(--text-primary)',
                         'text-secondary': 'var(--text-secondary)',

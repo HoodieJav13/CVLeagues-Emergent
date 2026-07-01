@@ -2,10 +2,11 @@ import { sportName } from "../../lib/statsConfig";
 
 // Sport chip — an OUTLINE chip (rounded-full + coloured border, no dot) to stay
 // visually distinct from the soft-filled, dotted, radius-sm status pills below.
-// Kickball = teal, flag football = gold — two distinct brand accents.
+// Kickball = teal, flag football = orange (v2 sport tokens — gold is reserved
+// for achievement/emphasis and never marks a sport).
 const SPORT_STYLES = {
-  kickball: { bg: "var(--cvf-teal-tint)", fg: "var(--cvf-teal)", border: "var(--cvf-teal)" },
-  flag_football: { bg: "var(--cvf-gold-tint)", fg: "var(--cvf-gold)", border: "var(--cvf-gold)" },
+  kickball: { bg: "var(--sport-kickball-tint)", fg: "var(--sport-kickball)", border: "var(--sport-kickball)" },
+  flag_football: { bg: "var(--sport-flag-tint)", fg: "var(--sport-flag)", border: "var(--sport-flag)" },
 };
 
 export const SportBadge = ({ sport, className = "" }) => {
@@ -13,7 +14,7 @@ export const SportBadge = ({ sport, className = "" }) => {
   return (
     <span
       data-testid={`sport-badge-${sport}`}
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide ${className}`}
+      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-micro font-semibold uppercase tracking-wide ${className}`}
       style={{ backgroundColor: s.bg, color: s.fg, border: `1px solid ${s.border}` }}
     >
       {sportName(sport)}

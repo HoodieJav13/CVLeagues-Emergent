@@ -44,14 +44,14 @@ export const BottomNav = () => {
               `flex flex-col items-center justify-center gap-0.5 flex-1 transition-all duration-200 relative pt-0.5 ${
                 isActive
                   ? "text-primary after:absolute after:top-0 after:inset-x-3 after:h-0.5 after:rounded-b-full after:bg-primary"
-                  : "text-muted-foreground hover:text-white/70"
+                  : "text-muted-foreground hover:text-foreground"
               }`
             }
           >
             {({ isActive }) => (
               <>
                 <Icon size={22} weight={isActive ? "fill" : "regular"} />
-                <span className="text-[10px] font-semibold uppercase tracking-wide">
+                <span className="text-micro font-semibold uppercase tracking-wide">
                   {item.label}
                 </span>
               </>

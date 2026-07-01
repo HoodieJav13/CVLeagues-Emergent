@@ -9,7 +9,7 @@ export default function Standings() {
   const { state } = useApp();
   return (
     <div className="space-y-8 animate-fade-up">
-      <SectionHeading as="h1" title="Standings" subtitle={`${state.settings.currentSeason} · sorted by wins, then point diff`} />
+      <SectionHeading as="h1" band title="Standings" subtitle={`${state.settings.currentSeason} · Albuquerque · wins first, point diff breaks ties`} />
       {state.leagues.length === 0 && (
         <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
       )}

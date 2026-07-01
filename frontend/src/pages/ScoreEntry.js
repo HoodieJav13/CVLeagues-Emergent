@@ -124,7 +124,7 @@ function Entry() {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="text-muted-foreground text-[10px] uppercase tracking-widest">
+              <tr className="text-muted-foreground text-micro uppercase tracking-widest">
                 <th className="text-left font-semibold pb-2"> </th>
                 {periods.home.map((_, i) => <th key={i} className="font-semibold pb-2 px-1 text-center min-w-[44px]">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</th>)}
                 <th className="font-semibold pb-2 px-2 text-center text-primary">Total</th>
@@ -182,7 +182,7 @@ function Entry() {
                           <span className="truncate">{r.profile.name}</span>
                           <EligibilityIndicator status={r.profile.eligibilityStatus} />
                         </p>
-                        <p className="text-[11px] text-muted-foreground tabular-nums">{summary}</p>
+                        <p className="text-micro text-muted-foreground tabular-nums">{summary}</p>
                       </div>
                       <CaretDown size={16} weight="bold" className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
                     </button>
@@ -190,11 +190,11 @@ function Entry() {
                       <div className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.playerId}`}>
                         {STAT_GROUPS[team.sport].map((grp) => (
                           <div key={grp.group}>
-                            <p className="text-[10px] uppercase tracking-widest text-primary font-semibold mb-1.5">{grp.group}</p>
+                            <p className="text-micro uppercase tracking-widest text-primary font-semibold mb-1.5">{grp.group}</p>
                             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                               {grp.stats.map((st) => (
                                 <label key={st.key} className="flex flex-col gap-1">
-                                  <span className="text-[10px] text-muted-foreground truncate">{st.label}</span>
+                                  <span className="text-micro text-muted-foreground truncate">{st.label}</span>
                                   <input
                                     type="number" min="0" value={pstats[st.key] || 0}
                                     data-testid={`score-stat-${r.playerId}-${st.key}`}

@@ -49,7 +49,7 @@ export default function Schedule() {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <SectionHeading as="h1" title="Schedule" subtitle={`${state.settings.currentSeason} · all matchups`} />
+      <SectionHeading as="h1" band title="Schedule" subtitle={`${state.settings.currentSeason} · Albuquerque · every matchup, every field`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setLeagueId("all"); setTeamId("all"); }} testid="schedule-filter-sport">
@@ -91,7 +91,7 @@ export default function Schedule() {
 
 const Filter = ({ label, value, onChange, testid, children }) => (
   <div>
-    <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">
+    <label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">
       {label}
     </label>
     <Select value={value} onValueChange={onChange}>

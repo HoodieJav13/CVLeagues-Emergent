@@ -1,0 +1,95 @@
+- generic [active] [ref=f8e1]:
+  - generic [ref=f8e2]:
+    - generic [ref=f8e3]:
+      - banner [ref=f8e4]:
+        - link "CVF Sports CVF Sports Albuquerque, NM" [ref=f8e6] [cursor=pointer]:
+          - /url: /
+          - img "CVF Sports" [ref=f8e7]
+          - generic [ref=f8e8]:
+            - generic [ref=f8e9]: CVF Sports
+            - text: Albuquerque, NM
+      - main [ref=f8e10]:
+        - generic [ref=f8e11]:
+          - generic [ref=f8e13]:
+            - heading "Team Interest" [level=1] [ref=f8e16]
+            - paragraph [ref=f8e17]: Tell us about your team — an admin will reach out.
+          - generic [ref=f8e18]:
+            - paragraph [ref=f8e19]: Captain Info
+            - generic [ref=f8e20]:
+              - generic [ref=f8e21]:
+                - text: Legal Name
+                - generic [ref=f8e22]: "*"
+              - textbox "Legal Name *" [ref=f8e23]:
+                - /placeholder: First and last name
+            - generic [ref=f8e24]:
+              - generic [ref=f8e25]:
+                - text: Contact
+                - generic [ref=f8e26]: "*"
+              - paragraph [ref=f8e27]: At least one of phone or email is required
+              - generic [ref=f8e28]:
+                - textbox "Phone" [ref=f8e29]
+                - textbox "Email" [ref=f8e30]
+          - generic [ref=f8e31]:
+            - paragraph [ref=f8e32]: Team Info
+            - generic [ref=f8e33]:
+              - generic [ref=f8e34]:
+                - text: Team Name
+                - generic [ref=f8e35]: "*"
+              - textbox "Team Name *" [ref=f8e36]:
+                - /placeholder: e.g. Westside Warriors
+            - generic [ref=f8e37]:
+              - generic [ref=f8e38]:
+                - text: Sport
+                - generic [ref=f8e39]: "*"
+              - combobox "Sport" [ref=f8e40] [cursor=pointer]:
+                - generic: Choose a sport
+                - img [ref=f8e41]
+            - generic [ref=f8e43]:
+              - generic [ref=f8e44]:
+                - generic [ref=f8e45]:
+                  - text: Estimated Roster Size
+                  - generic [ref=f8e46]: (optional)
+                - spinbutton "Estimated Roster Size (optional)" [ref=f8e47]
+              - generic [ref=f8e48]:
+                - generic [ref=f8e49]:
+                  - text: Preferred Season
+                  - generic [ref=f8e50]: (optional)
+                - textbox "Preferred Season (optional)" [ref=f8e51]: Summer 2026
+            - generic [ref=f8e52]:
+              - generic [ref=f8e53]:
+                - text: Notes
+                - generic [ref=f8e54]: (optional)
+              - textbox "Notes (optional)" [ref=f8e55]:
+                - /placeholder: Returning team, schedule preferences, anything we should know…
+          - generic [ref=f8e57] [cursor=pointer]:
+            - checkbox "I consent to be contacted by CVF Sports by phone, text, or email regarding league registration. *" [ref=f8e58]
+            - generic [ref=f8e59]: I consent to be contacted by CVF Sports by phone, text, or email regarding league registration. *
+          - button "Submit Team Interest" [ref=f8e60] [cursor=pointer]
+      - navigation [ref=f8e61]:
+        - link "Home" [ref=f8e62] [cursor=pointer]:
+          - /url: /
+          - img [ref=f8e63]
+          - generic [ref=f8e65]: Home
+        - link "Schedule" [ref=f8e66] [cursor=pointer]:
+          - /url: /schedule
+          - img [ref=f8e67]
+          - generic [ref=f8e69]: Schedule
+        - link "Standings" [ref=f8e70] [cursor=pointer]:
+          - /url: /standings
+          - img [ref=f8e71]
+          - generic [ref=f8e73]: Standings
+        - link "Leaders" [ref=f8e74] [cursor=pointer]:
+          - /url: /leaderboards
+          - img [ref=f8e75]
+          - generic [ref=f8e77]: Leaders
+      - button "Demo Preview Viewer" [ref=f8e79] [cursor=pointer]:
+        - img [ref=f8e80]
+        - generic [ref=f8e82]:
+          - generic [ref=f8e83]: Demo Preview
+          - generic [ref=f8e84]: Viewer
+        - img [ref=f8e85]
+    - region "Notifications alt+T"
+  - link "Made with Emergent" [ref=f8e87] [cursor=pointer]:
+    - /url: https://app.emergent.sh/?utm_source=emergent-badge
+    - img [ref=f8e88]
+    - paragraph [ref=f8e91]: Made with Emergent
