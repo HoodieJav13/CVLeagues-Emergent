@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
+import { MobileJoinBar } from "./MobileJoinBar";
 import { RoleSwitcher } from "../RoleSwitcher";
 
 // The Demo Role Preview switcher is an ADMIN-ONLY TESTING TOOL that exists only
@@ -15,7 +16,10 @@ const SHOW_ROLE_SWITCHER =
 export const AppLayout = () => (
   <div className="min-h-screen bg-background flex flex-col">
     <TopBar />
-    <main className="flex-1 w-full max-w-6xl mx-auto px-4 pt-5 pb-28 md:pb-12">
+    <MobileJoinBar />
+    {/* pb clears the fixed mobile BottomNav (h-16) so the last content / form
+        field is never covered; smaller padding on desktop where there's no nav. */}
+    <main className="flex-1 w-full max-w-6xl mx-auto px-4 pt-5 pb-32 md:pb-12">
       <Outlet />
     </main>
     <BottomNav />

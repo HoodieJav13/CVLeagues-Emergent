@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId, cloneElement, isValidElement } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -100,7 +100,7 @@ export default function FreeAgentSignup() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-up">
-      <SectionHeading title="Free Agent Sign-Up" subtitle="No team? Get found by captains." />
+      <SectionHeading as="h1" title="Free Agent Sign-Up" subtitle="No team? Get found by captains." />
 
       {/* Personal info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
@@ -118,8 +118,8 @@ export default function FreeAgentSignup() {
         </Field>
         <Field label="Contact" required error={errors.contact || errors.email} hint="At least one of phone or email is required">
           <div className="grid sm:grid-cols-2 gap-3">
-            <Input data-testid="fa-phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
-            <Input data-testid="fa-email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
+            <Input data-testid="fa-phone" aria-label="Phone" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
+            <Input data-testid="fa-email" aria-label="Email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
       </div>
@@ -128,12 +128,12 @@ export default function FreeAgentSignup() {
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <p className="font-display uppercase tracking-tight text-foreground text-sm">Sport & Availability</p>
         <Field label="Sport Interest" required error={errors.sports}>
-          <div className="flex flex-wrap gap-2 mt-1">
+          <div role="group" aria-label="Sport interest" className="flex flex-wrap gap-2 mt-1">
             {SPORTS.map((s) => (
               <label
                 key={s.id}
                 data-testid={`fa-sport-${s.id}`}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-xl border cursor-pointer transition-colors ${
                   sports.includes(s.id) ? "border-primary bg-primary/10" : "border-border"
                 }`}
               >
@@ -144,11 +144,11 @@ export default function FreeAgentSignup() {
           </div>
         </Field>
         <Field label="Availability" optional>
-          <div className="flex flex-wrap gap-2 mt-1">
+          <div role="group" aria-label="Availability" className="flex flex-wrap gap-2 mt-1">
             {AVAILABILITY_OPTIONS.map((opt) => (
               <label
                 key={opt.id}
-                className={`flex items-center gap-2 px-3 py-2 rounded-xl border cursor-pointer transition-colors ${
+                className={`flex items-center gap-2 px-3 py-2 min-h-[44px] rounded-xl border cursor-pointer transition-colors ${
                   availability.includes(opt.id) ? "border-primary bg-primary/10" : "border-border"
                 }`}
               >
@@ -161,7 +161,7 @@ export default function FreeAgentSignup() {
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Experience Level" optional>
             <Select value={form.experience} onValueChange={(v) => set("experience", v)}>
-              <SelectTrigger data-testid="fa-experience" className="bg-surface-sunken border-border h-10">
+              <SelectTrigger data-testid="fa-experience" aria-label="Experience level" className="bg-surface-sunken border-border h-10">
                 <SelectValue placeholder="Select level" />
               </SelectTrigger>
               <SelectContent>
@@ -205,7 +205,7 @@ export default function FreeAgentSignup() {
 
       {/* Consent */}
       <div className="bg-card border border-border rounded-2xl p-5">
-        <label className="flex items-start gap-3 cursor-pointer">
+        <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
           <Checkbox data-testid="fa-consent" checked={consentToContact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
             I consent to be contacted by CVF Sports by phone, text, or email regarding league participation.{" "}
@@ -226,15 +226,22 @@ export default function FreeAgentSignup() {
   );
 }
 
-const Field = ({ label, required, optional, error, hint, children }) => (
-  <div>
-    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
-      {label}
-      {required && <span className="text-destructive">*</span>}
-      {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
-    </Label>
-    {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
-    {children}
-    {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-  </div>
-);
+// Associates the visible label with a single Input/Textarea child via a
+// generated id (htmlFor/id). Grouped controls (checkbox sets, the phone+email
+// pair, Select) carry their own aria-label/label and are passed through as-is.
+const Field = ({ label, required, optional, error, hint, children }) => {
+  const id = useId();
+  const labelable = isValidElement(children) && (children.type === Input || children.type === Textarea);
+  return (
+    <div>
+      <Label htmlFor={labelable ? id : undefined} className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+        {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
+      </Label>
+      {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
+      {labelable ? cloneElement(children, { id }) : children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  );
+};

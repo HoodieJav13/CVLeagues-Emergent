@@ -89,7 +89,7 @@ function Entry() {
 
   return (
     <div className="space-y-6 animate-fade-up max-w-3xl mx-auto">
-      <SectionHeading title="Score Entry" subtitle={role === "temp_admin" ? "Scoring your assigned game" : "Select a game and record the final"} />
+      <SectionHeading as="h1" title="Score Entry" subtitle={role === "temp_admin" ? "Scoring your assigned game" : "Select a game and record the final"} />
 
       {/* Game selector */}
       <Select value={gameId} onValueChange={setGameId} disabled={role === "temp_admin"}>
@@ -118,7 +118,7 @@ function Entry() {
         <div className="flex items-center justify-between mb-4">
           <p className="font-display uppercase tracking-tight text-foreground">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
           {game.sport === "kickball" && (
-            <button onClick={addInning} data-testid="score-add-inning" className="text-primary text-sm font-semibold flex items-center gap-1"><Plus size={14} weight="bold" /> Extra inning</button>
+            <button onClick={addInning} data-testid="score-add-inning" className="text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1"><Plus size={14} weight="bold" /> Extra inning</button>
           )}
         </div>
         <div className="overflow-x-auto">

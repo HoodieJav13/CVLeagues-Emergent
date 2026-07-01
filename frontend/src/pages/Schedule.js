@@ -49,7 +49,7 @@ export default function Schedule() {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <SectionHeading title="Schedule" subtitle={`${state.settings.currentSeason} · all matchups`} />
+      <SectionHeading as="h1" title="Schedule" subtitle={`${state.settings.currentSeason} · all matchups`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setLeagueId("all"); setTeamId("all"); }} testid="schedule-filter-sport">
@@ -75,7 +75,7 @@ export default function Schedule() {
         <div className="space-y-6">
           {weekGroups.map((grp) => (
             <section key={grp.key} data-testid={`schedule-week-${grp.key}`}>
-              <h3 className="font-display uppercase tracking-tight text-sm text-muted-foreground mb-2.5">{grp.label}</h3>
+              <h2 className="font-display uppercase tracking-tight text-sm text-muted-foreground mb-2.5">{grp.label}</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {grp.games.map((g) => <GameCard key={g.id} game={g} />)}
               </div>

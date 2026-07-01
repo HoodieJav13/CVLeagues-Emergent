@@ -36,7 +36,7 @@ function Pool() {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <SectionHeading title="Free Agent Pool" subtitle="Browse available players and send invites" />
+      <SectionHeading as="h1" title="Free Agent Pool" subtitle="Browse available players and send invites" />
 
       <Tabs value={filter} onValueChange={setFilter}>
         <TabsList className="bg-card border border-border h-10">

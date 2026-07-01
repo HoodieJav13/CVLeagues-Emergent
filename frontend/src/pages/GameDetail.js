@@ -47,9 +47,17 @@ export default function GameDetail() {
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <button onClick={() => navigate(-1)} data-testid="game-back" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground text-sm">
+      <button onClick={() => navigate(-1)} data-testid="game-back" className="inline-flex items-center gap-1.5 min-h-[44px] -my-1 pr-2 text-muted-foreground hover:text-foreground text-sm">
         <ArrowLeft size={16} weight="bold" /> Back
       </button>
+
+      {/* Page-level matchup title. */}
+      <div data-testid="game-detail-heading">
+        <h1 className="font-display uppercase tracking-tighter text-display-lg text-foreground leading-none">
+          {away?.name || "TBD"} <span className="text-muted-foreground">vs</span> {home?.name || "TBD"}
+        </h1>
+        <p className="text-caption text-muted-foreground mt-1">{dateStr}</p>
+      </div>
 
       <div className="bg-card border border-border rounded-2xl p-5 md:p-7">
         <div className="flex items-center justify-between mb-5">

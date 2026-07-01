@@ -30,7 +30,7 @@ export const BottomNav = () => {
   return (
     <nav
       data-testid="bottom-nav"
-      className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-[#0F1416]/95 backdrop-blur-md border-t border-border flex justify-around items-stretch z-40"
+      className="md:hidden fixed bottom-0 left-0 right-0 h-16 box-content pb-[env(safe-area-inset-bottom)] bg-[#0F1416]/95 backdrop-blur-md border-t border-border flex justify-around items-stretch z-40"
     >
       {items.map((item) => {
         const Icon = ICONS[item.icon] || House;

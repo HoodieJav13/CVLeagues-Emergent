@@ -147,7 +147,7 @@ export default function Home() {
           title="Upcoming Games"
           subtitle="Next matchups on the schedule"
           action={
-            <Link to="/schedule" className="text-primary text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all">
+            <Link to="/schedule" className="text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1 hover:gap-2 transition-all">
               All <ArrowRight size={14} weight="bold" />
             </Link>
           }
@@ -167,7 +167,7 @@ export default function Home() {
           title="Recent Scores"
           subtitle="Latest final results"
           action={
-            <Link to="/standings" className="text-primary text-sm font-semibold flex items-center gap-1 hover:gap-2 transition-all">
+            <Link to="/standings" className="text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1 hover:gap-2 transition-all">
               Standings <ArrowRight size={14} weight="bold" />
             </Link>
           }

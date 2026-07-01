@@ -9,7 +9,7 @@ export default function Standings() {
   const { state } = useApp();
   return (
     <div className="space-y-8 animate-fade-up">
-      <SectionHeading title="Standings" subtitle={`${state.settings.currentSeason} · sorted by wins, then point diff`} />
+      <SectionHeading as="h1" title="Standings" subtitle={`${state.settings.currentSeason} · sorted by wins, then point diff`} />
       {state.leagues.length === 0 && (
         <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
       )}
@@ -18,7 +18,7 @@ export default function Standings() {
         return (
           <section key={league.id} data-testid={`standings-league-${league.id}`}>
             <div className="flex items-center gap-2 mb-3">
-              <h3 className="font-display uppercase tracking-tight text-lg text-foreground">{league.name}</h3>
+              <h2 className="font-display uppercase tracking-tight text-lg text-foreground">{league.name}</h2>
               <SportBadge sport={league.sport} />
             </div>
             <div className="bg-card border border-border rounded-2xl overflow-hidden">

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId, cloneElement, isValidElement } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle, Warning } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -91,7 +91,7 @@ export default function TeamRegistration() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-up">
-      <SectionHeading title="Team Interest" subtitle="Tell us about your team — an admin will reach out." />
+      <SectionHeading as="h1" title="Team Interest" subtitle="Tell us about your team — an admin will reach out." />
 
       {form.sport && !regOpen && (
         <div className="flex items-center gap-2 bg-[#F5B82E]/10 border border-[#F5B82E]/30 rounded-xl p-3 text-sm text-gold">
@@ -107,8 +107,8 @@ export default function TeamRegistration() {
         </Field>
         <Field label="Contact" required error={errors.contact || errors.captainEmail} hint="At least one of phone or email is required">
           <div className="grid sm:grid-cols-2 gap-3">
-            <Input data-testid="reg-captain-phone" value={form.captainPhone} onChange={(e) => set("captainPhone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
-            <Input data-testid="reg-captain-email" type="email" value={form.captainEmail} onChange={(e) => set("captainEmail", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
+            <Input data-testid="reg-captain-phone" aria-label="Phone" value={form.captainPhone} onChange={(e) => set("captainPhone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
+            <Input data-testid="reg-captain-email" aria-label="Email" type="email" value={form.captainEmail} onChange={(e) => set("captainEmail", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
       </div>
@@ -121,7 +121,7 @@ export default function TeamRegistration() {
         </Field>
         <Field label="Sport" required error={errors.sport}>
           <Select value={form.sport} onValueChange={(v) => set("sport", v)}>
-            <SelectTrigger data-testid="reg-sport" className="bg-surface-sunken border-border h-10">
+            <SelectTrigger data-testid="reg-sport" aria-label="Sport" className="bg-surface-sunken border-border h-10">
               <SelectValue placeholder="Choose a sport" />
             </SelectTrigger>
             <SelectContent>
@@ -159,7 +159,7 @@ export default function TeamRegistration() {
 
       {/* Consent */}
       <div className="bg-card border border-border rounded-2xl p-5">
-        <label className="flex items-start gap-3 cursor-pointer">
+        <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
           <Checkbox data-testid="reg-consent" checked={consentToContact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
             I consent to be contacted by CVF Sports by phone, text, or email regarding league registration.{" "}
@@ -180,15 +180,22 @@ export default function TeamRegistration() {
   );
 }
 
-const Field = ({ label, required, optional, error, hint, children }) => (
-  <div>
-    <Label className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
-      {label}
-      {required && <span className="text-destructive">*</span>}
-      {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
-    </Label>
-    {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
-    {children}
-    {error && <p className="text-xs text-destructive mt-1">{error}</p>}
-  </div>
-);
+// Associates the visible label with a single Input/Textarea child via a
+// generated id (htmlFor/id). Grouped controls (the phone+email pair, Select)
+// carry their own aria-label and are passed through as-is.
+const Field = ({ label, required, optional, error, hint, children }) => {
+  const id = useId();
+  const labelable = isValidElement(children) && (children.type === Input || children.type === Textarea);
+  return (
+    <div>
+      <Label htmlFor={labelable ? id : undefined} className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 flex items-center gap-1">
+        {label}
+        {required && <span className="text-destructive">*</span>}
+        {optional && <span className="normal-case tracking-normal font-normal text-[10px]">(optional)</span>}
+      </Label>
+      {hint && <p className="text-[10px] text-muted-foreground -mt-1 mb-1.5">{hint}</p>}
+      {labelable ? cloneElement(children, { id }) : children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
+    </div>
+  );
+};

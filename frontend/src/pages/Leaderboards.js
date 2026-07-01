@@ -27,7 +27,7 @@ export default function Leaderboards() {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <SectionHeading title="Leaderboards" subtitle="Top performers across the league" />
+      <SectionHeading as="h1" title="Leaderboards" subtitle="Top performers across the league" />
 
       <Tabs value={sport} onValueChange={onSport}>
         <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-11">
