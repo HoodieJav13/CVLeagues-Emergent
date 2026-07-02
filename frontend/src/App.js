@@ -20,8 +20,8 @@ import NotFound from "./pages/NotFound";
 
 function App() {
   return (
-    <AppStateProvider>
-      <RoleProvider>
+    <RoleProvider>
+      <AppStateProvider>
         <BrowserRouter>
           <Routes>
             <Route element={<AppLayout />}>
@@ -42,8 +42,8 @@ function App() {
           </Routes>
         </BrowserRouter>
         <Toaster theme="dark" position="top-center" richColors />
-      </RoleProvider>
-    </AppStateProvider>
+      </AppStateProvider>
+    </RoleProvider>
   );
 }
 

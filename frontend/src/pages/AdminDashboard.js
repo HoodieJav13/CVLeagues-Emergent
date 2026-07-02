@@ -25,6 +25,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/ui/table";
+import { BACKEND_ENABLED } from "../lib/supabase";
+import { signOutAdmin } from "../lib/backend";
 
 // FINAL DRAFT — Season 1 is admin-only (CLAUDE.md): players are profile
 // records, NOT user accounts. Account-language features (claim/invite counts,
@@ -62,7 +64,20 @@ function Dashboard() {
           <p className="text-micro uppercase tracking-[0.25em] text-primary font-bold">CVF Operations</p>
           <h1 className="font-display uppercase text-display-lg text-foreground mt-1">Admin Console</h1>
         </div>
-        <span className="text-micro uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">Season 1 · Demo Data</span>
+        <div className="flex items-center gap-2">
+          <span className="text-micro uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">
+            {BACKEND_ENABLED ? "Season 1 · Live Data" : "Season 1 · Demo Data"}
+          </span>
+          {BACKEND_ENABLED && (
+            <button
+              onClick={() => signOutAdmin().catch((e) => toast.error(e.message))}
+              data-testid="admin-sign-out"
+              className="text-micro uppercase tracking-widest text-muted-foreground hover:text-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap"
+            >
+              Sign Out
+            </button>
+          )}
+        </div>
       </header>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-card border border-border w-full flex overflow-x-auto h-auto p-1 justify-start">
@@ -226,7 +241,7 @@ const NotesList = ({ notes }) =>
     <div className="mt-2.5 pt-2.5 border-t border-border space-y-1">
       {[...notes].reverse().map((n, i) => (
         <p key={i} className="text-xs text-muted-foreground">
-          <span className="text-muted-foreground/60">{fmtTs(n.timestamp)}</span> — {n.text}
+          <span className="text-muted-foreground/60">{fmtTs(n.created_at)}</span> — {n.text}
         </p>
       ))}
     </div>
@@ -892,7 +907,7 @@ function ScoresTab({ app }) {
           <div data-testid={`admin-history-list-${g.id}`} className="mt-2.5 pt-2.5 border-t border-border space-y-1">
             {[...hist].reverse().map((e, i) => (
               <p key={i} className="text-xs text-muted-foreground">
-                <span className="text-muted-foreground/60">{fmtTs(e.timestamp)}</span> — <span className="text-foreground">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
+                <span className="text-muted-foreground/60">{fmtTs(e.created_at)}</span> — <span className="text-foreground">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
               </p>
             ))}
           </div>

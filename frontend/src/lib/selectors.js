@@ -87,9 +87,16 @@ export function playerGameLog(state, profile_id, sport) {
     .sort((a, b) => new Date(b.game.date) - new Date(a.game.date));
 }
 
+// Roster rows that still count. Backend soft-deletes assignments via
+// roster_status ('removed'/'inactive'); mock rows have no roster_status and
+// pass through. 'pending_waiver' and 'eligible' are both ACTIVE — eligibility
+// is informational only and never hides a player.
+const activeRosterRows = (state) =>
+  state.teamPlayers.filter((tp) => !["removed", "inactive"].includes(tp.roster_status));
+
 // Which sports has this player recorded stats / roster spots in.
 export function playerSports(state, profile_id) {
-  const fromRoster = state.teamPlayers
+  const fromRoster = activeRosterRows(state)
     .filter((tp) => tp.profile_id === profile_id)
     .map((tp) => getTeam(state, tp.team_id)?.sport)
     .filter(Boolean);
@@ -98,7 +105,7 @@ export function playerSports(state, profile_id) {
 
 // Teams a player belongs to (with sport + role meta).
 export function playerTeams(state, profile_id) {
-  return state.teamPlayers
+  return activeRosterRows(state)
     .filter((tp) => tp.profile_id === profile_id)
     .map((tp) => {
       const team = getTeam(state, tp.team_id);
@@ -111,7 +118,7 @@ export function playerTeams(state, profile_id) {
 
 /* ------------------------------- roster ---------------------------------- */
 export function teamRoster(state, team_id) {
-  return state.teamPlayers
+  return activeRosterRows(state)
     .filter((tp) => tp.team_id === team_id)
     .map((tp) => ({ ...tp, profile: getProfile(state, tp.profile_id) }))
     .filter((tp) => tp.profile);
@@ -131,7 +138,7 @@ export function buildLeaderboard(state, sport, statKey, scope = "season") {
   const fn = scope === "career" ? playerCareerStats : playerSeasonStats;
   // candidate players: anyone on a roster for this sport
   const playerIds = new Set(
-    state.teamPlayers
+    activeRosterRows(state)
       .filter((tp) => getTeam(state, tp.team_id)?.sport === sport)
       .map((tp) => tp.profile_id)
   );

@@ -1,6 +1,10 @@
-import { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { initialState } from "../data/seed";
 import { freeAgentName } from "../lib/utils";
+import { BACKEND_ENABLED } from "../lib/supabase";
+import * as backend from "../lib/backend";
+import { useRole } from "./RoleContext";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -66,21 +70,47 @@ let idCounter = 1000;
 const newId = (prefix) => `${prefix}_${Date.now()}_${idCounter++}`;
 
 // One entry in a game's mock audit log (Stage 3 — real audit table in Phase 2).
-const logEntry = (action, reason) => ({ action, timestamp: new Date().toISOString(), ...(reason ? { reason } : {}) });
+const logEntry = (action, reason) => ({ action, created_at: new Date().toISOString(), ...(reason ? { reason } : {}) });
 
 // Brand avatar palette (mirrors seed.js) for newly created profiles.
 const PLAYER_COLORS = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
 
 export function AppStateProvider({ children }) {
-  const [state, setState] = useState(loadState);
+  // Backend mode (Phase 9b): state comes from Supabase and starts null until
+  // the first fetch resolves. Mock mode: seed + localStorage, unchanged.
+  const { role } = useRole();
+  const isAdmin = BACKEND_ENABLED && role === "admin";
+  const [state, setState] = useState(BACKEND_ENABLED ? null : loadState);
+
+  // Live handle on state for backend actions that need current data
+  // (league derivation, settings toggles) without re-creating callbacks.
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; });
 
   useEffect(() => {
+    if (BACKEND_ENABLED) return; // persistence is Supabase's job in backend mode
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch {
       /* ignore quota errors */
     }
   }, [state]);
+
+  // Backend mode: full refetch on mount, on auth change (admin login widens
+  // reads to PII tables), and after every mutation. Data volume is Season-1
+  // small; realtime subscriptions are a later optimization, not a need.
+  const refresh = useCallback(async () => {
+    const next = await backend.fetchAppState(isAdmin);
+    setState(next);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!BACKEND_ENABLED) return;
+    refresh().catch((e) => {
+      console.error(e);
+      toast.error(`Could not load league data: ${e.message}`);
+    });
+  }, [refresh]);
 
   /* ----------------------- SCORE ENTRY (core loop) ---------------------- */
   // Updates a game to completed, stores period scores, and replaces the
@@ -265,7 +295,7 @@ export function AppStateProvider({ children }) {
     setState((prev) => ({
       ...prev,
       [collection]: prev[collection].map((e) =>
-        e.id === id ? { ...e, admin_notes: [...(e.admin_notes || []), { text, timestamp: new Date().toISOString() }] } : e
+        e.id === id ? { ...e, admin_notes: [...(e.admin_notes || []), { text, created_at: new Date().toISOString() }] } : e
       ),
     }));
   }, []);
@@ -323,28 +353,83 @@ export function AppStateProvider({ children }) {
     setState(initialState);
   }, []);
 
-  const value = {
-    state,
-    submitScore,
-    addRegistration,
-    updateRegistrationStatus,
-    addFreeAgent,
-    setFreeAgentStatus,
-    createPlayer,
-    assignPlayerToTeam,
-    removePlayerFromTeam,
-    createEntity,
-    updateEntity,
-    deleteEntity,
-    toggleRegistration,
-    assignTempAdmin,
-    appendAdminNote,
-    lockGame,
-    unlockGame,
-    setGameStatus,
-    resendInvite,
-    resetState,
+  /* ---------------- BACKEND MODE: same signatures, real writes ----------- */
+  // Every action delegates to the adapter (RPCs for multi-table mutations),
+  // then refetches. Errors surface as toasts here because most call sites
+  // fire-and-forget (mock heritage); tightening them to await is follow-up
+  // polish, not a correctness need.
+  const act = useCallback(
+    (fn) =>
+      async (...args) => {
+        try {
+          const result = await fn(...args);
+          await refresh();
+          return result;
+        } catch (e) {
+          console.error(e);
+          toast.error(e.message);
+          throw e;
+        }
+      },
+    [refresh]
+  );
+
+  const backendActions = {
+    submitScore: act(backend.submitScore),
+    addRegistration: act(backend.addRegistration),
+    updateRegistrationStatus: act((id, status) => backend.updateRegistrationStatus(id, status, stateRef.current)),
+    addFreeAgent: act(backend.addFreeAgent),
+    setFreeAgentStatus: act(backend.setFreeAgentStatus),
+    createPlayer: act(backend.createPlayer),
+    assignPlayerToTeam: act((args) => backend.assignPlayerToTeam(args, stateRef.current)),
+    removePlayerFromTeam: act(backend.removePlayerFromTeam),
+    createEntity: act((collection, entity) => backend.createEntity(collection, entity)),
+    updateEntity: act(backend.updateEntity),
+    deleteEntity: act(backend.deleteEntity),
+    toggleRegistration: act((sport) => backend.toggleRegistration(sport, stateRef.current)),
+    assignTempAdmin: act(backend.assignTempAdmin),
+    appendAdminNote: act(backend.appendAdminNote),
+    lockGame: act(backend.lockGame),
+    unlockGame: act(backend.unlockGame),
+    setGameStatus: act(backend.setGameStatus),
+    resendInvite: () => {}, // real invite email is a Phase-2 feature (Resend)
+    resetState: () => toast.info("Demo reset is mock-mode only."),
   };
+
+  const value = BACKEND_ENABLED
+    ? { state, ...backendActions }
+    : {
+        state,
+        submitScore,
+        addRegistration,
+        updateRegistrationStatus,
+        addFreeAgent,
+        setFreeAgentStatus,
+        createPlayer,
+        assignPlayerToTeam,
+        removePlayerFromTeam,
+        createEntity,
+        updateEntity,
+        deleteEntity,
+        toggleRegistration,
+        assignTempAdmin,
+        appendAdminNote,
+        lockGame,
+        unlockGame,
+        setGameStatus,
+        resendInvite,
+        resetState,
+      };
+
+  // Backend mode renders nothing until the first fetch lands (sub-second on
+  // Season-1 data) — a blank-but-branded gate beats flashing empty pages.
+  if (BACKEND_ENABLED && !state) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-muted-foreground text-sm">
+        Loading league data…
+      </div>
+    );
+  }
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
 }
