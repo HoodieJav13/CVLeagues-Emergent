@@ -162,7 +162,7 @@ export default function TeamRegistration() {
         <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
           <Checkbox data-testid="reg-consent" checked={consentToContact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
-            I consent to be contacted by CVF Sports by phone, text, or email regarding league registration.{" "}
+            I consent to be contacted by CVF Sports by phone, text, or email regarding this team interest submission.{" "}
             <span className="text-destructive font-bold">*</span>
           </span>
         </label>
