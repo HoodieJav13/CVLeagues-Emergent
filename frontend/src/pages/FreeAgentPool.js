@@ -31,7 +31,7 @@ function Pool() {
   const invite = (a) => {
     setFreeAgentStatus(a.id, "contacted");
     // PHASE 2: send a real invite email + create a pending roster request.
-    toast.success(`Invite sent to ${freeAgentName(a)}`, { description: roleMeta.teamId ? "They'll receive an email to join your team." : "Mock invite — wired for Phase 2 email." });
+    toast.success(`Invite sent to ${freeAgentName(a)}`, { description: roleMeta.team_id ? "They'll receive an email to join your team." : "Mock invite — wired for Phase 2 email." });
   };
 
   return (

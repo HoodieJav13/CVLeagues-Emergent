@@ -14,21 +14,21 @@ export default function TeamPage() {
   const team = state.teams.find((t) => t.id === id);
   if (!team) return <p className="text-muted-foreground">Team not found.</p>;
 
-  const league = getLeague(state, team.leagueId);
+  const league = getLeague(state, team.league_id);
   const record = computeTeamRecord(state, team.id);
   const roster = teamRoster(state, team.id);
   const games = teamGames(state, team.id);
   const upcoming = games.filter((g) => g.status === "upcoming").slice(0, 3);
   const recent = games.filter((g) => g.status === "completed").reverse().slice(0, 3);
-  const captain = getProfile(state, team.captainId);
+  const captain = getProfile(state, team.captain_id);
   const leaders = teamStatLeaders(state, team.id, HIGHLIGHT_STATS[team.sport]);
 
   return (
     <div className="space-y-8 animate-fade-up">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${team.logoColor}22, transparent)` }}>
+      <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${team.logo_color}22, transparent)` }}>
         <div className="flex items-center gap-4">
-          <span className="w-16 h-16 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-ink" style={{ backgroundColor: team.logoColor }}>
+          <span className="w-16 h-16 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-ink" style={{ backgroundColor: team.logo_color }}>
             {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
           </span>
           <div className="min-w-0">
@@ -60,7 +60,7 @@ export default function TeamPage() {
               <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">{statLabel(team.sport, l.key)}</p>
               {l.profile ? (
                 <>
-                  <Avatar name={l.profile.name} color={l.profile.avatarColor} size={40} className="mx-auto my-2" />
+                  <Avatar name={l.profile.name} color={l.profile.avatar_color} size={40} className="mx-auto my-2" />
                   <p className="font-mono-score text-2xl font-bold text-primary leading-none">{l.value}</p>
                   <Link to={`/profile/${l.profile.id}`} className="text-xs text-foreground hover:text-primary truncate block mt-1">{l.profile.name.split(" ")[0]}</Link>
                 </>
@@ -82,7 +82,7 @@ export default function TeamPage() {
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
             {roster.map((r) => (
-              <PlayerCard key={r.id} profile={r.profile} jersey={r.jersey} position={r.position} isCaptain={team.captainId === r.playerId} />
+              <PlayerCard key={r.id} profile={r.profile} jersey_number={r.jersey_number} position={r.position} isCaptain={team.captain_id === r.profile_id} />
             ))}
           </div>
         )}

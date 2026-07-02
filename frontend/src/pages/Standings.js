@@ -9,7 +9,7 @@ export default function Standings() {
   const { state } = useApp();
   return (
     <div className="space-y-8 animate-fade-up">
-      <SectionHeading as="h1" band title="Standings" subtitle={`${state.settings.currentSeason} · Albuquerque · wins first, point diff breaks ties`} />
+      <SectionHeading as="h1" band title="Standings" subtitle={`${state.settings.current_season} · Albuquerque · wins first, point diff breaks ties`} />
       {state.leagues.length === 0 && (
         <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
       )}
@@ -50,7 +50,7 @@ export default function Standings() {
                     {rank}
                   </span>
                   <span className="flex items-center gap-2 min-w-0">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: team.logoColor }} />
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: team.logo_color }} />
                     <span className="font-display uppercase tracking-tight text-foreground truncate text-base">{team.name}</span>
                   </span>
                   <span className="text-right font-mono-score font-bold text-foreground tabular-nums">{record.wins}</span>

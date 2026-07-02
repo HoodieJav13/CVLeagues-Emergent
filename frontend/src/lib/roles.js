@@ -23,7 +23,7 @@ export const ROLES = {
     description: "Sees own profile, stats, schedule and team.",
     color: "#22d3ee",
     // The demo player is bound to a specific profile so 'My Profile' resolves.
-    profileId: "p1",
+    profile_id: "p1",
   },
   captain: {
     id: "captain",
@@ -31,8 +31,8 @@ export const ROLES = {
     short: "Captain",
     description: "Manage roster, browse free agents, send mock invites.",
     color: "#10b981",
-    profileId: "p16",
-    teamId: "t4",
+    profile_id: "p16",
+    team_id: "t4",
   },
   admin: {
     id: "admin",

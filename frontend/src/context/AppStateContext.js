@@ -19,35 +19,37 @@ const AppStateContext = createContext(null);
 
 // Lightweight localStorage persistence so the demo survives page refreshes.
 // PHASE 2: this entire layer is replaced by Supabase queries + realtime.
-const STORAGE_KEY = "cvf_app_state_v1";
+// v2: Phase 9a snake_case field rename — pre-rename (v1) persisted state is
+// deliberately abandoned rather than field-migrated; the demo reseeds.
+const STORAGE_KEY = "cvf_app_state_v2";
 
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
 //   registrations: pending→new, rejected→archived
 //   free agents:   available→new, invited→contacted; `name` backfilled from
-//                  the firstName/lastName/displayName shape the intake form
+//                  the first_name/last_name/display_name shape the intake form
 //                  writes, so both legacy and new-shape records still display.
 //   games:         score_status added alongside status (upcoming→pending,
 //                  completed→approved). "final" now strictly means LOCKED via
 //                  Mark Final, so legacy "final" records get locked: true.
-//                  locked / editHistory / adminNotes backfilled when missing.
+//                  locked / edit_history / admin_notes backfilled when missing.
 const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
 const FA_STATUS_MAP = { available: "new", invited: "contacted" };
 const migrateState = (s) => ({
   ...s,
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
-  registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, adminNotes: r.adminNotes || [] })),
-  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, name: freeAgentName(f), adminNotes: f.adminNotes || [], assignedTeamId: f.assignedTeamId ?? null })),
+  registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),
+  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, name: freeAgentName(f), admin_notes: f.admin_notes || [], assigned_team_id: f.assigned_team_id ?? null })),
   // Flow C-lite: profiles carry an informational eligibility flag; roster
   // assignments carry an auto-stamped season. Backfilled for older states.
-  profiles: (s.profiles || []).map((p) => ({ ...p, eligibilityStatus: p.eligibilityStatus || "not_verified" })),
-  teamPlayers: (s.teamPlayers || []).map((tp) => ({ ...tp, season: tp.season || (s.settings?.currentSeason ?? initialState.settings.currentSeason) })),
+  profiles: (s.profiles || []).map((p) => ({ ...p, eligibility_status: p.eligibility_status || "not_verified" })),
+  teamPlayers: (s.teamPlayers || []).map((tp) => ({ ...tp, season: tp.season || (s.settings?.current_season ?? initialState.settings.current_season) })),
   games: (s.games || []).map((g) => ({
     ...g,
     score_status: g.score_status || (g.status === "completed" ? "approved" : "pending"),
     locked: g.locked ?? g.score_status === "final",
-    editHistory: g.editHistory || [],
+    edit_history: g.edit_history || [],
   })),
 });
 
@@ -85,31 +87,31 @@ export function AppStateProvider({ children }) {
   // per-player stat rows for that game. Everything downstream re-derives.
   // score_status goes to "submitted" — admin promotes to "final" (locked)
   // via the Mark Final action. Every save appends to the edit history.
-  const submitScore = useCallback(({ gameId, homeScore, awayScore, periods, statsByPlayer }) => {
+  const submitScore = useCallback(({ game_id, home_score, away_score, periods, statsByPlayer }) => {
     setState((prev) => {
       const games = prev.games.map((g) =>
-        g.id === gameId
+        g.id === game_id
           ? {
               ...g,
               status: "completed",
               score_status: "submitted",
-              homeScore: Number(homeScore),
-              awayScore: Number(awayScore),
+              home_score: Number(home_score),
+              away_score: Number(away_score),
               periods: periods || g.periods,
-              editHistory: [...(g.editHistory || []), logEntry(g.status === "completed" ? "Score edited" : "Score saved")],
+              edit_history: [...(g.edit_history || []), logEntry(g.status === "completed" ? "Score edited" : "Score saved")],
             }
           : g
       );
       // Drop any existing stat rows for this game, then add the new ones.
-      const game = prev.games.find((g) => g.id === gameId);
-      const kept = prev.playerStats.filter((s) => s.gameId !== gameId);
+      const game = prev.games.find((g) => g.id === game_id);
+      const kept = prev.playerStats.filter((s) => s.game_id !== game_id);
       const fresh = Object.entries(statsByPlayer || {})
         .filter(([, v]) => v && Object.values(v.stats || {}).some((n) => Number(n) > 0))
-        .map(([playerId, v]) => ({
+        .map(([profile_id, v]) => ({
           id: newId("s"),
-          gameId,
-          playerId,
-          teamId: v.teamId,
+          game_id,
+          profile_id,
+          team_id: v.team_id,
           sport: game.sport,
           stats: v.stats,
         }));
@@ -123,7 +125,7 @@ export function AppStateProvider({ children }) {
       ...prev,
       registrations: [
         ...prev.registrations,
-        { id: newId("reg"), status: "new", submittedDate: new Date().toISOString().slice(0, 10), ...reg },
+        { id: newId("reg"), status: "new", created_at: new Date().toISOString().slice(0, 10), ...reg },
       ],
     }));
   }, []);
@@ -141,7 +143,7 @@ export function AppStateProvider({ children }) {
       ...prev,
       freeAgents: [
         ...prev.freeAgents,
-        { id: newId("fa"), status: "new", createdDate: new Date().toISOString().slice(0, 10), ...agent },
+        { id: newId("fa"), status: "new", created_at: new Date().toISOString().slice(0, 10), ...agent },
       ],
     }));
   }, []);
@@ -164,9 +166,9 @@ export function AppStateProvider({ children }) {
   // not yet verified. PHASE 2: insert into public.profiles (auth_user_id nullable).
   const createPlayer = useCallback((profile) => {
     setState((prev) => {
-      const first = (profile.firstName || "").trim();
-      const last = (profile.lastName || "").trim();
-      const display = (profile.displayName || "").trim();
+      const first = (profile.first_name || "").trim();
+      const last = (profile.last_name || "").trim();
+      const display = (profile.display_name || "").trim();
       const name = display || `${first} ${last}`.trim();
       return {
         ...prev,
@@ -175,13 +177,13 @@ export function AppStateProvider({ children }) {
           {
             id: newId("p"),
             sports: [],
-            eligibilityStatus: "not_verified",
+            eligibility_status: "not_verified",
             ...profile,
-            firstName: first,
-            lastName: last,
-            displayName: display || null,
+            first_name: first,
+            last_name: last,
+            display_name: display || null,
             name,
-            avatarColor: PLAYER_COLORS[prev.profiles.length % PLAYER_COLORS.length],
+            avatar_color: PLAYER_COLORS[prev.profiles.length % PLAYER_COLORS.length],
           },
         ],
       };
@@ -194,18 +196,18 @@ export function AppStateProvider({ children }) {
   // PHASE 2: this becomes a real team_players row; roster_status
   // (pending_waiver/eligible/inactive/removed) and the intake→roster
   // conversion are introduced there, NOT here.
-  const assignPlayerToTeam = useCallback(({ playerId, teamId, jersey = null, position = "" }) => {
+  const assignPlayerToTeam = useCallback(({ profile_id, team_id, jersey_number = null, position = "" }) => {
     setState((prev) => {
-      if (!playerId || !teamId) return prev;
-      if (prev.teamPlayers.some((tp) => tp.playerId === playerId && tp.teamId === teamId)) return prev; // no dupes
-      const team = prev.teams.find((t) => t.id === teamId);
-      const league = prev.leagues.find((l) => l.id === team?.leagueId);
-      const season = league?.season || prev.settings.currentSeason;
+      if (!profile_id || !team_id) return prev;
+      if (prev.teamPlayers.some((tp) => tp.profile_id === profile_id && tp.team_id === team_id)) return prev; // no dupes
+      const team = prev.teams.find((t) => t.id === team_id);
+      const league = prev.leagues.find((l) => l.id === team?.league_id);
+      const season = league?.season || prev.settings.current_season;
       return {
         ...prev,
         teamPlayers: [
           ...prev.teamPlayers,
-          { id: newId("tp"), teamId, playerId, jersey: jersey === "" || jersey == null ? null : Number(jersey), position: position || "", season },
+          { id: newId("tp"), team_id, profile_id, jersey_number: jersey_number === "" || jersey_number == null ? null : Number(jersey_number), position: position || "", season },
         ],
       };
     });
@@ -245,15 +247,15 @@ export function AppStateProvider({ children }) {
       ...prev,
       settings: {
         ...prev.settings,
-        registrationOpen: { ...prev.settings.registrationOpen, [sport]: !prev.settings.registrationOpen[sport] },
+        registration_open: { ...prev.settings.registration_open, [sport]: !prev.settings.registration_open[sport] },
       },
     }));
   }, []);
 
-  const assignTempAdmin = useCallback((gameId, profileId) => {
+  const assignTempAdmin = useCallback((game_id, profile_id) => {
     setState((prev) => ({
       ...prev,
-      games: prev.games.map((g) => (g.id === gameId ? { ...g, tempAdminId: profileId } : g)),
+      games: prev.games.map((g) => (g.id === game_id ? { ...g, temp_admin_id: profile_id } : g)),
     }));
   }, []);
 
@@ -263,42 +265,42 @@ export function AppStateProvider({ children }) {
     setState((prev) => ({
       ...prev,
       [collection]: prev[collection].map((e) =>
-        e.id === id ? { ...e, adminNotes: [...(e.adminNotes || []), { text, timestamp: new Date().toISOString() }] } : e
+        e.id === id ? { ...e, admin_notes: [...(e.admin_notes || []), { text, timestamp: new Date().toISOString() }] } : e
       ),
     }));
   }, []);
 
   // Mark Final: score becomes final AND the game locks against edits.
-  const lockGame = useCallback((gameId) => {
+  const lockGame = useCallback((game_id) => {
     setState((prev) => ({
       ...prev,
       games: prev.games.map((g) =>
-        g.id === gameId
-          ? { ...g, score_status: "final", locked: true, editHistory: [...(g.editHistory || []), logEntry("Marked final")] }
+        g.id === game_id
+          ? { ...g, score_status: "final", locked: true, edit_history: [...(g.edit_history || []), logEntry("Marked final")] }
           : g
       ),
     }));
   }, []);
 
   // Deliberate unlock — requires a reason, which is recorded in the history.
-  const unlockGame = useCallback((gameId, reason) => {
+  const unlockGame = useCallback((game_id, reason) => {
     setState((prev) => ({
       ...prev,
       games: prev.games.map((g) =>
-        g.id === gameId
-          ? { ...g, score_status: "approved", locked: false, editHistory: [...(g.editHistory || []), logEntry("Unlocked", reason)] }
+        g.id === game_id
+          ? { ...g, score_status: "approved", locked: false, edit_history: [...(g.edit_history || []), logEntry("Unlocked", reason)] }
           : g
       ),
     }));
   }, []);
 
   // Postpone / cancel a scheduled game (the UI blocks this on locked games).
-  const setGameStatus = useCallback((gameId, status) => {
+  const setGameStatus = useCallback((game_id, status) => {
     setState((prev) => ({
       ...prev,
       games: prev.games.map((g) =>
-        g.id === gameId
-          ? { ...g, status, editHistory: [...(g.editHistory || []), logEntry(`Game ${status}`)] }
+        g.id === game_id
+          ? { ...g, status, edit_history: [...(g.edit_history || []), logEntry(`Game ${status}`)] }
           : g
       ),
     }));
@@ -306,11 +308,11 @@ export function AppStateProvider({ children }) {
 
   // Resend mock invite — flips a profile's claimed flag display intent only.
   // PHASE 2: trigger a real invite email via backend (e.g. Resend/Supabase).
-  const resendInvite = useCallback((profileId) => {
+  const resendInvite = useCallback((profile_id) => {
     setState((prev) => ({
       ...prev,
       profiles: prev.profiles.map((p) =>
-        p.id === profileId ? { ...p, inviteResentAt: new Date().toISOString() } : p
+        p.id === profile_id ? { ...p, inviteResentAt: new Date().toISOString() } : p
       ),
     }));
   }, []);

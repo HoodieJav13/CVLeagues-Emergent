@@ -29,7 +29,7 @@ const TeamLine = ({ team, score, isWinner, isLoser, completed }) => {
       <div className="flex items-center gap-2.5 min-w-0">
         <span
           className="w-2.5 h-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: team?.logoColor || "var(--border-strong)" }}
+          style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }}
         />
         <span className={`font-display uppercase tracking-tight text-base sm:text-sm truncate ${nameEmphasis}`}>
           {team?.name || "TBD"}
@@ -46,11 +46,11 @@ const TeamLine = ({ team, score, isWinner, isLoser, completed }) => {
 
 export const GameCard = ({ game, className = "" }) => {
   const { state } = useApp();
-  const home = getTeam(state, game.homeTeamId);
-  const away = getTeam(state, game.awayTeamId);
+  const home = getTeam(state, game.home_team_id);
+  const away = getTeam(state, game.away_team_id);
   const completed = game.status === "completed";
-  const homeWin = completed && game.homeScore > game.awayScore;
-  const awayWin = completed && game.awayScore > game.homeScore;
+  const homeWin = completed && game.home_score > game.away_score;
+  const awayWin = completed && game.away_score > game.home_score;
   // Upcoming games get a teal left-edge accent; recent results stay neutral.
   // Both read off the existing game.status — no new state.
   const isUpcoming = game.status === "upcoming";
@@ -73,8 +73,8 @@ export const GameCard = ({ game, className = "" }) => {
         <StatusBadge status={game.status} />
       </div>
       <div className="space-y-2 sm:space-y-1">
-        <TeamLine team={away} score={game.awayScore} isWinner={awayWin} isLoser={homeWin} completed={completed} />
-        <TeamLine team={home} score={game.homeScore} isWinner={homeWin} isLoser={awayWin} completed={completed} />
+        <TeamLine team={away} score={game.away_score} isWinner={awayWin} isLoser={homeWin} completed={completed} />
+        <TeamLine team={home} score={game.home_score} isWinner={homeWin} isLoser={awayWin} completed={completed} />
       </div>
       <div className="mt-3 sm:mt-2 pt-3 sm:pt-2 border-t border-border flex flex-wrap items-center gap-x-4 sm:gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1 font-medium text-foreground/80">{dateStr}</span>

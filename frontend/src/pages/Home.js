@@ -17,7 +17,7 @@ import freeAgentBg from "../assets/backgrounds/sandia-free-agent-cta-bg.svg";
 export default function Home() {
   const { state } = useApp();
   const [sport, setSport] = useState("all");
-  const [leagueId, setLeagueId] = useState("all");
+  const [league_id, setLeagueId] = useState("all");
 
   const leagues = useMemo(
     () => (sport === "all" ? state.leagues : state.leagues.filter((l) => l.sport === sport)),
@@ -26,9 +26,9 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     return state.games.filter(
-      (g) => (sport === "all" || g.sport === sport) && (leagueId === "all" || g.leagueId === leagueId)
+      (g) => (sport === "all" || g.sport === sport) && (league_id === "all" || g.league_id === league_id)
     );
-  }, [state.games, sport, leagueId]);
+  }, [state.games, sport, league_id]);
 
   const upcoming = filtered
     .filter((g) => g.status === "upcoming")
@@ -47,7 +47,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
         <div className="relative px-6 py-12 md:px-12 md:py-20 max-w-2xl">
           <span className="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 text-primary text-xs font-semibold uppercase tracking-widest">
-            {state.settings.currentSeason} · Albuquerque, NM
+            {state.settings.current_season} · Albuquerque, NM
           </span>
           <h1 className="mt-4 font-display font-bold uppercase tracking-tight text-foreground text-display-xl sm:text-5xl lg:text-6xl">
             Adult Rec Leagues.<br />
@@ -106,7 +106,7 @@ export default function Home() {
           <label className="text-label uppercase text-muted-foreground mb-1.5 block">
             League
           </label>
-          <Select value={leagueId} onValueChange={setLeagueId}>
+          <Select value={league_id} onValueChange={setLeagueId}>
             <SelectTrigger data-testid="home-league-select" className="bg-card border-border h-11">
               <SelectValue />
             </SelectTrigger>
@@ -125,7 +125,7 @@ export default function Home() {
       {/* SEASON INFO */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: CalendarCheck, label: "Season", value: state.settings.currentSeason },
+          { icon: CalendarCheck, label: "Season", value: state.settings.current_season },
           { icon: UsersThree, label: "Teams", value: state.teams.length },
           { icon: PersonSimpleRun, label: "Players", value: state.profiles.length },
           { icon: Fire, label: "Games", value: state.games.length },

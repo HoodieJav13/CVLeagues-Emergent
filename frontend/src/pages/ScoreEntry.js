@@ -36,8 +36,8 @@ function Entry() {
     return [...state.games].sort((a, b) => (a.status === b.status ? 0 : a.status === "upcoming" ? -1 : 1));
   }, [state.games, role, roleMeta]);
 
-  const [gameId, setGameId] = useState(location.state?.gameId || eligible[0]?.id || "");
-  const game = state.games.find((g) => g.id === gameId);
+  const [game_id, setGameId] = useState(location.state?.game_id || eligible[0]?.id || "");
+  const game = state.games.find((g) => g.id === game_id);
 
   const [periods, setPeriods] = useState({ home: [], away: [] });
   const [statsByPlayer, setStatsByPlayer] = useState({});
@@ -51,19 +51,19 @@ function Entry() {
     setPeriods({ home: fill(game.periods?.home), away: fill(game.periods?.away) });
     // Prefill existing stat rows if editing a completed game.
     const existing = {};
-    state.playerStats.filter((s) => s.gameId === game.id).forEach((s) => {
-      existing[s.playerId] = { teamId: s.teamId, stats: { ...s.stats } };
+    state.playerStats.filter((s) => s.game_id === game.id).forEach((s) => {
+      existing[s.profile_id] = { team_id: s.team_id, stats: { ...s.stats } };
     });
     setStatsByPlayer(existing);
     setExpanded(null);
-  }, [gameId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [game_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!game) {
     return <p className="text-muted-foreground">No game available to score.</p>;
   }
 
-  const home = getTeam(state, game.homeTeamId);
-  const away = getTeam(state, game.awayTeamId);
+  const home = getTeam(state, game.home_team_id);
+  const away = getTeam(state, game.away_team_id);
   const homeTotal = periods.home.reduce((a, b) => a + (Number(b) || 0), 0);
   const awayTotal = periods.away.reduce((a, b) => a + (Number(b) || 0), 0);
 
@@ -73,14 +73,14 @@ function Entry() {
   const addInning = () =>
     game.sport === "kickball" && setPeriods((p) => ({ home: [...p.home, 0], away: [...p.away, 0] }));
 
-  const setStat = (playerId, teamId, key, val) =>
+  const setStat = (profile_id, team_id, key, val) =>
     setStatsByPlayer((prev) => ({
       ...prev,
-      [playerId]: { teamId, stats: { ...(prev[playerId]?.stats || {}), [key]: Math.max(0, Number(val) || 0) } },
+      [profile_id]: { team_id, stats: { ...(prev[profile_id]?.stats || {}), [key]: Math.max(0, Number(val) || 0) } },
     }));
 
   const save = () => {
-    submitScore({ gameId: game.id, homeScore: homeTotal, awayScore: awayTotal, periods, statsByPlayer });
+    submitScore({ game_id: game.id, home_score: homeTotal, away_score: awayTotal, periods, statsByPlayer });
     toast.success(`${away.name} ${awayTotal} – ${homeTotal} ${home.name} saved!`, {
       description: "Standings, records, stats & leaderboards updated.",
     });
@@ -92,13 +92,13 @@ function Entry() {
       <SectionHeading as="h1" title="Score Entry" subtitle={role === "temp_admin" ? "Scoring your assigned game" : "Select a game and record the final"} />
 
       {/* Game selector */}
-      <Select value={gameId} onValueChange={setGameId} disabled={role === "temp_admin"}>
+      <Select value={game_id} onValueChange={setGameId} disabled={role === "temp_admin"}>
         <SelectTrigger data-testid="score-game-select" className="bg-card border-border h-12">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
           {eligible.map((g) => {
-            const h = getTeam(state, g.homeTeamId), a = getTeam(state, g.awayTeamId);
+            const h = getTeam(state, g.home_team_id), a = getTeam(state, g.away_team_id);
             return (
               <SelectItem key={g.id} value={g.id}>
                 {a.name} @ {h.name} · {new Date(g.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} {g.status === "completed" ? "(Final)" : ""}
@@ -159,35 +159,35 @@ function Entry() {
           return (
             <div key={team.id} className="bg-card border border-border rounded-2xl overflow-hidden">
               <p className="px-4 py-3 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logoColor }} /> {team.name} · Player Stats
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logo_color }} /> {team.name} · Player Stats
               </p>
               {roster.length === 0 ? (
                 <p className="px-4 py-8 text-center text-caption text-muted-foreground">
                   This team has no players yet. Assign players before entering a score.
                 </p>
               ) : roster.map((r) => {
-                const open = expanded === r.playerId;
-                const pstats = statsByPlayer[r.playerId]?.stats || {};
+                const open = expanded === r.profile_id;
+                const pstats = statsByPlayer[r.profile_id]?.stats || {};
                 const summary = HIGHLIGHT_STATS[team.sport].map((k) => `${pstats[k] || 0} ${statLabel(team.sport, k).split(" ")[0]}`).join(" · ");
                 return (
                   <div key={r.id} className="border-b border-border last:border-0">
                     <button
-                      onClick={() => setExpanded(open ? null : r.playerId)}
-                      data-testid={`score-player-toggle-${r.playerId}`}
+                      onClick={() => setExpanded(open ? null : r.profile_id)}
+                      data-testid={`score-player-toggle-${r.profile_id}`}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
                     >
-                      <Avatar name={r.profile.name} color={r.profile.avatarColor} size={34} />
+                      <Avatar name={r.profile.name} color={r.profile.avatar_color} size={34} />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-foreground truncate flex items-center gap-1.5">
                           <span className="truncate">{r.profile.name}</span>
-                          <EligibilityIndicator status={r.profile.eligibilityStatus} />
+                          <EligibilityIndicator status={r.profile.eligibility_status} />
                         </p>
                         <p className="text-micro text-muted-foreground tabular-nums">{summary}</p>
                       </div>
                       <CaretDown size={16} weight="bold" className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
                     </button>
                     {open && (
-                      <div className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.playerId}`}>
+                      <div className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.profile_id}`}>
                         {STAT_GROUPS[team.sport].map((grp) => (
                           <div key={grp.group}>
                             <p className="text-micro uppercase tracking-widest text-primary font-semibold mb-1.5">{grp.group}</p>
@@ -197,8 +197,8 @@ function Entry() {
                                   <span className="text-micro text-muted-foreground truncate">{st.label}</span>
                                   <input
                                     type="number" min="0" value={pstats[st.key] || 0}
-                                    data-testid={`score-stat-${r.playerId}-${st.key}`}
-                                    onChange={(e) => setStat(r.playerId, team.id, st.key, e.target.value)}
+                                    data-testid={`score-stat-${r.profile_id}-${st.key}`}
+                                    onChange={(e) => setStat(r.profile_id, team.id, st.key, e.target.value)}
                                     className="h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   />
                                 </label>

@@ -9,8 +9,8 @@ import { SPORTS } from "../lib/statsConfig";
 export default function Schedule() {
   const { state } = useApp();
   const [sport, setSport] = useState("all");
-  const [leagueId, setLeagueId] = useState("all");
-  const [teamId, setTeamId] = useState("all");
+  const [league_id, setLeagueId] = useState("all");
+  const [team_id, setTeamId] = useState("all");
   const [status, setStatus] = useState("all");
 
   const leagues = useMemo(
@@ -18,18 +18,18 @@ export default function Schedule() {
     [state.leagues, sport]
   );
   const teams = useMemo(
-    () => state.teams.filter((t) => (sport === "all" || t.sport === sport) && (leagueId === "all" || t.leagueId === leagueId)),
-    [state.teams, sport, leagueId]
+    () => state.teams.filter((t) => (sport === "all" || t.sport === sport) && (league_id === "all" || t.league_id === league_id)),
+    [state.teams, sport, league_id]
   );
 
   const games = useMemo(() => {
     return state.games
       .filter((g) => sport === "all" || g.sport === sport)
-      .filter((g) => leagueId === "all" || g.leagueId === leagueId)
-      .filter((g) => teamId === "all" || g.homeTeamId === teamId || g.awayTeamId === teamId)
+      .filter((g) => league_id === "all" || g.league_id === league_id)
+      .filter((g) => team_id === "all" || g.home_team_id === team_id || g.away_team_id === team_id)
       .filter((g) => status === "all" || g.status === status)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
-  }, [state.games, sport, leagueId, teamId, status]);
+  }, [state.games, sport, league_id, team_id, status]);
 
   // Group the already-filtered games by their week (Sunday start). Because groups
   // are built from the filtered list, a fully-filtered-out week never renders —
@@ -49,18 +49,18 @@ export default function Schedule() {
 
   return (
     <div className="space-y-5 animate-fade-up">
-      <SectionHeading as="h1" band title="Schedule" subtitle={`${state.settings.currentSeason} · Albuquerque · every matchup, every field`} />
+      <SectionHeading as="h1" band title="Schedule" subtitle={`${state.settings.current_season} · Albuquerque · every matchup, every field`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setLeagueId("all"); setTeamId("all"); }} testid="schedule-filter-sport">
           <SelectItem value="all">All Sports</SelectItem>
           {SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
         </Filter>
-        <Filter label="League" value={leagueId} onChange={(v) => { setLeagueId(v); setTeamId("all"); }} testid="schedule-filter-league">
+        <Filter label="League" value={league_id} onChange={(v) => { setLeagueId(v); setTeamId("all"); }} testid="schedule-filter-league">
           <SelectItem value="all">All Leagues</SelectItem>
           {leagues.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
         </Filter>
-        <Filter label="Team" value={teamId} onChange={setTeamId} testid="schedule-filter-team">
+        <Filter label="Team" value={team_id} onChange={setTeamId} testid="schedule-filter-team">
           <SelectItem value="all">All Teams</SelectItem>
           {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
         </Filter>

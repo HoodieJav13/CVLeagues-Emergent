@@ -21,14 +21,14 @@ export const playerName = (state, id) => getProfile(state, id)?.name ?? "Unknown
 
 /* --------------------------- team records -------------------------------- */
 // Derived from completed games only.
-export function computeTeamRecord(state, teamId) {
+export function computeTeamRecord(state, team_id) {
   let wins = 0, losses = 0, ties = 0, pf = 0, pa = 0;
   state.games.forEach((g) => {
     if (g.status !== "completed") return;
-    if (g.homeTeamId !== teamId && g.awayTeamId !== teamId) return;
-    const isHome = g.homeTeamId === teamId;
-    const own = isHome ? g.homeScore : g.awayScore;
-    const opp = isHome ? g.awayScore : g.homeScore;
+    if (g.home_team_id !== team_id && g.away_team_id !== team_id) return;
+    const isHome = g.home_team_id === team_id;
+    const own = isHome ? g.home_score : g.away_score;
+    const opp = isHome ? g.away_score : g.home_score;
     pf += own; pa += opp;
     if (own > opp) wins++;
     else if (own < opp) losses++;
@@ -39,8 +39,8 @@ export function computeTeamRecord(state, teamId) {
 
 /* ----------------------------- standings --------------------------------- */
 // Sort by wins desc, then point differential desc, then points-for desc.
-export function computeStandings(state, leagueId) {
-  const teams = state.teams.filter((t) => t.leagueId === leagueId);
+export function computeStandings(state, league_id) {
+  const teams = state.teams.filter((t) => t.league_id === league_id);
   return teams
     .map((t) => ({ team: t, record: computeTeamRecord(state, t.id) }))
     .sort((a, b) => {
@@ -63,64 +63,64 @@ function addStats(target, stats) {
 }
 
 // Aggregate a player's season stats for a given sport (current season only).
-export function playerSeasonStats(state, playerId, sport) {
+export function playerSeasonStats(state, profile_id, sport) {
   const total = zeroStats(sport);
   state.playerStats
-    .filter((s) => s.playerId === playerId && s.sport === sport)
+    .filter((s) => s.profile_id === profile_id && s.sport === sport)
     .forEach((s) => addStats(total, s.stats));
   return total;
 }
 
 // Career = prior-season baseline + current season.
-export function playerCareerStats(state, playerId, sport) {
-  const season = playerSeasonStats(state, playerId, sport);
-  const baseline = state.careerBaselines?.[playerId]?.[sport] || {};
+export function playerCareerStats(state, profile_id, sport) {
+  const season = playerSeasonStats(state, profile_id, sport);
+  const baseline = state.careerBaselines?.[profile_id]?.[sport] || {};
   return addStats({ ...season }, baseline);
 }
 
 // Per-game log for a player in a sport (joined with game meta).
-export function playerGameLog(state, playerId, sport) {
+export function playerGameLog(state, profile_id, sport) {
   return state.playerStats
-    .filter((s) => s.playerId === playerId && s.sport === sport)
-    .map((s) => ({ ...s, game: getGame(state, s.gameId) }))
+    .filter((s) => s.profile_id === profile_id && s.sport === sport)
+    .map((s) => ({ ...s, game: getGame(state, s.game_id) }))
     .filter((s) => s.game)
     .sort((a, b) => new Date(b.game.date) - new Date(a.game.date));
 }
 
 // Which sports has this player recorded stats / roster spots in.
-export function playerSports(state, playerId) {
+export function playerSports(state, profile_id) {
   const fromRoster = state.teamPlayers
-    .filter((tp) => tp.playerId === playerId)
-    .map((tp) => getTeam(state, tp.teamId)?.sport)
+    .filter((tp) => tp.profile_id === profile_id)
+    .map((tp) => getTeam(state, tp.team_id)?.sport)
     .filter(Boolean);
   return [...new Set(fromRoster)];
 }
 
 // Teams a player belongs to (with sport + role meta).
-export function playerTeams(state, playerId) {
+export function playerTeams(state, profile_id) {
   return state.teamPlayers
-    .filter((tp) => tp.playerId === playerId)
+    .filter((tp) => tp.profile_id === profile_id)
     .map((tp) => {
-      const team = getTeam(state, tp.teamId);
+      const team = getTeam(state, tp.team_id);
       return team
-        ? { ...tp, team, isCaptain: team.captainId === playerId, record: computeTeamRecord(state, team.id) }
+        ? { ...tp, team, isCaptain: team.captain_id === profile_id, record: computeTeamRecord(state, team.id) }
         : null;
     })
     .filter(Boolean);
 }
 
 /* ------------------------------- roster ---------------------------------- */
-export function teamRoster(state, teamId) {
+export function teamRoster(state, team_id) {
   return state.teamPlayers
-    .filter((tp) => tp.teamId === teamId)
-    .map((tp) => ({ ...tp, profile: getProfile(state, tp.playerId) }))
+    .filter((tp) => tp.team_id === team_id)
+    .map((tp) => ({ ...tp, profile: getProfile(state, tp.profile_id) }))
     .filter((tp) => tp.profile);
 }
 
 /* ------------------------------ schedule --------------------------------- */
-export function teamGames(state, teamId) {
+export function teamGames(state, team_id) {
   return state.games
-    .filter((g) => g.homeTeamId === teamId || g.awayTeamId === teamId)
+    .filter((g) => g.home_team_id === team_id || g.away_team_id === team_id)
     .sort((a, b) => new Date(a.date) - new Date(b.date));
 }
 
@@ -132,8 +132,8 @@ export function buildLeaderboard(state, sport, statKey, scope = "season") {
   // candidate players: anyone on a roster for this sport
   const playerIds = new Set(
     state.teamPlayers
-      .filter((tp) => getTeam(state, tp.teamId)?.sport === sport)
-      .map((tp) => tp.playerId)
+      .filter((tp) => getTeam(state, tp.team_id)?.sport === sport)
+      .map((tp) => tp.profile_id)
   );
   return [...playerIds]
     .map((pid) => {
@@ -147,14 +147,14 @@ export function buildLeaderboard(state, sport, statKey, scope = "season") {
 }
 
 // Team stat leaders: top player on a team for each highlight stat.
-export function teamStatLeaders(state, teamId, highlightKeys) {
-  const team = getTeam(state, teamId);
+export function teamStatLeaders(state, team_id, highlightKeys) {
+  const team = getTeam(state, team_id);
   if (!team) return [];
-  const roster = teamRoster(state, teamId);
+  const roster = teamRoster(state, team_id);
   return highlightKeys.map((key) => {
     let best = null;
     roster.forEach((r) => {
-      const val = playerSeasonStats(state, r.playerId, team.sport)[key] || 0;
+      const val = playerSeasonStats(state, r.profile_id, team.sport)[key] || 0;
       if (!best || val > best.value) best = { profile: r.profile, value: val };
     });
     return { key, ...(best || {}) };

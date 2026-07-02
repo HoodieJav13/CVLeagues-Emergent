@@ -70,7 +70,7 @@ export default function Leaderboards() {
                   <span className={`w-7 text-center font-display font-bold text-lg ${i === 0 ? "text-leader" : i === 1 ? "text-rank-silver" : i === 2 ? "text-rank-bronze" : "text-muted-foreground"}`}>
                     {i < 3 ? <Medal size={20} weight="fill" className="inline" /> : row.rank}
                   </span>
-                  <Avatar name={row.profile.name} color={row.profile.avatarColor} size={38} />
+                  <Avatar name={row.profile.name} color={row.profile.avatar_color} size={38} />
                   <div className="flex-1 min-w-0">
                     <Link to={`/profile/${row.profile.id}`} className="font-display uppercase tracking-tight text-foreground hover:text-primary truncate block text-base">{row.profile.name}</Link>
                     {row.team && <Link to={`/team/${row.team.id}`} className="text-xs text-muted-foreground hover:text-foreground">{row.team.name}</Link>}

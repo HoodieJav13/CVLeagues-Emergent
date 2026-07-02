@@ -14,15 +14,15 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 export default function TeamRegistration() {
   const { state, addRegistration } = useApp();
   const [form, setForm] = useState({
-    captainName: "",
-    captainPhone: "",
-    captainEmail: "",
+    captain_name: "",
+    captain_phone: "",
+    captain_email: "",
     sport: "",
-    teamName: "",
-    estimatedRosterSize: "",
+    team_name: "",
+    estimated_roster_size: "",
     notes: "",
   });
-  const [consentToContact, setConsentToContact] = useState(false);
+  const [consent_to_contact, setConsentToContact] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -30,17 +30,17 @@ export default function TeamRegistration() {
 
   const validate = () => {
     const e = {};
-    if (!form.captainName.trim()) e.captainName = "Captain name is required";
-    if (!form.captainPhone.trim() && !form.captainEmail.trim()) e.contact = "Phone or email is required";
-    if (form.captainEmail.trim() && !/^\S+@\S+\.\S+$/.test(form.captainEmail)) e.captainEmail = "Enter a valid email address";
+    if (!form.captain_name.trim()) e.captain_name = "Captain name is required";
+    if (!form.captain_phone.trim() && !form.captain_email.trim()) e.contact = "Phone or email is required";
+    if (form.captain_email.trim() && !/^\S+@\S+\.\S+$/.test(form.captain_email)) e.captain_email = "Enter a valid email address";
     if (!form.sport) e.sport = "Select a sport";
-    if (!form.teamName.trim()) e.teamName = "Team name is required";
-    if (!consentToContact) e.consent = "You must agree to be contacted";
+    if (!form.team_name.trim()) e.team_name = "Team name is required";
+    if (!consent_to_contact) e.consent = "You must agree to be contacted";
     return e;
   };
 
   const reset = () => {
-    setForm({ captainName: "", captainPhone: "", captainEmail: "", sport: "", teamName: "", estimatedRosterSize: "", notes: "" });
+    setForm({ captain_name: "", captain_phone: "", captain_email: "", sport: "", team_name: "", estimated_roster_size: "", notes: "" });
     setConsentToContact(false);
     setSubmitted(false);
   };
@@ -50,14 +50,14 @@ export default function TeamRegistration() {
     setErrors(e);
     if (Object.keys(e).length) { toast.error("Please fix the highlighted fields"); return; }
     addRegistration({
-      captainName: form.captainName.trim(),
-      captainPhone: form.captainPhone.trim(),
-      captainEmail: form.captainEmail.trim(),
+      captain_name: form.captain_name.trim(),
+      captain_phone: form.captain_phone.trim(),
+      captain_email: form.captain_email.trim(),
       sport: form.sport,
-      teamName: form.teamName.trim(),
-      estimatedRosterSize: form.estimatedRosterSize ? Number(form.estimatedRosterSize) : null,
-      preferredSeason: state.settings.currentSeason,
-      consentToContact: true,
+      team_name: form.team_name.trim(),
+      estimated_roster_size: form.estimated_roster_size ? Number(form.estimated_roster_size) : null,
+      preferred_season: state.settings.current_season,
+      consent_to_contact: true,
       notes: form.notes.trim() || null,
     });
     // PHASE 2: POST to /registrations + send captain confirmation email.
@@ -65,7 +65,7 @@ export default function TeamRegistration() {
     toast.success("Team submitted! An admin will review it shortly.");
   };
 
-  const regOpen = form.sport ? state.settings.registrationOpen[form.sport] : true;
+  const regOpen = form.sport ? state.settings.registration_open[form.sport] : true;
 
   if (submitted) {
     return (
@@ -75,7 +75,7 @@ export default function TeamRegistration() {
         </div>
         <h1 className="font-display uppercase text-display-lg text-foreground">Team Interest Submitted</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          <span className="text-foreground font-semibold">{form.teamName}</span> is now pending admin review. An admin will review it and follow up about next steps.
+          <span className="text-foreground font-semibold">{form.team_name}</span> is now pending admin review. An admin will review it and follow up about next steps.
         </p>
         <div className="flex gap-3 justify-center mt-6">
           <Link to="/" className="border border-white/15 text-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors">
@@ -102,13 +102,13 @@ export default function TeamRegistration() {
       {/* Captain info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <p className="font-display uppercase tracking-tight text-foreground text-sm">Captain Info</p>
-        <Field label="Legal Name" required error={errors.captainName}>
-          <Input data-testid="reg-captain-name" value={form.captainName} onChange={(e) => set("captainName", e.target.value)} placeholder="First and last name" className="bg-surface-sunken border-border" />
+        <Field label="Legal Name" required error={errors.captain_name}>
+          <Input data-testid="reg-captain-name" value={form.captain_name} onChange={(e) => set("captain_name", e.target.value)} placeholder="First and last name" className="bg-surface-sunken border-border" />
         </Field>
-        <Field label="Contact" required error={errors.contact || errors.captainEmail} hint="At least one of phone or email is required">
+        <Field label="Contact" required error={errors.contact || errors.captain_email} hint="At least one of phone or email is required">
           <div className="grid sm:grid-cols-2 gap-3">
-            <Input data-testid="reg-captain-phone" aria-label="Phone" value={form.captainPhone} onChange={(e) => set("captainPhone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
-            <Input data-testid="reg-captain-email" aria-label="Email" type="email" value={form.captainEmail} onChange={(e) => set("captainEmail", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
+            <Input data-testid="reg-captain-phone" aria-label="Phone" value={form.captain_phone} onChange={(e) => set("captain_phone", e.target.value)} placeholder="Phone" className="bg-surface-sunken border-border" />
+            <Input data-testid="reg-captain-email" aria-label="Email" type="email" value={form.captain_email} onChange={(e) => set("captain_email", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
       </div>
@@ -116,8 +116,8 @@ export default function TeamRegistration() {
       {/* Team info */}
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <p className="font-display uppercase tracking-tight text-foreground text-sm">Team Info</p>
-        <Field label="Team Name" required error={errors.teamName}>
-          <Input data-testid="reg-team-name" value={form.teamName} onChange={(e) => set("teamName", e.target.value)} placeholder="e.g. Westside Warriors" className="bg-surface-sunken border-border" />
+        <Field label="Team Name" required error={errors.team_name}>
+          <Input data-testid="reg-team-name" value={form.team_name} onChange={(e) => set("team_name", e.target.value)} placeholder="e.g. Westside Warriors" className="bg-surface-sunken border-border" />
         </Field>
         <Field label="Sport" required error={errors.sport}>
           <Select value={form.sport} onValueChange={(v) => set("sport", v)}>
@@ -136,14 +136,14 @@ export default function TeamRegistration() {
               type="number"
               min="1"
               max="30"
-              value={form.estimatedRosterSize}
-              onChange={(e) => set("estimatedRosterSize", e.target.value)}
+              value={form.estimated_roster_size}
+              onChange={(e) => set("estimated_roster_size", e.target.value)}
               placeholder="e.g. 10"
               className="bg-surface-sunken border-border"
             />
           </Field>
           <Field label="Preferred Season" optional>
-            <Input value={state.settings.currentSeason} readOnly className="bg-surface-sunken border-border opacity-60 cursor-default" />
+            <Input value={state.settings.current_season} readOnly className="bg-surface-sunken border-border opacity-60 cursor-default" />
           </Field>
         </div>
         <Field label="Notes" optional>
@@ -160,7 +160,7 @@ export default function TeamRegistration() {
       {/* Consent */}
       <div className="bg-card border border-border rounded-2xl p-5">
         <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
-          <Checkbox data-testid="reg-consent" checked={consentToContact} onCheckedChange={setConsentToContact} className="mt-0.5" />
+          <Checkbox data-testid="reg-consent" checked={consent_to_contact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
             I consent to be contacted by CVF Sports by phone, text, or email regarding this team interest submission.{" "}
             <span className="text-destructive font-bold">*</span>

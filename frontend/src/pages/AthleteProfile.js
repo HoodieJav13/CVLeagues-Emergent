@@ -17,7 +17,7 @@ export default function AthleteProfile() {
   const { role, roleMeta } = useRole();
 
   // Resolve "me" to the demo role's bound profile.
-  const targetId = id === "me" ? roleMeta.profileId : id;
+  const targetId = id === "me" ? roleMeta.profile_id : id;
   const profile = targetId ? getProfile(state, targetId) : null;
 
   if (!profile) {
@@ -32,7 +32,7 @@ export default function AthleteProfile() {
   }
 
   // PRODUCTION RULE: private tab only for the profile owner or an admin.
-  const isOwner = roleMeta.profileId === profile.id;
+  const isOwner = roleMeta.profile_id === profile.id;
   const canViewPrivate = role === "admin" || ((role === "player" || role === "captain") && isOwner);
 
   const sports = playerSports(state, profile.id);
@@ -41,9 +41,9 @@ export default function AthleteProfile() {
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Header banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${profile.avatarColor}22, transparent)` }}>
+      <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${profile.avatar_color}22, transparent)` }}>
         <div className="flex items-center gap-4">
-          <Avatar name={profile.name} color={profile.avatarColor} size={72} />
+          <Avatar name={profile.name} color={profile.avatar_color} size={72} />
           <div className="min-w-0">
             <h1 className="font-display uppercase text-display-lg text-foreground">{profile.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -145,11 +145,11 @@ const TeamHistory = ({ teams }) => (
       {teams.map((t) => (
         <Link key={t.id} to={`/team/${t.team.id}`} className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.team.logoColor }} />
+            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.team.logo_color }} />
             <span className="font-medium text-foreground truncate">{t.team.name}</span>
             <SportBadge sport={t.team.sport} />
           </div>
-          <span className="text-xs font-mono-score text-muted-foreground">#{t.jersey} · {t.record.wins}-{t.record.losses}</span>
+          <span className="text-xs font-mono-score text-muted-foreground">#{t.jersey_number} · {t.record.wins}-{t.record.losses}</span>
         </Link>
       ))}
     </div>
@@ -197,7 +197,7 @@ const PrivateSport = ({ state, profile, sport }) => {
       <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-2">Game Log</p>
       <div className="space-y-1.5">
         {log.length ? log.map((row) => {
-          const opp = getTeam(state, row.game.homeTeamId === row.teamId ? row.game.awayTeamId : row.game.homeTeamId);
+          const opp = getTeam(state, row.game.home_team_id === row.team_id ? row.game.away_team_id : row.game.home_team_id);
           return (
             <Link key={row.id} to={`/game/${row.game.id}`} className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg hover:bg-white/5">
               <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-secondary">vs {opp?.name}</span></span>

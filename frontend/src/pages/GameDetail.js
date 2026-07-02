@@ -35,10 +35,10 @@ export default function GameDetail() {
 
   if (!game) return <p className="text-muted-foreground">Game not found.</p>;
 
-  const home = getTeam(state, game.homeTeamId);
-  const away = getTeam(state, game.awayTeamId);
+  const home = getTeam(state, game.home_team_id);
+  const away = getTeam(state, game.away_team_id);
   const completed = game.status === "completed";
-  const gameStats = state.playerStats.filter((s) => s.gameId === game.id);
+  const gameStats = state.playerStats.filter((s) => s.game_id === game.id);
   const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
 
   // Temp admin can only score their assigned game.
@@ -66,11 +66,11 @@ export default function GameDetail() {
         </div>
 
         <div className="grid grid-cols-3 items-center gap-2">
-          <TeamHead team={away} score={game.awayScore} completed={completed} win={completed && game.awayScore > game.homeScore} />
+          <TeamHead team={away} score={game.away_score} completed={completed} win={completed && game.away_score > game.home_score} />
           <div className="text-center">
             <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">{completed ? "Final" : "VS"}</span>
           </div>
-          <TeamHead team={home} score={game.homeScore} completed={completed} win={completed && game.homeScore > game.awayScore} home />
+          <TeamHead team={home} score={game.home_score} completed={completed} win={completed && game.home_score > game.away_score} home />
         </div>
 
         <div className="mt-6 pt-5 border-t border-border flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
@@ -82,7 +82,7 @@ export default function GameDetail() {
         {canScore && (
           <Link
             to="/score-entry"
-            state={{ gameId: game.id }}
+            state={{ game_id: game.id }}
             data-testid="game-enter-score"
             className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-4 py-2.5 rounded-xl hover:bg-teal-deep transition-colors"
           >
@@ -109,7 +109,7 @@ export default function GameDetail() {
                 </tr>
               </thead>
               <tbody>
-                {[{ t: away, arr: game.periods.away, total: game.awayScore }, { t: home, arr: game.periods.home, total: game.homeScore }].map((row) => (
+                {[{ t: away, arr: game.periods.away, total: game.away_score }, { t: home, arr: game.periods.home, total: game.home_score }].map((row) => (
                   <tr key={row.t.id} className="border-t border-border">
                     <td className="py-2 pr-3 font-display uppercase tracking-tight text-foreground whitespace-nowrap">{row.t.name}</td>
                     {row.arr.map((v, i) => (
@@ -128,13 +128,13 @@ export default function GameDetail() {
       {completed && gameStats.length > 0 && (
         <div className="space-y-4">
           {[away, home].map((t) => {
-            const rows = gameStats.filter((s) => s.teamId === t.id);
+            const rows = gameStats.filter((s) => s.team_id === t.id);
             if (!rows.length) return null;
             const cols = BOX[game.sport];
             return (
               <div key={t.id} className="bg-card border border-border rounded-2xl overflow-hidden">
                 <p className="px-4 py-2.5 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.logoColor }} /> {t.name}
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.logo_color }} /> {t.name}
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -146,12 +146,12 @@ export default function GameDetail() {
                     </thead>
                     <tbody>
                       {rows.map((s) => {
-                        const p = getProfile(state, s.playerId);
+                        const p = getProfile(state, s.profile_id);
                         return (
                           <tr key={s.id} className="border-t border-border">
                             <td className="px-4 py-2.5">
                               <Link to={`/profile/${p.id}`} className="flex items-center gap-2 hover:text-primary">
-                                <Avatar name={p.name} color={p.avatarColor} size={28} />
+                                <Avatar name={p.name} color={p.avatar_color} size={28} />
                                 <span className="font-medium text-foreground truncate">{p.name}</span>
                               </Link>
                             </td>
@@ -175,7 +175,7 @@ export default function GameDetail() {
 
 const TeamHead = ({ team, score, completed, win, home }) => (
   <Link to={`/team/${team.id}`} className="flex flex-col items-center text-center group">
-    <span className="w-12 h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg text-ink mb-2" style={{ backgroundColor: team.logoColor }}>
+    <span className="w-12 h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg text-ink mb-2" style={{ backgroundColor: team.logo_color }}>
       {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
     </span>
     <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>

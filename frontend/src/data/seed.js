@@ -38,45 +38,45 @@ const color = (i) => AVATAR_COLORS[i % AVATAR_COLORS.length];
 /* ----------------------------- PROFILES ---------------------------------- */
 // claimed=false => account not yet claimed (admin can resend mock invites)
 export const profiles = [
-  { id: "p1", firstName: "Marcus", lastName: "Trujillo", email: "marcus.t@cvf.demo", phone: "505-555-0101", sports: ["kickball", "flag_football"], experience: "Advanced", claimed: true, bio: "Two-sport athlete. Power kicker and a sneaky-fast slot receiver." },
-  { id: "p2", firstName: "Diego", lastName: "Sanchez", email: "diego.s@cvf.demo", phone: "505-555-0102", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "Contact hitter who never strikes out." },
-  { id: "p3", firstName: "Aaron", lastName: "Chavez", email: "aaron.c@cvf.demo", phone: "505-555-0103", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "Gold-glove shortstop." },
-  { id: "p4", firstName: "Tyler", lastName: "Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", sports: ["kickball"], experience: "Beginner", claimed: false, bio: "" },
-  { id: "p5", firstName: "Brandon", lastName: "Lujan", email: "brandon.l@cvf.demo", phone: "505-555-0105", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Lead-off homer threat." },
-  { id: "p6", firstName: "Jessica", lastName: "Martinez", email: "jess.m@cvf.demo", phone: "505-555-0106", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Captain. Brings the snacks and the wins." },
-  { id: "p7", firstName: "Ashley", lastName: "Gallegos", email: "ashley.g@cvf.demo", phone: "505-555-0107", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p8", firstName: "Crystal", lastName: "Vigil", email: "crystal.v@cvf.demo", phone: "505-555-0108", sports: ["kickball"], experience: "Beginner", claimed: false, bio: "" },
-  { id: "p9", firstName: "Monica", lastName: "Padilla", email: "monica.p@cvf.demo", phone: "505-555-0109", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p10", firstName: "Sarah", lastName: "Montoya", email: "sarah.m@cvf.demo", phone: "505-555-0110", sports: ["kickball"], experience: "Beginner", claimed: true, bio: "" },
-  { id: "p11", firstName: "Kevin", lastName: "Baca", email: "kevin.b@cvf.demo", phone: "505-555-0111", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Captain of the Nomads. Switch kicker." },
-  { id: "p12", firstName: "Eric", lastName: "Apodaca", email: "eric.a@cvf.demo", phone: "505-555-0112", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p13", firstName: "Nathan", lastName: "Griego", email: "nathan.g@cvf.demo", phone: "505-555-0113", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Cleanup kicker." },
-  { id: "p14", firstName: "Carlos", lastName: "Maestas", email: "carlos.m@cvf.demo", phone: "505-555-0114", sports: ["kickball"], experience: "Beginner", claimed: false, bio: "" },
-  { id: "p15", firstName: "Derek", lastName: "Quintana", email: "derek.q@cvf.demo", phone: "505-555-0115", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p16", firstName: "Anthony", lastName: "Garcia", email: "anthony.g@cvf.demo", phone: "505-555-0116", sports: ["flag_football", "kickball"], experience: "Advanced", claimed: true, bio: "Captain & franchise QB. Also crushes it at first base." },
-  { id: "p17", firstName: "Jordan", lastName: "Sandoval", email: "jordan.s@cvf.demo", phone: "505-555-0117", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "WR1. Route-running technician." },
-  { id: "p18", firstName: "Mike", lastName: "Tafoya", email: "mike.t@cvf.demo", phone: "505-555-0118", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "Dual-threat back." },
-  { id: "p19", firstName: "Steven", lastName: "Ortiz", email: "steven.o@cvf.demo", phone: "505-555-0119", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Ball-hawk safety." },
-  { id: "p20", firstName: "Luis", lastName: "Herrera", email: "luis.h@cvf.demo", phone: "505-555-0120", sports: ["flag_football"], experience: "Intermediate", claimed: false, bio: "" },
-  { id: "p21", firstName: "Amanda", lastName: "Lopez", email: "amanda.l@cvf.demo", phone: "505-555-0121", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Captain & gunslinger QB." },
-  { id: "p22", firstName: "Rachel", lastName: "Duran", email: "rachel.d@cvf.demo", phone: "505-555-0122", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p23", firstName: "Nicole", lastName: "Archuleta", email: "nicole.a@cvf.demo", phone: "505-555-0123", sports: ["flag_football"], experience: "Beginner", claimed: false, bio: "" },
-  { id: "p24", firstName: "Stephanie", lastName: "Mora", email: "steph.m@cvf.demo", phone: "505-555-0124", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p25", firstName: "Vanessa", lastName: "Salazar", email: "vanessa.s@cvf.demo", phone: "505-555-0125", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Edge rusher." },
-  { id: "p26", firstName: "Chris", lastName: "Aragon", email: "chris.a@cvf.demo", phone: "505-555-0126", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Captain. Big arm, bigger ego." },
-  { id: "p27", firstName: "Daniel", lastName: "Velasquez", email: "daniel.v@cvf.demo", phone: "505-555-0127", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Possession receiver." },
-  { id: "p28", firstName: "Joseph", lastName: "Cordova", email: "joseph.c@cvf.demo", phone: "505-555-0128", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
-  { id: "p29", firstName: "Robert", lastName: "Mondragon", email: "robert.m@cvf.demo", phone: "505-555-0129", sports: ["flag_football"], experience: "Intermediate", claimed: false, bio: "" },
-  { id: "p30", firstName: "Patrick", lastName: "Bustamante", email: "patrick.b@cvf.demo", phone: "505-555-0130", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Sack artist." },
+  { id: "p1", first_name: "Marcus", last_name: "Trujillo", email: "marcus.t@cvf.demo", phone: "505-555-0101", sports: ["kickball", "flag_football"], experience: "Advanced", claimed: true, bio: "Two-sport athlete. Power kicker and a sneaky-fast slot receiver." },
+  { id: "p2", first_name: "Diego", last_name: "Sanchez", email: "diego.s@cvf.demo", phone: "505-555-0102", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "Contact hitter who never strikes out." },
+  { id: "p3", first_name: "Aaron", last_name: "Chavez", email: "aaron.c@cvf.demo", phone: "505-555-0103", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "Gold-glove shortstop." },
+  { id: "p4", first_name: "Tyler", last_name: "Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", sports: ["kickball"], experience: "Beginner", claimed: false, bio: "" },
+  { id: "p5", first_name: "Brandon", last_name: "Lujan", email: "brandon.l@cvf.demo", phone: "505-555-0105", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Lead-off homer threat." },
+  { id: "p6", first_name: "Jessica", last_name: "Martinez", email: "jess.m@cvf.demo", phone: "505-555-0106", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Captain. Brings the snacks and the wins." },
+  { id: "p7", first_name: "Ashley", last_name: "Gallegos", email: "ashley.g@cvf.demo", phone: "505-555-0107", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p8", first_name: "Crystal", last_name: "Vigil", email: "crystal.v@cvf.demo", phone: "505-555-0108", sports: ["kickball"], experience: "Beginner", claimed: false, bio: "" },
+  { id: "p9", first_name: "Monica", last_name: "Padilla", email: "monica.p@cvf.demo", phone: "505-555-0109", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p10", first_name: "Sarah", last_name: "Montoya", email: "sarah.m@cvf.demo", phone: "505-555-0110", sports: ["kickball"], experience: "Beginner", claimed: true, bio: "" },
+  { id: "p11", first_name: "Kevin", last_name: "Baca", email: "kevin.b@cvf.demo", phone: "505-555-0111", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Captain of the Nomads. Switch kicker." },
+  { id: "p12", first_name: "Eric", last_name: "Apodaca", email: "eric.a@cvf.demo", phone: "505-555-0112", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p13", first_name: "Nathan", last_name: "Griego", email: "nathan.g@cvf.demo", phone: "505-555-0113", sports: ["kickball"], experience: "Advanced", claimed: true, bio: "Cleanup kicker." },
+  { id: "p14", first_name: "Carlos", last_name: "Maestas", email: "carlos.m@cvf.demo", phone: "505-555-0114", sports: ["kickball"], experience: "Beginner", claimed: false, bio: "" },
+  { id: "p15", first_name: "Derek", last_name: "Quintana", email: "derek.q@cvf.demo", phone: "505-555-0115", sports: ["kickball"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p16", first_name: "Anthony", last_name: "Garcia", email: "anthony.g@cvf.demo", phone: "505-555-0116", sports: ["flag_football", "kickball"], experience: "Advanced", claimed: true, bio: "Captain & franchise QB. Also crushes it at first base." },
+  { id: "p17", first_name: "Jordan", last_name: "Sandoval", email: "jordan.s@cvf.demo", phone: "505-555-0117", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "WR1. Route-running technician." },
+  { id: "p18", first_name: "Mike", last_name: "Tafoya", email: "mike.t@cvf.demo", phone: "505-555-0118", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "Dual-threat back." },
+  { id: "p19", first_name: "Steven", last_name: "Ortiz", email: "steven.o@cvf.demo", phone: "505-555-0119", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Ball-hawk safety." },
+  { id: "p20", first_name: "Luis", last_name: "Herrera", email: "luis.h@cvf.demo", phone: "505-555-0120", sports: ["flag_football"], experience: "Intermediate", claimed: false, bio: "" },
+  { id: "p21", first_name: "Amanda", last_name: "Lopez", email: "amanda.l@cvf.demo", phone: "505-555-0121", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Captain & gunslinger QB." },
+  { id: "p22", first_name: "Rachel", last_name: "Duran", email: "rachel.d@cvf.demo", phone: "505-555-0122", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p23", first_name: "Nicole", last_name: "Archuleta", email: "nicole.a@cvf.demo", phone: "505-555-0123", sports: ["flag_football"], experience: "Beginner", claimed: false, bio: "" },
+  { id: "p24", first_name: "Stephanie", last_name: "Mora", email: "steph.m@cvf.demo", phone: "505-555-0124", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p25", first_name: "Vanessa", last_name: "Salazar", email: "vanessa.s@cvf.demo", phone: "505-555-0125", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Edge rusher." },
+  { id: "p26", first_name: "Chris", last_name: "Aragon", email: "chris.a@cvf.demo", phone: "505-555-0126", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Captain. Big arm, bigger ego." },
+  { id: "p27", first_name: "Daniel", last_name: "Velasquez", email: "daniel.v@cvf.demo", phone: "505-555-0127", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Possession receiver." },
+  { id: "p28", first_name: "Joseph", last_name: "Cordova", email: "joseph.c@cvf.demo", phone: "505-555-0128", sports: ["flag_football"], experience: "Intermediate", claimed: true, bio: "" },
+  { id: "p29", first_name: "Robert", last_name: "Mondragon", email: "robert.m@cvf.demo", phone: "505-555-0129", sports: ["flag_football"], experience: "Intermediate", claimed: false, bio: "" },
+  { id: "p30", first_name: "Patrick", last_name: "Bustamante", email: "patrick.b@cvf.demo", phone: "505-555-0130", sports: ["flag_football"], experience: "Advanced", claimed: true, bio: "Sack artist." },
 ].map((p, i) => ({
   ...p,
-  name: `${p.firstName} ${p.lastName}`,
-  avatarColor: color(i),
+  name: `${p.first_name} ${p.last_name}`,
+  avatar_color: color(i),
   // Informational eligibility flag (Flow C-lite). Seeded as a MIX so the
   // <EligibilityIndicator> shows both states out of the box. NEVER gates
   // anything — the admin enforces eligibility in real life.
   // PHASE 2: this flag is replaced by real waiver verification status.
-  eligibilityStatus: i % 3 === 0 ? "verified" : "not_verified",
+  eligibility_status: i % 3 === 0 ? "verified" : "not_verified",
 }));
 
 /* ------------------------------ LEAGUES ---------------------------------- */
@@ -87,12 +87,12 @@ export const leagues = [
 
 /* ------------------------------- TEAMS ----------------------------------- */
 export const teams = [
-  { id: "t1", name: "Sandia Sluggers", sport: "kickball", leagueId: "l1", captainId: "p1", logoColor: "#22d3ee", founded: "2023" },
-  { id: "t2", name: "Rio Grande Rollers", sport: "kickball", leagueId: "l1", captainId: "p6", logoColor: "#f97316", founded: "2022" },
-  { id: "t3", name: "Nob Hill Nomads", sport: "kickball", leagueId: "l1", captainId: "p11", logoColor: "#a855f7", founded: "2024" },
-  { id: "t4", name: "Bosque Blitz", sport: "flag_football", leagueId: "l2", captainId: "p16", logoColor: "#10b981", founded: "2022" },
-  { id: "t5", name: "Mesa Mavericks", sport: "flag_football", leagueId: "l2", captainId: "p21", logoColor: "#ef4444", founded: "2023" },
-  { id: "t6", name: "Frontier Force", sport: "flag_football", leagueId: "l2", captainId: "p26", logoColor: "#3b82f6", founded: "2024" },
+  { id: "t1", name: "Sandia Sluggers", sport: "kickball", league_id: "l1", captain_id: "p1", logo_color: "#22d3ee", founded: "2023" },
+  { id: "t2", name: "Rio Grande Rollers", sport: "kickball", league_id: "l1", captain_id: "p6", logo_color: "#f97316", founded: "2022" },
+  { id: "t3", name: "Nob Hill Nomads", sport: "kickball", league_id: "l1", captain_id: "p11", logo_color: "#a855f7", founded: "2024" },
+  { id: "t4", name: "Bosque Blitz", sport: "flag_football", league_id: "l2", captain_id: "p16", logo_color: "#10b981", founded: "2022" },
+  { id: "t5", name: "Mesa Mavericks", sport: "flag_football", league_id: "l2", captain_id: "p21", logo_color: "#ef4444", founded: "2023" },
+  { id: "t6", name: "Frontier Force", sport: "flag_football", league_id: "l2", captain_id: "p26", logo_color: "#3b82f6", founded: "2024" },
 ];
 
 /* --------------------------- TEAM_PLAYERS -------------------------------- */
@@ -102,43 +102,43 @@ export const teams = [
 // driven by the waiver flow against the real team_players table.
 export const teamPlayers = [
   // t1 Sandia Sluggers (kickball)
-  { id: "tp1", teamId: "t1", playerId: "p1", jersey: 7, position: "Pitcher" },
-  { id: "tp2", teamId: "t1", playerId: "p2", jersey: 12, position: "Shortstop" },
-  { id: "tp3", teamId: "t1", playerId: "p3", jersey: 3, position: "1st Base" },
-  { id: "tp4", teamId: "t1", playerId: "p4", jersey: 21, position: "Outfield" },
-  { id: "tp5", teamId: "t1", playerId: "p5", jersey: 9, position: "Catcher" },
-  { id: "tp25", teamId: "t1", playerId: "p16", jersey: 4, position: "Outfield" }, // cross-sport
+  { id: "tp1", team_id: "t1", profile_id: "p1", jersey_number: 7, position: "Pitcher" },
+  { id: "tp2", team_id: "t1", profile_id: "p2", jersey_number: 12, position: "Shortstop" },
+  { id: "tp3", team_id: "t1", profile_id: "p3", jersey_number: 3, position: "1st Base" },
+  { id: "tp4", team_id: "t1", profile_id: "p4", jersey_number: 21, position: "Outfield" },
+  { id: "tp5", team_id: "t1", profile_id: "p5", jersey_number: 9, position: "Catcher" },
+  { id: "tp25", team_id: "t1", profile_id: "p16", jersey_number: 4, position: "Outfield" }, // cross-sport
   // t2 Rio Grande Rollers (kickball)
-  { id: "tp6", teamId: "t2", playerId: "p6", jersey: 1, position: "Pitcher" },
-  { id: "tp7", teamId: "t2", playerId: "p7", jersey: 14, position: "2nd Base" },
-  { id: "tp8", teamId: "t2", playerId: "p8", jersey: 8, position: "Outfield" },
-  { id: "tp9", teamId: "t2", playerId: "p9", jersey: 22, position: "Catcher" },
-  { id: "tp10", teamId: "t2", playerId: "p10", jersey: 5, position: "Shortstop" },
+  { id: "tp6", team_id: "t2", profile_id: "p6", jersey_number: 1, position: "Pitcher" },
+  { id: "tp7", team_id: "t2", profile_id: "p7", jersey_number: 14, position: "2nd Base" },
+  { id: "tp8", team_id: "t2", profile_id: "p8", jersey_number: 8, position: "Outfield" },
+  { id: "tp9", team_id: "t2", profile_id: "p9", jersey_number: 22, position: "Catcher" },
+  { id: "tp10", team_id: "t2", profile_id: "p10", jersey_number: 5, position: "Shortstop" },
   // t3 Nob Hill Nomads (kickball)
-  { id: "tp11", teamId: "t3", playerId: "p11", jersey: 11, position: "Pitcher" },
-  { id: "tp12", teamId: "t3", playerId: "p12", jersey: 6, position: "1st Base" },
-  { id: "tp13", teamId: "t3", playerId: "p13", jersey: 24, position: "Outfield" },
-  { id: "tp14", teamId: "t3", playerId: "p14", jersey: 17, position: "Catcher" },
-  { id: "tp15", teamId: "t3", playerId: "p15", jersey: 2, position: "Shortstop" },
+  { id: "tp11", team_id: "t3", profile_id: "p11", jersey_number: 11, position: "Pitcher" },
+  { id: "tp12", team_id: "t3", profile_id: "p12", jersey_number: 6, position: "1st Base" },
+  { id: "tp13", team_id: "t3", profile_id: "p13", jersey_number: 24, position: "Outfield" },
+  { id: "tp14", team_id: "t3", profile_id: "p14", jersey_number: 17, position: "Catcher" },
+  { id: "tp15", team_id: "t3", profile_id: "p15", jersey_number: 2, position: "Shortstop" },
   // t4 Bosque Blitz (flag football)
-  { id: "tp16", teamId: "t4", playerId: "p16", jersey: 7, position: "QB" },
-  { id: "tp17", teamId: "t4", playerId: "p17", jersey: 80, position: "WR" },
-  { id: "tp18", teamId: "t4", playerId: "p18", jersey: 28, position: "RB / WR" },
-  { id: "tp19", teamId: "t4", playerId: "p19", jersey: 20, position: "Safety" },
-  { id: "tp20", teamId: "t4", playerId: "p20", jersey: 55, position: "Rusher" },
-  { id: "tp26", teamId: "t4", playerId: "p1", jersey: 7, position: "WR" }, // cross-sport
+  { id: "tp16", team_id: "t4", profile_id: "p16", jersey_number: 7, position: "QB" },
+  { id: "tp17", team_id: "t4", profile_id: "p17", jersey_number: 80, position: "WR" },
+  { id: "tp18", team_id: "t4", profile_id: "p18", jersey_number: 28, position: "RB / WR" },
+  { id: "tp19", team_id: "t4", profile_id: "p19", jersey_number: 20, position: "Safety" },
+  { id: "tp20", team_id: "t4", profile_id: "p20", jersey_number: 55, position: "Rusher" },
+  { id: "tp26", team_id: "t4", profile_id: "p1", jersey_number: 7, position: "WR" }, // cross-sport
   // t5 Mesa Mavericks (flag football)
-  { id: "tp21", teamId: "t5", playerId: "p21", jersey: 12, position: "QB" },
-  { id: "tp22", teamId: "t5", playerId: "p22", jersey: 81, position: "WR" },
-  { id: "tp23", teamId: "t5", playerId: "p23", jersey: 84, position: "WR" },
-  { id: "tp24", teamId: "t5", playerId: "p24", jersey: 23, position: "Safety" },
-  { id: "tp27", teamId: "t5", playerId: "p25", jersey: 90, position: "Rusher" },
+  { id: "tp21", team_id: "t5", profile_id: "p21", jersey_number: 12, position: "QB" },
+  { id: "tp22", team_id: "t5", profile_id: "p22", jersey_number: 81, position: "WR" },
+  { id: "tp23", team_id: "t5", profile_id: "p23", jersey_number: 84, position: "WR" },
+  { id: "tp24", team_id: "t5", profile_id: "p24", jersey_number: 23, position: "Safety" },
+  { id: "tp27", team_id: "t5", profile_id: "p25", jersey_number: 90, position: "Rusher" },
   // t6 Frontier Force (flag football)
-  { id: "tp28", teamId: "t6", playerId: "p26", jersey: 9, position: "QB" },
-  { id: "tp29", teamId: "t6", playerId: "p27", jersey: 88, position: "WR" },
-  { id: "tp30", teamId: "t6", playerId: "p28", jersey: 32, position: "RB / WR" },
-  { id: "tp31", teamId: "t6", playerId: "p29", jersey: 25, position: "Safety" },
-  { id: "tp32", teamId: "t6", playerId: "p30", jersey: 99, position: "Rusher" },
+  { id: "tp28", team_id: "t6", profile_id: "p26", jersey_number: 9, position: "QB" },
+  { id: "tp29", team_id: "t6", profile_id: "p27", jersey_number: 88, position: "WR" },
+  { id: "tp30", team_id: "t6", profile_id: "p28", jersey_number: 32, position: "RB / WR" },
+  { id: "tp31", team_id: "t6", profile_id: "p29", jersey_number: 25, position: "Safety" },
+  { id: "tp32", team_id: "t6", profile_id: "p30", jersey_number: 99, position: "Rusher" },
 ].map((tp) => ({ season: CURRENT_SEASON, ...tp }));
 
 /* ------------------------------- GAMES ----------------------------------- */
@@ -147,7 +147,7 @@ export const teamPlayers = [
 // score_status: 'pending' | 'submitted' | 'approved' | 'disputed' | 'final'
 // (CLAUDE.md data model) — lives ALONGSIDE status, which is kept as-is.
 // 'final' means LOCKED (locked: true, set via the admin Mark Final action);
-// editHistory is the mock audit log: { action, timestamp, reason? }.
+// edit_history is the mock audit log: { action, timestamp, reason? }.
 //
 // SEASON-IN-PROGRESS ANCHOR: this mock season is read as if "today" is
 // 2026-06-27. Every game dated on/before the anchor is completed (with scores
@@ -156,26 +156,26 @@ export const teamPlayers = [
 // completed games only, so a future-dated game must never carry a result.
 export const games = [
   // --- Kickball completed ---
-  { id: "g1", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t2", date: "2026-06-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", homeScore: 7, awayScore: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g2", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t3", date: "2026-06-11", time: "7:30 PM", location: "Los Altos Park, Field 1", status: "completed", score_status: "approved", homeScore: 4, awayScore: 6, periods: { home: [1, 2, 0, 1, 0], away: [0, 3, 1, 2, 0] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g3", leagueId: "l1", sport: "kickball", homeTeamId: "t1", awayTeamId: "t3", date: "2026-06-16", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", homeScore: 8, awayScore: 5, periods: { home: [3, 1, 2, 0, 2], away: [1, 0, 1, 2, 1] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", date: "2026-06-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", home_score: 7, away_score: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g2", league_id: "l1", sport: "kickball", home_team_id: "t2", away_team_id: "t3", date: "2026-06-11", time: "7:30 PM", location: "Los Altos Park, Field 1", status: "completed", score_status: "approved", home_score: 4, away_score: 6, periods: { home: [1, 2, 0, 1, 0], away: [0, 3, 1, 2, 0] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g3", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", date: "2026-06-16", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", home_score: 8, away_score: 5, periods: { home: [3, 1, 2, 0, 2], away: [1, 0, 1, 2, 1] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Kickball upcoming ---
-  { id: "g4", leagueId: "l1", sport: "kickball", homeTeamId: "t2", awayTeamId: "t1", date: "2026-06-30", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g5", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t1", date: "2026-07-02", time: "7:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g6", leagueId: "l1", sport: "kickball", homeTeamId: "t3", awayTeamId: "t2", date: "2026-07-07", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g4", league_id: "l1", sport: "kickball", home_team_id: "t2", away_team_id: "t1", date: "2026-06-30", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g5", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t1", date: "2026-07-02", time: "7:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g6", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t2", date: "2026-07-07", time: "6:30 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Flag football completed ---
-  { id: "g7", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t5", date: "2026-06-07", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", homeScore: 21, awayScore: 14, periods: { home: [7, 6, 0, 8], away: [0, 7, 7, 0] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g8", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t6", date: "2026-06-14", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "approved", homeScore: 13, awayScore: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g9", leagueId: "l2", sport: "flag_football", homeTeamId: "t4", awayTeamId: "t6", date: "2026-06-21", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", homeScore: 21, awayScore: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g7", league_id: "l2", sport: "flag_football", home_team_id: "t4", away_team_id: "t5", date: "2026-06-07", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", home_score: 21, away_score: 14, periods: { home: [7, 6, 0, 8], away: [0, 7, 7, 0] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g8", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t6", date: "2026-06-14", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "approved", home_score: 13, away_score: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g9", league_id: "l2", sport: "flag_football", home_team_id: "t4", away_team_id: "t6", date: "2026-06-21", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", home_score: 21, away_score: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Flag football upcoming ---
-  { id: "g10", leagueId: "l2", sport: "flag_football", homeTeamId: "t5", awayTeamId: "t4", date: "2026-06-28", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g11", leagueId: "l2", sport: "flag_football", homeTeamId: "t6", awayTeamId: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
-  { id: "g12", leagueId: "l2", sport: "flag_football", homeTeamId: "t6", awayTeamId: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", homeScore: null, awayScore: null, periods: { home: [], away: [] }, tempAdminId: null, locked: false, editHistory: [] },
+  { id: "g10", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t4", date: "2026-06-28", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g11", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g12", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
 ];
 
 /* ---------------------------- PLAYER_STATS ------------------------------- */
 // One row per player per completed game. Missing stat keys default to 0.
-const ps = (id, gameId, playerId, teamId, sport, stats) => ({ id, gameId, playerId, teamId, sport, stats });
+const ps = (id, game_id, profile_id, team_id, sport, stats) => ({ id, game_id, profile_id, team_id, sport, stats });
 
 export const playerStats = [
   // ===== g1 : t1 7 - 4 t2 (kickball) =====
@@ -273,19 +273,19 @@ export const careerBaselines = {
 
 /* ----------------------------- FREE_AGENTS ------------------------------- */
 export const freeAgents = [
-  { id: "fa1", name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", sports: ["kickball"], experience: "Intermediate", notes: "Played college softball. Looking for a competitive squad.", status: "new", createdDate: "2026-05-28" },
-  { id: "fa2", name: "Ben Carrillo", email: "ben.c@cvf.demo", phone: "505-555-0202", sports: ["flag_football"], experience: "Advanced", notes: "Former HS QB. Can also play safety.", status: "new", createdDate: "2026-05-29" },
-  { id: "fa3", name: "Hannah Esquibel", email: "hannah.e@cvf.demo", phone: "", sports: ["kickball", "flag_football"], experience: "Beginner", notes: "New to leagues, eager to learn and have fun!", status: "new", createdDate: "2026-05-30" },
-  { id: "fa4", name: "Marcus Tenorio", email: "marcus.te@cvf.demo", phone: "505-555-0204", sports: ["flag_football"], experience: "Intermediate", notes: "Speedy receiver, available weeknights.", status: "new", createdDate: "2026-06-01" },
-  { id: "fa5", name: "Gabriela Rael", email: "gabriela.r@cvf.demo", phone: "505-555-0205", sports: ["kickball"], experience: "Advanced", notes: "Big bat, plays anywhere in the field.", status: "new", createdDate: "2026-06-02" },
-  { id: "fa6", name: "Tyler Madrid", email: "tyler.ma@cvf.demo", phone: "505-555-0206", sports: ["kickball", "flag_football"], experience: "Intermediate", notes: "Two-sport guy looking to stay busy this summer.", status: "new", createdDate: "2026-06-03" },
-  { id: "fa7", name: "Sophia Lucero", email: "sophia.l@cvf.demo", phone: "", sports: ["kickball"], experience: "Beginner", notes: "Just moved to ABQ, want to meet people.", status: "new", createdDate: "2026-06-04" },
-  { id: "fa8", name: "Andrew Sena", email: "andrew.s@cvf.demo", phone: "505-555-0208", sports: ["flag_football"], experience: "Advanced", notes: "Pass rusher / edge. Played 4 seasons of flag.", status: "new", createdDate: "2026-06-05" },
+  { id: "fa1", name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", sports: ["kickball"], experience: "Intermediate", notes: "Played college softball. Looking for a competitive squad.", status: "new", created_at: "2026-05-28" },
+  { id: "fa2", name: "Ben Carrillo", email: "ben.c@cvf.demo", phone: "505-555-0202", sports: ["flag_football"], experience: "Advanced", notes: "Former HS QB. Can also play safety.", status: "new", created_at: "2026-05-29" },
+  { id: "fa3", name: "Hannah Esquibel", email: "hannah.e@cvf.demo", phone: "", sports: ["kickball", "flag_football"], experience: "Beginner", notes: "New to leagues, eager to learn and have fun!", status: "new", created_at: "2026-05-30" },
+  { id: "fa4", name: "Marcus Tenorio", email: "marcus.te@cvf.demo", phone: "505-555-0204", sports: ["flag_football"], experience: "Intermediate", notes: "Speedy receiver, available weeknights.", status: "new", created_at: "2026-06-01" },
+  { id: "fa5", name: "Gabriela Rael", email: "gabriela.r@cvf.demo", phone: "505-555-0205", sports: ["kickball"], experience: "Advanced", notes: "Big bat, plays anywhere in the field.", status: "new", created_at: "2026-06-02" },
+  { id: "fa6", name: "Tyler Madrid", email: "tyler.ma@cvf.demo", phone: "505-555-0206", sports: ["kickball", "flag_football"], experience: "Intermediate", notes: "Two-sport guy looking to stay busy this summer.", status: "new", created_at: "2026-06-03" },
+  { id: "fa7", name: "Sophia Lucero", email: "sophia.l@cvf.demo", phone: "", sports: ["kickball"], experience: "Beginner", notes: "Just moved to ABQ, want to meet people.", status: "new", created_at: "2026-06-04" },
+  { id: "fa8", name: "Andrew Sena", email: "andrew.s@cvf.demo", phone: "505-555-0208", sports: ["flag_football"], experience: "Advanced", notes: "Pass rusher / edge. Played 4 seasons of flag.", status: "new", created_at: "2026-06-05" },
 ];
 
 /* ---------------------------- REGISTRATIONS ------------------------------ */
 export const registrations = [
-  { id: "reg1", teamName: "Westside Warriors", sport: "kickball", captainName: "Felix Ortega", captainEmail: "felix.o@cvf.demo", captainPhone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "new", submittedDate: "2026-06-04" },
+  { id: "reg1", team_name: "Westside Warriors", sport: "kickball", captain_name: "Felix Ortega", captain_email: "felix.o@cvf.demo", captain_phone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "new", created_at: "2026-06-04" },
 ];
 
 /* ------------------------------- WAIVERS ---------------------------------- */
@@ -297,18 +297,18 @@ export const registrations = [
 // verification_status: 'pending' | 'verified' | 'rejected' | 'duplicate'
 export const WAIVER_VERSION = "CVF-WAIVER-2026-06-04-v1";
 export const waivers = [
-  { id: "w1", profileId: "p1", signed_name: "Marcus Trujillo", email: "marcus.t@cvf.demo", phone: "505-555-0101", signed_at: "2026-06-05T17:42:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "174.56.20.18", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "verified" },
-  { id: "w2", profileId: "p6", signed_name: "Jessica Martinez", email: "jess.m@cvf.demo", phone: "505-555-0106", signed_at: "2026-06-05T19:03:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "98.60.142.77", user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", verification_status: "verified" },
-  { id: "w3", profileId: "p4", signed_name: "Tyler Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", signed_at: "2026-06-06T15:11:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: false, ip_address: "70.171.33.204", user_agent: "Mozilla/5.0 (Linux; Android 14)", verification_status: "duplicate" },
-  { id: "w4", profileId: "p4", signed_name: "Tyler J. Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", signed_at: "2026-06-08T20:27:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "70.171.33.204", user_agent: "Mozilla/5.0 (Linux; Android 14)", verification_status: "pending" },
-  { id: "w5", profileId: "p8", signed_name: "C. Vigil", email: "crystal.v@cvf.demo", phone: "505-555-0108", signed_at: "2026-06-07T16:48:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: false, media_consent: false, ip_address: "166.70.21.9", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)", verification_status: "rejected" },
-  { id: "w6", profileId: null, signed_name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", signed_at: "2026-06-09T18:35:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "97.123.88.40", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "pending" },
+  { id: "w1", profile_id: "p1", signed_name: "Marcus Trujillo", email: "marcus.t@cvf.demo", phone: "505-555-0101", signed_at: "2026-06-05T17:42:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "174.56.20.18", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "verified" },
+  { id: "w2", profile_id: "p6", signed_name: "Jessica Martinez", email: "jess.m@cvf.demo", phone: "505-555-0106", signed_at: "2026-06-05T19:03:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "98.60.142.77", user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", verification_status: "verified" },
+  { id: "w3", profile_id: "p4", signed_name: "Tyler Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", signed_at: "2026-06-06T15:11:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: false, ip_address: "70.171.33.204", user_agent: "Mozilla/5.0 (Linux; Android 14)", verification_status: "duplicate" },
+  { id: "w4", profile_id: "p4", signed_name: "Tyler J. Romero", email: "tyler.r@cvf.demo", phone: "505-555-0104", signed_at: "2026-06-08T20:27:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "70.171.33.204", user_agent: "Mozilla/5.0 (Linux; Android 14)", verification_status: "pending" },
+  { id: "w5", profile_id: "p8", signed_name: "C. Vigil", email: "crystal.v@cvf.demo", phone: "505-555-0108", signed_at: "2026-06-07T16:48:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: false, media_consent: false, ip_address: "166.70.21.9", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X)", verification_status: "rejected" },
+  { id: "w6", profile_id: null, signed_name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", signed_at: "2026-06-09T18:35:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "97.123.88.40", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "pending" },
 ];
 
 /* ------------------------------ SETTINGS --------------------------------- */
 export const settings = {
-  currentSeason: CURRENT_SEASON,
-  registrationOpen: { kickball: true, flag_football: false },
+  current_season: CURRENT_SEASON,
+  registration_open: { kickball: true, flag_football: false },
 };
 
 /* Assemble the initial shared state object. */

@@ -23,20 +23,20 @@ const AVAILABILITY_OPTIONS = [
 export default function FreeAgentSignup() {
   const { addFreeAgent } = useApp();
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    displayName: "",
+    first_name: "",
+    last_name: "",
+    display_name: "",
     email: "",
     phone: "",
     experience: "",
-    preferredPosition: "",
-    emergencyContactName: "",
-    emergencyContactPhone: "",
+    preferred_position: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
     notes: "",
   });
   const [sports, setSports] = useState([]);
   const [availability, setAvailability] = useState([]);
-  const [consentToContact, setConsentToContact] = useState(false);
+  const [consent_to_contact, setConsentToContact] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -46,12 +46,12 @@ export default function FreeAgentSignup() {
 
   const validate = () => {
     const e = {};
-    if (!form.firstName.trim()) e.firstName = "First name is required";
-    if (!form.lastName.trim()) e.lastName = "Last name is required";
+    if (!form.first_name.trim()) e.first_name = "First name is required";
+    if (!form.last_name.trim()) e.last_name = "Last name is required";
     if (!form.phone.trim() && !form.email.trim()) e.contact = "Phone or email is required";
     if (form.email.trim() && !/^\S+@\S+\.\S+$/.test(form.email)) e.email = "Enter a valid email address";
     if (!sports.length) e.sports = "Select at least one sport";
-    if (!consentToContact) e.consent = "You must agree to be contacted";
+    if (!consent_to_contact) e.consent = "You must agree to be contacted";
     return e;
   };
 
@@ -60,18 +60,18 @@ export default function FreeAgentSignup() {
     setErrors(e);
     if (Object.keys(e).length) { toast.error("Please fix the highlighted fields"); return; }
     addFreeAgent({
-      firstName: form.firstName.trim(),
-      lastName: form.lastName.trim(),
-      displayName: form.displayName.trim() || null,
+      first_name: form.first_name.trim(),
+      last_name: form.last_name.trim(),
+      display_name: form.display_name.trim() || null,
       email: form.email.trim(),
       phone: form.phone.trim(),
       sports,
       experience: form.experience || null,
-      preferredPosition: form.preferredPosition.trim() || null,
+      preferred_position: form.preferred_position.trim() || null,
       availability,
-      emergencyContactName: form.emergencyContactName.trim() || null,
-      emergencyContactPhone: form.emergencyContactPhone.trim() || null,
-      consentToContact: true,
+      emergency_contact_name: form.emergency_contact_name.trim() || null,
+      emergency_contact_phone: form.emergency_contact_phone.trim() || null,
+      consent_to_contact: true,
       notes: form.notes.trim() || null,
     });
     // PHASE 2: POST to /free_agents + notify captains watching for that sport.
@@ -106,15 +106,15 @@ export default function FreeAgentSignup() {
       <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
         <p className="font-display uppercase tracking-tight text-foreground text-sm">Your Info</p>
         <div className="grid sm:grid-cols-2 gap-4">
-          <Field label="First Name" required error={errors.firstName}>
-            <Input data-testid="fa-first-name" value={form.firstName} onChange={(e) => set("firstName", e.target.value)} className="bg-surface-sunken border-border" />
+          <Field label="First Name" required error={errors.first_name}>
+            <Input data-testid="fa-first-name" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
-          <Field label="Last Name" required error={errors.lastName}>
-            <Input data-testid="fa-last-name" value={form.lastName} onChange={(e) => set("lastName", e.target.value)} className="bg-surface-sunken border-border" />
+          <Field label="Last Name" required error={errors.last_name}>
+            <Input data-testid="fa-last-name" value={form.last_name} onChange={(e) => set("last_name", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
         </div>
         <Field label="Display Name" optional>
-          <Input data-testid="fa-display-name" value={form.displayName} onChange={(e) => set("displayName", e.target.value)} placeholder="Nickname or preferred name" className="bg-surface-sunken border-border" />
+          <Input data-testid="fa-display-name" value={form.display_name} onChange={(e) => set("display_name", e.target.value)} placeholder="Nickname or preferred name" className="bg-surface-sunken border-border" />
         </Field>
         <Field label="Contact" required error={errors.contact || errors.email} hint="At least one of phone or email is required">
           <div className="grid sm:grid-cols-2 gap-3">
@@ -170,7 +170,7 @@ export default function FreeAgentSignup() {
             </Select>
           </Field>
           <Field label="Preferred Position" optional>
-            <Input data-testid="fa-position" value={form.preferredPosition} onChange={(e) => set("preferredPosition", e.target.value)} placeholder="e.g. Pitcher, WR…" className="bg-surface-sunken border-border" />
+            <Input data-testid="fa-position" value={form.preferred_position} onChange={(e) => set("preferred_position", e.target.value)} placeholder="e.g. Pitcher, WR…" className="bg-surface-sunken border-border" />
           </Field>
         </div>
       </div>
@@ -182,10 +182,10 @@ export default function FreeAgentSignup() {
         </p>
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Contact Name" optional>
-            <Input data-testid="fa-ec-name" value={form.emergencyContactName} onChange={(e) => set("emergencyContactName", e.target.value)} className="bg-surface-sunken border-border" />
+            <Input data-testid="fa-ec-name" value={form.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
           <Field label="Contact Phone" optional>
-            <Input data-testid="fa-ec-phone" value={form.emergencyContactPhone} onChange={(e) => set("emergencyContactPhone", e.target.value)} className="bg-surface-sunken border-border" />
+            <Input data-testid="fa-ec-phone" value={form.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function FreeAgentSignup() {
       {/* Consent */}
       <div className="bg-card border border-border rounded-2xl p-5">
         <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
-          <Checkbox data-testid="fa-consent" checked={consentToContact} onCheckedChange={setConsentToContact} className="mt-0.5" />
+          <Checkbox data-testid="fa-consent" checked={consent_to_contact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
             I consent to be contacted by CVF Sports by phone, text, or email regarding league participation.{" "}
             <span className="text-destructive font-bold">*</span>

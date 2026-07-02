@@ -4,24 +4,24 @@ import { Avatar } from "../common/Avatar";
 import { EligibilityIndicator } from "../common/EligibilityIndicator";
 
 // Compact roster player card linking to athlete profile.
-export const PlayerCard = ({ profile, jersey, position, isCaptain }) => (
+export const PlayerCard = ({ profile, jersey_number, position, isCaptain }) => (
   <Link
     to={`/profile/${profile.id}`}
     data-testid={`player-card-${profile.id}`}
     className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 shadow-card transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 hover:shadow-card-hover"
   >
-    <Avatar name={profile.name} color={profile.avatarColor} size={42} />
+    <Avatar name={profile.name} color={profile.avatar_color} size={42} />
     <div className="min-w-0 flex-1">
       <div className="flex items-center gap-1.5">
         <span className="font-display uppercase tracking-tight text-foreground truncate text-base">
           {profile.name}
         </span>
         {isCaptain && <Crown size={14} weight="fill" className="text-gold shrink-0" />}
-        <EligibilityIndicator status={profile.eligibilityStatus} />
+        <EligibilityIndicator status={profile.eligibility_status} />
       </div>
       <p className="text-xs text-muted-foreground truncate">
         {position}
-        {jersey != null && <span className="tabular-nums"> · #{jersey}</span>}
+        {jersey_number != null && <span className="tabular-nums"> · #{jersey_number}</span>}
       </p>
     </div>
   </Link>
