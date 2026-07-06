@@ -3,6 +3,7 @@ import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
 import { MobileJoinBar } from "./MobileJoinBar";
 import { RoleSwitcher } from "../RoleSwitcher";
+import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 // The Demo Role Preview switcher is an ADMIN-ONLY TESTING TOOL that exists only
 // because this MVP has no real auth (CLAUDE.md). It must NEVER ship in a public
@@ -13,7 +14,9 @@ const SHOW_ROLE_SWITCHER =
   process.env.NODE_ENV !== "production" || process.env.REACT_APP_SHOW_ROLE_SWITCHER === "true";
 
 // App shell: desktop top bar + mobile bottom nav + (dev-only) role switcher.
-export const AppLayout = () => (
+export const AppLayout = () => {
+  useDocumentTitle();
+  return (
   <div className="min-h-screen bg-background flex flex-col">
     <TopBar />
     <MobileJoinBar />
@@ -25,4 +28,5 @@ export const AppLayout = () => (
     <BottomNav />
     {SHOW_ROLE_SWITCHER && <RoleSwitcher />}
   </div>
-);
+  );
+};

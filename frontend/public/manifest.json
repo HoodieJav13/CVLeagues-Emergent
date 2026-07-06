@@ -1,0 +1,21 @@
+{
+    "name": "CVF Sports — Adult Rec Leagues",
+    "short_name": "CVF Sports",
+    "description": "Free adult kickball and flag football leagues in Albuquerque, NM. Schedules, standings, and stats — player first, always free.",
+    "start_url": ".",
+    "display": "standalone",
+    "theme_color": "#0F1416",
+    "background_color": "#0F1416",
+    "icons": [
+        {
+            "src": "icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
