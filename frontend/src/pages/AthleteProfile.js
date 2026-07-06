@@ -9,6 +9,7 @@ import { HIGHLIGHT_STATS, statLabel, sportName, LEADERBOARD_CATEGORIES } from ".
 import { Avatar } from "../components/common/Avatar";
 import { SportBadge } from "../components/common/Badges";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
 import { ComingSoon } from "../components/common/ComingSoon";
 
 export default function AthleteProfile() {
@@ -68,9 +69,9 @@ export default function AthleteProfile() {
         {/* ---------------- PUBLIC ---------------- */}
         <TabsContent value="public" className="space-y-6 mt-4" data-testid="profile-public-content">
           <div className="flex justify-end">
-            <button data-testid="profile-share" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary">
+            <Button variant="ghost" data-testid="profile-share" className="h-auto p-0 gap-1.5 normal-case tracking-normal text-sm font-normal text-muted-foreground hover:text-primary hover:bg-transparent">
               <ShareNetwork size={15} weight="bold" /> Share profile
-            </button>
+            </Button>
           </div>
           <SportTabs sports={sports} testid="profile-public-sport" render={(sport) => {
             const season = playerSeasonStats(state, profile.id, sport);

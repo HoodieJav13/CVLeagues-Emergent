@@ -8,6 +8,7 @@ import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { Button } from "../components/ui/button";
 import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
 
@@ -67,14 +68,14 @@ function Pool() {
                 <span className="flex items-center gap-1 truncate"><EnvelopeSimple size={13} weight="bold" /> {a.email}</span>
                 {a.phone && <span className="flex items-center gap-1"><Phone size={13} weight="bold" /> {a.phone}</span>}
               </div>
-              <button
+              <Button
                 onClick={() => invite(a)}
                 disabled={a.status !== "new"}
                 data-testid={`fa-invite-${a.id}`}
-                className="mt-3 w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs py-2.5 rounded-xl hover:bg-teal-deep transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-3 w-full h-auto py-2.5 text-xs font-bold tracking-wide rounded-xl"
               >
                 <PaperPlaneTilt size={14} weight="bold" /> {a.status === "contacted" ? "Invite Sent" : a.status === "new" ? "Send Invite" : a.status === "assigned" ? "Assigned" : "Archived"}
-              </button>
+              </Button>
             </div>
           ))}
         </div>

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { SectionHeading } from "../components/common/Section";
 import { SPORTS } from "../lib/statsConfig";
+import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
@@ -215,13 +216,13 @@ export default function FreeAgentSignup() {
         {errors.consent && <p className="text-xs text-destructive mt-2 ml-7">{errors.consent}</p>}
       </div>
 
-      <button
+      <Button
         onClick={submit}
         data-testid="fa-submit"
-        className="w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-teal-deep transition-colors"
+        className="w-full h-auto py-4 text-sm font-bold tracking-wide rounded-xl"
       >
         Join Free Agent Pool
-      </button>
+      </Button>
     </div>
   );
 }

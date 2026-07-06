@@ -4,6 +4,7 @@ import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile } from "../lib/selectors";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
+import { Button } from "../components/ui/button";
 import { Avatar } from "../components/common/Avatar";
 import { can } from "../lib/roles";
 
@@ -47,9 +48,9 @@ export default function GameDetail() {
 
   return (
     <div className="space-y-6 animate-fade-up">
-      <button onClick={() => navigate(-1)} data-testid="game-back" className="inline-flex items-center gap-1.5 min-h-[44px] -my-1 pr-2 text-muted-foreground hover:text-foreground text-sm">
+      <Button variant="ghost" onClick={() => navigate(-1)} data-testid="game-back" className="h-auto min-h-[44px] -my-1 p-0 pr-2 gap-1.5 normal-case tracking-normal text-sm font-normal text-muted-foreground hover:text-foreground hover:bg-transparent">
         <ArrowLeft size={16} weight="bold" /> Back
-      </button>
+      </Button>
 
       {/* Page-level matchup title. */}
       <div data-testid="game-detail-heading">

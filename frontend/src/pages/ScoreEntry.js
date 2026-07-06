@@ -10,6 +10,7 @@ import { SectionHeading } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { EligibilityIndicator } from "../components/common/EligibilityIndicator";
+import { Button } from "../components/ui/button";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 
@@ -118,7 +119,7 @@ function Entry() {
         <div className="flex items-center justify-between mb-4">
           <p className="font-display uppercase tracking-tight text-foreground">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
           {game.sport === "kickball" && (
-            <button onClick={addInning} data-testid="score-add-inning" className="text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1"><Plus size={14} weight="bold" /> Extra inning</button>
+            <Button variant="ghost" onClick={addInning} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
           )}
         </div>
         <div className="overflow-x-auto">
@@ -171,10 +172,11 @@ function Entry() {
                 const summary = HIGHLIGHT_STATS[team.sport].map((k) => `${pstats[k] || 0} ${statLabel(team.sport, k).split(" ")[0]}`).join(" · ");
                 return (
                   <div key={r.id} className="border-b border-border last:border-0">
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => setExpanded(open ? null : r.profile_id)}
                       data-testid={`score-player-toggle-${r.profile_id}`}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-white/5 transition-colors text-left"
+                      className="w-full h-auto justify-start gap-3 px-4 py-3 rounded-none normal-case tracking-normal font-normal whitespace-normal text-left text-foreground hover:text-foreground hover:bg-white/5 active:scale-100"
                     >
                       <Avatar name={r.profile.name} color={r.profile.avatar_color} size={34} />
                       <div className="flex-1 min-w-0">
@@ -185,7 +187,7 @@ function Entry() {
                         <p className="text-micro text-muted-foreground tabular-nums">{summary}</p>
                       </div>
                       <CaretDown size={16} weight="bold" className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-                    </button>
+                    </Button>
                     {open && (
                       <div className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.profile_id}`}>
                         {STAT_GROUPS[team.sport].map((grp) => (
@@ -216,9 +218,9 @@ function Entry() {
         })}
       </div>
 
-      <button onClick={save} data-testid="score-save" className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-4 rounded-xl hover:bg-teal-deep transition-colors sticky bottom-20 md:bottom-6">
+      <Button onClick={save} data-testid="score-save" className="w-full h-auto py-4 gap-2 text-sm font-bold tracking-wide rounded-xl sticky bottom-20 md:bottom-6 [&_svg]:size-[18px]">
         <FloppyDisk size={18} weight="bold" /> Submit Score
-      </button>
+      </Button>
     </div>
   );
 }
