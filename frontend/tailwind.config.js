@@ -15,6 +15,7 @@ module.exports = {
                 // default xs/sm/base are REMAPPED onto the tokens so the dev-reflex
                 // `text-sm` lands on the system (values unchanged: 12/14/16px).
                 fontSize: {
+                        'display-2xl': ['var(--text-display-2xl)', { lineHeight: '1', fontWeight: '700', letterSpacing: '-0.02em' }],
                         'display-xl': ['var(--text-display-xl)', { lineHeight: '1.05', fontWeight: '700', letterSpacing: '-0.02em' }],
                         'display-lg': ['var(--text-display-lg)', { lineHeight: '1.1', fontWeight: '700', letterSpacing: '-0.02em' }],
                         'heading': ['var(--text-heading)', { lineHeight: '1.2', fontWeight: '600' }],
@@ -28,6 +29,7 @@ module.exports = {
                         'caption': ['var(--text-caption)', { lineHeight: '1.4', fontWeight: '400' }],
                         'micro': ['var(--text-micro)', { lineHeight: '1.35', fontWeight: '500' }],
                         'score': ['var(--score-figure)', { lineHeight: '1', fontWeight: '700' }],
+                        'score-lg': ['var(--score-figure-lg)', { lineHeight: '1', fontWeight: '700' }],
                 },
                 borderRadius: {
                         lg: 'var(--radius)',

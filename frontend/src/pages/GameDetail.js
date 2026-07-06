@@ -181,7 +181,7 @@ const TeamHead = ({ team, score, completed, win, home }) => (
     <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
     <span className="text-micro text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
     {completed && (
-      <span className={`mt-1 font-mono-score text-3xl font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>
+      <span className={`mt-1 font-mono-score tabular-nums text-score-lg font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>
     )}
   </Link>
 );

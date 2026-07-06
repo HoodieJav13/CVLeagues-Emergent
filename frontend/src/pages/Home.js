@@ -1,18 +1,104 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, UsersThree, PersonSimpleRun, CalendarCheck, Fire } from "@phosphor-icons/react";
+import { ArrowRight, Clock, MapPin } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
+import { getTeam } from "../lib/selectors";
 import { SectionHeading } from "../components/common/Section";
 import { GameCard } from "../components/game/GameCard";
 import { SportBadge } from "../components/common/Badges";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
-import { SPORTS, sportName } from "../lib/statsConfig";
+import { SPORTS } from "../lib/statsConfig";
+import logoSrc from "../assets/cvf-logo-transparent.png";
 
 // Sandia ridge backgrounds (brand pass) — self-contained dark dusk scenes,
 // used at full opacity. Replaces the stadium/stock photos.
 import heroBg from "../assets/backgrounds/sandia-wide-hero-bg.svg";
 import teamInterestBg from "../assets/backgrounds/sandia-team-interest-cta-bg.svg";
 import freeAgentBg from "../assets/backgrounds/sandia-free-agent-cta-bg.svg";
+
+const formatGameDate = (game) =>
+  new Date(game.date + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  });
+
+// One row of the featured scoreboard. Winner weighting mirrors GameCard's
+// TeamLine semantics (--win / --loss-text, 3px teal leading bar) at the
+// featured scale: names in display type, figures in --score-figure-lg /
+// --text-display-2xl Oswald tabular numerals.
+const ScoreboardLine = ({ team, score, isWinner, isLoser, completed }) => {
+  const nameEmphasis = isWinner
+    ? "text-[var(--win)] font-semibold"
+    : isLoser
+    ? "text-[var(--loss-text)] font-normal"
+    : "text-foreground font-normal";
+  const scoreEmphasis = isWinner
+    ? "text-[var(--win)]"
+    : isLoser
+    ? "text-[var(--loss-text)]"
+    : "text-foreground";
+  return (
+    <div
+      className={`flex items-center justify-between gap-3 border-l-[3px] pl-3 ${
+        isWinner ? "border-teal" : "border-transparent"
+      }`}
+    >
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span
+          className="w-3 h-3 rounded-full shrink-0"
+          style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }}
+        />
+        <span className={`font-display uppercase tracking-tight text-heading md:text-display-lg truncate ${nameEmphasis}`}>
+          {team?.name || "TBD"}
+        </span>
+      </div>
+      {completed ? (
+        <span className={`font-mono-score tabular-nums text-score-lg md:text-display-2xl shrink-0 ${scoreEmphasis}`}>
+          {score}
+        </span>
+      ) : null}
+    </div>
+  );
+};
+
+// Featured scoreboard card: the most recent final (kind="latest") or the next
+// scheduled game (kind="up-next"), rendered big. Pure read of existing game
+// shape — same fields GameCard consumes.
+const ScoreboardFeature = ({ game, kind, state }) => {
+  const home = getTeam(state, game.home_team_id);
+  const away = getTeam(state, game.away_team_id);
+  const completed = game.status === "completed";
+  const homeWin = completed && game.home_score > game.away_score;
+  const awayWin = completed && game.away_score > game.home_score;
+  return (
+    <Link
+      to={`/game/${game.id}`}
+      data-testid={`home-scoreboard-${kind}`}
+      className="block bg-card border border-border rounded-2xl p-4 md:p-5 shadow-card transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover"
+    >
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-label uppercase text-muted-foreground">
+          {kind === "latest" ? "Latest Final" : "Up Next"}
+        </span>
+        <SportBadge sport={game.sport} />
+      </div>
+      <div className="space-y-2">
+        <ScoreboardLine team={away} score={game.away_score} isWinner={awayWin} isLoser={homeWin} completed={completed} />
+        <ScoreboardLine team={home} score={game.home_score} isWinner={homeWin} isLoser={awayWin} completed={completed} />
+      </div>
+      <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="font-medium text-foreground/80">{formatGameDate(game)}</span>
+        <span className="flex items-center gap-1">
+          <Clock size={13} weight="bold" /> {game.time}
+        </span>
+        <span className="flex items-center gap-1 truncate">
+          <MapPin size={13} weight="bold" /> {game.location}
+        </span>
+      </div>
+    </Link>
+  );
+};
 
 export default function Home() {
   const { state } = useApp();
@@ -39,42 +125,67 @@ export default function Home() {
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 4);
 
+  // Featured scoreboard (unfiltered — it sits above the sport/league selectors):
+  // single most recent final + single next scheduled game, league-wide.
+  const latestFinal = useMemo(
+    () =>
+      state.games
+        .filter((g) => g.status === "completed")
+        .sort((a, b) => new Date(b.date) - new Date(a.date))[0] || null,
+    [state.games]
+  );
+  const nextUp = useMemo(
+    () =>
+      state.games
+        .filter((g) => g.status === "upcoming")
+        .sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null,
+    [state.games]
+  );
+
   return (
     <div className="space-y-10 animate-fade-up">
-      {/* HERO */}
+      {/* IDENTITY BAND — compact lockup, not a marketing hero */}
       <section className="relative overflow-hidden rounded-2xl border border-border">
         <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
-        <div className="relative px-6 py-12 md:px-12 md:py-20 max-w-2xl">
-          <span className="inline-flex items-center px-3 py-1 rounded-full border border-primary/30 text-primary text-xs font-semibold uppercase tracking-widest">
-            {state.settings.current_season} · Albuquerque, NM
-          </span>
-          <h1 className="mt-4 font-display font-bold uppercase tracking-tight text-foreground text-display-xl sm:text-5xl lg:text-6xl">
-            Adult Rec Leagues.<br />
-            <span className="text-primary">Player First.</span> Always Free.
-          </h1>
-          <p className="mt-4 text-base text-muted-foreground max-w-md">
-            Albuquerque's home for adult kickball &amp; flag football. Track your stats, build your
-            squad, and own your athlete profile — across every sport you play.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+        <div className="relative px-5 py-6 md:px-8 md:py-7">
+          <div className="flex items-center gap-3.5">
+            <img src={logoSrc} alt="" className="w-14 h-14 md:w-16 md:h-16 shrink-0" />
+            <div className="min-w-0">
+              <h1 className="font-display font-bold uppercase tracking-tight text-display-lg md:text-display-xl text-foreground leading-none">
+                CVF Sports
+              </h1>
+              <p className="text-label uppercase tracking-widest text-primary mt-1.5">
+                {state.settings.current_season} · Albuquerque, NM
+              </p>
+            </div>
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2.5">
             <Link
               to="/register-team"
               data-testid="hero-register-team"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:bg-teal-deep transition-colors"
+              className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs px-4 py-2.5 rounded-xl hover:bg-teal-deep transition-colors"
             >
-              Submit Team Interest <ArrowRight size={16} weight="bold" />
+              Submit Team Interest <ArrowRight size={14} weight="bold" />
             </Link>
             <Link
               to="/free-agent-signup"
               data-testid="hero-free-agent"
-              className="inline-flex items-center gap-2 border border-white/15 text-foreground font-bold uppercase tracking-wide text-sm px-5 py-3 rounded-xl hover:border-primary transition-colors"
+              className="inline-flex items-center gap-1.5 border border-white/15 text-foreground font-bold uppercase tracking-wide text-xs px-4 py-2.5 rounded-xl hover:border-primary transition-colors"
             >
               Join Free Agent Pool
             </Link>
           </div>
         </div>
       </section>
+
+      {/* FEATURED SCOREBOARD — latest final + next game, league-wide */}
+      {(latestFinal || nextUp) && (
+        <section className="grid md:grid-cols-2 gap-3" data-testid="home-scoreboard">
+          {latestFinal && <ScoreboardFeature game={latestFinal} kind="latest" state={state} />}
+          {nextUp && <ScoreboardFeature game={nextUp} kind="up-next" state={state} />}
+        </section>
+      )}
 
       {/* SELECTORS */}
       <section className="grid grid-cols-2 gap-3">
@@ -120,22 +231,6 @@ export default function Home() {
             </SelectContent>
           </Select>
         </div>
-      </section>
-
-      {/* SEASON INFO */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {[
-          { icon: CalendarCheck, label: "Season", value: state.settings.current_season },
-          { icon: UsersThree, label: "Teams", value: state.teams.length },
-          { icon: PersonSimpleRun, label: "Players", value: state.profiles.length },
-          { icon: Fire, label: "Games", value: state.games.length },
-        ].map((s) => (
-          <div key={s.label} className="bg-card border border-border rounded-2xl p-4">
-            <s.icon size={20} weight="duotone" className="text-primary mb-2" />
-            <p className="font-display font-bold text-2xl text-foreground leading-none">{s.value}</p>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">{s.label}</p>
-          </div>
-        ))}
       </section>
 
       {/* UPCOMING */}
