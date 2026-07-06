@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import logoSrc from "../../assets/cvf-logo-transparent.png";
 
-// Primary brand logo (local asset — the old remote Emergent URL is dead).
+// Primary brand logo (local asset).
 const LOGO_URL = logoSrc;
 
 export const Logo = ({ size = 36, withWord = true, className = "" }) => (
