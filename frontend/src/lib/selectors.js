@@ -20,11 +20,16 @@ export const teamName = (state, id) => getTeam(state, id)?.name ?? "TBD";
 export const playerName = (state, id) => getProfile(state, id)?.name ?? "Unknown";
 
 /* --------------------------- team records -------------------------------- */
-// Derived from completed games only.
+// Derived from completed REGULAR-SEASON games only. Playoff/tournament games
+// are their own record set and never move the standings (playoffs are seeded
+// FROM these records); their stats still count toward season totals — see
+// playerSeasonStats. A game with no stage field (legacy persisted state) is
+// regular season.
 export function computeTeamRecord(state, team_id) {
   let wins = 0, losses = 0, ties = 0, pf = 0, pa = 0;
   state.games.forEach((g) => {
     if (g.status !== "completed") return;
+    if (g.stage === "playoff" || g.stage === "tournament") return;
     if (g.home_team_id !== team_id && g.away_team_id !== team_id) return;
     const isHome = g.home_team_id === team_id;
     const own = isHome ? g.home_score : g.away_score;
@@ -63,6 +68,8 @@ function addStats(target, stats) {
 }
 
 // Aggregate a player's season stats for a given sport (current season only).
+// ALL stages count — playoff/tournament stats are part of full-season totals
+// by design; only the standings computation above excludes those games.
 export function playerSeasonStats(state, profile_id, sport) {
   const total = zeroStats(sport);
   state.playerStats

@@ -3,6 +3,7 @@ import { MapPin, Clock } from "@phosphor-icons/react";
 import { useApp } from "../../context/AppStateContext";
 import { getTeam, computeTeamRecord } from "../../lib/selectors";
 import { SportBadge, StatusBadge } from "../common/Badges";
+import { StageBanner, isSpecialStage } from "./StageBanner";
 
 // Winner/loser weighting (spec §5). Winner: --win text, body-strong weight,
 // score in --score-figure. Loser: --loss-text, regular weight. A 3px teal
@@ -53,7 +54,10 @@ export const GameCard = ({ game, className = "" }) => {
   const awayWin = completed && game.away_score > game.home_score;
   // Upcoming games get a teal left-edge accent; recent results stay neutral.
   // Both read off the existing game.status — no new state.
+  // Playoff/tournament games (any status) instead carry the gold treatment:
+  // full-width StageBanner up top + gold left edge, upcoming AND historical.
   const isUpcoming = game.status === "upcoming";
+  const special = isSpecialStage(game);
   const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
@@ -65,9 +69,13 @@ export const GameCard = ({ game, className = "" }) => {
       to={`/game/${game.id}`}
       data-testid={`game-card-${game.id}`}
       className={`block bg-card border border-border rounded-xl p-4 sm:p-3 shadow-card transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 hover:shadow-card-hover ${
-        isUpcoming ? "border-l-2 border-l-teal" : ""
+        special ? "border-l-2 border-l-gold" : isUpcoming ? "border-l-2 border-l-teal" : ""
       } ${className}`}
     >
+      {special && (
+        // Full-bleed strip: negative margins pull it over the card padding.
+        <StageBanner stage={game.stage} className="-mx-4 -mt-4 sm:-mx-3 sm:-mt-3 mb-3 sm:mb-2 px-4 sm:px-3 py-1.5 rounded-t-xl" />
+      )}
       <div className="flex items-center justify-between mb-3 sm:mb-2">
         <SportBadge sport={game.sport} />
         <StatusBadge status={game.status} />

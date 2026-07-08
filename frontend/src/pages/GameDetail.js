@@ -4,6 +4,7 @@ import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile } from "../lib/selectors";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
+import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
 import { Avatar } from "../components/common/Avatar";
 import { can } from "../lib/roles";
@@ -61,6 +62,9 @@ export default function GameDetail() {
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-5 md:p-7">
+        {isSpecialStage(game) && (
+          <StageBanner stage={game.stage} className="-mx-5 -mt-5 md:-mx-7 md:-mt-7 mb-5 px-5 md:px-7 py-2 rounded-t-2xl" />
+        )}
         <div className="flex items-center justify-between mb-5">
           <SportBadge sport={game.sport} />
           <StatusBadge status={game.status} />

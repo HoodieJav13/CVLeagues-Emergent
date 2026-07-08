@@ -25,7 +25,10 @@ const AppStateContext = createContext(null);
 // PHASE 2: this entire layer is replaced by Supabase queries + realtime.
 // v2: Phase 9a snake_case field rename — pre-rename (v1) persisted state is
 // deliberately abandoned rather than field-migrated; the demo reseeds.
-const STORAGE_KEY = "cvf_app_state_v2";
+// v3: playoff/tournament seed pass — new playoff GAMES (g10 reshaped, g13/g14
+// added) can't reach a persisted state via field backfill, so the demo
+// reseeds again (same precedent as v1→v2).
+const STORAGE_KEY = "cvf_app_state_v3";
 
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
@@ -54,7 +57,9 @@ const migrateState = (s) => ({
     score_status: g.score_status || (g.status === "completed" ? "approved" : "pending"),
     locked: g.locked ?? g.score_status === "final",
     edit_history: g.edit_history || [],
+    stage: g.stage || "regular", // migration 9 shape; pre-playoff states backfill as regular season
   })),
+  leagues: (s.leagues || []).map((l) => ({ ...l, kind: l.kind || "league", playoff_format: l.playoff_format ?? null })),
 });
 
 const loadState = () => {

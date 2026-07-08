@@ -80,9 +80,12 @@ export const profiles = [
 }));
 
 /* ------------------------------ LEAGUES ---------------------------------- */
+// kind: 'league' | 'tournament' — a standalone tournament is its own container
+// row (migration 9 shape). playoff_format: 'single_elim' | 'double_elim' |
+// 'round_robin' | null; varies per season, informational until bracket UI.
 export const leagues = [
-  { id: "l1", name: "Duke City Kickball", sport: "kickball", season: CURRENT_SEASON, description: "Albuquerque's premier adult co-ed kickball league. Tuesday & Thursday nights." },
-  { id: "l2", name: "Burque Flag Football", sport: "flag_football", season: CURRENT_SEASON, description: "5-on-5 adult flag football under the lights at the West Mesa fields." },
+  { id: "l1", name: "Duke City Kickball", sport: "kickball", season: CURRENT_SEASON, kind: "league", playoff_format: "single_elim", description: "Albuquerque's premier adult co-ed kickball league. Tuesday & Thursday nights." },
+  { id: "l2", name: "Burque Flag Football", sport: "flag_football", season: CURRENT_SEASON, kind: "league", playoff_format: "round_robin", description: "5-on-5 adult flag football under the lights at the West Mesa fields." },
 ];
 
 /* ------------------------------- TEAMS ----------------------------------- */
@@ -154,6 +157,13 @@ export const teamPlayers = [
 // + playerStats); every game dated after it is upcoming (pending, no scores).
 // Keep this invariant when editing: standings + leaderboards derive from
 // completed games only, so a future-dated game must never carry a result.
+//
+// stage: 'regular' | 'playoff' | 'tournament' (migration 9 shape; defaulted to
+// 'regular' by the .map below — only playoff games declare it). Playoff games
+// count toward season stat totals but are EXCLUDED from standings (selectors).
+// Narrative: flag football's 3-team round robin finished 06-21, so its playoff
+// round robin is underway (g10 played, g11/g12 to come). Kickball's regular
+// season runs through 07-07 with single-elim playoffs after (g13/g14).
 export const games = [
   // --- Kickball completed ---
   { id: "g1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", date: "2026-06-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "completed", score_status: "approved", home_score: 7, away_score: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, temp_admin_id: null, locked: false, edit_history: [] },
@@ -167,11 +177,15 @@ export const games = [
   { id: "g7", league_id: "l2", sport: "flag_football", home_team_id: "t4", away_team_id: "t5", date: "2026-06-07", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", home_score: 21, away_score: 14, periods: { home: [7, 6, 0, 8], away: [0, 7, 7, 0] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g8", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t6", date: "2026-06-14", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "approved", home_score: 13, away_score: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g9", league_id: "l2", sport: "flag_football", home_team_id: "t4", away_team_id: "t6", date: "2026-06-21", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", home_score: 21, away_score: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, temp_admin_id: null, locked: false, edit_history: [] },
-  // --- Flag football upcoming ---
-  { id: "g10", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t4", date: "2026-06-28", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
-  { id: "g11", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
-  { id: "g12", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
-];
+  // --- Flag football playoffs (round robin; g10 played, g11/g12 upcoming) ---
+  { id: "g10", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t4", date: "2026-06-26", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "approved", stage: "playoff", home_score: 20, away_score: 28, periods: { home: [7, 6, 0, 7], away: [7, 7, 7, 7] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g11", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g12", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  // --- Kickball playoffs (single elim, after the 07-07 finale; matchups are
+  //     mock placeholders — real seeding/bracket UI is a later pass) ---
+  { id: "g13", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t2", date: "2026-07-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g14", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", date: "2026-07-14", time: "7:00 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+].map((g) => ({ stage: "regular", ...g }));
 
 /* ---------------------------- PLAYER_STATS ------------------------------- */
 // One row per player per completed game. Missing stat keys default to 0.
@@ -244,6 +258,19 @@ export const playerStats = [
   ps("s_g9_p28", "g9", "p28", "t6", "flag_football", { carries: 5, rushYards: 35, catches: 4, recYards: 50, recTDs: 1, recFirstDowns: 2, tds: 1 }),
   ps("s_g9_p29", "g9", "p29", "t6", "flag_football", { flagPulls: 5, defInts: 1 }),
   ps("s_g9_p30", "g9", "p30", "t6", "flag_football", { flagPulls: 4, sacks: 2 }),
+  // ===== g10 : t5 20 - 28 t4 (flag football, PLAYOFF round robin) =====
+  // Playoff stats count toward season totals (same categories/weighting);
+  // only the standings computation excludes this game (see selectors).
+  ps("s_g10_p16", "g10", "p16", "t4", "flag_football", { completions: 15, attempts: 22, passYards: 240, passTDs: 3, ints: 0, carries: 3, rushYards: 18, rushTDs: 1, tds: 1 }),
+  ps("s_g10_p17", "g10", "p17", "t4", "flag_football", { catches: 7, recYards: 105, recTDs: 2, recFirstDowns: 4, flagPulls: 2, tds: 2 }),
+  ps("s_g10_p18", "g10", "p18", "t4", "flag_football", { carries: 5, rushYards: 38, catches: 4, recYards: 60, recTDs: 1, recFirstDowns: 2, tds: 1 }),
+  ps("s_g10_p19", "g10", "p19", "t4", "flag_football", { flagPulls: 5, sacks: 1, defInts: 1 }),
+  ps("s_g10_p20", "g10", "p20", "t4", "flag_football", { flagPulls: 4, sacks: 2 }),
+  ps("s_g10_p21", "g10", "p21", "t5", "flag_football", { completions: 11, attempts: 21, passYards: 165, passTDs: 2, ints: 1, carries: 2, rushYards: 12 }),
+  ps("s_g10_p22", "g10", "p22", "t5", "flag_football", { catches: 6, recYards: 85, recTDs: 1, recFirstDowns: 3, flagPulls: 2, tds: 1 }),
+  ps("s_g10_p23", "g10", "p23", "t5", "flag_football", { catches: 4, recYards: 50, recTDs: 1, recFirstDowns: 2, tds: 1 }),
+  ps("s_g10_p24", "g10", "p24", "t5", "flag_football", { flagPulls: 5, defInts: 1 }),
+  ps("s_g10_p25", "g10", "p25", "t5", "flag_football", { flagPulls: 4, sacks: 2 }),
 ];
 
 /* --------------- CAREER BASELINE (prior seasons, per player) -------------- */
