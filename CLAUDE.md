@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. Runs in mock state; not yet wired to a backend.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state; the backend schema is complete locally but has not yet been applied to a hosted Supabase project.
 
 ## Current Status
 - Public site: all pages working, 8-step score-entry flow verified
@@ -13,9 +13,14 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Functional cleanup: env-gated demo switcher, dormant account surfaces, empty states, destructive confirmations — done
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
+- Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
+- Phase 9 backend schema: COMPLETE locally — the original Phase 9 migration set plus `20260707000900_season2_foundations.sql` live in `supabase/migrations/`; the pgtest harness passes 52/52 locally
 - Running locally via `npm start` from `frontend/`; single source of truth on `main`
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Backend NOT yet wired — mock seed data + localStorage with a migrateState pass
+- Hosted backend NOT yet provisioned or pushed — until owner setup is complete, the env-gated Supabase wiring uses mock seed data + localStorage with a migrateState pass
+
+## Current Priority
+Hosted Supabase project creation (owner-actioned) → `db push` of both migration batches (owner-actioned: original Phase 9 schema + Season 2 foundations) → `admin_users` setup → env vars → re-run the 8-step flow against the live backend → Phase 10 (deploy).
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -25,8 +30,9 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Business logic: pure selectors in `src/lib/selectors.js`
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
-- Persistence (current): localStorage
-- Future backend: Supabase (PostgreSQL + Auth), Vercel — confirmed for Season 1, NOT yet connected
+- Persistence (current fallback): localStorage
+- Backend: Supabase (PostgreSQL + Auth); schema and env-gated frontend adapter exist, but no hosted project has been created or connected
+- Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
 - `AppStateContext`, `selectors.js`, `roles.js`, `seed.js` are the protected core. Extend; don't rewrite structure/logic unless explicitly scoped.
@@ -40,7 +46,7 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - **Admin-only for Season 1.** Only the admin logs in. Players are profile records, not accounts.
 - **Auth User ≠ Player.** `profiles.auth_user_id` is nullable so a player can claim an account later without losing history.
 - **Sports at launch:** kickball and flag football only.
-- **Payments:** manual tracking for Season 1 (fields in the model, no Stripe).
+- **Payments:** manual tracking for Season 1; the database ledger exists (`charges` + `payment_entries`), but payments UI and Stripe are deferred.
 - **One active season per sport.** Records auto-stamped with the season; users don't pick a season on forms.
 - **Quality-gated, no hard deadline.** Finish each phase's gates; don't drift.
 - **Backend confirmed before Season 1.** Relational linkage (intake→roster→waiver) is built ONCE against real Supabase tables, NOT mock-built first.
@@ -64,24 +70,27 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 ## Score Lifecycle (built, working)
 - Two parallel fields: `status` (upcoming/completed/postponed/canceled) = game lifecycle; `score_status` (pending/submitted/approved/disputed/final) = score lifecycle. Intentionally separate.
 - Flow: pending → submitted (score saved) → final (Mark Final, locks game) → approved (on unlock) → submitted (on re-edit).
-- A final game is LOCKED: editing requires deliberate unlock + required reason; every change appends to `editHistory` (mock audit log; becomes append-only table in backend).
+- A final game is LOCKED: editing requires deliberate unlock + required reason; every change appends to `editHistory` in mock mode and maps to the append-only `game_edit_history` table in the backend schema.
 
-## Future Data Model (shape mock data to match)
+## Backend Data Model (schema complete; not yet hosted)
+- seasons (natural text key such as `Summer 2026`; referenced by all season-scoped records)
 - profiles (auth_user_id nullable, first/last/display name, email, phone, dob optional, age_confirmed, emergency contacts, admin notes)
-- leagues (sport, season, status)
-- teams (league_id, captain contact, status)
-- team_players (team_id, profile_id, season_id, jersey_number, roster_status: pending_waiver/eligible/inactive/removed — roster_status deferred to backend)
-- games (league_id, home/away team, date, location, status, score_status, locked, editHistory, scores, submitted_by, approved_by)
+- leagues (sport, season, status, kind: league/tournament, playoff_format; standalone tournaments are league containers with `kind='tournament'`)
+- teams (league_id, captain contact, status, division)
+- team_players (team_id, profile_id, season natural-key reference, jersey_number, roster_status: pending_waiver/eligible/inactive/removed)
+- games (league_id, home/away team, date, location, stage: regular/playoff/tournament, status, score_status, locked, editHistory, scores, submitted_by, approved_by); database guards keep stages consistent with league kind and prevent changing a locked game's stage
 - player_stats (profile_id, game_id, team_id, sport-specific fields)
-- registrations (status: new/contacted/approved/archived, adminNotes[])
+- team_registrations (status: new/contacted/approved/archived, adminNotes[])
 - free_agents (status: new/contacted/assigned/archived, assignedTeamId, adminNotes[])
 - waivers (append-only — see Waiver model)
+- charges + payment_entries (manual payments ledger; every charge targets exactly one of profile_id or team_id)
+- hof_entries + league_settings.hof_published (admin-curated Hall of Fame; unpublished entries are hidden from public reads by RLS)
 
 ## Stat Categories
 Flag Football — Passing (comp/att/comp%/yds/TD/INT), Rushing (carries/yds/TD/1st), Receiving (catches/yds/TD/1st), Defense (flag pulls/sacks/INT), Scoring (TD/1-2-3pt conversions).
 Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists/errors).
 
-## Security (backend phase)
+## Security (implemented in migrations; pending hosted application)
 - Row Level Security on every Supabase table — non-negotiable.
 - Public READ of public data; unauthenticated users cannot write.
 - Only admin writes league data, edits scores, changes roles.
@@ -104,11 +113,18 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 6. ✅ Functional cleanup
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
-8b. Logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter  ← NEXT
-9. Backend wiring (Supabase, RLS, real intake→roster→waiver linkage)
-10. Deploy + soft launch (domain, backups, clean reset, Season 1)
+8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
+9. ◐ Backend wiring — schema complete and pgtest 52/52 locally; hosted project creation, migration push, admin setup, env configuration, and live-flow verification remain
+10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
-Background (lead time, start now): NM attorney waiver review · domain purchase · confirm friend's native-app stack.
+External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
+
+## Deferred / Backlog
+- `duplicate_season` RPC
+- Bracket/seeding UI
+- Hall of Fame admin curation screen
+- Payments UI
+- Season-aware selector fixes: `playerSeasonStats` needs explicit season/stage filters once two seasons of stats coexist
 
 ## Intake Form Specs (built)
 Free Agent (required: name, phone or email, sport, consent): legal first/last name, display name (opt), phone, email, sport (kickball/flag football/both), experience (opt), preferred position (opt), availability multi-select (Sunday morning/Sunday night/Monday night — configurable), emergency contact (opt), consent to contact (req). NO waiver content.

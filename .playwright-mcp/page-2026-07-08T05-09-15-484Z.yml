@@ -1,0 +1,342 @@
+- generic [ref=f3e2]:
+  - generic [ref=f3e3]:
+    - banner [ref=f3e4]:
+      - link "CVF Sports CVF Sports Albuquerque, NM" [ref=f3e6] [cursor=pointer]:
+        - /url: /
+        - img "CVF Sports" [ref=f3e7]
+        - generic [ref=f3e8]:
+          - generic [ref=f3e9]: CVF Sports
+          - text: Albuquerque, NM
+    - button "Join CVF Sports" [ref=f3e11] [cursor=pointer]:
+      - text: Join
+      - img [ref=f3e12]
+    - main [ref=f3e14]:
+      - generic [ref=f3e15]:
+        - generic [ref=f3e17]:
+          - heading "Schedule" [level=1] [ref=f3e18]
+          - paragraph [ref=f3e19]: Summer 2026 · Albuquerque · every matchup, every field
+        - generic [ref=f3e20]:
+          - generic [ref=f3e21]:
+            - generic [ref=f3e22]: Sport
+            - combobox [ref=f3e23] [cursor=pointer]:
+              - generic: All Sports
+              - img [ref=f3e24]
+          - generic [ref=f3e26]:
+            - generic [ref=f3e27]: League
+            - combobox [ref=f3e28] [cursor=pointer]:
+              - generic: All Leagues
+              - img [ref=f3e29]
+          - generic [ref=f3e31]:
+            - generic [ref=f3e32]: Team
+            - combobox [ref=f3e33] [cursor=pointer]:
+              - generic: All Teams
+              - img [ref=f3e34]
+          - generic [ref=f3e36]:
+            - generic [ref=f3e37]: Status
+            - combobox [ref=f3e38] [cursor=pointer]:
+              - generic: All
+              - img [ref=f3e39]
+        - generic [ref=f3e41]:
+          - generic [ref=f3e42]:
+            - heading "Week of Jun 7" [level=2] [ref=f3e43]
+            - generic [ref=f3e44]:
+              - link "Flag Football Final Mesa Mavericks 14 Bosque Blitz 21 Sun, Jun 7 8:00 PM West Mesa Fields, Field A" [ref=f3e45] [cursor=pointer]:
+                - /url: /game/g7
+                - generic [ref=f3e46]:
+                  - generic [ref=f3e47]: Flag Football
+                  - generic [ref=f3e48]: Final
+                - generic [ref=f3e50]:
+                  - generic [ref=f3e51]:
+                    - generic [ref=f3e54]: Mesa Mavericks
+                    - generic [ref=f3e55]: "14"
+                  - generic [ref=f3e56]:
+                    - generic [ref=f3e59]: Bosque Blitz
+                    - generic [ref=f3e60]: "21"
+                - generic [ref=f3e61]:
+                  - generic [ref=f3e62]: Sun, Jun 7
+                  - generic [ref=f3e63]:
+                    - img [ref=f3e64]
+                    - text: 8:00 PM
+                  - generic [ref=f3e66]:
+                    - img [ref=f3e67]
+                    - text: West Mesa Fields, Field A
+              - link "Kickball Final Rio Grande Rollers 4 Sandia Sluggers 7 Tue, Jun 9 6:30 PM Los Altos Park, Field 2" [ref=f3e69] [cursor=pointer]:
+                - /url: /game/g1
+                - generic [ref=f3e70]:
+                  - generic [ref=f3e71]: Kickball
+                  - generic [ref=f3e72]: Final
+                - generic [ref=f3e74]:
+                  - generic [ref=f3e75]:
+                    - generic [ref=f3e78]: Rio Grande Rollers
+                    - generic [ref=f3e79]: "4"
+                  - generic [ref=f3e80]:
+                    - generic [ref=f3e83]: Sandia Sluggers
+                    - generic [ref=f3e84]: "7"
+                - generic [ref=f3e85]:
+                  - generic [ref=f3e86]: Tue, Jun 9
+                  - generic [ref=f3e87]:
+                    - img [ref=f3e88]
+                    - text: 6:30 PM
+                  - generic [ref=f3e90]:
+                    - img [ref=f3e91]
+                    - text: Los Altos Park, Field 2
+              - link "Kickball Final Nob Hill Nomads 6 Rio Grande Rollers 4 Thu, Jun 11 7:30 PM Los Altos Park, Field 1" [ref=f3e93] [cursor=pointer]:
+                - /url: /game/g2
+                - generic [ref=f3e94]:
+                  - generic [ref=f3e95]: Kickball
+                  - generic [ref=f3e96]: Final
+                - generic [ref=f3e98]:
+                  - generic [ref=f3e99]:
+                    - generic [ref=f3e102]: Nob Hill Nomads
+                    - generic [ref=f3e103]: "6"
+                  - generic [ref=f3e104]:
+                    - generic [ref=f3e107]: Rio Grande Rollers
+                    - generic [ref=f3e108]: "4"
+                - generic [ref=f3e109]:
+                  - generic [ref=f3e110]: Thu, Jun 11
+                  - generic [ref=f3e111]:
+                    - img [ref=f3e112]
+                    - text: 7:30 PM
+                  - generic [ref=f3e114]:
+                    - img [ref=f3e115]
+                    - text: Los Altos Park, Field 1
+          - generic [ref=f3e117]:
+            - heading "Week of Jun 14" [level=2] [ref=f3e118]
+            - generic [ref=f3e119]:
+              - link "Flag Football Final Frontier Force 20 Mesa Mavericks 13 Sun, Jun 14 7:00 PM West Mesa Fields, Field B" [ref=f3e120] [cursor=pointer]:
+                - /url: /game/g8
+                - generic [ref=f3e121]:
+                  - generic [ref=f3e122]: Flag Football
+                  - generic [ref=f3e123]: Final
+                - generic [ref=f3e125]:
+                  - generic [ref=f3e126]:
+                    - generic [ref=f3e129]: Frontier Force
+                    - generic [ref=f3e130]: "20"
+                  - generic [ref=f3e131]:
+                    - generic [ref=f3e134]: Mesa Mavericks
+                    - generic [ref=f3e135]: "13"
+                - generic [ref=f3e136]:
+                  - generic [ref=f3e137]: Sun, Jun 14
+                  - generic [ref=f3e138]:
+                    - img [ref=f3e139]
+                    - text: 7:00 PM
+                  - generic [ref=f3e141]:
+                    - img [ref=f3e142]
+                    - text: West Mesa Fields, Field B
+              - link "Kickball Final Nob Hill Nomads 5 Sandia Sluggers 8 Tue, Jun 16 6:30 PM Los Altos Park, Field 2" [ref=f3e144] [cursor=pointer]:
+                - /url: /game/g3
+                - generic [ref=f3e145]:
+                  - generic [ref=f3e146]: Kickball
+                  - generic [ref=f3e147]: Final
+                - generic [ref=f3e149]:
+                  - generic [ref=f3e150]:
+                    - generic [ref=f3e153]: Nob Hill Nomads
+                    - generic [ref=f3e154]: "5"
+                  - generic [ref=f3e155]:
+                    - generic [ref=f3e158]: Sandia Sluggers
+                    - generic [ref=f3e159]: "8"
+                - generic [ref=f3e160]:
+                  - generic [ref=f3e161]: Tue, Jun 16
+                  - generic [ref=f3e162]:
+                    - img [ref=f3e163]
+                    - text: 6:30 PM
+                  - generic [ref=f3e165]:
+                    - img [ref=f3e166]
+                    - text: Los Altos Park, Field 2
+          - generic [ref=f3e168]:
+            - heading "Week of Jun 21" [level=2] [ref=f3e169]
+            - generic [ref=f3e170]:
+              - link "Flag Football Final Frontier Force 17 Bosque Blitz 21 Sun, Jun 21 8:00 PM West Mesa Fields, Field A" [ref=f3e171] [cursor=pointer]:
+                - /url: /game/g9
+                - generic [ref=f3e172]:
+                  - generic [ref=f3e173]: Flag Football
+                  - generic [ref=f3e174]: Final
+                - generic [ref=f3e176]:
+                  - generic [ref=f3e177]:
+                    - generic [ref=f3e180]: Frontier Force
+                    - generic [ref=f3e181]: "17"
+                  - generic [ref=f3e182]:
+                    - generic [ref=f3e185]: Bosque Blitz
+                    - generic [ref=f3e186]: "21"
+                - generic [ref=f3e187]:
+                  - generic [ref=f3e188]: Sun, Jun 21
+                  - generic [ref=f3e189]:
+                    - img [ref=f3e190]
+                    - text: 8:00 PM
+                  - generic [ref=f3e192]:
+                    - img [ref=f3e193]
+                    - text: West Mesa Fields, Field A
+              - link "Playoffs Flag Football Final Bosque Blitz 28 Mesa Mavericks 20 Fri, Jun 26 7:00 PM West Mesa Fields, Field B" [ref=f3e195] [cursor=pointer]:
+                - /url: /game/g10
+                - generic [ref=f3e196]:
+                  - img [ref=f3e197]
+                  - text: Playoffs
+                - generic [ref=f3e199]:
+                  - generic [ref=f3e200]: Flag Football
+                  - generic [ref=f3e201]: Final
+                - generic [ref=f3e203]:
+                  - generic [ref=f3e204]:
+                    - generic [ref=f3e207]: Bosque Blitz
+                    - generic [ref=f3e208]: "28"
+                  - generic [ref=f3e209]:
+                    - generic [ref=f3e212]: Mesa Mavericks
+                    - generic [ref=f3e213]: "20"
+                - generic [ref=f3e214]:
+                  - generic [ref=f3e215]: Fri, Jun 26
+                  - generic [ref=f3e216]:
+                    - img [ref=f3e217]
+                    - text: 7:00 PM
+                  - generic [ref=f3e219]:
+                    - img [ref=f3e220]
+                    - text: West Mesa Fields, Field B
+          - generic [ref=f3e222]:
+            - heading "Week of Jun 28" [level=2] [ref=f3e223]
+            - generic [ref=f3e224]:
+              - link "Kickball Upcoming Sandia Sluggers Rio Grande Rollers Tue, Jun 30 6:30 PM Los Altos Park, Field 1" [ref=f3e225] [cursor=pointer]:
+                - /url: /game/g4
+                - generic [ref=f3e226]:
+                  - generic [ref=f3e227]: Kickball
+                  - generic [ref=f3e228]: Upcoming
+                - generic [ref=f3e230]:
+                  - generic [ref=f3e234]: Sandia Sluggers
+                  - generic [ref=f3e238]: Rio Grande Rollers
+                - generic [ref=f3e239]:
+                  - generic [ref=f3e240]: Tue, Jun 30
+                  - generic [ref=f3e241]:
+                    - img [ref=f3e242]
+                    - text: 6:30 PM
+                  - generic [ref=f3e244]:
+                    - img [ref=f3e245]
+                    - text: Los Altos Park, Field 1
+              - link "Kickball Upcoming Sandia Sluggers Nob Hill Nomads Thu, Jul 2 7:30 PM Los Altos Park, Field 2" [ref=f3e247] [cursor=pointer]:
+                - /url: /game/g5
+                - generic [ref=f3e248]:
+                  - generic [ref=f3e249]: Kickball
+                  - generic [ref=f3e250]: Upcoming
+                - generic [ref=f3e252]:
+                  - generic [ref=f3e256]: Sandia Sluggers
+                  - generic [ref=f3e260]: Nob Hill Nomads
+                - generic [ref=f3e261]:
+                  - generic [ref=f3e262]: Thu, Jul 2
+                  - generic [ref=f3e263]:
+                    - img [ref=f3e264]
+                    - text: 7:30 PM
+                  - generic [ref=f3e266]:
+                    - img [ref=f3e267]
+                    - text: Los Altos Park, Field 2
+          - generic [ref=f3e269]:
+            - heading "Week of Jul 5" [level=2] [ref=f3e270]
+            - generic [ref=f3e271]:
+              - link "Playoffs Flag Football Upcoming Bosque Blitz Frontier Force Sun, Jul 5 8:00 PM West Mesa Fields, Field A" [ref=f3e272] [cursor=pointer]:
+                - /url: /game/g11
+                - generic [ref=f3e273]:
+                  - img [ref=f3e274]
+                  - text: Playoffs
+                - generic [ref=f3e276]:
+                  - generic [ref=f3e277]: Flag Football
+                  - generic [ref=f3e278]: Upcoming
+                - generic [ref=f3e280]:
+                  - generic [ref=f3e284]: Bosque Blitz
+                  - generic [ref=f3e288]: Frontier Force
+                - generic [ref=f3e289]:
+                  - generic [ref=f3e290]: Sun, Jul 5
+                  - generic [ref=f3e291]:
+                    - img [ref=f3e292]
+                    - text: 8:00 PM
+                  - generic [ref=f3e294]:
+                    - img [ref=f3e295]
+                    - text: West Mesa Fields, Field A
+              - link "Kickball Upcoming Rio Grande Rollers Nob Hill Nomads Tue, Jul 7 6:30 PM Los Altos Park, Field 1" [ref=f3e297] [cursor=pointer]:
+                - /url: /game/g6
+                - generic [ref=f3e298]:
+                  - generic [ref=f3e299]: Kickball
+                  - generic [ref=f3e300]: Upcoming
+                - generic [ref=f3e302]:
+                  - generic [ref=f3e306]: Rio Grande Rollers
+                  - generic [ref=f3e310]: Nob Hill Nomads
+                - generic [ref=f3e311]:
+                  - generic [ref=f3e312]: Tue, Jul 7
+                  - generic [ref=f3e313]:
+                    - img [ref=f3e314]
+                    - text: 6:30 PM
+                  - generic [ref=f3e316]:
+                    - img [ref=f3e317]
+                    - text: Los Altos Park, Field 1
+              - link "Playoffs Kickball Upcoming Rio Grande Rollers Nob Hill Nomads Thu, Jul 9 6:30 PM Los Altos Park, Field 2" [ref=f3e319] [cursor=pointer]:
+                - /url: /game/g13
+                - generic [ref=f3e320]:
+                  - img [ref=f3e321]
+                  - text: Playoffs
+                - generic [ref=f3e323]:
+                  - generic [ref=f3e324]: Kickball
+                  - generic [ref=f3e325]: Upcoming
+                - generic [ref=f3e327]:
+                  - generic [ref=f3e331]: Rio Grande Rollers
+                  - generic [ref=f3e335]: Nob Hill Nomads
+                - generic [ref=f3e336]:
+                  - generic [ref=f3e337]: Thu, Jul 9
+                  - generic [ref=f3e338]:
+                    - img [ref=f3e339]
+                    - text: 6:30 PM
+                  - generic [ref=f3e341]:
+                    - img [ref=f3e342]
+                    - text: Los Altos Park, Field 2
+          - generic [ref=f3e344]:
+            - heading "Week of Jul 12" [level=2] [ref=f3e345]
+            - generic [ref=f3e346]:
+              - link "Playoffs Flag Football Upcoming Mesa Mavericks Frontier Force Sun, Jul 12 7:00 PM West Mesa Fields, Field B" [ref=f3e347] [cursor=pointer]:
+                - /url: /game/g12
+                - generic [ref=f3e348]:
+                  - img [ref=f3e349]
+                  - text: Playoffs
+                - generic [ref=f3e351]:
+                  - generic [ref=f3e352]: Flag Football
+                  - generic [ref=f3e353]: Upcoming
+                - generic [ref=f3e355]:
+                  - generic [ref=f3e359]: Mesa Mavericks
+                  - generic [ref=f3e363]: Frontier Force
+                - generic [ref=f3e364]:
+                  - generic [ref=f3e365]: Sun, Jul 12
+                  - generic [ref=f3e366]:
+                    - img [ref=f3e367]
+                    - text: 7:00 PM
+                  - generic [ref=f3e369]:
+                    - img [ref=f3e370]
+                    - text: West Mesa Fields, Field B
+              - link "Playoffs Kickball Upcoming Nob Hill Nomads Sandia Sluggers Tue, Jul 14 7:00 PM Los Altos Park, Field 1" [ref=f3e372] [cursor=pointer]:
+                - /url: /game/g14
+                - generic [ref=f3e373]:
+                  - img [ref=f3e374]
+                  - text: Playoffs
+                - generic [ref=f3e376]:
+                  - generic [ref=f3e377]: Kickball
+                  - generic [ref=f3e378]: Upcoming
+                - generic [ref=f3e380]:
+                  - generic [ref=f3e384]: Nob Hill Nomads
+                  - generic [ref=f3e388]: Sandia Sluggers
+                - generic [ref=f3e389]:
+                  - generic [ref=f3e390]: Tue, Jul 14
+                  - generic [ref=f3e391]:
+                    - img [ref=f3e392]
+                    - text: 7:00 PM
+                  - generic [ref=f3e394]:
+                    - img [ref=f3e395]
+                    - text: Los Altos Park, Field 1
+    - navigation [ref=f3e397]:
+      - link "Home" [ref=f3e398] [cursor=pointer]:
+        - /url: /
+        - img [ref=f3e399]
+        - generic [ref=f3e401]: Home
+      - link "Schedule" [ref=f3e402] [cursor=pointer]:
+        - /url: /schedule
+        - img [ref=f3e403]
+        - generic [ref=f3e405]: Schedule
+      - link "Standings" [ref=f3e406] [cursor=pointer]:
+        - /url: /standings
+        - img [ref=f3e407]
+        - generic [ref=f3e409]: Standings
+      - link "Leaders" [ref=f3e410] [cursor=pointer]:
+        - /url: /leaderboards
+        - img [ref=f3e411]
+        - generic [ref=f3e413]: Leaders
+  - region "Notifications alt+T"
