@@ -562,6 +562,125 @@ select cvf_test.eq_int(
   1
 );
 
+-- ---------------------------------------------------------------------------
+-- Charge-season hardening migration invariants (11 assertions).
+-- ---------------------------------------------------------------------------
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+
+insert into public.seasons (name, status)
+values ('Fall 2026', 'upcoming');
+
+insert into public.leagues (id, name, sport, season, description)
+values (
+  '20000000-0000-0000-0000-000000000101',
+  'Fall Kickball League',
+  'kickball',
+  'Fall 2026',
+  'Cross-season guard fixture'
+);
+
+insert into public.teams (id, league_id, name, sport, logo_color)
+values (
+  '30000000-0000-0000-0000-000000000101',
+  '20000000-0000-0000-0000-000000000101',
+  'Fall Kickball Team',
+  'kickball',
+  '#14B8A6'
+);
+
+select cvf_test.lives_ok(
+  'charge season 01 matching-season team charge succeeds',
+  $$insert into public.charges
+      (id, season, team_id, amount_due_cents)
+    values
+      ('a0000000-0000-0000-0000-000000000101',
+       'Summer 2026',
+       '30000000-0000-0000-0000-000000000001',
+       10000)$$
+);
+select cvf_test.throws_ok(
+  'charge season 02 cross-season team charge fails',
+  $$insert into public.charges
+      (season, team_id, amount_due_cents)
+    values
+      ('Fall 2026',
+       '30000000-0000-0000-0000-000000000001',
+       10000)$$,
+  '%must match%'
+);
+select cvf_test.throws_ok(
+  'charge season 03 changing a team charge to another season fails',
+  $$update public.charges
+       set season = 'Fall 2026'
+     where id = 'a0000000-0000-0000-0000-000000000101'$$,
+  '%must match%'
+);
+select cvf_test.throws_ok(
+  'charge season 04 charged team cannot move to another-season league',
+  $$update public.teams
+       set league_id = '20000000-0000-0000-0000-000000000101'
+     where id = '30000000-0000-0000-0000-000000000001'$$,
+  '%cannot move%'
+);
+select cvf_test.throws_ok(
+  'charge season 05 charged league cannot be reassigned to another season',
+  $$update public.leagues
+       set season = 'Fall 2026'
+     where id = '20000000-0000-0000-0000-000000000001'$$,
+  '%cannot change%'
+);
+select cvf_test.lives_ok(
+  'charge season 06 profile-only charge remains valid in any existing season',
+  $$insert into public.charges
+      (id, season, profile_id, amount_due_cents)
+    values
+      ('a0000000-0000-0000-0000-000000000102',
+       'Fall 2026',
+       '10000000-0000-0000-0000-000000000001',
+       5000)$$
+);
+select cvf_test.ok(
+  'charge season 07 upstream guard indexes exist',
+  to_regclass('public.charges_team_id_idx') is not null
+  and to_regclass('public.teams_league_id_idx') is not null
+);
+select cvf_test.lives_ok(
+  'charge season 08 season rename cascades without false rejection',
+  $$update public.seasons
+       set name = 'Summer 2026 Renamed'
+     where name = 'Summer 2026'$$
+);
+select cvf_test.ok(
+  'charge season 09 renamed season preserves every team-charge match',
+  exists (select 1 from public.seasons where name = 'Summer 2026 Renamed')
+  and not exists (
+    select 1
+      from public.charges c
+      join public.teams t on t.id = c.team_id
+      join public.leagues l on l.id = t.league_id
+     where c.team_id is not null
+       and c.season is distinct from l.season
+  )
+);
+select cvf_test.lives_ok(
+  'charge season 10 season rename can be reversed cleanly',
+  $$update public.seasons
+       set name = 'Summer 2026'
+     where name = 'Summer 2026 Renamed'$$
+);
+select cvf_test.ok(
+  'charge season 11 restored season preserves every team-charge match',
+  exists (select 1 from public.seasons where name = 'Summer 2026')
+  and not exists (
+    select 1
+      from public.charges c
+      join public.teams t on t.id = c.team_id
+      join public.leagues l on l.id = t.league_id
+     where c.team_id is not null
+       and c.season is distinct from l.season
+  )
+);
+
 select cvf_test.as_owner();
 
 \echo ''
