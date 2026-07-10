@@ -1,87 +1,117 @@
-# CVF Leagues — Supabase backend (Phase 9)
+# CVF Leagues — Supabase backend
 
-Schema migrations for CVF Leagues' **own Supabase project** (fully separate
-from ZonAthletica's — no shared backend, no cross-project references).
+This directory contains the migration source of truth for CVF Leagues' dedicated Supabase project. It must remain separate from ZonAthletica or any unrelated project.
 
-## Migrations (apply in filename order)
+## Verified status — 2026-07-10
+
+- Nine migration files are committed in filename order.
+- The repository's plain-PostgreSQL harness applies all nine migrations and passes 52/52 assertions.
+- The frontend Supabase adapter is implemented and env-gated.
+- Supabase CLI `2.109.0` is installed on the audited machine.
+- `supabase/config.toml` is not present, so the repository has not been initialized as a local Supabase project.
+- A real `supabase db reset`, PostgREST/Data API test, hosted migration, advisor run, and hosted authorization matrix have not been completed.
+- No production seed data, hosted project reference, or credentials are stored here.
+
+Passing the PostgreSQL harness does not prove local-stack or hosted Supabase behavior. In particular, it does not exercise the Data API, Auth sessions, project exposure settings, or hosted advisors.
+
+## Migration inventory
 
 | File | Contents |
 |---|---|
-| `20260702000100_extensions_and_admin.sql` | moddatetime, `admin_users` (deny-all RLS), `is_admin()` / `assert_admin()` |
-| `20260702000200_profiles.sql` | `profiles` — nullable `auth_user_id` (Auth User ≠ Player), generated `name`, admin-only RLS, no deletes |
-| `20260702000300_leagues_teams_rosters.sql` | `leagues`, `teams` (sport trigger-locked to league), `team_players` (roster_status lifecycle, no deletes) |
-| `20260702000400_games_and_stats.sql` | `games` (dual status, lock trigger binding even admin), `game_edit_history` (append-only), `player_stats`, `career_baselines` |
-| `20260702000500_intake.sql` | `team_registrations`, `free_agents` — anon INSERT-only with forced-clean triage state; no deletes |
-| `20260702000600_waivers.sql` | `waiver_versions` (immutable), `waivers` (append-only: column grants + immutability trigger + no deletes) |
-| `20260702000700_settings_and_views.sql` | `league_settings` singleton (seeded) + `public_profiles` view (the PII boundary; derives `claimed` + `eligibility_status`) |
-| `20260702000800_rpcs.sql` | `save_score`, `lock_game`, `unlock_game(reason)`, `set_game_status`, `approve_registration`, `assign_free_agent`, `verify_waiver` |
-| `20260707000900_season2_foundations.sql` | `seasons` anchor (text natural key; FKs on every season column), `games.stage` + stage guards in the consistency/lock triggers, `leagues.kind`/`playoff_format` (tournament-as-container), `teams.division`, payments ledger (`charges` + `payment_entries`, admin-only, exactly-one-of profile/team), `hof_entries` + RLS-level `hof_published` gate |
+| `20260702000100_extensions_and_admin.sql` | `moddatetime`, `admin_users`, `is_admin()`, and `assert_admin()` |
+| `20260702000200_profiles.sql` | Private `profiles`; nullable `auth_user_id`; generated display name; no client deletes |
+| `20260702000300_leagues_teams_rosters.sql` | `leagues`, `teams`, sport consistency, and soft-lifecycle `team_players` |
+| `20260702000400_games_and_stats.sql` | Games, lock enforcement, append-only edit history, player stats, and career baselines |
+| `20260702000500_intake.sql` | Anonymous insert-only team/free-agent intake with admin-only triage reads |
+| `20260702000600_waivers.sql` | Immutable waiver versions and append-only signed waivers |
+| `20260702000700_settings_and_views.sql` | Settings singleton and the definer-style `public_profiles` PII boundary |
+| `20260702000800_rpcs.sql` | Score, lock/unlock, status, intake conversion, roster assignment, and waiver RPCs |
+| `20260707000900_season2_foundations.sql` | Seasons, competition stages, tournament containers, payments tables, and Hall of Fame gate |
 
-## First validation (before touching the hosted project)
+## Pre-hosting blockers
 
-These migrations have **not** been executed anywhere yet (no local Postgres on
-the authoring machine). First act of the wiring step:
+Do not push the current migration set to a hosted project until these gates are resolved and reviewed:
+
+1. Add an additive migration enforcing that a team charge's `season` matches the referenced team's league season.
+2. Add and test explicit Data API privileges for every table, view, sequence, and function the frontend needs. New Supabase projects no longer necessarily expose newly created database objects automatically; RLS controls rows after an object is exposed, while `GRANT` controls whether the API role can reach it at all. See Supabase's [Data API exposure change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
+3. Add public-profile regression tests that attempt to retrieve each forbidden PII field, not only tests that count visible rows.
+4. Apply the migrations through a real local Supabase reset and test the API with anonymous, authenticated non-admin, and admin sessions.
+5. Review whether direct table writes can bypass score/history RPC invariants before the hosted authorization matrix.
+
+Statistics scope decisions remain required before Season 2 or real tournament statistics. Payment audit semantics remain required before operational use of the payments tables.
+
+## Local verification
+
+First confirm the installed commands instead of relying on remembered CLI flags:
 
 ```sh
-supabase init          # if not already
-supabase start         # local stack
-supabase db reset      # applies ./supabase/migrations in order
+supabase --version
+supabase --help
+supabase db --help
+supabase migration --help
 ```
 
-Then smoke-test the invariants in the SQL editor / psql:
+After the owner approves the local Supabase-validation stage:
 
-1. Anonymous can `select` from `games`/`teams`/`public_profiles` but NOT `profiles`/`waivers`/intake tables.
-2. Anonymous can `insert` into `team_registrations`/`free_agents` only with `status='new'` and consent true.
-3. `update games set home_score = 1` on a locked game fails **even as admin**; `unlock_game(id, 'reason')` then succeeds; `unlock_game(id, '')` fails.
-4. `update waivers set signed_name = 'x'` fails for everyone; verification columns update; second `profile_id` change fails.
-5. `approve_registration` / `assign_free_agent` round-trips create the full chain (team → captain profile → roster row → waiver linkage).
-6. Stage guards: inserting a game with `stage='tournament'` into a `kind='league'` league fails, and vice versa (`stage='regular'` in a `kind='tournament'` container fails); `update games set stage='playoff'` on a locked game fails even as admin.
-7. HoF gate: with `hof_published=false`, anonymous `select` from `hof_entries` returns zero rows even when entries exist; flipping the flag exposes them.
-8. Charges: inserting a `charges` row with both `profile_id` and `team_id` set fails, as does one with neither.
+```sh
+supabase init
+supabase start
+supabase db reset
+supabase migration list --local
+```
 
-## Manual steps after applying (hosted project)
+`supabase db reset` recreates the local database, applies migrations in order, and applies `supabase/seed.sql` if one exists. This repository intentionally has no seed file. Never substitute a remote reset for this local command.
 
-1. **Create the admin:** add your auth user (dashboard → Authentication),
-   then as service role:
-   `insert into admin_users (auth_user_id, label) values ('<your-auth-uid>', 'Jav');`
-2. **Waiver version:** when the NM-attorney-reviewed language lands, insert the
-   `waiver_versions` row (e.g. `CVF-WAIVER-2026-…-v1` + exact body text +
-   `effective_at`). Until then the public waiver flow has nothing to sign
-   against and computed eligibility is truthfully `not_verified` for everyone.
-3. **League + season rows:** create the two Season 1 leagues via the admin UI
-   once wired (or SQL). `league_settings` row ships in migration 7
-   (`Summer 2026`, kickball open / flag closed — current app values).
+Run the repository harness separately:
 
-## Deliberately NOT seeded (approved decisions)
+```sh
+./tests/pgtest/run_pgtest.sh
+```
 
-- Demo data (profiles/teams/games/stats from `seed.js`) — production starts
-  clean. If a translated demo seed is wanted for wiring tests, generate it as
-  `supabase/seed.sql` (dev-only) in the wiring step.
-- The fossil intake rows (`reg1` with its dead roster array, old-shape free
-  agents) and `careerBaselines` demo data — dropped; the `career_baselines`
-  table exists for real historical imports only.
+The harness requires local PostgreSQL binaries and permission to allocate PostgreSQL shared memory.
 
-## Invariants the database now owns (not the app)
+## Hosted migration gate
 
-- **Game lock:** score fields (and `stage` — a final game's record set is
-  history too) on a locked game are immutable for every role; the only path
-  is `unlock_game(id, reason)` which records the reason in
-  `game_edit_history` in the same transaction.
-- **Stage integrity:** tournament containers hold only `stage='tournament'`
-  games; league containers only `regular`/`playoff` — misclassified games
-  can't silently pollute standings.
-- **HoF publish gate:** until `league_settings.hof_published` is true, the
-  public cannot read (or detect) `hof_entries` — the gate is in the RLS
-  policy, not the UI.
-- **Append-only waivers:** signature fields can never change; re-signing
-  inserts; `profile_id` may be set exactly once (NULL → value); no deletes.
-- **Append-only edit history:** insert-only for admin, immutable for all.
-- **RLS everywhere:** all 18 tables; public reads scoreboard data only;
-  contact PII (`profiles`, intake, waivers) and payment records are
-  admin-only; public profile reads go through the `public_profiles` view.
+Project creation, linking, credentials, migration push, migration-history repair, and hosted writes require owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
-## Next steps (queued, in order)
+After the owner creates the dedicated project and authorizes linking:
 
-1. Frontend field-rename sweep (approved: snake_case) — own commit, before wiring.
-2. Local `supabase db reset` + invariant smoke tests above.
-3. Wire `AppStateContext` actions to Supabase queries/RPCs (same signatures — swap points marked `// PHASE 2` in the frontend).
+```sh
+supabase login
+supabase link --project-ref <project-ref>
+supabase migration list
+supabase db push --dry-run
+```
+
+The dry-run must show only the expected additive migrations, once each and in filename order. It must not include seed data or reveal migration-history divergence. Supabase documents that `db push --dry-run` prints migrations without applying them; see the [CLI reference](https://supabase.com/docs/reference/cli/introduction).
+
+Stop for explicit owner approval before:
+
+```sh
+supabase db push
+```
+
+After an approved push, immediately re-run migration listing, compare hosted history with Git, verify expected objects, and run Security and Performance Advisors. Do not repair history speculatively if a migration fails.
+
+## Database-owned invariants
+
+- **Admin identity:** `admin_users` is distinct from player profiles; Auth User is not Player.
+- **RLS:** all 18 tables enable RLS. API privileges must also be explicitly verified.
+- **Game locks:** score, lifecycle, lock, and competition-stage changes are blocked while locked unless the approved unlock transaction records a non-empty reason.
+- **Edit history:** game history rows are insert-only and immutable.
+- **Competition stages:** tournament containers accept only tournament games; league containers accept regular/playoff games.
+- **Waivers:** signature fields are immutable, re-signing inserts a new row, and profile linkage is one-shot.
+- **Public profiles:** public names and sport fields come from an explicit allowlist; contact and administrative PII stays in `profiles`.
+- **Intake:** anonymous users can submit clean initial records but cannot read them back or set triage state.
+- **Hall of Fame:** entries remain invisible to public roles until the settings gate is enabled.
+- **Payments:** exactly one payer is required per charge; cross-season team consistency is not yet enforced.
+
+## Owner-controlled steps after a verified push
+
+1. Create the real Supabase Auth administrator and add its UUID to `admin_users` through a privileged channel.
+2. Configure MFA, recovery, session revocation, and any break-glass administrator.
+3. Insert the attorney-approved waiver as a new immutable `waiver_versions` row. Until then, the public waiver flow must have no fallback text.
+4. Create the real Season 1 league and team records only after the clean-state report is approved.
+5. Enter the project URL and publishable/public key personally. Never put a service-role or secret key in React.
+
+No remote database reset, migration repair, Auth/admin identity change, or hosted data write is routine housekeeping.
