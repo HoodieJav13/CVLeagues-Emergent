@@ -4,8 +4,8 @@ This directory contains the migration source of truth for CVF Leagues' dedicated
 
 ## Verified status — 2026-07-10
 
-- Nine migration files are committed in filename order.
-- The repository's plain-PostgreSQL harness applies all nine migrations and passes 52/52 assertions.
+- Ten migration files are present in filename order.
+- The repository's plain-PostgreSQL harness applies all ten migrations and passes 63/63 assertions.
 - The frontend Supabase adapter is implemented and env-gated.
 - Supabase CLI `2.109.0` is installed on the audited machine.
 - `supabase/config.toml` is not present, so the repository has not been initialized as a local Supabase project.
@@ -27,16 +27,23 @@ Passing the PostgreSQL harness does not prove local-stack or hosted Supabase beh
 | `20260702000700_settings_and_views.sql` | Settings singleton and the definer-style `public_profiles` PII boundary |
 | `20260702000800_rpcs.sql` | Score, lock/unlock, status, intake conversion, roster assignment, and waiver RPCs |
 | `20260707000900_season2_foundations.sql` | Seasons, competition stages, tournament containers, payments tables, and Hall of Fame gate |
+| `20260710075655_enforce_charge_team_season.sql` | Charge-team season constraint triggers and supporting indexes |
+
+## Completed pre-hosting hardening
+
+- Team charges must match the referenced team's league season.
+- Charged teams cannot move to a league in another season.
+- Leagues with charged teams cannot be reassigned to a conflicting season.
+- Season-name cascades remain supported and verified.
 
 ## Pre-hosting blockers
 
 Do not push the current migration set to a hosted project until these gates are resolved and reviewed:
 
-1. Add an additive migration enforcing that a team charge's `season` matches the referenced team's league season.
-2. Add and test explicit Data API privileges for every table, view, sequence, and function the frontend needs. New Supabase projects no longer necessarily expose newly created database objects automatically; RLS controls rows after an object is exposed, while `GRANT` controls whether the API role can reach it at all. See Supabase's [Data API exposure change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
-3. Add public-profile regression tests that attempt to retrieve each forbidden PII field, not only tests that count visible rows.
-4. Apply the migrations through a real local Supabase reset and test the API with anonymous, authenticated non-admin, and admin sessions.
-5. Review whether direct table writes can bypass score/history RPC invariants before the hosted authorization matrix.
+1. Add and test explicit Data API privileges for every table, view, sequence, and function the frontend needs. New Supabase projects no longer necessarily expose newly created database objects automatically; RLS controls rows after an object is exposed, while `GRANT` controls whether the API role can reach it at all. See Supabase's [Data API exposure change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
+2. Add public-profile regression tests that attempt to retrieve each forbidden PII field, not only tests that count visible rows.
+3. Apply the migrations through a real local Supabase reset and test the API with anonymous, authenticated non-admin, and admin sessions.
+4. Review whether direct table writes can bypass score/history RPC invariants before the hosted authorization matrix.
 
 Statistics scope decisions remain required before Season 2 or real tournament statistics. Payment audit semantics remain required before operational use of the payments tables.
 
@@ -104,7 +111,7 @@ After an approved push, immediately re-run migration listing, compare hosted his
 - **Public profiles:** public names and sport fields come from an explicit allowlist; contact and administrative PII stays in `profiles`.
 - **Intake:** anonymous users can submit clean initial records but cannot read them back or set triage state.
 - **Hall of Fame:** entries remain invisible to public roles until the settings gate is enabled.
-- **Payments:** exactly one payer is required per charge; cross-season team consistency is not yet enforced.
+- **Payments:** exactly one payer is required per charge, and a team charge must match the team's league season.
 
 ## Owner-controlled steps after a verified push
 

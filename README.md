@@ -2,7 +2,7 @@
 
 CVF Leagues is a mobile-first React application and Supabase backend for adult recreational kickball and flag football leagues in Albuquerque, New Mexico.
 
-The frontend currently supports an explicit local mock mode and contains an env-gated Supabase adapter. Nine database migrations and a local PostgreSQL test harness are present, but the repository has not yet completed a real local Supabase reset or connected to a hosted project. Production launch is not ready.
+The frontend currently supports an explicit local mock mode and contains an env-gated Supabase adapter. Ten database migrations and a local PostgreSQL test harness are present, but the repository has not yet completed a real local Supabase reset or connected to a hosted project. Production launch is not ready.
 
 ## Start here
 

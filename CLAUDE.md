@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Nine backend migrations exist and pass the repository's plain-PostgreSQL harness, but they have not completed a real local Supabase reset or been applied to a hosted project.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Ten backend migrations exist and pass the repository's plain-PostgreSQL harness, but they have not completed a real local Supabase reset or been applied to a hosted project.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
@@ -14,13 +14,13 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
-- Phase 9 backend schema: nine migrations are present; the pgtest harness passes 52/52 locally, while a real Supabase local-stack reset, Data API grants, hosted advisors, and hosted authorization tests remain
+- Phase 9 backend schema: ten migrations are present; the pgtest harness passes 63/63 locally, including verified charge-team season consistency, while a real Supabase local-stack reset, Data API grants, hosted advisors, and hosted authorization tests remain
 - Running locally via `npm start` from `frontend/`; single source of truth on `main`
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
 - Hosted backend NOT yet provisioned or pushed — until owner setup is complete, the env-gated Supabase wiring uses mock seed data + localStorage with a migrateState pass
 
 ## Current Priority
-Repository controls → pre-hosted hardening (charge-season consistency, explicit Data API grants, public-profile PII regression tests) → real local Supabase reset → owner-created hosted project → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
+Repository controls → remaining pre-hosted hardening (explicit Data API grants and public-profile PII regression tests) → real local Supabase reset → owner-created hosted project → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -83,7 +83,7 @@ Repository controls → pre-hosted hardening (charge-season consistency, explici
 - team_registrations (status: new/contacted/approved/archived, adminNotes[])
 - free_agents (status: new/contacted/assigned/archived, assignedTeamId, adminNotes[])
 - waivers (append-only — see Waiver model)
-- charges + payment_entries (manual payments ledger; every charge targets exactly one of profile_id or team_id)
+- charges + payment_entries (manual payments ledger; every charge targets exactly one of profile_id or team_id, and team charges must match the team's league season)
 - hof_entries + league_settings.hof_published (admin-curated Hall of Fame; unpublished entries are hidden from public reads by RLS)
 
 ## Stat Categories
@@ -115,7 +115,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — adapter and migrations exist; pgtest is 52/52, but pre-hosted hardening, real Supabase local validation, hosted project creation, migration push, admin setup, env configuration, and live-flow verification remain
+9. ◐ Backend wiring — adapter and migrations exist; pgtest is 63/63 with charge-season hardening complete, but remaining pre-hosted hardening, real Supabase local validation, hosted project creation, migration push, admin setup, env configuration, and live-flow verification remain
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
