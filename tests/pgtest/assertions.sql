@@ -210,10 +210,26 @@ select cvf_test.as_anon();
 select cvf_test.eq_int('existing 01 anon reads games', (select count(*)::int from public.games), 3);
 select cvf_test.eq_int('existing 02 anon reads teams', (select count(*)::int from public.teams), 5);
 select cvf_test.eq_int('existing 03 anon reads public_profiles', (select count(*)::int from public.public_profiles), 4);
-select cvf_test.eq_int('existing 04 anon profiles read is RLS-empty', (select count(*)::int from public.profiles), 0);
-select cvf_test.eq_int('existing 05 anon waivers read is RLS-empty', (select count(*)::int from public.waivers), 0);
-select cvf_test.eq_int('existing 06 anon team registrations read is RLS-empty', (select count(*)::int from public.team_registrations), 0);
-select cvf_test.eq_int('existing 07 anon free agents read is RLS-empty', (select count(*)::int from public.free_agents), 0);
+select cvf_test.throws_ok(
+  'existing 04 anon profiles read is privilege-blocked',
+  $$select count(*) from public.profiles$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'existing 05 anon waivers read is privilege-blocked',
+  $$select count(*) from public.waivers$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'existing 06 anon team registrations read is privilege-blocked',
+  $$select count(*) from public.team_registrations$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'existing 07 anon free agents read is privilege-blocked',
+  $$select count(*) from public.free_agents$$,
+  '%permission denied%'
+);
 
 select cvf_test.lives_ok(
   'existing 08 anon can submit clean team registration',
@@ -680,6 +696,172 @@ select cvf_test.ok(
        and c.season is distinct from l.season
   )
 );
+
+-- ---------------------------------------------------------------------------
+-- Public-profile and explicit Data API boundary invariants (33 assertions).
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+
+select cvf_test.eq_text(
+  'data api 01 public_profiles exposes the exact safe-field allowlist',
+  (
+    select string_agg(column_name, ',' order by ordinal_position)
+      from information_schema.columns
+     where table_schema = 'public'
+       and table_name = 'public_profiles'
+  ),
+  'id,first_name,last_name,display_name,name,sports,experience,bio,avatar_color,claimed,eligibility_status,created_at'
+);
+select cvf_test.ok(
+  'data api 02 public_profiles remains the intentional definer-style boundary',
+  exists (
+    select 1
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relname = 'public_profiles'
+       and not ('security_invoker=true' = any(coalesce(c.reloptions, '{}'::text[])))
+  )
+);
+
+select cvf_test.as_anon();
+select cvf_test.throws_ok(
+  'data api 03 public_profiles does not expose email',
+  $$select email from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 04 public_profiles does not expose phone',
+  $$select phone from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 05 public_profiles does not expose date of birth',
+  $$select dob from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 06 public_profiles does not expose emergency contact name',
+  $$select emergency_contact_name from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 07 public_profiles does not expose emergency contact phone',
+  $$select emergency_contact_phone from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 08 public_profiles does not expose admin notes',
+  $$select admin_notes from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 09 public_profiles does not expose auth user id',
+  $$select auth_user_id from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 10 public_profiles does not expose waiver details',
+  $$select waiver_version from public.public_profiles$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'data api 11 anon cannot inspect admin identities',
+  $$select count(*) from public.admin_users$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'data api 12 anon cannot inspect game edit history',
+  $$select count(*) from public.game_edit_history$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'data api 13 anon cannot inspect charges',
+  $$select count(*) from public.charges$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'data api 14 anon cannot inspect payment entries',
+  $$select count(*) from public.payment_entries$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.eq_int('data api 15 non-admin profiles read is RLS-empty', (select count(*)::int from public.profiles), 0);
+select cvf_test.eq_int('data api 16 non-admin waivers read is RLS-empty', (select count(*)::int from public.waivers), 0);
+select cvf_test.eq_int('data api 17 non-admin registrations read is RLS-empty', (select count(*)::int from public.team_registrations), 0);
+select cvf_test.eq_int('data api 18 non-admin free agents read is RLS-empty', (select count(*)::int from public.free_agents), 0);
+select cvf_test.eq_int('data api 19 non-admin edit history read is RLS-empty', (select count(*)::int from public.game_edit_history), 0);
+select cvf_test.eq_int('data api 20 non-admin charges read is RLS-empty', (select count(*)::int from public.charges), 0);
+select cvf_test.eq_int('data api 21 non-admin payment entries read is RLS-empty', (select count(*)::int from public.payment_entries), 0);
+select cvf_test.throws_ok(
+  'data api 22 non-admin admin RPC call fails its authorization guard',
+  $$select public.lock_game('50000000-0000-0000-0000-000000000001')$$,
+  '%Admin only%'
+);
+
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'data api 23 anon can select public_profiles',
+  has_table_privilege('anon', 'public.public_profiles', 'select')
+);
+select cvf_test.ok(
+  'data api 24 anon has no profiles table privilege',
+  not has_table_privilege('anon', 'public.profiles', 'select')
+);
+select cvf_test.ok(
+  'data api 25 anon cannot execute an admin RPC',
+  not has_function_privilege('anon', 'public.lock_game(uuid)', 'execute')
+);
+select cvf_test.ok(
+  'data api 26 authenticated can execute an admin RPC',
+  has_function_privilege('authenticated', 'public.lock_game(uuid)', 'execute')
+);
+select cvf_test.ok(
+  'data api 27 waiver table-wide update remains denied',
+  not has_table_privilege('authenticated', 'public.waivers', 'update')
+);
+select cvf_test.ok(
+  'data api 28 waiver verification column update is allowlisted',
+  has_column_privilege('authenticated', 'public.waivers', 'verification_status', 'update')
+);
+select cvf_test.ok(
+  'data api 29 waiver signature column update remains denied',
+  not has_column_privilege('authenticated', 'public.waivers', 'signed_name', 'update')
+);
+select cvf_test.ok(
+  'data api 30 trigger helpers are not client-executable',
+  not has_function_privilege('authenticated', 'public.enforce_waiver_immutability()', 'execute')
+  and not has_function_privilege('authenticated', 'public.enforce_charge_team_season()', 'execute')
+);
+select cvf_test.ok(
+  'data api 31 every public base table has RLS enabled',
+  not exists (
+    select 1
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relkind in ('r', 'p')
+       and not c.relrowsecurity
+  )
+);
+
+create table public._cvf_default_privilege_test (id int);
+select cvf_test.ok(
+  'data api 32 future tables are not exposed automatically',
+  not has_table_privilege('anon', 'public._cvf_default_privilege_test', 'select')
+  and not has_table_privilege('authenticated', 'public._cvf_default_privilege_test', 'insert')
+);
+drop table public._cvf_default_privilege_test;
+
+create function public._cvf_default_privilege_test()
+returns void language sql as $$select$$;
+select cvf_test.ok(
+  'data api 33 future functions are not executable automatically',
+  not has_function_privilege('anon', 'public._cvf_default_privilege_test()', 'execute')
+  and not has_function_privilege('authenticated', 'public._cvf_default_privilege_test()', 'execute')
+);
+drop function public._cvf_default_privilege_test();
 
 select cvf_test.as_owner();
 

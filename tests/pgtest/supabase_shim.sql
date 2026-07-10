@@ -1,6 +1,8 @@
 -- Supabase environment shim for plain local Postgres pgtests.
 -- This intentionally models only the pieces the migrations depend on:
--- roles, auth.uid(), auth.users, extensions, and Supabase-like default grants.
+-- roles, auth.uid(), auth.users, and extensions. Data API table/function
+-- privileges intentionally begin denied, matching new Supabase projects; the
+-- repository migration must grant every client capability explicitly.
 
 create schema if not exists extensions;
 create schema if not exists auth;
@@ -20,12 +22,6 @@ end
 $$;
 
 grant usage on schema public, auth to anon, authenticated;
-
-alter default privileges in schema public
-  grant select, insert, update, delete on tables to anon, authenticated;
-
-alter default privileges in schema public
-  grant usage, select on sequences to anon, authenticated;
 
 create table if not exists auth.users (
   id uuid primary key default gen_random_uuid(),
