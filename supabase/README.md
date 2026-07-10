@@ -8,9 +8,26 @@ This directory contains the migration source of truth for CVF Leagues' dedicated
 - The repository's plain-PostgreSQL harness applies all eleven migrations and passes 96/96 assertions.
 - The frontend Supabase adapter is implemented and env-gated.
 - Supabase CLI `2.109.0` is installed on the audited machine.
+- The dedicated hosted project exists, but this repository is not linked and no migrations have been applied remotely.
 - `supabase/config.toml` is not present, so the repository has not been initialized as a local Supabase project.
 - A real `supabase db reset`, PostgREST/Data API test, hosted migration, advisor run, and hosted authorization matrix have not been completed.
-- No production seed data, hosted project reference, or credentials are stored here.
+- No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
+
+## Hosted project record
+
+Owner-confirmed on 2026-07-10:
+
+- Project reference: `orlhqewzprjadyrdrqxw`
+- Project URL: `https://orlhqewzprjadyrdrqxw.supabase.co`
+- Owner: CVF Leagues owner
+- Region: US East (Ohio)
+- Plan: Free
+- Dashboard access: owner only
+- Scope: dedicated to CVF Leagues; no unrelated CVF or ZonAthletica resources
+- Database password: owner confirmed it is stored securely; its value and storage details are not recorded here
+- Backup capability: Free-plan project; regular off-platform logical exports remain required before launch
+
+The public project endpoint was reachable during the Stage 2.1 review. This confirms routing, not database contents, ownership, or authorization behavior. Linking, migration listing, dry-run, schema application, and hosted verification remain separate owner-approved stages.
 
 Passing the PostgreSQL harness does not prove local-stack or hosted Supabase behavior. In particular, it does not exercise the Data API, Auth sessions, project exposure settings, or hosted advisors.
 

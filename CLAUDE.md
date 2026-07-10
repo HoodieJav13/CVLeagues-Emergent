@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Eleven backend migrations exist and pass the repository's plain-PostgreSQL harness, but they have not completed a real local Supabase reset or been applied to a hosted project.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Eleven backend migrations exist and pass the repository's plain-PostgreSQL harness. A dedicated Free-plan Supabase project now exists in US East (Ohio), but the repository is not linked and the migrations have not been applied remotely.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
@@ -17,10 +17,10 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Phase 9 backend schema: eleven migrations are present; the pgtest harness passes 96/96 locally, including charge-team season consistency, explicit Data API grants, and public-profile PII regression coverage, while a real Supabase local-stack reset, hosted advisors, and hosted authorization tests remain
 - Running locally via `npm start` from `frontend/`; single source of truth on `main`
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Hosted backend NOT yet provisioned or pushed — until owner setup is complete, the env-gated Supabase wiring uses mock seed data + localStorage with a migrateState pass
+- Dedicated hosted backend provisioned but not linked or migrated — until owner-approved setup is complete, the env-gated Supabase wiring uses mock seed data + localStorage with a migrateState pass
 
 ## Current Priority
-Repository controls and pre-hosted database hardening are locally verified → real local Supabase reset → owner-created hosted project → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
+Repository controls, pre-hosted database hardening, and dedicated project creation are verified → real local Supabase reset → repository linking → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -31,7 +31,7 @@ Repository controls and pre-hosted database hardening are locally verified → r
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
 - Persistence (current fallback): localStorage
-- Backend: Supabase (PostgreSQL + Auth); schema and env-gated frontend adapter exist, but no hosted project has been created or connected
+- Backend: Supabase (PostgreSQL + Auth); schema, env-gated frontend adapter, and dedicated hosted project exist, but the repository is not linked and no schema has been applied remotely
 - Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
@@ -116,7 +116,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — adapter and eleven migrations exist; pre-hosted database hardening is 96/96 in the PostgreSQL harness, but real Supabase local validation, hosted project creation, migration push, admin setup, env configuration, and live-flow verification remain
+9. ◐ Backend wiring — adapter, eleven migrations, and the dedicated hosted project exist; pre-hosted database hardening is 96/96 in the PostgreSQL harness, but real Supabase local validation, repository linking, migration push, admin setup, env configuration, and live-flow verification remain
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
