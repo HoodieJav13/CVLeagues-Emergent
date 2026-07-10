@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Ten backend migrations exist and pass the repository's plain-PostgreSQL harness, but they have not completed a real local Supabase reset or been applied to a hosted project.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Eleven backend migrations exist and pass the repository's plain-PostgreSQL harness, but they have not completed a real local Supabase reset or been applied to a hosted project.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
@@ -14,13 +14,13 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
-- Phase 9 backend schema: ten migrations are present; the pgtest harness passes 63/63 locally, including verified charge-team season consistency, while a real Supabase local-stack reset, Data API grants, hosted advisors, and hosted authorization tests remain
+- Phase 9 backend schema: eleven migrations are present; the pgtest harness passes 96/96 locally, including charge-team season consistency, explicit Data API grants, and public-profile PII regression coverage, while a real Supabase local-stack reset, hosted advisors, and hosted authorization tests remain
 - Running locally via `npm start` from `frontend/`; single source of truth on `main`
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
 - Hosted backend NOT yet provisioned or pushed — until owner setup is complete, the env-gated Supabase wiring uses mock seed data + localStorage with a migrateState pass
 
 ## Current Priority
-Repository controls → remaining pre-hosted hardening (explicit Data API grants and public-profile PII regression tests) → real local Supabase reset → owner-created hosted project → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
+Repository controls and pre-hosted database hardening are locally verified → real local Supabase reset → owner-created hosted project → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -92,7 +92,8 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 
 ## Security (designed in migrations; pending full Supabase and hosted verification)
 - Row Level Security is enabled in migrations on all 18 tables — non-negotiable.
-- Explicit Data API grants still require a pre-hosting migration review; RLS and API exposure grants are separate controls.
+- Data API grants are explicitly allowlisted for anonymous and authenticated roles; RLS and API exposure grants remain separate controls.
+- `public_profiles` is an intentional definer-style security boundary with an exact safe-field allowlist and forbidden-PII regression tests.
 - Public scoreboard reads are allowed; anonymous writes are limited to constrained intake and waiver submissions.
 - Only admin writes league data, edits scores, changes roles.
 - Game lock and append-only edit history are database-enforced; RLS separately restricts role access.
@@ -115,7 +116,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — adapter and migrations exist; pgtest is 63/63 with charge-season hardening complete, but remaining pre-hosted hardening, real Supabase local validation, hosted project creation, migration push, admin setup, env configuration, and live-flow verification remain
+9. ◐ Backend wiring — adapter and eleven migrations exist; pre-hosted database hardening is 96/96 in the PostgreSQL harness, but real Supabase local validation, hosted project creation, migration push, admin setup, env configuration, and live-flow verification remain
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.

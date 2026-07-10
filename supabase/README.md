@@ -4,8 +4,8 @@ This directory contains the migration source of truth for CVF Leagues' dedicated
 
 ## Verified status — 2026-07-10
 
-- Ten migration files are present in filename order.
-- The repository's plain-PostgreSQL harness applies all ten migrations and passes 63/63 assertions.
+- Eleven migration files are present in filename order.
+- The repository's plain-PostgreSQL harness applies all eleven migrations and passes 96/96 assertions.
 - The frontend Supabase adapter is implemented and env-gated.
 - Supabase CLI `2.109.0` is installed on the audited machine.
 - `supabase/config.toml` is not present, so the repository has not been initialized as a local Supabase project.
@@ -28,6 +28,7 @@ Passing the PostgreSQL harness does not prove local-stack or hosted Supabase beh
 | `20260702000800_rpcs.sql` | Score, lock/unlock, status, intake conversion, roster assignment, and waiver RPCs |
 | `20260707000900_season2_foundations.sql` | Seasons, competition stages, tournament containers, payments tables, and Hall of Fame gate |
 | `20260710075655_enforce_charge_team_season.sql` | Charge-team season constraint triggers and supporting indexes |
+| `20260710144539_explicit_data_api_grants.sql` | Deny-by-default Data API privileges with explicit anon/authenticated allowlists |
 
 ## Completed pre-hosting hardening
 
@@ -35,15 +36,17 @@ Passing the PostgreSQL harness does not prove local-stack or hosted Supabase beh
 - Charged teams cannot move to a league in another season.
 - Leagues with charged teams cannot be reassigned to a conflicting season.
 - Season-name cascades remain supported and verified.
+- Anonymous and authenticated Data API privileges are explicitly allowlisted; future tables and functions are private by default.
+- `public_profiles` is verified as an intentional definer-style view with an exact 12-column safe-field allowlist.
+- Anonymous clients cannot read profiles, waivers, intake records, admin identities, edit history, charges, or payment entries.
+- Authenticated non-admin sessions can reach admin-managed tables only where required for RLS evaluation, and RLS returns no private rows.
 
 ## Pre-hosting blockers
 
 Do not push the current migration set to a hosted project until these gates are resolved and reviewed:
 
-1. Add and test explicit Data API privileges for every table, view, sequence, and function the frontend needs. New Supabase projects no longer necessarily expose newly created database objects automatically; RLS controls rows after an object is exposed, while `GRANT` controls whether the API role can reach it at all. See Supabase's [Data API exposure change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
-2. Add public-profile regression tests that attempt to retrieve each forbidden PII field, not only tests that count visible rows.
-3. Apply the migrations through a real local Supabase reset and test the API with anonymous, authenticated non-admin, and admin sessions.
-4. Review whether direct table writes can bypass score/history RPC invariants before the hosted authorization matrix.
+1. Apply the migrations through a real local Supabase reset and test the API with anonymous, authenticated non-admin, and admin sessions.
+2. Review whether direct table writes can bypass score/history RPC invariants before the hosted authorization matrix.
 
 Statistics scope decisions remain required before Season 2 or real tournament statistics. Payment audit semantics remain required before operational use of the payments tables.
 
@@ -108,7 +111,8 @@ After an approved push, immediately re-run migration listing, compare hosted his
 - **Edit history:** game history rows are insert-only and immutable.
 - **Competition stages:** tournament containers accept only tournament games; league containers accept regular/playoff games.
 - **Waivers:** signature fields are immutable, re-signing inserts a new row, and profile linkage is one-shot.
-- **Public profiles:** public names and sport fields come from an explicit allowlist; contact and administrative PII stays in `profiles`.
+- **Public profiles:** `public_profiles` intentionally uses definer-style view behavior to read through private `profiles` RLS. Its exact allowlist is `id`, `first_name`, `last_name`, `display_name`, `name`, `sports`, `experience`, `bio`, `avatar_color`, `claimed`, `eligibility_status`, and `created_at`. Email, phone, date of birth, emergency contacts, admin notes, Auth user IDs, and waiver details are absent and regression-tested.
+- **Data API:** grants are reset and rebuilt from an anon/authenticated allowlist. RLS remains mandatory after a role receives object access. New functions created by the migration role do not inherit PostgreSQL's default `PUBLIC EXECUTE`; later client-facing functions require an explicit grant. See Supabase's [API security guidance](https://supabase.com/docs/guides/api/securing-your-api) and [Data API exposure change](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
 - **Intake:** anonymous users can submit clean initial records but cannot read them back or set triage state.
 - **Hall of Fame:** entries remain invisible to public roles until the settings gate is enabled.
 - **Payments:** exactly one payer is required per charge, and a team charge must match the team's league season.
