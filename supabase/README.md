@@ -69,6 +69,8 @@ Statistics scope decisions remain required before Season 2 or real tournament st
 
 ## Local verification
 
+Local Storage and Analytics are disabled in `config.toml` because CVF Leagues currently uses neither service; local verification covers the database, Auth, and Data API.
+
 First confirm the installed commands instead of relying on remembered CLI flags:
 
 ```sh
