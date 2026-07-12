@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and currently falls back to mock state. Eleven backend migrations exist and pass the repository's plain-PostgreSQL harness. A dedicated Free-plan Supabase project now exists in US East (Ohio), but the repository is not linked and the migrations have not been applied remotely.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and still uses mock state until the owner supplies hosted environment configuration. Twelve backend migrations pass the real local Supabase harness and are applied to the dedicated Free-plan Supabase project in US East (Ohio); hosted advisor remediation is verified and the database gate is closed.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
@@ -14,13 +14,13 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
-- Phase 9 backend schema: eleven migrations are present; the pgtest harness passes 96/96 locally, including charge-team season consistency, explicit Data API grants, and public-profile PII regression coverage, while a real Supabase local-stack reset, hosted advisors, and hosted authorization tests remain
+- Phase 9 backend database: twelve migrations are hosted and in sync; the real local Supabase stack passes 100/100 pgtest assertions plus 7/7 anonymous Data API checks, and hosted migration history, function attributes, 38/38 foreign-key index coverage, clean row counts, and both advisors are verified
 - Running locally via `npm start` from `frontend/`; single source of truth on `main`
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Dedicated hosted backend provisioned but not linked or migrated — until owner-approved setup is complete, the env-gated Supabase wiring uses mock seed data + localStorage with a migrateState pass
+- Dedicated hosted backend is linked, migrated, advisor-reviewed, and database-verified; admin bootstrap, frontend environment variables, hosted authorization acceptance, and the live eight-step flow are not yet complete, so the frontend still uses mock seed data + localStorage
 
 ## Current Priority
-Repository controls, pre-hosted database hardening, and dedicated project creation are verified → real local Supabase reset → repository linking → migration list and `db push --dry-run` → owner-approved push → hosted advisors and authorization matrix → admin setup → production-safe env handling → live eight-step flow.
+Phase 9's database gate is closed: repository controls, real local Supabase validation, project linking, all twelve hosted migrations, clean-state invariants, and advisor remediation are verified. Next: hosted authorization matrix → admin setup and recovery → production-safe environment configuration → live eight-step flow → Phase 10 deployment and soft launch.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -31,7 +31,7 @@ Repository controls, pre-hosted database hardening, and dedicated project creati
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
 - Persistence (current fallback): localStorage
-- Backend: Supabase (PostgreSQL + Auth); schema, env-gated frontend adapter, and dedicated hosted project exist, but the repository is not linked and no schema has been applied remotely
+- Backend: Supabase (PostgreSQL + Auth); twelve migrations are applied and verified in the dedicated hosted project, while admin identity, frontend environment configuration, and live application acceptance remain open
 - Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
@@ -72,7 +72,7 @@ Repository controls, pre-hosted database hardening, and dedicated project creati
 - Flow: pending → submitted (score saved) → final (Mark Final, locks game) → approved (on unlock) → submitted (on re-edit).
 - A final game is LOCKED: editing requires deliberate unlock + required reason; every change appends to `editHistory` in mock mode and maps to the append-only `game_edit_history` table in the backend schema.
 
-## Backend Data Model (migrations present; not yet Supabase-verified or hosted)
+## Backend Data Model (twelve migrations; hosted and database-verified)
 - seasons (natural text key such as `Summer 2026`; referenced by all season-scoped records)
 - profiles (auth_user_id nullable, first/last/display name, email, phone, dob optional, age_confirmed, emergency contacts, admin notes)
 - leagues (sport, season, status, kind: league/tournament, playoff_format; standalone tournaments are league containers with `kind='tournament'`)
@@ -90,7 +90,7 @@ Repository controls, pre-hosted database hardening, and dedicated project creati
 Flag Football — Passing (comp/att/comp%/yds/TD/INT), Rushing (carries/yds/TD/1st), Receiving (catches/yds/TD/1st), Defense (flag pulls/sacks/INT), Scoring (TD/1-2-3pt conversions).
 Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists/errors).
 
-## Security (designed in migrations; pending full Supabase and hosted verification)
+## Security (database controls verified; hosted identity matrix still pending)
 - Row Level Security is enabled in migrations on all 18 tables — non-negotiable.
 - Data API grants are explicitly allowlisted for anonymous and authenticated roles; RLS and API exposure grants remain separate controls.
 - `public_profiles` is an intentional definer-style security boundary with an exact safe-field allowlist and forbidden-PII regression tests.
@@ -116,7 +116,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — adapter, eleven migrations, and the dedicated hosted project exist; pre-hosted database hardening is 96/96 in the PostgreSQL harness, but real Supabase local validation, repository linking, migration push, admin setup, env configuration, and live-flow verification remain
+9. ◐ Backend wiring — database gate closed: twelve migrations are hosted and in sync, the real local Supabase stack is 100/100, anonymous Data API checks are 7/7, and hosted advisors/invariants are verified; hosted authorization acceptance, admin setup, env configuration, and live-flow verification remain
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.

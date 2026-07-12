@@ -2,15 +2,15 @@
 
 This directory contains the migration source of truth for CVF Leagues' dedicated Supabase project. It must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-10
+## Verified status — 2026-07-12
 
-- Eleven migration files are present in filename order.
-- The repository's plain-PostgreSQL harness applies all eleven migrations and passes 96/96 assertions.
-- The frontend Supabase adapter is implemented and env-gated.
-- Supabase CLI `2.109.0` is installed on the audited machine.
-- The dedicated hosted project exists, but this repository is not linked and no migrations have been applied remotely.
-- `supabase/config.toml` is not present, so the repository has not been initialized as a local Supabase project.
-- A real `supabase db reset`, PostgREST/Data API test, hosted migration, advisor run, and hosted authorization matrix have not been completed.
+- Twelve migration files are present in filename order and committed through `2454768`.
+- A clean real local Supabase reset applies all twelve migrations on PostgreSQL 17; the complete pgtest suite passes 100/100 and anonymous PostgREST checks pass 7/7.
+- This repository is linked to the dedicated hosted project, whose migration ledger matches all twelve local migrations; a final `db push --dry-run` reports the remote database is up to date.
+- Hosted verification confirms the two remediated function attributes, 38/38 foreign-key index coverage, and the expected clean row-count baseline.
+- Hosted Security and Performance Advisors were rerun. Remaining findings are the reviewed intentional security boundaries, unused-index INFO results on empty tables, and seven deferred permissive-policy consolidations recorded in `CLAUDE.md`.
+- `supabase/config.toml` is present; unused local Storage and Analytics services are intentionally disabled.
+- The frontend Supabase adapter is implemented and env-gated, but owner-entered environment values, admin identity setup, the complete hosted authorization matrix, and the live eight-step application flow remain open.
 - No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
 
 ## Hosted project record
@@ -27,9 +27,7 @@ Owner-confirmed on 2026-07-10:
 - Database password: owner confirmed it is stored securely; its value and storage details are not recorded here
 - Backup capability: Free-plan project; regular off-platform logical exports remain required before launch
 
-The public project endpoint was reachable during the Stage 2.1 review. This confirms routing, not database contents, ownership, or authorization behavior. Linking, migration listing, dry-run, schema application, and hosted verification remain separate owner-approved stages.
-
-Passing the PostgreSQL harness does not prove local-stack or hosted Supabase behavior. In particular, it does not exercise the Data API, Auth sessions, project exposure settings, or hosted advisors.
+The project is linked and all twelve migrations are applied. Hosted migration history, catalog invariants, clean row counts, and both advisors are verified. This closes the Phase 9 database gate; it does not replace the still-pending hosted anonymous/non-admin/admin authorization matrix or live application QA.
 
 ## Migration inventory
 
@@ -46,8 +44,9 @@ Passing the PostgreSQL harness does not prove local-stack or hosted Supabase beh
 | `20260707000900_season2_foundations.sql` | Seasons, competition stages, tournament containers, payments tables, and Hall of Fame gate |
 | `20260710075655_enforce_charge_team_season.sql` | Charge-team season constraint triggers and supporting indexes |
 | `20260710144539_explicit_data_api_grants.sql` | Deny-by-default Data API privileges with explicit anon/authenticated allowlists |
+| `20260712063616_remediate_database_advisors.sql` | Safe function execution attributes and complete public foreign-key index coverage |
 
-## Completed pre-hosting hardening
+## Completed database hardening
 
 - Team charges must match the referenced team's league season.
 - Charged teams cannot move to a league in another season.
@@ -57,13 +56,16 @@ Passing the PostgreSQL harness does not prove local-stack or hosted Supabase beh
 - `public_profiles` is verified as an intentional definer-style view with an exact 12-column safe-field allowlist.
 - Anonymous clients cannot read profiles, waivers, intake records, admin identities, edit history, charges, or payment entries.
 - Authenticated non-admin sessions can reach admin-managed tables only where required for RLS evaluation, and RLS returns no private rows.
+- `current_waiver_version()` uses caller privileges, and `cvf_palette_color(integer)` has an immutable `pg_catalog` search path.
+- All 38 public foreign keys have a covering index; no hosted unindexed-foreign-key advisor findings remain.
 
-## Pre-hosting blockers
+## Remaining backend launch gates
 
-Do not push the current migration set to a hosted project until these gates are resolved and reviewed:
-
-1. Apply the migrations through a real local Supabase reset and test the API with anonymous, authenticated non-admin, and admin sessions.
-2. Review whether direct table writes can bypass score/history RPC invariants before the hosted authorization matrix.
+1. Complete the reusable hosted authorization matrix with anonymous, authenticated non-admin, and real administrator sessions, including direct-write bypass attempts.
+2. Bootstrap the real administrator and complete MFA, recovery, and session-revocation checks.
+3. Enter the hosted URL and publishable key into local/frontend environment configuration without exposing a service-role or secret key.
+4. Run the live eight-step score flow and edge-case suite against hosted Supabase with no mock or localStorage participation.
+5. Complete Phase 10 preview deployment and acceptance before production launch.
 
 Statistics scope decisions remain required before Season 2 or real tournament statistics. Payment audit semantics remain required before operational use of the payments tables.
 
@@ -80,10 +82,9 @@ supabase db --help
 supabase migration --help
 ```
 
-After the owner approves the local Supabase-validation stage:
+To reproduce the verified local database gate:
 
 ```sh
-supabase init
 supabase start
 supabase db reset
 supabase migration list --local
@@ -99,15 +100,13 @@ Run the repository harness separately:
 
 The harness requires local PostgreSQL binaries and permission to allocate PostgreSQL shared memory.
 
-## Hosted migration gate
+## Future hosted migration procedure
 
-Project creation, linking, credentials, migration push, migration-history repair, and hosted writes require owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+The hosted ledger currently matches all twelve repository migrations and the database gate is closed. Every future migration push, migration-history repair, or other hosted write still requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
-After the owner creates the dedicated project and authorizes linking:
+Before a future hosted migration:
 
 ```sh
-supabase login
-supabase link --project-ref <project-ref>
 supabase migration list
 supabase db push --dry-run
 ```
@@ -136,7 +135,7 @@ After an approved push, immediately re-run migration listing, compare hosted his
 - **Hall of Fame:** entries remain invisible to public roles until the settings gate is enabled.
 - **Payments:** exactly one payer is required per charge, and a team charge must match the team's league season.
 
-## Owner-controlled steps after a verified push
+## Remaining owner-controlled steps
 
 1. Create the real Supabase Auth administrator and add its UUID to `admin_users` through a privileged channel.
 2. Configure MFA, recovery, session revocation, and any break-glass administrator.
