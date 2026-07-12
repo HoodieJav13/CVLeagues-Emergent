@@ -863,6 +863,66 @@ select cvf_test.ok(
 );
 drop function public._cvf_default_privilege_test();
 
+-- ---------------------------------------------------------------------------
+-- Database Advisor remediation invariants (4 assertions).
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'advisor 01 palette helper has an immutable search path',
+  exists (
+    select 1
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname = 'cvf_palette_color'
+       and p.proconfig @> array['search_path=pg_catalog']
+  )
+);
+select cvf_test.ok(
+  'advisor 02 current waiver lookup uses caller privileges',
+  exists (
+    select 1
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'public'
+       and p.proname = 'current_waiver_version'
+       and not p.prosecdef
+  )
+);
+
+select cvf_test.as_anon();
+select cvf_test.eq_text(
+  'advisor 03 anon still reads the current waiver version through RLS',
+  public.current_waiver_version(),
+  'CVF-WAIVER-TEST-v1'
+);
+
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'advisor 04 every public foreign key has a covering index',
+  not exists (
+    select 1
+      from pg_constraint fk
+      join pg_class t on t.oid = fk.conrelid
+      join pg_namespace n on n.oid = t.relnamespace
+     where fk.contype = 'f'
+       and n.nspname = 'public'
+       and not exists (
+         select 1
+           from pg_index i
+          where i.indrelid = fk.conrelid
+            and i.indisvalid
+            and i.indisready
+            and i.indnkeyatts >= cardinality(fk.conkey)
+            and not exists (
+              select 1
+                from generate_subscripts(fk.conkey, 1) s(position)
+               where fk.conkey[s.position] <> i.indkey[s.position - 1]
+            )
+       )
+  )
+);
+
 select cvf_test.as_owner();
 
 \echo ''
