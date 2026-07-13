@@ -36,11 +36,13 @@ const fail = (error, what) => {
 // and empty intake collections (RLS would return zero rows anyway — skipping
 // the requests avoids pointless round-trips).
 export async function fetchAppState(isAdmin) {
-  const gamesQ = supabase
-    .from("games")
-    .select("*, edit_history:game_edit_history(action, reason, created_at)")
-    .order("date")
-    .order("created_at", { referencedTable: "game_edit_history" });
+  const gamesQ = isAdmin
+    ? supabase
+        .from("games")
+        .select("*, edit_history:game_edit_history(action, reason, created_at)")
+        .order("date")
+        .order("created_at", { referencedTable: "game_edit_history" })
+    : supabase.from("games").select("*").order("date");
 
   const [games, leagues, teams, teamPlayers, playerStats, baselines, settingsRow, profiles, freeAgents, registrations, waivers] =
     await Promise.all([
@@ -76,7 +78,10 @@ export async function fetchAppState(isAdmin) {
     leagues: leagues.data || [],
     teams: teams.data || [],
     teamPlayers: teamPlayers.data || [],
-    games: games.data || [],
+    games: (games.data || []).map((game) => ({
+      ...game,
+      edit_history: game.edit_history || [],
+    })),
     playerStats: playerStats.data || [],
     careerBaselines,
     freeAgents: freeAgents.data || [],

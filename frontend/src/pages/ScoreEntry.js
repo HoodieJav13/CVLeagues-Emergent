@@ -80,12 +80,16 @@ function Entry() {
       [profile_id]: { team_id, stats: { ...(prev[profile_id]?.stats || {}), [key]: Math.max(0, Number(val) || 0) } },
     }));
 
-  const save = () => {
-    submitScore({ game_id: game.id, home_score: homeTotal, away_score: awayTotal, periods, statsByPlayer });
-    toast.success(`${away.name} ${awayTotal} – ${homeTotal} ${home.name} saved!`, {
-      description: "Standings, records, stats & leaderboards updated.",
-    });
-    navigate(`/game/${game.id}`);
+  const save = async () => {
+    try {
+      await submitScore({ game_id: game.id, home_score: homeTotal, away_score: awayTotal, periods, statsByPlayer });
+      toast.success(`${away.name} ${awayTotal} – ${homeTotal} ${home.name} saved!`, {
+        description: "Standings, records, stats & leaderboards updated.",
+      });
+      navigate(`/game/${game.id}`);
+    } catch {
+      // Backend mode already reports the failure; keep the form open for correction.
+    }
   };
 
   return (
