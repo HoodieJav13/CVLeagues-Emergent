@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CVF Hosted Authorization Matrix</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, system-ui, sans-serif; background: #0f1416; color: #f4f6f5; }
+      body { margin: 0; padding: 32px 18px; }
+      main { max-width: 880px; margin: 0 auto; }
+      .card { background: #171d20; border: 1px solid #2a3236; border-radius: 16px; padding: 20px; margin: 16px 0; }
+      .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+      label { display: block; margin: 10px 0 4px; color: #a8b0ad; font-size: 13px; }
+      input { box-sizing: border-box; width: 100%; padding: 11px; border-radius: 8px; border: 1px solid #3c464b; background: #0a0e10; color: #f4f6f5; }
+      button { min-height: 44px; padding: 10px 18px; border: 0; border-radius: 8px; background: #5bb8cc; color: #0f1416; font-weight: 700; cursor: pointer; }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #0a0e10; padding: 14px; border-radius: 8px; min-height: 120px; }
+      .warning { color: #f5b82e; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>CVF hosted authorization matrix</h1>
+      <p>This local page uses two real hosted Auth sessions. Passwords stay in browser memory, are cleared immediately after sign-in, and are never included in the report.</p>
+      <p class="warning">Use only the designated disposable administrator and non-admin test accounts.</p>
+      <div class="card grid">
+        <section>
+          <h2>Administrator</h2>
+          <label for="admin-email">Email</label>
+          <input id="admin-email" type="email" autocomplete="username" />
+          <label for="admin-password">Password</label>
+          <input id="admin-password" type="password" autocomplete="current-password" />
+        </section>
+        <section>
+          <h2>Authenticated non-admin</h2>
+          <label for="nonadmin-email">Email</label>
+          <input id="nonadmin-email" type="email" autocomplete="username" />
+          <label for="nonadmin-password">Password</label>
+          <input id="nonadmin-password" type="password" autocomplete="current-password" />
+        </section>
+      </div>
+      <button id="run" type="button">Run hosted matrix</button>
+      <div class="card">
+        <h2>Sanitized output</h2>
+        <pre id="output" aria-live="polite">Waiting for credentials.</pre>
+      </div>
+    </main>
+    <script src="/supabase.js"></script>
+    <script src="/matrix.js"></script>
+  </body>
+</html>
