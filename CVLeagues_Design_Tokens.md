@@ -1,4 +1,4 @@
-# CVLeagues — Design Token Spec v2 (Phase 8c)
+# CVLeagues — Design Token Spec v2 (Phase 8a/8b)
 
 **Purpose:** Single source of truth for the visual system. v2 supersedes the Phase 8 spec: it keeps every locked decision, fixes the places where v1 was aspirational (a type/spacing/radius scale the codebase never adopted), corrects measured WCAG failures, and codifies patterns the code got right but v1 never documented. Every value below is a token — apply tokens, do not invent new colors, sizes, or styles.
 
@@ -267,17 +267,17 @@ All buttons: `--radius-md`, `text-body-strong` uppercase, min 44px tap target, v
 
 Config + token file (one-shot, zero component edits, silently normalizes most of the app):
 
-1. `index.css`: `--text-muted` → `#7E8883` (also `--loss-text`); re-base `--text-body` → 14px, `--text-subheading` → 16px; add `--text-micro`, `--text-body-lg`, `--cvf-zia-down`, `--sport-flag`/`-tint`/`-deep`, `--sport-kickball`/`-tint` (aliases), `--rank-silver`, `--rank-bronze`; delete `--space-1`…`--space-10`.
-2. `tailwind.config.js`: remap `fontSize` `xs` → caption, `sm` → body, `base` → body-lg (each with paired line-height/weight); add `micro`; remap `borderRadius` `xl` and `2xl` → `var(--radius-lg)`; delete the `s1`–`s10` spacing aliases and the `mono`/JetBrains entry; add sport/rank colors.
-3. `button.jsx`: destructive hover → `--cvf-zia-down` (one line). `input.jsx`: placeholder to full-opacity `--text-muted` (one line).
+1. **Complete —** `index.css`: `--text-muted` → `#7E8883` (also `--loss-text`); re-base `--text-body` → 14px, `--text-subheading` → 16px; add `--text-micro`, `--text-body-lg`, `--cvf-zia-down`, `--sport-flag`/`-tint`/`-deep`, `--sport-kickball`/`-tint` (aliases), `--rank-silver`, `--rank-bronze`; delete `--space-1`…`--space-10`.
+2. **Complete —** `tailwind.config.js`: remap `fontSize` `xs` → caption, `sm` → body, `base` → body-lg (each with paired line-height/weight); add `micro`; remap `borderRadius` `xl` and `2xl` → `var(--radius-lg)`; delete the `s1`–`s10` spacing aliases and the `mono`/JetBrains entry; add sport/rank colors.
+3. **Complete —** `button.jsx`: destructive hover uses `--cvf-zia-down`; `input.jsx`: placeholder uses full-opacity `--text-muted`.
 
 Small sweeps (mechanical, display-only):
 
-4. Headings (~10 h1/h2s): apply §3 recipes — removes `font-extrabold`, `tracking-tighter`, `leading` overrides.
-5. `Badges.js` SportBadge → sport tokens; replace raw `#f97316` in `roles.js`/`seed.js` with `--sport-flag-deep`; `Leaderboards.js` medals → rank tokens.
-6. `text-black` → `text-on-brand`/`text-ink` (×7); `text-white` → `text-foreground` (×3); remaining raw hexes in pages (`#5BB8CC`, `#F5B82E`, `#0F1416`, `#a1a1aa`, `#555`) → tokens.
-7. `text-[9px]/[10px]/[11px]` (×41) → `text-micro` (long-tail; can trail the rest).
-8. Delete CRA boilerplate in `App.css` (spinning-logo styles); one `rounded-3xl` → `rounded-2xl`.
+4. **Complete —** headings use the §3 recipes; the prior `font-extrabold` and `tracking-tighter` drift is gone.
+5. **Deferred remainder —** SportBadge and leaderboard treatments use the new semantic tokens, but raw role, seed, and backend palette values remain for a separate display/data-color cleanup.
+6. **Deferred remainder —** most component colors use tokens, but the mock role switcher and several legacy page/admin color literals still remain. Resolve them in a focused visual pass rather than mixing them into functional work.
+7. **Deferred —** arbitrary micro text remains in the mock role switcher and base Badge primitive; normalize it in the same focused visual pass.
+8. **Complete —** CRA spinning-logo boilerplate and the stray `rounded-3xl` usage are gone.
 
 After the config remap lands, verify: build passes, score-entry flow intact, game cards / standings / pills visually unchanged except the intended shifts (muted text slightly brighter, 12px radii → 16px, flag chips orange).
 

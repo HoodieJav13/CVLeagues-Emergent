@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and still uses mock state until the owner supplies hosted environment configuration. Twelve backend migrations pass the real local Supabase harness and are applied to the dedicated Free-plan Supabase project in US East (Ohio); hosted advisor remediation is verified and the database gate is closed.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated; the owner-configured local environment now runs against hosted Supabase, while explicit mock mode remains available for local development. Twelve backend migrations pass the real local Supabase harness and are applied to the dedicated Free-plan Supabase project in US East (Ohio); hosted advisor findings have been reviewed with explicit dispositions and the database gate is closed. Preview/production environment configuration and production-safe mock handling remain open.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
@@ -15,12 +15,12 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
 - Phase 9 backend database: twelve migrations are hosted and in sync; the real local Supabase stack passes 100/100 pgtest assertions plus 7/7 anonymous Data API checks, and hosted migration history, function attributes, 38/38 foreign-key index coverage, clean row counts, and both advisors are verified
-- Running locally via `npm start` from `frontend/`; single source of truth on `main`
+- Running locally via `npm start` from `frontend/`; active backend-to-launch work is on `codex/backend-to-launch` (always confirm the checked-out branch before editing; `main` is not the current work branch)
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Dedicated hosted backend is linked, migrated, advisor-reviewed, and database-verified; admin bootstrap, frontend environment variables, hosted authorization acceptance, and the live eight-step flow are not yet complete, so the frontend still uses mock seed data + localStorage
+- Dedicated hosted backend is linked, migrated, advisor-reviewed, and database-verified. The real administrator is linked, local hosted-mode environment variables are configured, three-session role resolution is verified fail-closed, and the locked-score unlock/re-lock flow is hosted-verified. MFA/recovery/session revocation, the complete hosted authorization matrix, production-safe mock handling, preview/production variables, and the live eight-step flow remain open.
 
 ## Current Priority
-Phase 9's database gate is closed: repository controls, real local Supabase validation, project linking, all twelve hosted migrations, clean-state invariants, and advisor remediation are verified. Next: hosted authorization matrix → admin setup and recovery → production-safe environment configuration → live eight-step flow → Phase 10 deployment and soft launch.
+Phase 9's database gate is closed: repository controls, real local Supabase validation, project linking, all twelve hosted migrations, clean-state invariants, and advisor review are verified. The admin link, local hosted environment, role resolution, and locked-score UX flow are also verified. Next: complete hosted authorization matrix → MFA/recovery/session-revocation readiness → production-safe mock behavior plus preview/production variables → live eight-step flow → Phase 10 deployment and soft launch.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -31,13 +31,13 @@ Phase 9's database gate is closed: repository controls, real local Supabase vali
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
 - Persistence (current fallback): localStorage
-- Backend: Supabase (PostgreSQL + Auth); twelve migrations are applied and verified in the dedicated hosted project, while admin identity, frontend environment configuration, and live application acceptance remain open
+- Backend: Supabase (PostgreSQL + Auth); twelve migrations and the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. Full authorization/live application acceptance and preview/production configuration remain open.
 - Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
 - `AppStateContext`, `selectors.js`, `roles.js`, `seed.js` are the protected core. Extend; don't rewrite structure/logic unless explicitly scoped.
 - Admin and public read/write the SAME shared state. A score entered in admin updates public schedule/standings/stats automatically. Never create a separate admin data store.
-- Keep the same function signatures when swapping mock logic for Supabase. Mark swap points `// PHASE 2`.
+- Preserve `AppStateContext` action signatures across mock and hosted Supabase paths. Describe new work using the current backend/live-verification roadmap terminology rather than the retired `PHASE 2` swap-point label.
 - Out-of-scope account/login features are kept dormant behind the `FINAL_DRAFT` flag, not deleted.
 - Use existing shared components and design tokens — no new UI libraries, no rogue hex colors (map to tokens).
 - Mobile-first: every view works at iPhone SE width (375px) and up.
@@ -55,7 +55,7 @@ Phase 9's database gate is closed: repository controls, real local Supabase vali
 - **Flow C-lite (built):** "Add Player" creates a profile; manual roster assignment sets team + jersey; season auto-stamped.
 - **Do NOT build intake-conversion in mock state** (approve→team, assign→profile). Built once in the backend phase.
 - **Eligibility is purely informational.** Never blocks anything in-app. Admin enforces physically IRL.
-- **`<EligibilityIndicator>`:** reusable, icon + tooltip, not color-alone. Shown on rosters, score entry, team pages. Data source becomes real waiver status in the backend phase.
+- **`<EligibilityIndicator>`:** reusable, icon + tooltip, not color-alone. Shown on rosters, score entry, team pages. Hosted data derives eligibility from the real profile/waiver workflow; mock mode retains seed status for local development.
 
 ## Waiver / Identity Model
 - Waivers are a SEPARATE step from intake forms — never bundled.
@@ -64,7 +64,7 @@ Phase 9's database gate is closed: repository controls, real local Supabase vali
 - Submitted waiver ≠ eligibility. Eligibility = admin verification + team/season assignment.
 - Capture: signed name, signed_at, email, phone, ip_address, user_agent, accepted_terms, age_confirmed, media_consent (optional), verification_status (pending/verified/rejected/duplicate).
 - Adults only Season 1 ("I confirm I am 18+"). Minor/guardian flow deferred.
-- Public waiver submission flow built in the backend phase (needs real DB, append-only architecture, attorney-reviewed language). Admin Waivers tab currently shows an honest "ships with backend" empty state.
+- The append-only waiver schema and hosted submission RPC exist. The public waiver experience remains gated on attorney-approved immutable waiver text and abuse protection; it must never use fallback legal text. The admin Waivers tab can consume hosted records, while its remaining placeholder copy/UI cleanup is separate frontend work.
 - LEGAL: waiver language reviewed by a New Mexico attorney before launch.
 
 ## Score Lifecycle (built, working)
@@ -74,7 +74,7 @@ Phase 9's database gate is closed: repository controls, real local Supabase vali
 
 ## Backend Data Model (twelve migrations; hosted and database-verified)
 - seasons (natural text key such as `Summer 2026`; referenced by all season-scoped records)
-- profiles (auth_user_id nullable, first/last/display name, email, phone, dob optional, age_confirmed, emergency contacts, admin notes)
+- profiles (auth_user_id nullable, first/last/display name, email, phone, optional date of birth, emergency contacts, admin notes; age confirmation is recorded on signed waiver rows, not profiles)
 - leagues (sport, season, status, kind: league/tournament, playoff_format; standalone tournaments are league containers with `kind='tournament'`)
 - teams (league_id, captain contact, status, division)
 - team_players (team_id, profile_id, season natural-key reference, jersey_number, roster_status: pending_waiver/eligible/inactive/removed)
@@ -90,7 +90,7 @@ Phase 9's database gate is closed: repository controls, real local Supabase vali
 Flag Football — Passing (comp/att/comp%/yds/TD/INT), Rushing (carries/yds/TD/1st), Receiving (catches/yds/TD/1st), Defense (flag pulls/sacks/INT), Scoring (TD/1-2-3pt conversions).
 Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists/errors).
 
-## Security (database controls verified; hosted identity matrix still pending)
+## Security (database controls verified; hosted identity acceptance partially complete)
 - Row Level Security is enabled in migrations on all 18 tables — non-negotiable.
 - Data API grants are explicitly allowlisted for anonymous and authenticated roles; RLS and API exposure grants remain separate controls.
 - `public_profiles` is an intentional definer-style security boundary with an exact safe-field allowlist and forbidden-PII regression tests.
@@ -116,7 +116,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — database gate closed: twelve migrations are hosted and in sync, the real local Supabase stack is 100/100, anonymous Data API checks are 7/7, and hosted advisors/invariants are verified; hosted authorization acceptance, admin setup, env configuration, and live-flow verification remain
+9. ◐ Backend wiring — database gate closed: twelve migrations are hosted and in sync, the real local Supabase stack is 100/100, anonymous Data API checks are 7/7, and hosted advisors/invariants are verified. Admin bootstrap, local hosted environment configuration, three-session role resolution, and the locked-score flow are complete; the full authorization matrix, account recovery controls, production/preview configuration, and live-flow verification remain.
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
@@ -128,7 +128,6 @@ External critical-path dependency (unchanged): NM attorney waiver review. Other 
 - Payments UI
 - Season-aware selector fixes: `playerSeasonStats` needs explicit season/stage filters once two seasons of stats coexist
 - Consolidate the seven overlapping permissive RLS-policy cases reported by the Supabase Performance Advisor. Preserve existing anonymous/public and admin authorization semantics, and add negative RLS regression coverage before applying the consolidation.
-- ScoreEntry form doesn't visually disable/warn when a game is already locked — rejection currently surfaces only after submit attempt. UX hardening, not a security gap.
 - Before Season 2 player/captain accounts are built, fully review the role-resolution path and confirm every admin-gated UI check derives from the validated `backendRole`.
 
 ## Intake Form Specs (built)

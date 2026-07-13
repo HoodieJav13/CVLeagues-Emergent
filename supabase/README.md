@@ -2,15 +2,16 @@
 
 This directory contains the migration source of truth for CVF Leagues' dedicated Supabase project. It must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-12
+## Verified status — 2026-07-13
 
 - Twelve migration files are present in filename order and committed through `2454768`.
 - A clean real local Supabase reset applies all twelve migrations on PostgreSQL 17; the complete pgtest suite passes 100/100 and anonymous PostgREST checks pass 7/7.
 - This repository is linked to the dedicated hosted project, whose migration ledger matches all twelve local migrations; a final `db push --dry-run` reports the remote database is up to date.
 - Hosted verification confirms the two remediated function attributes, 38/38 foreign-key index coverage, and the expected clean row-count baseline.
-- Hosted Security and Performance Advisors were rerun. Remaining findings are the reviewed intentional security boundaries, unused-index INFO results on empty tables, and seven deferred permissive-policy consolidations recorded in `CLAUDE.md`.
+- Hosted Security and Performance Advisors were rerun: all 12 Security Advisor and 19 Performance Advisor findings have the itemized dispositions below. No finding is being silently dismissed.
 - `supabase/config.toml` is present; unused local Storage and Analytics services are intentionally disabled.
-- The frontend Supabase adapter is implemented and env-gated, but owner-entered environment values, admin identity setup, the complete hosted authorization matrix, and the live eight-step application flow remain open.
+- The real Auth administrator is linked through `admin_users`, and the owner-configured local frontend runs against hosted Supabase. Anonymous, authenticated non-admin, and administrator role resolution is verified fail-closed; the hosted locked-score disable/unlock/re-enable/re-lock fixture cycle also passes with baseline row counts restored.
+- The complete hosted authorization matrix, MFA/recovery/session-revocation readiness, production-safe mock handling, preview/production environment values, and the live eight-step application flow remain open.
 - No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
 
 ## Hosted project record
@@ -59,11 +60,31 @@ The project is linked and all twelve migrations are applied. Hosted migration hi
 - `current_waiver_version()` uses caller privileges, and `cvf_palette_color(integer)` has an immutable `pg_catalog` search path.
 - All 38 public foreign keys have a covering index; no hosted unindexed-foreign-key advisor findings remain.
 
+## Hosted advisor dispositions — 2026-07-13
+
+The current Security Advisor reports 12 findings:
+
+| Finding | Count | Disposition |
+|---|---:|---|
+| `rls_enabled_no_policy` on `admin_users` | 1 INFO | Intentional deny-all helper table. RLS is enabled and Data API access is revoked; admin membership is checked through controlled functions rather than client row reads. No action. |
+| `security_definer_view` on `public_profiles` | 1 ERROR | Intentional security boundary. The view exposes an explicit 12-column safe-field allowlist and has negative PII regression coverage. Keep and document. |
+| Anonymous executable `SECURITY DEFINER` warning on `is_admin()` | 1 WARN | Already reviewed. Anonymous execution is required by current RLS/helper behavior and returns false without an authenticated admin identity. No action. |
+| Authenticated executable `SECURITY DEFINER` warning on `is_admin()` | 1 WARN | The same existing function as the anonymous warning, surfaced separately by the newer role-specific lint. Already reviewed with the same disposition; no new function or code change triggered it. |
+| Authenticated executable `SECURITY DEFINER` warnings on admin RPCs | 7 WARN | Applies to `approve_registration`, `assign_free_agent`, `lock_game`, `save_score`, `set_game_status`, `unlock_game`, and `verify_waiver`. Each is an intentional client-callable endpoint that invokes `assert_admin()`; non-admin negative authorization remains required in the hosted matrix. No schema action now. |
+| `auth_leaked_password_protection` | 1 WARN | Auth configuration setting, not a code defect or evidence of a leaked credential. Leaked-password protection requires a paid plan; enabling it is an owner/billing decision. It is not applicable to the current single-admin Free-plan state, so no action now. Revisit if the plan or account model changes. |
+
+The current Performance Advisor reports 19 findings:
+
+| Finding | Count | Disposition |
+|---|---:|---|
+| Unused indexes | 12 INFO | Expected while hosted launch tables are empty. Reassess from real query and usage evidence after data entry; do not remove preemptively. |
+| Multiple permissive policies | 7 WARN | Deferred consolidation recorded in `CLAUDE.md`. Preserve current public/admin semantics and add negative RLS regression coverage before changing policies. |
+
 ## Remaining backend launch gates
 
 1. Complete the reusable hosted authorization matrix with anonymous, authenticated non-admin, and real administrator sessions, including direct-write bypass attempts.
-2. Bootstrap the real administrator and complete MFA, recovery, and session-revocation checks.
-3. Enter the hosted URL and publishable key into local/frontend environment configuration without exposing a service-role or secret key.
+2. Complete MFA, recovery, and session-revocation checks for the already-linked administrator; decide separately whether a break-glass administrator is warranted.
+3. Harden preview/production against silent mock fallback, then enter the hosted URL and publishable key in those environments without exposing a service-role or secret key. Local hosted-mode values are already configured.
 4. Run the live eight-step score flow and edge-case suite against hosted Supabase with no mock or localStorage participation.
 5. Complete Phase 10 preview deployment and acceptance before production launch.
 
@@ -137,10 +158,9 @@ After an approved push, immediately re-run migration listing, compare hosted his
 
 ## Remaining owner-controlled steps
 
-1. Create the real Supabase Auth administrator and add its UUID to `admin_users` through a privileged channel.
-2. Configure MFA, recovery, session revocation, and any break-glass administrator.
-3. Insert the attorney-approved waiver as a new immutable `waiver_versions` row. Until then, the public waiver flow must have no fallback text.
-4. Create the real Season 1 league and team records only after the clean-state report is approved.
-5. Enter the project URL and publishable/public key personally. Never put a service-role or secret key in React.
+1. Configure MFA, recovery, session revocation, and any break-glass administrator. The primary Auth administrator and `admin_users` link are already complete.
+2. Insert the attorney-approved waiver as a new immutable `waiver_versions` row. Until then, the public waiver flow must have no fallback text.
+3. Create the real Season 1 league and team records only after the clean-state report is approved.
+4. Enter the project URL and publishable/public key personally for preview and production. Local hosted-mode values already exist. Never put a service-role or secret key in React.
 
 No remote database reset, migration repair, Auth/admin identity change, or hosted data write is routine housekeeping.
