@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CaretDown, FloppyDisk, Plus, Minus } from "@phosphor-icons/react";
+import { CaretDown, FloppyDisk, LockSimple, LockSimpleOpen, Plus, Minus } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
@@ -11,8 +11,11 @@ import { SportBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { EligibilityIndicator } from "../components/common/EligibilityIndicator";
 import { Button } from "../components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Label } from "../components/ui/label";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { Textarea } from "../components/ui/textarea";
 
 export default function ScoreEntry() {
   return (
@@ -26,7 +29,7 @@ const periodCount = (sport) => (sport === "kickball" ? 5 : 4);
 const periodLabel = (sport, i) => (sport === "kickball" ? `Inning ${i + 1}` : `Q${i + 1}`);
 
 function Entry() {
-  const { state, submitScore } = useApp();
+  const { state, submitScore, unlockGame } = useApp();
   const { role, roleMeta } = useRole();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,6 +46,9 @@ function Entry() {
   const [periods, setPeriods] = useState({ home: [], away: [] });
   const [statsByPlayer, setStatsByPlayer] = useState({});
   const [expanded, setExpanded] = useState(null);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [unlockReason, setUnlockReason] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
 
   // (Re)initialize form whenever the selected game changes.
   useEffect(() => {
@@ -65,6 +71,7 @@ function Entry() {
 
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
+  const locked = game.locked === true;
   const homeTotal = periods.home.reduce((a, b) => a + (Number(b) || 0), 0);
   const awayTotal = periods.away.reduce((a, b) => a + (Number(b) || 0), 0);
 
@@ -92,9 +99,43 @@ function Entry() {
     }
   };
 
+  const unlock = async () => {
+    const reason = unlockReason.trim();
+    if (!reason) return toast.error("A reason is required to unlock");
+
+    setUnlocking(true);
+    try {
+      await unlockGame(game.id, reason);
+      toast.success("Game unlocked — score entry is editable");
+      setUnlockOpen(false);
+      setUnlockReason("");
+    } catch {
+      // Backend mode already reports the failure; keep the dialog open for correction.
+    } finally {
+      setUnlocking(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-up max-w-3xl mx-auto">
       <SectionHeading as="h1" title="Score Entry" subtitle={role === "temp_admin" ? "Scoring your assigned game" : "Select a game and record the final"} />
+
+      {locked && (
+        <div data-testid="score-locked-notice" role="status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
+          <div className="flex items-start gap-3">
+            <LockSimple size={20} weight="bold" className="text-primary shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-foreground">This game is finalized and locked.</p>
+              <p className="text-sm text-muted-foreground">Unlock it to make changes.</p>
+            </div>
+          </div>
+          {role === "admin" && (
+            <Button type="button" variant="outline" data-testid="score-unlock" onClick={() => setUnlockOpen(true)} className="shrink-0 gap-2">
+              <LockSimpleOpen size={16} weight="bold" /> Unlock game
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Game selector */}
       <Select value={game_id} onValueChange={setGameId} disabled={role === "temp_admin"}>
@@ -123,7 +164,7 @@ function Entry() {
         <div className="flex items-center justify-between mb-4">
           <p className="font-display uppercase tracking-tight text-foreground">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
           {game.sport === "kickball" && (
-            <Button variant="ghost" onClick={addInning} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
+            <Button variant="ghost" onClick={addInning} disabled={locked} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
           )}
         </div>
         <div className="overflow-x-auto">
@@ -143,6 +184,7 @@ function Entry() {
                     <td key={i} className="px-1 py-2">
                       <input
                         type="number" min="0" value={v}
+                        disabled={locked} readOnly={locked} aria-readonly={locked}
                         data-testid={`score-${r.side}-period-${i}`}
                         onChange={(e) => setPeriod(r.side, i, e.target.value)}
                         className="w-11 h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -203,6 +245,7 @@ function Entry() {
                                   <span className="text-micro text-muted-foreground truncate">{st.label}</span>
                                   <input
                                     type="number" min="0" value={pstats[st.key] || 0}
+                                    disabled={locked} readOnly={locked} aria-readonly={locked}
                                     data-testid={`score-stat-${r.profile_id}-${st.key}`}
                                     onChange={(e) => setStat(r.profile_id, team.id, st.key, e.target.value)}
                                     className="h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -222,9 +265,35 @@ function Entry() {
         })}
       </div>
 
-      <Button onClick={save} data-testid="score-save" className="w-full h-auto py-4 gap-2 text-sm font-bold tracking-wide rounded-xl sticky bottom-20 md:bottom-6 [&_svg]:size-[18px]">
+      <Button onClick={save} disabled={locked} data-testid="score-save" className="w-full h-auto py-4 gap-2 text-sm font-bold tracking-wide rounded-xl sticky bottom-20 md:bottom-6 [&_svg]:size-[18px]">
         <FloppyDisk size={18} weight="bold" /> Submit Score
       </Button>
+
+      <Dialog open={unlockOpen} onOpenChange={(open) => !unlocking && setUnlockOpen(open)}>
+        <DialogContent data-testid="score-unlock-dialog" className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-tight text-foreground">Unlock Game</DialogTitle>
+            <DialogDescription>Unlocking allows score edits and records the required reason in the game's edit history.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="score-unlock-reason" className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">Reason (required)</Label>
+            <Textarea
+              id="score-unlock-reason"
+              data-testid="score-unlock-reason"
+              value={unlockReason}
+              onChange={(event) => setUnlockReason(event.target.value)}
+              disabled={unlocking}
+              className="bg-surface-sunken border-border"
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={unlocking} onClick={() => setUnlockOpen(false)}>Cancel</Button>
+            <Button type="button" data-testid="score-unlock-confirm" disabled={unlocking} onClick={unlock}>
+              {unlocking ? "Unlocking…" : "Unlock game"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
