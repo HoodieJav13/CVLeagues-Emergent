@@ -11,7 +11,8 @@ This directory contains the migration source of truth for CVF Leagues' dedicated
 - Hosted Security and Performance Advisors were rerun: all 12 Security Advisor and 19 Performance Advisor findings have the itemized dispositions below. No finding is being silently dismissed.
 - `supabase/config.toml` is present; unused local Storage and Analytics services are intentionally disabled.
 - The real Auth administrator is linked through `admin_users`, and the owner-configured local frontend runs against hosted Supabase. Anonymous, authenticated non-admin, and administrator role resolution is verified fail-closed; the hosted locked-score disable/unlock/re-enable/re-lock fixture cycle also passes with baseline row counts restored.
-- The complete hosted authorization matrix, MFA/recovery/session-revocation readiness, production-safe mock handling, preview/production environment values, and the live eight-step application flow remain open.
+- The hosted authorization matrix is executed and durably evidenced: 66/66 browser/API checks passed with real anonymous, authenticated non-admin, and administrator sessions, and fixture cleanup restored the exact hosted baseline. See [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-13.md`](evidence/hosted-auth-matrix-2026-07-13.md).
+- MFA/recovery/session-revocation readiness, production-safe mock handling, preview/production environment values, and the live eight-step application flow remain open.
 - No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
 
 ## Hosted project record
@@ -28,7 +29,7 @@ Owner-confirmed on 2026-07-10:
 - Database password: owner confirmed it is stored securely; its value and storage details are not recorded here
 - Backup capability: Free-plan project; regular off-platform logical exports remain required before launch
 
-The project is linked and all twelve migrations are applied. Hosted migration history, catalog invariants, clean row counts, and both advisors are verified. This closes the Phase 9 database gate; it does not replace the still-pending hosted anonymous/non-admin/admin authorization matrix or live application QA.
+The project is linked and all twelve migrations are applied. Hosted migration history, catalog invariants, clean row counts, both advisors, and the real-session hosted authorization matrix are verified. The reusable procedure and dated evidence are retained in [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-13.md`](evidence/hosted-auth-matrix-2026-07-13.md). This closes the Phase 9 database and hosted-authorization gates; it does not replace the still-pending live application QA.
 
 ## Migration inventory
 
@@ -70,7 +71,7 @@ The current Security Advisor reports 12 findings:
 | `security_definer_view` on `public_profiles` | 1 ERROR | Intentional security boundary. The view exposes an explicit 12-column safe-field allowlist and has negative PII regression coverage. Keep and document. |
 | Anonymous executable `SECURITY DEFINER` warning on `is_admin()` | 1 WARN | Already reviewed. Anonymous execution is required by current RLS/helper behavior and returns false without an authenticated admin identity. No action. |
 | Authenticated executable `SECURITY DEFINER` warning on `is_admin()` | 1 WARN | The same existing function as the anonymous warning, surfaced separately by the newer role-specific lint. Already reviewed with the same disposition; no new function or code change triggered it. |
-| Authenticated executable `SECURITY DEFINER` warnings on admin RPCs | 7 WARN | Applies to `approve_registration`, `assign_free_agent`, `lock_game`, `save_score`, `set_game_status`, `unlock_game`, and `verify_waiver`. Each is an intentional client-callable endpoint that invokes `assert_admin()`; non-admin negative authorization remains required in the hosted matrix. No schema action now. |
+| Authenticated executable `SECURITY DEFINER` warnings on admin RPCs | 7 WARN | Applies to `approve_registration`, `assign_free_agent`, `lock_game`, `save_score`, `set_game_status`, `unlock_game`, and `verify_waiver`. Each is an intentional client-callable endpoint that invokes `assert_admin()`; all seven real-session non-admin negative checks pass in the retained hosted matrix evidence. No schema action now. |
 | `auth_leaked_password_protection` | 1 WARN | Auth configuration setting, not a code defect or evidence of a leaked credential. Leaked-password protection requires a paid plan; enabling it is an owner/billing decision. It is not applicable to the current single-admin Free-plan state, so no action now. Revisit if the plan or account model changes. |
 
 The current Performance Advisor reports 19 findings:
@@ -82,11 +83,12 @@ The current Performance Advisor reports 19 findings:
 
 ## Remaining backend launch gates
 
-1. Complete the reusable hosted authorization matrix with anonymous, authenticated non-admin, and real administrator sessions, including direct-write bypass attempts.
-2. Complete MFA, recovery, and session-revocation checks for the already-linked administrator; decide separately whether a break-glass administrator is warranted.
-3. Harden preview/production against silent mock fallback, then enter the hosted URL and publishable key in those environments without exposing a service-role or secret key. Local hosted-mode values are already configured.
-4. Run the live eight-step score flow and edge-case suite against hosted Supabase with no mock or localStorage participation.
-5. Complete Phase 10 preview deployment and acceptance before production launch.
+Hosted authorization matrix executed and durably evidenced — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-13.md`](evidence/hosted-auth-matrix-2026-07-13.md).
+
+1. Complete MFA, recovery, and session-revocation checks for the already-linked administrator; decide separately whether a break-glass administrator is warranted.
+2. Harden preview/production against silent mock fallback, then enter the hosted URL and publishable key in those environments without exposing a service-role or secret key. Local hosted-mode values are already configured.
+3. Run the live eight-step score flow and edge-case suite against hosted Supabase with no mock or localStorage participation.
+4. Complete Phase 10 preview deployment and acceptance before production launch.
 
 Statistics scope decisions remain required before Season 2 or real tournament statistics. Payment audit semantics remain required before operational use of the payments tables.
 
