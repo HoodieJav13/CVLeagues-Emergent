@@ -128,6 +128,8 @@ External critical-path dependency (unchanged): NM attorney waiver review. Other 
 - Payments UI
 - Season-aware selector fixes: `playerSeasonStats` needs explicit season/stage filters once two seasons of stats coexist
 - Consolidate the seven overlapping permissive RLS-policy cases reported by the Supabase Performance Advisor. Preserve existing anonymous/public and admin authorization semantics, and add negative RLS regression coverage before applying the consolidation.
+- ScoreEntry form doesn't visually disable/warn when a game is already locked — rejection currently surfaces only after submit attempt. UX hardening, not a security gap.
+- Before Season 2 player/captain accounts are built, fully review the role-resolution path and confirm every admin-gated UI check derives from the validated `backendRole`.
 
 ## Intake Form Specs (built)
 Free Agent (required: name, phone or email, sport, consent): legal first/last name, display name (opt), phone, email, sport (kickball/flag football/both), experience (opt), preferred position (opt), availability multi-select (Sunday morning/Sunday night/Monday night — configurable), emergency contact (opt), consent to contact (req). NO waiver content.
