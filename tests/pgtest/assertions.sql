@@ -1001,6 +1001,53 @@ select cvf_test.ok(
   and not has_function_privilege('anon', 'public.assert_admin()', 'execute')
 );
 
+-- ---------------------------------------------------------------------------
+-- Stage 1 per-sport current-season defaults.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_anon();
+select cvf_test.ok(
+  'season isolation 01 anonymous readers receive both sport defaults',
+  (select current_kickball_season = 'Summer 2026'
+      and current_flag_football_season = 'Summer 2026'
+     from public.league_settings where id = 1)
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+update public.league_settings
+set current_flag_football_season = 'Fall 2026'
+where id = 1;
+select cvf_test.eq_text(
+  'season isolation 02 non-admin cannot change a sport default',
+  (select current_flag_football_season from public.league_settings where id = 1),
+  'Summer 2026'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+update public.league_settings
+set current_kickball_season = 'Fall 2026'
+where id = 1;
+select cvf_test.ok(
+  'season isolation 03 admin can set different current seasons by sport',
+  (select current_kickball_season = 'Fall 2026'
+      and current_flag_football_season = 'Summer 2026'
+     from public.league_settings where id = 1)
+);
+select cvf_test.throws_ok(
+  'season isolation 04 sport defaults are season foreign keys',
+  $$update public.league_settings
+      set current_kickball_season = 'Not A Season'
+    where id = 1$$,
+  '%foreign key constraint%'
+);
+update public.league_settings
+set current_kickball_season = 'Summer 2026'
+where id = 1;
+select cvf_test.eq_text(
+  'season isolation 05 restoring one sport leaves the other default unchanged',
+  (select current_flag_football_season from public.league_settings where id = 1),
+  'Summer 2026'
+);
+
 select cvf_test.as_owner();
 
 \echo ''
