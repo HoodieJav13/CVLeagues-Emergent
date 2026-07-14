@@ -2,12 +2,13 @@
 
 CVF Leagues is a mobile-first React application and Supabase backend for adult recreational kickball and flag football leagues in Albuquerque, New Mexico.
 
-## Current state — July 13, 2026
+## Current state — July 14, 2026
 
-- The repository is linked to the dedicated hosted Supabase project. All 12 migrations are applied locally and remotely with matching migration history.
-- The real local Supabase stack passes 100/100 pgtest assertions and 7/7 anonymous Data API checks. Hosted schema invariants and both advisors have been reviewed with explicit dispositions.
-- A real Auth administrator is linked through `admin_users`. Local frontend hosted-mode variables are configured, and anonymous, non-admin, admin role resolution plus the locked-score unlock flow have been verified against hosted Supabase.
-- The hosted authorization matrix is complete and retained in [`supabase/HOSTED_AUTH_RUNBOOK.md`](supabase/HOSTED_AUTH_RUNBOOK.md) with [dated evidence](supabase/evidence/hosted-auth-matrix-2026-07-13.md). Production launch is not ready: MFA/recovery/session-revocation, the full live eight-step flow, production-safe mock handling, preview/production environment variables, legal/privacy readiness, abuse protection, backup recovery, and deployment remain open.
+- The extended-runway implementation is complete locally. It adds MFA-gated administration and protected intake, per-sport current seasons, tournament-safe stat scopes, fixed single-elimination brackets, admin-only payments and Hall of Fame workflows, and persistent team identities with explicit season/sport enrollment.
+- Sixteen additive migrations apply cleanly from scratch. The complete local database harness passes 144/144 assertions; the frontend passes 18/18 tests and the production build.
+- The dedicated hosted Supabase project remains at the previously accepted 12-migration, 18-table baseline. Its retained 66-check authorization evidence is still valid for that baseline.
+- Four new migrations and the expanded 22-table/13-RPC authorization matrix are intentionally not applied or executed against hosted Supabase without an owner checkpoint. No deployment or hosted write was performed during the extended-runway build.
+- Production launch is not ready. The New Mexico attorney-reviewed waiver text remains an external dependency, and hosted migration, expanded live authorization verification, advisor review, preview/production configuration, recovery checks, backup acceptance, and deployment remain open.
 
 ## Start here
 
@@ -16,6 +17,7 @@ CVF Leagues is a mobile-first React application and Supabase backend for adult r
 - Database status, advisor dispositions, and runbook: [`supabase/README.md`](supabase/README.md)
 - Frontend setup and backend modes: [`frontend/README.md`](frontend/README.md)
 - Visual-system source of truth: [`CVLeagues_Design_Tokens.md`](CVLeagues_Design_Tokens.md)
+- Extended-runway implementation record: [`docs/EXTENDED_RUNWAY_IMPLEMENTATION.md`](docs/EXTENDED_RUNWAY_IMPLEMENTATION.md)
 
 ## Verification
 

@@ -3,24 +3,24 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated; the owner-configured local environment now runs against hosted Supabase, while explicit mock mode remains available for local development. Twelve backend migrations pass the real local Supabase harness and are applied to the dedicated Free-plan Supabase project in US East (Ohio); hosted advisor findings have been reviewed with explicit dispositions and the database gate is closed. Preview/production environment configuration and production-safe mock handling remain open.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and explicit mock mode remains available for local development. The current frontend expects all sixteen locally verified migrations; hosted Supabase remains at the first-twelve accepted baseline, so hosted mode must not be treated as compatible until the four July 14 migrations pass their separate hosted checkpoint. Preview/production acceptance remains open.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
 - Intake forms (Free Agent + Team Interest): rebuilt to spec, feeding shared state
-- Admin dashboard: COMPLETE — 9 tabs, triage workflows, game lock + edit history, waiver placeholder queue, operational overview
+- Admin dashboard: COMPLETE locally — 11 tabs including brackets, manual payments, and Hall of Fame curation; triage workflows, game lock + edit history, waiver queue, and operational overview
 - Roster flow (Flow C-lite): Add Player, manual assignment, eligibility indicator — done
 - Functional cleanup: env-gated demo switcher, dormant account surfaces, empty states, destructive confirmations — done
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
-- Phase 9 backend database: twelve migrations are hosted and in sync; the real local Supabase stack passes 100/100 pgtest assertions plus 7/7 anonymous Data API checks, and hosted migration history, function attributes, 38/38 foreign-key index coverage, clean row counts, and both advisors are verified
-- Running locally via `npm start` from `frontend/`; active backend-to-launch work is on `codex/backend-to-launch` (always confirm the checked-out branch before editing; `main` is not the current work branch)
+- Extended-runway backend: sixteen migrations apply locally and 144/144 pgtest assertions pass. The hosted project remains at the twelve-migration baseline until owner approval.
+- Running locally via `npm start` from `frontend/`; always confirm the checked-out branch before editing.
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Dedicated hosted backend is linked, migrated, advisor-reviewed, and database-verified. The real administrator is linked, local hosted-mode environment variables are configured, three-session role resolution is verified fail-closed, the locked-score unlock/re-lock flow is hosted-verified, and the hosted authorization matrix is complete with a reusable [`supabase/HOSTED_AUTH_RUNBOOK.md`](supabase/HOSTED_AUTH_RUNBOOK.md) and [dated evidence](supabase/evidence/hosted-auth-matrix-2026-07-13.md). MFA/recovery/session revocation, production-safe mock handling, preview/production variables, and the live eight-step flow remain open.
+- Dedicated hosted backend is linked and accepted at its July 13 baseline. The real administrator is linked, three-session role resolution and the locked-score flow are hosted-verified, and the 66-check evidence is retained. The four new migrations, expanded matrix, advisors, recovery acceptance, preview/production variables, and live application flows remain open.
 
 ## Current Priority
-Phase 9's database and hosted-authorization gates are closed: repository controls, real local Supabase validation, project linking, all twelve hosted migrations, clean-state invariants, advisor review, the admin link, local hosted environment, role resolution, locked-score UX flow, and the [hosted authorization matrix](supabase/evidence/hosted-auth-matrix-2026-07-13.md) are verified. Next: MFA/recovery/session-revocation readiness → production-safe mock behavior plus preview/production variables → live eight-step flow → Phase 10 deployment and soft launch.
+The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RUNWAY_IMPLEMENTATION.md`](docs/EXTENDED_RUNWAY_IMPLEMENTATION.md). Next is an owner-controlled hosted acceptance: four-migration dry-run/review → approved push → expanded 22-table/13-RPC authorization matrix and advisors → preview/live-flow acceptance → production launch. Attorney-approved New Mexico waiver text remains an independent blocker.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -31,7 +31,7 @@ Phase 9's database and hosted-authorization gates are closed: repository control
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
 - Persistence (current fallback): localStorage
-- Backend: Supabase (PostgreSQL + Auth); twelve migrations and the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. Full authorization/live application acceptance and preview/production configuration remain open.
+- Backend: Supabase (PostgreSQL + Auth); sixteen migrations are locally verified, the first twelve plus the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. The four-migration hosted extension, expanded authorization acceptance, and preview/production configuration remain open.
 - Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
@@ -46,8 +46,10 @@ Phase 9's database and hosted-authorization gates are closed: repository control
 - **Admin-only for Season 1.** Only the admin logs in. Players are profile records, not accounts.
 - **Auth User ≠ Player.** `profiles.auth_user_id` is nullable so a player can claim an account later without losing history.
 - **Sports at launch:** kickball and flag football only.
-- **Payments:** manual tracking for Season 1; the database ledger exists (`charges` + `payment_entries`), but payments UI and Stripe are deferred.
-- **One active season per sport.** Records auto-stamped with the season; users don't pick a season on forms.
+- **Payments:** manual, admin-only, admin-correctable tracking for Season 1. The UI and ledger are built locally; Stripe, reversal/void accounting, player-visible balances, and automation remain deferred.
+- **Current season is per sport.** Multiple seasons may coexist long term; public views default to the chosen sport's current season and historical seasons remain selectable.
+- **Tournament stats are separate.** They are tracked but excluded from league-season and league-career/all-time totals.
+- **Team continuity uses identities plus enrollments.** `team_identities` is the persistent brand; each `teams` row is an explicit league/season/sport/tournament enrollment with no automatic roster/payment/history carryover.
 - **Quality-gated, no hard deadline.** Finish each phase's gates; don't drift.
 - **Backend confirmed before Season 1.** Relational linkage (intake→roster→waiver) is built ONCE against real Supabase tables, NOT mock-built first.
 
@@ -72,11 +74,12 @@ Phase 9's database and hosted-authorization gates are closed: repository control
 - Flow: pending → submitted (score saved) → final (Mark Final, locks game) → approved (on unlock) → submitted (on re-edit).
 - A final game is LOCKED: editing requires deliberate unlock + required reason; every change appends to `editHistory` in mock mode and maps to the append-only `game_edit_history` table in the backend schema.
 
-## Backend Data Model (twelve migrations; hosted and database-verified)
+## Backend Data Model (sixteen migrations locally; first twelve hosted)
 - seasons (natural text key such as `Summer 2026`; referenced by all season-scoped records)
 - profiles (auth_user_id nullable, first/last/display name, email, phone, optional date of birth, emergency contacts, admin notes; age confirmation is recorded on signed waiver rows, not profiles)
 - leagues (sport, season, status, kind: league/tournament, playoff_format; standalone tournaments are league containers with `kind='tournament'`)
-- teams (league_id, captain contact, status, division)
+- team_identities (persistent canonical name, color, founded year, lifecycle)
+- teams (identity_id, league_id, captain contact, status, division; one explicit container enrollment)
 - team_players (team_id, profile_id, season natural-key reference, jersey_number, roster_status: pending_waiver/eligible/inactive/removed)
 - games (league_id, home/away team, date, location, stage: regular/playoff/tournament, status, score_status, locked, editHistory, scores, submitted_by, approved_by); database guards keep stages consistent with league kind and prevent changing a locked game's stage
 - player_stats (profile_id, game_id, team_id, sport-specific fields)
@@ -85,16 +88,17 @@ Phase 9's database and hosted-authorization gates are closed: repository control
 - waivers (append-only — see Waiver model)
 - charges + payment_entries (manual payments ledger; every charge targets exactly one of profile_id or team_id, and team charges must match the team's league season)
 - hof_entries + league_settings.hof_published (admin-curated Hall of Fame; unpublished entries are hidden from public reads by RLS)
+- playoff_brackets + playoff_seeds + playoff_matches (fixed bracket topology, seed snapshot, scheduled/linked games, manual advancement, third-place path)
 
 ## Stat Categories
 Flag Football — Passing (comp/att/comp%/yds/TD/INT), Rushing (carries/yds/TD/1st), Receiving (catches/yds/TD/1st), Defense (flag pulls/sacks/INT), Scoring (TD/1-2-3pt conversions).
 Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists/errors).
 
-## Security (database controls verified; hosted identity acceptance partially complete)
-- Row Level Security is enabled in migrations on all 18 tables — non-negotiable.
+## Security (local controls verified; hosted extension pending)
+- Row Level Security is enabled on all 22 local exposed tables — non-negotiable. The hosted accepted baseline currently contains 18 tables.
 - Data API grants are explicitly allowlisted for anonymous and authenticated roles; RLS and API exposure grants remain separate controls.
 - `public_profiles` is an intentional definer-style security boundary with an exact safe-field allowlist and forbidden-PII regression tests.
-- Public scoreboard reads are allowed; anonymous writes are limited to constrained intake and waiver submissions.
+- Public scoreboard reads are allowed. Anonymous intake and waiver submissions pass through the Turnstile-verified server endpoint; direct Data API inserts are denied.
 - Only admin writes league data, edits scores, changes roles.
 - Game lock and append-only edit history are database-enforced; RLS separately restricts role access.
 - The env-gated demo Role Switcher is replaced entirely by real Supabase Auth.
@@ -116,19 +120,19 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — database and hosted-authorization gates closed: twelve migrations are hosted and in sync, the real local Supabase stack is 100/100, anonymous Data API checks are 7/7, and hosted advisors/invariants are verified. Admin bootstrap, local hosted environment configuration, three-session role resolution, the locked-score flow, and the [hosted authorization matrix](supabase/HOSTED_AUTH_RUNBOOK.md) are complete; account recovery controls, production/preview configuration, and live-flow verification remain.
+9. ◐ Backend wiring — July 13 hosted baseline accepted; July 14 extended-runway work is locally complete at 16 migrations and 144/144 pgtest assertions. Hosted application and expanded acceptance remain open.
+9b. ✅ Extended-runway local build — launch hardening, season/tournament isolation, Season 1 brackets, manual payments, admin Hall of Fame curation, and persistent team enrollment.
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
 
 ## Deferred / Backlog
-- `duplicate_season` RPC
-- Bracket/seeding UI
-- Hall of Fame admin curation screen
-- Payments UI
-- Season-aware selector fixes: `playerSeasonStats` needs explicit season/stage filters once two seasons of stats coexist
-- Consolidate the seven overlapping permissive RLS-policy cases reported by the Supabase Performance Advisor. Preserve existing anonymous/public and admin authorization semantics, and add negative RLS regression coverage before applying the consolidation.
-- Before Season 2 player/captain accounts are built, fully review the role-resolution path and confirm every admin-gated UI check derives from the validated `backendRole`.
+- Consolidate the seven overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. Preserve existing public/admin semantics and rerun the complete negative matrix.
+- Season 2 player/captain self-service: signup, email verification, password recovery, safe profile claiming, captain permissions, abuse controls, and a new authorization matrix. This remains outside Season 1 and is also gated by the waiver/eligibility design.
+- Public Hall of Fame route and publication control.
+- Tournament-specific leaderboard/history UI. Tournament rows are safely isolated from league totals now.
+- Payment processor integration, automated reminders/reconciliation, and the unresolved future league/sport context for profile-only charges.
+- Double-elimination and round-robin bracket engines; Season 1 is single elimination only.
 
 ## Intake Form Specs (built)
 Free Agent (required: name, phone or email, sport, consent): legal first/last name, display name (opt), phone, email, sport (kickball/flag football/both), experience (opt), preferred position (opt), availability multi-select (Sunday morning/Sunday night/Monday night — configurable), emergency contact (opt), consent to contact (req). NO waiver content.

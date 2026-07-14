@@ -23,10 +23,11 @@ From the repository root:
 
 1. Confirm the working tree and branch.
 2. Confirm Supabase CLI authentication and linkage to the dedicated project.
-3. Confirm `frontend/.env.local` contains the hosted public URL and anonymous/publishable key. Do not print their values.
+3. Confirm `frontend/.env.local` contains the hosted public URL, anonymous/publishable key, and Turnstile site key. Do not print their values.
 4. Confirm `frontend/node_modules` is installed so the harness can serve the pinned local `@supabase/supabase-js` browser bundle.
 5. Confirm the two disposable Auth users exist and that only the administrator is linked in `public.admin_users`.
-6. Obtain explicit owner approval for the fixture cycle.
+6. Confirm the administrator has a verified TOTP factor and have its authenticator available.
+7. Obtain explicit owner approval for the fixture cycle.
 
 Read-only preflight:
 
@@ -38,7 +39,7 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-Do not continue if linkage or migration history differs from the expected project and twelve migrations.
+Do not continue if linkage or migration history differs from the expected project and all sixteen repository migrations. If the four July 14 migrations are still pending, stop and complete the separately approved dry-run/push procedure first.
 
 ## Run
 
@@ -49,7 +50,7 @@ CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
   supabase/evidence/hosted-auth-matrix-YYYY-MM-DD.md
 ```
 
-Open the printed loopback URL in the in-app browser or another isolated browser. Enter the administrator and non-admin test-account credentials personally, then select **Run hosted matrix**.
+Open the printed loopback URL in the in-app browser or another isolated browser. Complete both Turnstile widgets, enter the administrator and non-admin test-account credentials plus the administrator TOTP code personally, then select **Run hosted matrix**.
 
 The terminal must end with all three lines reporting `PASS`:
 
@@ -69,22 +70,21 @@ The command exits nonzero if any browser/API assertion, residue query, or baseli
 - The real authenticated non-admin returns false.
 - The linked administrator returns true.
 
-### Anonymous positive submissions
+### Protected intake boundary
 
-- Clean team-interest intake succeeds.
-- Clean free-agent intake succeeds.
-- Clean waiver submission succeeds against the current version.
-- An anonymous caller cannot submit pre-triaged intake state.
+- Direct anonymous team-interest, free-agent, and waiver writes are denied.
+- Direct authenticated non-admin intake is denied by RLS.
+- Public positive submissions are exercised through the deployed Turnstile-verified application endpoint, not through the Data API matrix.
 
 ### Public and private reads
 
-- Anonymous reads succeed for the fixture season, league, teams, roster, game, settings, waiver version, and allowlisted public profile.
+- Anonymous reads succeed for the fixture season, league, persistent team identity, enrollment, roster, game, settings, waiver version, playoff bracket tables, and allowlisted public profile.
 - Selecting PII such as email from `public_profiles` fails.
 - Anonymous and non-admin sessions cannot retrieve `admin_users`, profiles, waivers, intake rows, edit history, charges, or payment entries. The harness treats either a Data API denial or an RLS-empty result as a pass.
 
 ### Admin RPC denial
 
-Anonymous execution is denied for all seven client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each:
+Anonymous execution is denied for all thirteen client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each:
 
 - `save_score`
 - `lock_game`
@@ -93,6 +93,12 @@ Anonymous execution is denied for all seven client-facing admin RPCs. A real aut
 - `approve_registration`
 - `assign_free_agent`
 - `verify_waiver`
+- `generate_single_elim_bracket`
+- `schedule_playoff_match`
+- `link_playoff_game`
+- `advance_playoff_match`
+- `enroll_team_identity`
+- `create_team_identity_and_enroll`
 
 ### Direct-write and append-only guards
 
@@ -105,9 +111,11 @@ Anonymous execution is denied for all seven client-facing admin RPCs. A real aut
 
 ### Administrator positive path
 
-- All seven admin RPCs succeed with valid disposable records.
+- All thirteen admin RPCs succeed with valid disposable records.
 - Score, lifecycle, intake conversion, roster assignment, and waiver verification effects persist.
 - Locking and reasoned unlocking create append-only history, including the exact unlock reason.
+- A four-team bracket is generated, one match is scheduled, another existing game is linked, and a final locked result advances.
+- An existing identity enrolls into another sport with no roster or payment carryover, and a new identity plus first enrollment is created atomically.
 
 ### Hall of Fame gate
 
@@ -118,8 +126,8 @@ Anonymous execution is denied for all seven client-facing admin RPCs. A real aut
 
 ### Cleanup
 
-- The namespace residue query returns zero seasons, leagues, profiles, waivers, and history rows.
-- Counts for all 18 public tables match the pre-run values.
+- The namespace residue query returns zero seasons, leagues, team identities, profiles, waivers, and history rows.
+- Counts for all 22 public tables match the pre-run values.
 - `league_settings.hof_published`, `current_season`, and `current_waiver_version()` match their pre-run values.
 
 ## Failure handling
@@ -137,7 +145,7 @@ Run this matrix after any change to:
 
 - RLS policies or Data API grants
 - `admin_users`, `is_admin()`, or Auth-role resolution
-- Any of the seven admin RPCs
+- Any of the thirteen admin RPCs
 - Game lock/stage enforcement or edit history
 - Profiles or the `public_profiles` allowlist
 - Intake or waiver policies and triggers
