@@ -18,6 +18,7 @@ const TABLES = {
   seasons: "seasons",
   profiles: "profiles",
   leagues: "leagues",
+  teamIdentities: "team_identities",
   teams: "teams",
   teamPlayers: "team_players",
   games: "games",
@@ -48,11 +49,12 @@ export async function fetchAppState(isAdmin) {
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
 
-  const [games, leagues, seasons, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
+  const [games, leagues, seasons, teamIdentities, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
       supabase.from("seasons").select("*").order("starts_on", { ascending: false, nullsFirst: false }),
+      supabase.from("team_identities").select("*").order("name"),
       supabase.from("teams").select("*").order("name"),
       supabase.from("team_players").select("*"),
       supabase.from("player_stats").select("*"),
@@ -73,7 +75,7 @@ export async function fetchAppState(isAdmin) {
     ]);
 
   for (const [r, what] of [
-    [games, "games"], [leagues, "leagues"], [seasons, "seasons"], [teams, "teams"], [teamPlayers, "team_players"],
+    [games, "games"], [leagues, "leagues"], [seasons, "seasons"], [teamIdentities, "team_identities"], [teams, "teams"], [teamPlayers, "team_players"],
     [playerStats, "player_stats"], [playoffBrackets, "playoff_brackets"], [playoffSeeds, "playoff_seeds"],
     [playoffMatches, "playoff_matches"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
@@ -91,6 +93,7 @@ export async function fetchAppState(isAdmin) {
     seasons: seasons.data || [],
     profiles: profiles.data || [],
     leagues: leagues.data || [],
+    teamIdentities: teamIdentities.data || [],
     teams: teams.data || [],
     teamPlayers: teamPlayers.data || [],
     games: (games.data || []).map((game) => ({
@@ -248,6 +251,38 @@ export async function assignPlayerToTeam({ profile_id, team_id, jersey_number = 
 export async function removePlayerFromTeam(teamPlayerId) {
   const { error } = await supabase.from("team_players").update({ roster_status: "removed" }).eq("id", teamPlayerId);
   fail(error, "remove from roster");
+}
+
+export async function createTeamIdentityAndEnroll({ name, logo_color, founded, league_id, captain_id = null, division = null }) {
+  const { data, error } = await supabase.rpc("create_team_identity_and_enroll", {
+    p_name: name,
+    p_logo_color: logo_color,
+    p_founded: founded || null,
+    p_league_id: league_id,
+    p_captain_id: captain_id || null,
+    p_division: division || null,
+  });
+  fail(error, "create team identity and enrollment");
+  return data;
+}
+
+export async function enrollTeamIdentity({ identity_id, league_id, captain_id = null, division = null }) {
+  const { data, error } = await supabase.rpc("enroll_team_identity", {
+    p_identity_id: identity_id,
+    p_league_id: league_id,
+    p_captain_id: captain_id || null,
+    p_division: division || null,
+  });
+  fail(error, "enroll team identity");
+  return data;
+}
+
+export async function updateTeamIdentity(id, patch) {
+  const allowed = Object.fromEntries(
+    Object.entries(patch).filter(([key]) => ["name", "logo_color", "founded", "status"].includes(key))
+  );
+  const { error } = await supabase.from("team_identities").update(allowed).eq("id", id);
+  fail(error, "update team identity");
 }
 
 export async function createEntity(collection, entity) {

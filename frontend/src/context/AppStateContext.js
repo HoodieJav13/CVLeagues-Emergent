@@ -30,8 +30,8 @@ const AppStateContext = createContext(null);
 // added) can't reach a persisted state via field backfill, so the demo
 // reseeds again (same precedent as v1→v2).
 // v4: bracket records were added; v5 adds the demo-only manual payments ledger;
-// v6 adds the admin Hall of Fame draft.
-const STORAGE_KEY = "cvf_app_state_v6";
+// v6 adds the admin Hall of Fame draft; v7 adds persistent team identities.
+const STORAGE_KEY = "cvf_app_state_v7";
 
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
@@ -61,6 +61,7 @@ const migrateState = (s) => ({
   charges: s.charges || initialState.charges,
   paymentEntries: s.paymentEntries || initialState.paymentEntries,
   hofEntries: s.hofEntries || initialState.hofEntries,
+  teamIdentities: s.teamIdentities || initialState.teamIdentities,
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),
@@ -269,6 +270,62 @@ export function AppStateProvider({ children }) {
   // removed player simply loses the row. PHASE 2: soft-delete via roster_status.
   const removePlayerFromTeam = useCallback((teamPlayerId) => {
     setState((prev) => ({ ...prev, teamPlayers: prev.teamPlayers.filter((tp) => tp.id !== teamPlayerId) }));
+  }, []);
+
+  /* ----------- TEAM IDENTITIES & EXPLICIT CONTAINER ENROLLMENT ---------- */
+  const createTeamIdentityAndEnroll = useCallback(({ name, logo_color, founded, league_id, captain_id = null, division = null }) => {
+    let result;
+    setState((prev) => {
+      const league = prev.leagues.find((item) => item.id === league_id);
+      if (!league) throw new Error("Select a league or tournament.");
+      const identity_id = newId("ti");
+      const team_id = newId("t");
+      const identity = { id: identity_id, name: name.trim(), logo_color, founded: founded || null, status: "active" };
+      const team = {
+        id: team_id, identity_id, league_id, name: identity.name, logo_color: identity.logo_color,
+        founded: identity.founded, sport: league.sport, captain_id: captain_id || null,
+        division: division || null, status: "active",
+      };
+      result = { identity_id, team_id };
+      return { ...prev, teamIdentities: [...prev.teamIdentities, identity], teams: [...prev.teams, team] };
+    });
+    return result;
+  }, []);
+
+  const enrollTeamIdentity = useCallback(({ identity_id, league_id, captain_id = null, division = null }) => {
+    let team_id;
+    setState((prev) => {
+      const identity = prev.teamIdentities.find((item) => item.id === identity_id);
+      const league = prev.leagues.find((item) => item.id === league_id);
+      if (!identity || identity.status !== "active") throw new Error("Only an active team identity can be enrolled.");
+      if (!league) throw new Error("Select a league or tournament.");
+      if (prev.teams.some((item) => item.identity_id === identity_id && item.league_id === league_id)) {
+        throw new Error("This team is already enrolled in that league or tournament.");
+      }
+      team_id = newId("t");
+      const team = {
+        id: team_id, identity_id, league_id, name: identity.name, logo_color: identity.logo_color,
+        founded: identity.founded, sport: league.sport, captain_id: captain_id || null,
+        division: division || null, status: "active",
+      };
+      return { ...prev, teams: [...prev.teams, team] };
+    });
+    return team_id;
+  }, []);
+
+  const updateTeamIdentity = useCallback((id, patch) => {
+    setState((prev) => {
+      const nextIdentity = prev.teamIdentities.find((item) => item.id === id);
+      if (!nextIdentity) return prev;
+      const canonical = { ...nextIdentity, ...patch };
+      return {
+        ...prev,
+        teamIdentities: prev.teamIdentities.map((item) => item.id === id ? canonical : item),
+        teams: prev.teams.map((team) => team.identity_id === id
+          ? { ...team, name: canonical.name, logo_color: canonical.logo_color, founded: canonical.founded }
+          : team),
+      };
+    });
   }, []);
 
   /* ------------------------- ADMIN: GENERIC CRUD ------------------------ */
@@ -525,6 +582,9 @@ export function AppStateProvider({ children }) {
     createPlayer: act(backend.createPlayer),
     assignPlayerToTeam: act((args) => backend.assignPlayerToTeam(args, stateRef.current)),
     removePlayerFromTeam: act(backend.removePlayerFromTeam),
+    createTeamIdentityAndEnroll: act(backend.createTeamIdentityAndEnroll),
+    enrollTeamIdentity: act(backend.enrollTeamIdentity),
+    updateTeamIdentity: act(backend.updateTeamIdentity),
     createEntity: act((collection, entity) => backend.createEntity(collection, entity)),
     updateEntity: act(backend.updateEntity),
     deleteEntity: act(backend.deleteEntity),
@@ -556,6 +616,9 @@ export function AppStateProvider({ children }) {
         createPlayer,
         assignPlayerToTeam,
         removePlayerFromTeam,
+        createTeamIdentityAndEnroll,
+        enrollTeamIdentity,
+        updateTeamIdentity,
         createEntity,
         updateEntity,
         deleteEntity,

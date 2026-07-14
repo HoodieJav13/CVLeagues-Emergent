@@ -93,15 +93,26 @@ export const leagues = [
 ];
 
 /* ------------------------------- TEAMS ----------------------------------- */
+export const teamIdentities = [
+  { id: "ti1", name: "Sandia Sluggers", logo_color: "#22d3ee", founded: "2023", status: "active" },
+  { id: "ti2", name: "Rio Grande Rollers", logo_color: "#f97316", founded: "2022", status: "active" },
+  { id: "ti3", name: "Nob Hill Nomads", logo_color: "#a855f7", founded: "2024", status: "active" },
+  { id: "ti4", name: "Bosque Blitz", logo_color: "#10b981", founded: "2022", status: "active" },
+  { id: "ti5", name: "Mesa Mavericks", logo_color: "#ef4444", founded: "2023", status: "active" },
+  { id: "ti6", name: "Frontier Force", logo_color: "#3b82f6", founded: "2024", status: "active" },
+  { id: "ti7", name: "High Desert Heat", logo_color: "#facc15", founded: "2026", status: "active" },
+  { id: "ti8", name: "Route 66 Rush", logo_color: "#ec4899", founded: "2026", status: "active" },
+];
+
 export const teams = [
-  { id: "t1", name: "Sandia Sluggers", sport: "kickball", league_id: "l1", captain_id: "p1", logo_color: "#22d3ee", founded: "2023" },
-  { id: "t2", name: "Rio Grande Rollers", sport: "kickball", league_id: "l1", captain_id: "p6", logo_color: "#f97316", founded: "2022" },
-  { id: "t3", name: "Nob Hill Nomads", sport: "kickball", league_id: "l1", captain_id: "p11", logo_color: "#a855f7", founded: "2024" },
-  { id: "t4", name: "Bosque Blitz", sport: "flag_football", league_id: "l2", captain_id: "p16", logo_color: "#10b981", founded: "2022" },
-  { id: "t5", name: "Mesa Mavericks", sport: "flag_football", league_id: "l2", captain_id: "p21", logo_color: "#ef4444", founded: "2023" },
-  { id: "t6", name: "Frontier Force", sport: "flag_football", league_id: "l2", captain_id: "p26", logo_color: "#3b82f6", founded: "2024" },
-  { id: "t7", name: "High Desert Heat", sport: "kickball", league_id: "l1", captain_id: null, logo_color: "#facc15", founded: "2026" },
-  { id: "t8", name: "Route 66 Rush", sport: "flag_football", league_id: "l2", captain_id: null, logo_color: "#ec4899", founded: "2026" },
+  { id: "t1", identity_id: "ti1", name: "Sandia Sluggers", sport: "kickball", league_id: "l1", captain_id: "p1", logo_color: "#22d3ee", founded: "2023" },
+  { id: "t2", identity_id: "ti2", name: "Rio Grande Rollers", sport: "kickball", league_id: "l1", captain_id: "p6", logo_color: "#f97316", founded: "2022" },
+  { id: "t3", identity_id: "ti3", name: "Nob Hill Nomads", sport: "kickball", league_id: "l1", captain_id: "p11", logo_color: "#a855f7", founded: "2024" },
+  { id: "t4", identity_id: "ti4", name: "Bosque Blitz", sport: "flag_football", league_id: "l2", captain_id: "p16", logo_color: "#10b981", founded: "2022" },
+  { id: "t5", identity_id: "ti5", name: "Mesa Mavericks", sport: "flag_football", league_id: "l2", captain_id: "p21", logo_color: "#ef4444", founded: "2023" },
+  { id: "t6", identity_id: "ti6", name: "Frontier Force", sport: "flag_football", league_id: "l2", captain_id: "p26", logo_color: "#3b82f6", founded: "2024" },
+  { id: "t7", identity_id: "ti7", name: "High Desert Heat", sport: "kickball", league_id: "l1", captain_id: null, logo_color: "#facc15", founded: "2026" },
+  { id: "t8", identity_id: "ti8", name: "Route 66 Rush", sport: "flag_football", league_id: "l2", captain_id: null, logo_color: "#ec4899", founded: "2026" },
 ];
 
 /* --------------------------- TEAM_PLAYERS -------------------------------- */
@@ -373,6 +384,7 @@ export const initialState = {
   seasons,
   profiles,
   leagues,
+  teamIdentities,
   teams,
   teamPlayers,
   games,

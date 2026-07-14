@@ -432,27 +432,91 @@ function LeaguesTab({ app }) {
 
 /* ------------------------------ TEAMS ------------------------------------ */
 function TeamsTab({ app }) {
-  const { state, createEntity, updateEntity, deleteEntity } = app;
+  const { state, createTeamIdentityAndEnroll, enrollTeamIdentity, updateTeamIdentity, updateEntity } = app;
   const [modal, setModal] = useState(null);
   const [rosterFor, setRosterFor] = useState(null); // team_id whose roster is open
   const [confirm, setConfirm] = useState(null);
   const rosterTeam = rosterFor && getTeam(state, rosterFor);
 
-  const save = () => {
-    if (!modal.name?.trim() || !modal.sport || !modal.league_id) return toast.error("Name, sport & league required");
-    const data = { name: modal.name, sport: modal.sport, league_id: modal.league_id, captain_id: modal.captain_id || null, logo_color: modal.logo_color || "#5BB8CC", founded: modal.founded || "2026" };
-    if (modal.id) updateEntity("teams", modal.id, data);
-    else createEntity("teams", data, "t");
-    toast.success(modal.id ? "Team updated" : "Team created");
-    setModal(null);
+  const openNew = () => setModal({ mode: "new", name: "", logo_color: "#5BB8CC", founded: "2026", league_id: "", captain_id: "", division: "" });
+  const openIdentity = (identity) => setModal({ mode: "identity", id: identity.id, name: identity.name, logo_color: identity.logo_color, founded: identity.founded || "", status: identity.status });
+  const openEnroll = (identity) => setModal({ mode: "enroll", identity_id: identity.id, name: identity.name, league_id: "", captain_id: "", division: "" });
+  const openEnrollment = (team) => setModal({
+    mode: "enrollment", id: team.id, identity_id: team.identity_id, name: team.name,
+    logo_color: team.logo_color, founded: team.founded || "", captain_id: team.captain_id || "",
+    division: team.division || "", status: team.status || "active",
+  });
+
+  const save = async () => {
+    try {
+      if (modal.mode === "new") {
+        if (!modal.name?.trim() || !modal.league_id) return toast.error("Team name and first league or tournament are required.");
+        await createTeamIdentityAndEnroll(modal);
+        toast.success("Team identity created and enrolled");
+      } else if (modal.mode === "enroll") {
+        if (!modal.league_id) return toast.error("Select a league or tournament.");
+        await enrollTeamIdentity(modal);
+        toast.success("Team enrolled with a clean roster and ledger");
+      } else if (modal.mode === "identity") {
+        if (!modal.name?.trim()) return toast.error("Team name is required.");
+        await updateTeamIdentity(modal.id, { name: modal.name.trim(), logo_color: modal.logo_color, founded: modal.founded || null, status: modal.status });
+        toast.success("Team identity updated across every enrollment");
+      } else if (modal.mode === "enrollment") {
+        if (!modal.name?.trim()) return toast.error("Team name is required.");
+        await updateTeamIdentity(modal.identity_id, { name: modal.name.trim(), logo_color: modal.logo_color, founded: modal.founded || null });
+        await updateEntity("teams", modal.id, { captain_id: modal.captain_id || null, division: modal.division || null, status: modal.status });
+        toast.success("Enrollment updated");
+      }
+      setModal(null);
+    } catch (error) {
+      if (!BACKEND_ENABLED) toast.error(error.message);
+    }
   };
 
-  const leaguesForSport = state.leagues.filter((l) => !modal?.sport || l.sport === modal.sport);
+  const openContainers = state.leagues.filter((league) => league.status !== "archived");
+  const targetLeagues = modal?.mode === "enroll"
+    ? openContainers.filter((league) => !state.teams.some((team) => team.identity_id === modal.identity_id && team.league_id === league.id))
+    : openContainers;
   const rosterCount = (team_id) => state.teamPlayers.filter((tp) => tp.team_id === team_id).length;
 
   return (
     <div className="space-y-3">
-      <SectionTitle title="Teams" count={state.teams.length} action={<AddBtn onClick={() => setModal({ name: "", sport: "kickball", league_id: "", captain_id: "", logo_color: "#5BB8CC", founded: "2026" })} label="New Team" testid="admin-add-team" />} />
+      <SectionTitle title="Team Identities" count={state.teamIdentities.length} action={<AddBtn onClick={openNew} label="New Team Identity" testid="admin-add-team" />} />
+      <p className="text-xs text-muted-foreground">
+        A team identity is the permanent name and brand. Enroll it into any season, sport, league, or standalone tournament without copying rosters, payments, games, or stats.
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="admin-team-identities">
+        {state.teamIdentities.map((identity) => {
+          const enrollments = state.teams.filter((team) => team.identity_id === identity.id);
+          return (
+            <Card key={identity.id} className="bg-card border-border" data-testid={`admin-team-identity-${identity.id}`}>
+              <CardContent className="p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: identity.logo_color }} />
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">{identity.name}</p>
+                      <p className="text-micro uppercase tracking-wide text-muted-foreground">Founded {identity.founded || "—"} · {identity.status}</p>
+                    </div>
+                  </div>
+                  <div className="flex">
+                    <IconBtn onClick={() => openIdentity(identity)} icon={PencilSimple} title="Edit permanent identity" testid={`admin-edit-identity-${identity.id}`} />
+                    {identity.status === "active" && <IconBtn onClick={() => openEnroll(identity)} icon={Plus} title="Enroll in another container" testid={`admin-enroll-identity-${identity.id}`} />}
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {enrollments.length ? enrollments.map((team) => {
+                    const league = getLeague(state, team.league_id);
+                    return <span key={team.id} className="text-micro rounded-full border border-border px-2 py-1 text-muted-foreground">{league?.name || "Unknown"} · {league?.season || "—"}</span>;
+                  }) : <span className="text-xs text-muted-foreground">No enrollments</span>}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      <SectionTitle title="Season / Tournament Enrollments" count={state.teams.length} />
       <AdminTable testid="admin-teams-table" head={["Team", "Sport", "League / Season", "Captain", "Roster", "Waivers", "Status", ""]}>
         {state.teams.length === 0 ? (
           <EmptyRow colSpan={8}>No teams yet. Approve a registration or create one directly.</EmptyRow>
@@ -481,8 +545,17 @@ function TeamsTab({ app }) {
               <TableCell>
                 <div className="flex items-center justify-end">
                   <IconBtn onClick={() => setRosterFor(t.id)} icon={UsersThree} title="Manage roster" testid={`admin-roster-team-${t.id}`} />
-                  <IconBtn onClick={() => setModal({ id: t.id, name: t.name, sport: t.sport, league_id: t.league_id, captain_id: t.captain_id, logo_color: t.logo_color, founded: t.founded })} icon={PencilSimple} title="Edit team" testid={`admin-edit-team-${t.id}`} />
-                  <IconBtn onClick={() => setConfirm({ title: "Delete team?", message: `Delete “${t.name}”? The team record is removed; its ${rosterCount(t.id)} roster assignment(s) and any games stay in the data but lose their team link. This cannot be undone.`, onConfirm: () => { deleteEntity("teams", t.id); toast.success("Team deleted"); } })} icon={Trash} title="Delete team" testid={`admin-delete-team-${t.id}`} danger />
+                  <IconBtn onClick={() => openEnrollment(t)} icon={PencilSimple} title="Edit enrollment" testid={`admin-edit-team-${t.id}`} />
+                  <IconBtn
+                    onClick={() => setConfirm({
+                      title: `${(t.status || "active") === "active" ? "Deactivate" : "Reactivate"} enrollment?`,
+                      message: `${t.name} in ${league?.name || "this container"} will be marked ${(t.status || "active") === "active" ? "inactive" : "active"}. Rosters, games, payments, and history remain linked.`,
+                      onConfirm: () => { updateEntity("teams", t.id, { status: (t.status || "active") === "active" ? "inactive" : "active" }); toast.success("Enrollment status updated"); },
+                    })}
+                    icon={(t.status || "active") === "active" ? Archive : Power}
+                    title={(t.status || "active") === "active" ? "Deactivate enrollment" : "Reactivate enrollment"}
+                    testid={`admin-toggle-team-${t.id}`}
+                  />
                 </div>
               </TableCell>
             </TableRow>
@@ -490,28 +563,43 @@ function TeamsTab({ app }) {
         })}
       </AdminTable>
 
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.id ? "Edit Team" : "New Team"} onSave={save}>
+      <Modal
+        open={!!modal}
+        onClose={() => setModal(null)}
+        title={modal?.mode === "new" ? "New Team Identity" : modal?.mode === "enroll" ? `Enroll ${modal?.name}` : modal?.mode === "identity" ? "Edit Team Identity" : "Edit Enrollment"}
+        onSave={save}
+      >
         {modal && (
           <>
-            <ModalField label="Team Name"><Input data-testid="admin-team-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
-            <ModalField label="Sport">
-              <Select value={modal.sport} onValueChange={(v) => setModal({ ...modal, sport: v, league_id: "" })}>
-                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
-                <SelectContent>{SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
-              </Select>
-            </ModalField>
-            <ModalField label="League">
+            {["new", "identity", "enrollment"].includes(modal.mode) && <>
+              <ModalField label="Permanent Team Name"><Input data-testid="admin-team-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+              <div className="grid grid-cols-2 gap-3">
+                <ModalField label="Brand Color"><Input type="color" value={modal.logo_color} onChange={(e) => setModal({ ...modal, logo_color: e.target.value })} className="bg-surface-sunken border-border h-11" /></ModalField>
+                <ModalField label="Founded"><Input value={modal.founded} onChange={(e) => setModal({ ...modal, founded: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+              </div>
+            </>}
+            {["new", "enroll"].includes(modal.mode) && <ModalField label="League or Standalone Tournament">
               <Select value={modal.league_id} onValueChange={(v) => setModal({ ...modal, league_id: v })}>
                 <SelectTrigger className="bg-surface-sunken border-border"><SelectValue placeholder="Select league" /></SelectTrigger>
-                <SelectContent>{leaguesForSport.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{targetLeagues.map((l) => <SelectItem key={l.id} value={l.id}>{l.name} · {sportName(l.sport)} · {l.season} {l.kind === "tournament" ? "(Tournament)" : ""}</SelectItem>)}</SelectContent>
               </Select>
-            </ModalField>
-            <ModalField label="Captain">
-              <Select value={modal.captain_id || ""} onValueChange={(v) => setModal({ ...modal, captain_id: v })}>
+            </ModalField>}
+            {["new", "enroll", "enrollment"].includes(modal.mode) && <>
+            <ModalField label="Captain (optional)">
+              <Select value={modal.captain_id || "__none__"} onValueChange={(v) => setModal({ ...modal, captain_id: v === "__none__" ? "" : v })}>
                 <SelectTrigger className="bg-surface-sunken border-border"><SelectValue placeholder="Select captain" /></SelectTrigger>
-                <SelectContent>{state.profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="__none__">No captain</SelectItem>{state.profiles.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select>
             </ModalField>
+            <ModalField label="Division (optional)"><Input value={modal.division || ""} onChange={(e) => setModal({ ...modal, division: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            </>}
+            {["identity", "enrollment"].includes(modal.mode) && <ModalField label={modal.mode === "identity" ? "Identity Status" : "Enrollment Status"}>
+              <Select value={modal.status} onValueChange={(v) => setModal({ ...modal, status: v })}>
+                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="active">Active</SelectItem><SelectItem value="inactive">Inactive</SelectItem></SelectContent>
+              </Select>
+            </ModalField>}
+            {modal.mode === "enroll" && <p className="rounded-lg border border-border bg-surface-sunken p-3 text-xs text-muted-foreground">This creates a clean enrollment shell. Rosters, payments, game history, and statistics never carry over.</p>}
           </>
         )}
       </Modal>
@@ -530,7 +618,6 @@ function TeamsTab({ app }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       <ConfirmDialog confirm={confirm} onClose={() => setConfirm(null)} />
     </div>
   );
