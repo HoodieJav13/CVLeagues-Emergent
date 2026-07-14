@@ -117,6 +117,20 @@ function rpcArguments(name) {
     schedule_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch, p_date: "2099-07-14", p_time: "7:00 PM", p_location: config.runId },
     link_playoff_game: { p_match_id: config.ids.unknownPlayoffMatch, p_game_id: config.ids.game },
     advance_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch },
+    enroll_team_identity: {
+      p_identity_id: config.ids.unknownTeamIdentity,
+      p_league_id: config.ids.identityLeague,
+      p_captain_id: null,
+      p_division: null,
+    },
+    create_team_identity_and_enroll: {
+      p_name: `${config.runId} denied identity`,
+      p_logo_color: "#5BB8CC",
+      p_founded: "2099",
+      p_league_id: config.ids.identityLeague,
+      p_captain_id: null,
+      p_division: null,
+    },
   }[name];
 }
 
@@ -224,6 +238,7 @@ async function runMatrix() {
     const publicReads = [
       ["seasons", "name", config.season],
       ["leagues", "id", config.ids.league],
+      ["team_identities", "name", `${config.runId} home`],
       ["teams", "id", config.ids.homeTeam],
       ["team_players", "id", config.ids.roster],
       ["games", "id", config.ids.game],
@@ -254,7 +269,7 @@ async function runMatrix() {
       await check("private reads", `non-admin cannot read ${table}`, async () => requireHidden(await nonadmin.from(table).select("*").limit(1)));
     }
 
-    for (const rpc of ["save_score", "lock_game", "unlock_game", "set_game_status", "approve_registration", "assign_free_agent", "verify_waiver", "generate_single_elim_bracket", "schedule_playoff_match", "link_playoff_game", "advance_playoff_match"]) {
+    for (const rpc of ["save_score", "lock_game", "unlock_game", "set_game_status", "approve_registration", "assign_free_agent", "verify_waiver", "generate_single_elim_bracket", "schedule_playoff_match", "link_playoff_game", "advance_playoff_match", "enroll_team_identity", "create_team_identity_and_enroll"]) {
       await check("RPC denial", `anonymous cannot execute ${rpc}`, async () => requireDenied(await anon.rpc(rpc, rpcArguments(rpc))));
       await check("RPC denial", `non-admin cannot execute ${rpc}`, async () => requireAdminGuard(await nonadmin.rpc(rpc, rpcArguments(rpc))));
     }
@@ -271,6 +286,7 @@ async function runMatrix() {
     })));
     await check("direct-write guards", "non-admin direct score update is denied", async () => requireNoWrite(await nonadmin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
     await check("direct-write guards", "non-admin direct bracket insertion is denied", async () => requireDenied(await nonadmin.from("playoff_brackets").insert({ league_id: config.ids.league, bracket_size: 4 })));
+    await check("direct-write guards", "non-admin cannot alter a team identity", async () => requireNoWrite(await nonadmin.from("team_identities").update({ name: "Changed" }).eq("name", `${config.runId} home`).select()));
     await check("direct-write guards", "admin cannot mutate signed waiver fields", async () => requireDenied(await admin.from("waivers").update({ signed_name: "Changed" }).eq("id", config.ids.waiver).select()));
     await check("direct-write guards", "admin cannot update append-only history", async () => requireDenied(await admin.from("game_edit_history").update({ action: "Changed" }).eq("id", config.ids.seedHistory).select()));
     await check("direct-write guards", "admin cannot delete append-only history", async () => requireDenied(await admin.from("game_edit_history").delete().eq("id", config.ids.seedHistory).select()));
@@ -299,7 +315,7 @@ async function runMatrix() {
     });
     await check("admin RPC success", "approve_registration succeeds", async () => {
       const data = requireSuccess(await admin.rpc("approve_registration", rpcArguments("approve_registration")));
-      requireCondition(Boolean(data?.team_id && data?.captain_profile_id), "Approval did not return linked IDs.");
+      requireCondition(Boolean(data?.identity_id && data?.team_id && data?.captain_profile_id), "Approval did not return linked identity, enrollment, and captain IDs.");
     });
     await check("admin RPC success", "assign_free_agent succeeds", async () => {
       const data = requireSuccess(await admin.rpc("assign_free_agent", rpcArguments("assign_free_agent")));
@@ -364,6 +380,34 @@ async function runMatrix() {
       requireSuccess(await admin.rpc("advance_playoff_match", { p_match_id: match.id }));
       const result = requireSuccess(await anon.from("playoff_matches").select("status,winner_team_id").eq("id", match.id).single());
       requireCondition(result.status === "completed" && result.winner_team_id, "Final result did not advance publicly.");
+    });
+
+    await check("team identity RPC success", "administrator enrolls a persistent identity cross-sport without history", async () => {
+      const source = requireSuccess(await admin.from("teams").select("identity_id").eq("id", config.ids.homeTeam).single());
+      const teamId = requireSuccess(await admin.rpc("enroll_team_identity", {
+        p_identity_id: source.identity_id,
+        p_league_id: config.ids.identityLeague,
+        p_captain_id: null,
+        p_division: "Matrix",
+      }));
+      const enrollment = requireSuccess(await admin.from("teams").select("identity_id,sport,name").eq("id", teamId).single());
+      const roster = requireSuccess(await admin.from("team_players").select("id").eq("team_id", teamId));
+      const charges = requireSuccess(await admin.from("charges").select("id").eq("team_id", teamId));
+      requireCondition(enrollment.identity_id === source.identity_id && enrollment.sport === "flag_football", "Enrollment did not reuse the identity in the target sport.");
+      requireCondition(roster.length === 0 && charges.length === 0, "Enrollment unexpectedly copied roster or payment rows.");
+    });
+    await check("team identity RPC success", "administrator creates an identity and first enrollment atomically", async () => {
+      const data = requireSuccess(await admin.rpc("create_team_identity_and_enroll", {
+        p_name: `${config.runId} atomic identity`,
+        p_logo_color: "#A855F7",
+        p_founded: "2099",
+        p_league_id: config.ids.identityLeague,
+        p_captain_id: null,
+        p_division: null,
+      }));
+      requireCondition(Boolean(data?.identity_id && data?.team_id), "Atomic RPC did not return both IDs.");
+      const team = requireSuccess(await admin.from("teams").select("identity_id,sport").eq("id", data.team_id).single());
+      requireCondition(team.identity_id === data.identity_id && team.sport === "flag_football", "Atomic enrollment was not linked correctly.");
     });
 
     await check("Hall of Fame gate", "admin can create unpublished Hall of Fame entry", async () => {

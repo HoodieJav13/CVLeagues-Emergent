@@ -20,9 +20,9 @@ const tempDir = mkdtempSync(join(tmpdir(), "cvf-hosted-auth-"));
 const runId = `cvf-matrix-${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}`;
 const ids = Object.fromEntries(
   [
-    "league", "homeTeam", "awayTeam", "extraTeam1", "extraTeam2", "profile", "roster",
+    "league", "identityLeague", "homeTeam", "awayTeam", "extraTeam1", "extraTeam2", "profile", "roster",
     "game", "linkedPlayoffGame", "unknownPlayoffMatch", "seedHistory", "charge", "payment",
-    "registration", "freeAgent", "waiver", "hof", "deniedGame",
+    "registration", "freeAgent", "waiver", "hof", "deniedGame", "unknownTeamIdentity",
   ].map((name) => [name, randomUUID()]),
 );
 const season = `Matrix ${runId}`;
@@ -85,6 +85,7 @@ select json_build_object(
   'admin_users', (select count(*) from public.admin_users),
   'profiles', (select count(*) from public.profiles),
   'leagues', (select count(*) from public.leagues),
+  'team_identities', (select count(*) from public.team_identities),
   'teams', (select count(*) from public.teams),
   'team_players', (select count(*) from public.team_players),
   'games', (select count(*) from public.games),
@@ -123,7 +124,9 @@ function seedFixture() {
 ${waiverInsert}
 insert into public.seasons (name, status) values (${sqlLiteral(season)}, 'active');
 insert into public.leagues (id, name, sport, season, status, kind, playoff_format)
-values (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} league`)}, 'kickball', ${sqlLiteral(season)}, 'active', 'league', 'single_elim');
+values
+  (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} league`)}, 'kickball', ${sqlLiteral(season)}, 'active', 'league', 'single_elim'),
+  (${sqlLiteral(ids.identityLeague)}::uuid, ${sqlLiteral(`${runId} flag league`)}, 'flag_football', ${sqlLiteral(season)}, 'active', 'league', 'single_elim');
 insert into public.profiles (id, first_name, last_name, email, sports)
 values (${sqlLiteral(ids.profile)}::uuid, ${sqlLiteral(runId)}, 'Player', ${sqlLiteral(`${runId}.player@example.invalid`)}, array['kickball']);
 insert into public.teams (id, league_id, name, sport, logo_color, status)
@@ -165,16 +168,18 @@ delete from public.waivers where email like ${sqlLiteral(`${runId}.%@example.inv
 delete from public.team_players where season = ${sqlLiteral(season)};
 delete from public.team_registrations where captain_email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.free_agents where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
-delete from public.games where league_id = ${sqlLiteral(ids.league)}::uuid;
-delete from public.teams where league_id = ${sqlLiteral(ids.league)}::uuid;
+delete from public.games where league_id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
+delete from public.teams where league_id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
+delete from public.team_identities where name like ${sqlLiteral(`${runId}%`)};
 delete from public.profiles where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
-delete from public.leagues where id = ${sqlLiteral(ids.league)}::uuid;
+delete from public.leagues where id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
 delete from public.waiver_versions where version = ${sqlLiteral(fixtureWaiverVersion)};
 delete from public.seasons where name = ${sqlLiteral(season)};
 commit;
 select json_build_object(
   'season_rows', (select count(*) from public.seasons where name = ${sqlLiteral(season)}),
-  'league_rows', (select count(*) from public.leagues where id = ${sqlLiteral(ids.league)}::uuid),
+  'league_rows', (select count(*) from public.leagues where id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid)),
+  'identity_rows', (select count(*) from public.team_identities where name like ${sqlLiteral(`${runId}%`)}),
   'profile_rows', (select count(*) from public.profiles where email like ${sqlLiteral(`${runId}.%@example.invalid`)}),
   'waiver_rows', (select count(*) from public.waivers where email like ${sqlLiteral(`${runId}.%@example.invalid`)}),
   'history_rows', (select count(*) from public.game_edit_history where game_id = ${sqlLiteral(ids.game)}::uuid)

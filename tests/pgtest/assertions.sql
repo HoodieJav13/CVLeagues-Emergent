@@ -1224,6 +1224,135 @@ select cvf_test.ok(
   )
 );
 
+-- ---------------------------------------------------------------------------
+-- Persistent team identities and explicit enrollment shells.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_anon();
+select cvf_test.ok(
+  'team identity 01 anonymous viewers can read persistent team brands',
+  exists (
+    select 1 from public.team_identities identity
+    join public.teams enrollment on enrollment.identity_id = identity.id
+  )
+);
+select cvf_test.throws_ok(
+  'team identity 02 anonymous viewers cannot create an identity',
+  $$insert into public.team_identities (name, logo_color) values ('Tampered', '#000000')$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'team identity 03 non-admin cannot enroll an identity',
+  $$select public.enroll_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '20000000-0000-0000-0000-000000000002'
+    )$$,
+  '%Admin only%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'team identity 04 one identity can enroll into another sport',
+  $$select public.enroll_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '20000000-0000-0000-0000-000000000002',
+      '10000000-0000-0000-0000-000000000004',
+      'Open'
+    )$$
+);
+select cvf_test.ok(
+  'team identity 05 cross-sport enrollment has the target sport and same brand',
+  exists (
+    select 1
+    from public.teams source
+    join public.teams enrolled on enrolled.identity_id = source.identity_id
+    where source.id = '30000000-0000-0000-0000-000000000001'
+      and enrolled.league_id = '20000000-0000-0000-0000-000000000002'
+      and enrolled.sport = 'flag_football'
+      and enrolled.name = source.name
+      and enrolled.logo_color = source.logo_color
+  )
+);
+select cvf_test.ok(
+  'team identity 06 new enrollment carries no roster or payments',
+  not exists (
+    select 1 from public.team_players roster
+    join public.teams enrolled on enrolled.id = roster.team_id
+    where enrolled.identity_id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')
+      and enrolled.league_id = '20000000-0000-0000-0000-000000000002'
+  )
+  and not exists (
+    select 1 from public.charges charge
+    join public.teams enrolled on enrolled.id = charge.team_id
+    where enrolled.identity_id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')
+      and enrolled.league_id = '20000000-0000-0000-0000-000000000002'
+  )
+);
+select cvf_test.throws_ok(
+  'team identity 07 duplicate enrollment is rejected',
+  $$select public.enroll_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '20000000-0000-0000-0000-000000000002'
+    )$$,
+  '%already enrolled%'
+);
+select cvf_test.lives_ok(
+  'team identity 08 canonical brand edits propagate to every enrollment',
+  $$update public.team_identities
+       set name = 'Kick A United', logo_color = '#112233'
+     where id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')$$
+);
+select cvf_test.ok(
+  'team identity 09 every enrollment reflects the canonical brand',
+  not exists (
+    select 1 from public.teams
+    where identity_id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')
+      and (name <> 'Kick A United' or logo_color <> '#112233')
+  )
+);
+select cvf_test.lives_ok(
+  'team identity 10 legacy direct brand edits are normalized',
+  $$update public.teams set name = 'Enrollment-only rename'
+     where id = '30000000-0000-0000-0000-000000000001'$$
+);
+select cvf_test.eq_text(
+  'team identity 11 identity remains the source of truth',
+  (select name from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+  'Kick A United'
+);
+select cvf_test.lives_ok(
+  'team identity 12 new identity and first enrollment are transactional',
+  $$select public.create_team_identity_and_enroll(
+      'Future Flyers', '#445566', '2026',
+      '20000000-0000-0000-0000-000000000101', null, 'Recreation'
+    )$$
+);
+select cvf_test.ok(
+  'team identity 13 transactional enrollment creates only its shell',
+  exists (
+    select 1 from public.team_identities identity
+    join public.teams enrollment on enrollment.identity_id = identity.id
+    where identity.name = 'Future Flyers'
+      and enrollment.league_id = '20000000-0000-0000-0000-000000000101'
+  )
+  and not exists (
+    select 1 from public.team_players roster
+    join public.teams enrollment on enrollment.id = roster.team_id
+    join public.team_identities identity on identity.id = enrollment.identity_id
+    where identity.name = 'Future Flyers'
+  )
+);
+select cvf_test.ok(
+  'team identity 14 approved registrations own a persistent identity',
+  exists (
+    select 1 from public.team_registrations registration
+    join public.teams enrollment on enrollment.id = registration.approved_team_id
+    join public.team_identities identity on identity.id = enrollment.identity_id
+    where registration.status = 'approved' and identity.name = enrollment.name
+  )
+);
+
 select cvf_test.as_owner();
 
 \echo ''
