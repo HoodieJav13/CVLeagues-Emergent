@@ -20,8 +20,9 @@ const tempDir = mkdtempSync(join(tmpdir(), "cvf-hosted-auth-"));
 const runId = `cvf-matrix-${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}`;
 const ids = Object.fromEntries(
   [
-    "league", "homeTeam", "awayTeam", "profile", "roster", "game", "seedHistory",
-    "charge", "payment", "registration", "freeAgent", "waiver", "hof", "deniedGame",
+    "league", "homeTeam", "awayTeam", "extraTeam1", "extraTeam2", "profile", "roster",
+    "game", "linkedPlayoffGame", "unknownPlayoffMatch", "seedHistory", "charge", "payment",
+    "registration", "freeAgent", "waiver", "hof", "deniedGame",
   ].map((name) => [name, randomUUID()]),
 );
 const season = `Matrix ${runId}`;
@@ -99,6 +100,9 @@ select json_build_object(
   'charges', (select count(*) from public.charges),
   'payment_entries', (select count(*) from public.payment_entries),
   'hof_entries', (select count(*) from public.hof_entries),
+  'playoff_brackets', (select count(*) from public.playoff_brackets),
+  'playoff_seeds', (select count(*) from public.playoff_seeds),
+  'playoff_matches', (select count(*) from public.playoff_matches),
   'hof_published', (select hof_published from public.league_settings where id = 1),
   'current_season', (select current_season from public.league_settings where id = 1),
   'current_waiver_version', public.current_waiver_version()
@@ -118,14 +122,16 @@ function seedFixture() {
   runLinkedSql("seed", `begin;
 ${waiverInsert}
 insert into public.seasons (name, status) values (${sqlLiteral(season)}, 'active');
-insert into public.leagues (id, name, sport, season, status, kind)
-values (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} league`)}, 'kickball', ${sqlLiteral(season)}, 'active', 'league');
+insert into public.leagues (id, name, sport, season, status, kind, playoff_format)
+values (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} league`)}, 'kickball', ${sqlLiteral(season)}, 'active', 'league', 'single_elim');
 insert into public.profiles (id, first_name, last_name, email, sports)
 values (${sqlLiteral(ids.profile)}::uuid, ${sqlLiteral(runId)}, 'Player', ${sqlLiteral(`${runId}.player@example.invalid`)}, array['kickball']);
 insert into public.teams (id, league_id, name, sport, logo_color, status)
 values
   (${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} home`)}, 'kickball', '#5BB8CC', 'active'),
-  (${sqlLiteral(ids.awayTeam)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} away`)}, 'kickball', '#F97316', 'active');
+  (${sqlLiteral(ids.awayTeam)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} away`)}, 'kickball', '#F97316', 'active'),
+  (${sqlLiteral(ids.extraTeam1)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} extra one`)}, 'kickball', '#A855F7', 'active'),
+  (${sqlLiteral(ids.extraTeam2)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} extra two`)}, 'kickball', '#10B981', 'active');
 insert into public.team_players (id, team_id, profile_id, season, jersey_number, roster_status)
 values (${sqlLiteral(ids.roster)}::uuid, ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.profile)}::uuid, ${sqlLiteral(season)}, 13, 'pending_waiver');
 insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location, stage)
@@ -152,6 +158,7 @@ update public.league_settings set hof_published = ${baseline.hof_published ? "tr
 delete from public.payment_entries where id = ${sqlLiteral(ids.payment)}::uuid or note = ${sqlLiteral(runId)};
 delete from public.charges where id = ${sqlLiteral(ids.charge)}::uuid or notes = ${sqlLiteral(runId)};
 delete from public.hof_entries where id = ${sqlLiteral(ids.hof)}::uuid or title like ${sqlLiteral(`${runId}%`)};
+delete from public.playoff_brackets where league_id = ${sqlLiteral(ids.league)}::uuid;
 delete from public.game_edit_history where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
 delete from public.player_stats where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
 delete from public.waivers where email like ${sqlLiteral(`${runId}.%@example.invalid`)};

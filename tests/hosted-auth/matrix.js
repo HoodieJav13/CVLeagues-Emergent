@@ -110,6 +110,13 @@ function rpcArguments(name) {
     approve_registration: { p_registration_id: config.ids.registration, p_league_id: config.ids.league, p_create_captain_profile: true },
     assign_free_agent: { p_free_agent_id: config.ids.freeAgent, p_team_id: config.ids.homeTeam, p_jersey_number: 31, p_position: "Utility" },
     verify_waiver: { p_waiver_id: config.ids.waiver, p_decision: "verified" },
+    generate_single_elim_bracket: {
+      p_league_id: config.ids.league,
+      p_seed_team_ids: [config.ids.homeTeam, config.ids.awayTeam, config.ids.extraTeam1, config.ids.extraTeam2],
+    },
+    schedule_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch, p_date: "2099-07-14", p_time: "7:00 PM", p_location: config.runId },
+    link_playoff_game: { p_match_id: config.ids.unknownPlayoffMatch, p_game_id: config.ids.game },
+    advance_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch },
   }[name];
 }
 
@@ -229,6 +236,11 @@ async function runMatrix() {
         requireCondition(Array.isArray(data) && data.length === 1, `${table} fixture row was not public.`);
       });
     }
+    for (const table of ["playoff_brackets", "playoff_seeds", "playoff_matches"]) {
+      await check("public reads", `anonymous can query ${table}`, async () => {
+        requireSuccess(await anon.from(table).select("*").limit(1));
+      });
+    }
     await check("public reads", "public_profiles exposes allowlisted fixture profile", async () => {
       const data = requireSuccess(await anon.from("public_profiles").select("id,name,eligibility_status").eq("id", config.ids.profile));
       requireCondition(data.length === 1, "Fixture public profile was not visible.");
@@ -242,7 +254,7 @@ async function runMatrix() {
       await check("private reads", `non-admin cannot read ${table}`, async () => requireHidden(await nonadmin.from(table).select("*").limit(1)));
     }
 
-    for (const rpc of ["save_score", "lock_game", "unlock_game", "set_game_status", "approve_registration", "assign_free_agent", "verify_waiver"]) {
+    for (const rpc of ["save_score", "lock_game", "unlock_game", "set_game_status", "approve_registration", "assign_free_agent", "verify_waiver", "generate_single_elim_bracket", "schedule_playoff_match", "link_playoff_game", "advance_playoff_match"]) {
       await check("RPC denial", `anonymous cannot execute ${rpc}`, async () => requireDenied(await anon.rpc(rpc, rpcArguments(rpc))));
       await check("RPC denial", `non-admin cannot execute ${rpc}`, async () => requireAdminGuard(await nonadmin.rpc(rpc, rpcArguments(rpc))));
     }
@@ -258,6 +270,7 @@ async function runMatrix() {
       location: config.runId,
     })));
     await check("direct-write guards", "non-admin direct score update is denied", async () => requireNoWrite(await nonadmin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
+    await check("direct-write guards", "non-admin direct bracket insertion is denied", async () => requireDenied(await nonadmin.from("playoff_brackets").insert({ league_id: config.ids.league, bracket_size: 4 })));
     await check("direct-write guards", "admin cannot mutate signed waiver fields", async () => requireDenied(await admin.from("waivers").update({ signed_name: "Changed" }).eq("id", config.ids.waiver).select()));
     await check("direct-write guards", "admin cannot update append-only history", async () => requireDenied(await admin.from("game_edit_history").update({ action: "Changed" }).eq("id", config.ids.seedHistory).select()));
     await check("direct-write guards", "admin cannot delete append-only history", async () => requireDenied(await admin.from("game_edit_history").delete().eq("id", config.ids.seedHistory).select()));
@@ -301,6 +314,56 @@ async function runMatrix() {
       const data = requireSuccess(await admin.from("game_edit_history").select("action,reason").eq("game_id", config.ids.game));
       requireCondition(data.length >= 6, "Expected RPC history rows were not created.");
       requireCondition(data.some((row) => row.action === "Unlocked" && row.reason === "hosted matrix verified unlock reason"), "Unlock reason was not retained.");
+    });
+
+    let scheduledPlayoffGame;
+    await check("playoff RPC success", "administrator generates a fixed single-elimination bracket", async () => {
+      const bracketId = requireSuccess(await admin.rpc("generate_single_elim_bracket", rpcArguments("generate_single_elim_bracket")));
+      requireCondition(Boolean(bracketId), "Bracket RPC did not return an ID.");
+      const rows = requireSuccess(await anon.from("playoff_brackets").select("id,bracket_size").eq("id", bracketId));
+      requireCondition(rows.length === 1 && rows[0].bracket_size === 4, "Generated bracket was not public or correctly sized.");
+    });
+    await check("playoff RPC success", "administrator schedules a ready bracket match", async () => {
+      const matches = requireSuccess(await admin.from("playoff_matches").select("id").eq("status", "ready").order("match_number").limit(1));
+      requireCondition(matches.length === 1, "No ready playoff match was generated.");
+      scheduledPlayoffGame = requireSuccess(await admin.rpc("schedule_playoff_match", {
+        p_match_id: matches[0].id,
+        p_date: "2099-07-14",
+        p_time: "7:00 PM",
+        p_location: config.runId,
+      }));
+      requireCondition(Boolean(scheduledPlayoffGame), "Schedule RPC did not return a game ID.");
+    });
+    await check("playoff RPC success", "administrator links a matching existing playoff game", async () => {
+      const matches = requireSuccess(await admin.from("playoff_matches").select("id,home_team_id,away_team_id").eq("status", "ready").is("game_id", null).order("match_number").limit(1));
+      requireCondition(matches.length === 1, "No second ready playoff match was available.");
+      requireSuccess(await admin.from("games").insert({
+        id: config.ids.linkedPlayoffGame,
+        league_id: config.ids.league,
+        sport: "kickball",
+        home_team_id: matches[0].home_team_id,
+        away_team_id: matches[0].away_team_id,
+        date: "2099-07-14",
+        time: "8:00 PM",
+        location: config.runId,
+        stage: "playoff",
+      }));
+      requireSuccess(await admin.rpc("link_playoff_game", { p_match_id: matches[0].id, p_game_id: config.ids.linkedPlayoffGame }));
+    });
+    await check("playoff RPC success", "administrator advances a final locked playoff result", async () => {
+      requireCondition(Boolean(scheduledPlayoffGame), "Scheduled playoff game was unavailable.");
+      requireSuccess(await admin.rpc("save_score", {
+        p_game_id: scheduledPlayoffGame,
+        p_home_score: 3,
+        p_away_score: 1,
+        p_periods: { home: [3], away: [1] },
+        p_stats: {},
+      }));
+      requireSuccess(await admin.rpc("lock_game", { p_game_id: scheduledPlayoffGame }));
+      const match = requireSuccess(await admin.from("playoff_matches").select("id").eq("game_id", scheduledPlayoffGame).single());
+      requireSuccess(await admin.rpc("advance_playoff_match", { p_match_id: match.id }));
+      const result = requireSuccess(await anon.from("playoff_matches").select("status,winner_team_id").eq("id", match.id).single());
+      requireCondition(result.status === "completed" && result.winner_team_id, "Final result did not advance publicly.");
     });
 
     await check("Hall of Fame gate", "admin can create unpublished Hall of Fame entry", async () => {

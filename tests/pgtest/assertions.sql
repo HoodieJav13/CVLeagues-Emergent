@@ -1048,6 +1048,182 @@ select cvf_test.eq_text(
   'Summer 2026'
 );
 
+-- ---------------------------------------------------------------------------
+-- Stage 2 single-elimination bracket generation and advancement.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+insert into public.teams (id, league_id, name, sport, logo_color)
+values
+  ('30000000-0000-0000-0000-000000000201', '20000000-0000-0000-0000-000000000001', 'Kick C', 'kickball', '#A855F7'),
+  ('30000000-0000-0000-0000-000000000202', '20000000-0000-0000-0000-000000000001', 'Kick D', 'kickball', '#10B981'),
+  ('30000000-0000-0000-0000-000000000203', '20000000-0000-0000-0000-000000000001', 'Kick E', 'kickball', '#EF4444');
+update public.leagues set playoff_format = 'single_elim'
+where id = '20000000-0000-0000-0000-000000000001';
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'bracket 01 non-admin cannot generate a bracket',
+  $$select public.generate_single_elim_bracket(
+      '20000000-0000-0000-0000-000000000001',
+      array[
+        '30000000-0000-0000-0000-000000000001',
+        '30000000-0000-0000-0000-000000000002',
+        '30000000-0000-0000-0000-000000000201',
+        '30000000-0000-0000-0000-000000000202',
+        '30000000-0000-0000-0000-000000000203'
+      ]::uuid[]
+    )$$,
+  '%Admin only%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'bracket 02 admin generates a variable-size bracket',
+  $$select public.generate_single_elim_bracket(
+      '20000000-0000-0000-0000-000000000001',
+      (select array_agg(id order by id) from public.teams
+        where league_id = '20000000-0000-0000-0000-000000000001'
+          and status = 'active')
+    )$$
+);
+select cvf_test.eq_int(
+  'bracket 03 bracket expands to the next power of two',
+  (select bracket_size from public.playoff_brackets
+    where league_id = '20000000-0000-0000-0000-000000000001'),
+  8
+);
+select cvf_test.eq_int(
+  'bracket 04 all seeds are snapshotted',
+  (select count(*)::int from public.playoff_seeds),
+  6
+);
+select cvf_test.eq_int(
+  'bracket 05 top seeds receive the required byes',
+  (select count(*)::int from public.playoff_matches where status = 'bye'),
+  2
+);
+select cvf_test.eq_int(
+  'bracket 06 championship plus third-place paths exist',
+  (select count(*)::int from public.playoff_matches where label in ('Championship', 'Third Place')),
+  2
+);
+select cvf_test.lives_ok(
+  'bracket 07 a ready first-round match can be scheduled',
+  $$select public.schedule_playoff_match(
+      (select id from public.playoff_matches where round_number = 1 and status = 'ready' limit 1),
+      '2026-08-01', '6:00 PM', 'Championship Field'
+    )$$
+);
+select cvf_test.throws_ok(
+  'bracket 08 an unfinished game cannot advance',
+  $$select public.advance_playoff_match(
+      (select id from public.playoff_matches where game_id is not null limit 1)
+    )$$,
+  '%completed, marked final, and locked%'
+);
+select cvf_test.lives_ok(
+  'bracket setup score and lock scheduled game',
+  $$select public.save_score(
+      (select game_id from public.playoff_matches where game_id is not null limit 1),
+      10, 4, '{"home":[],"away":[]}'::jsonb, '{}'::jsonb
+    );
+    select public.lock_game(
+      (select game_id from public.playoff_matches where game_id is not null limit 1)
+    )$$
+);
+select cvf_test.lives_ok(
+  'bracket 09 final locked result advances manually',
+  $$select public.advance_playoff_match(
+      (select id from public.playoff_matches where game_id is not null limit 1)
+    )$$
+);
+select cvf_test.ok(
+  'bracket 10 winner is placed into the next match',
+  exists (
+    select 1 from public.playoff_matches source
+    join public.playoff_matches destination on destination.id = source.winner_to_match_id
+    where source.game_id is not null
+      and source.winner_team_id is not null
+      and source.winner_team_id in (destination.home_team_id, destination.away_team_id)
+  )
+);
+
+select cvf_test.as_anon();
+select cvf_test.eq_int(
+  'bracket 11 anonymous viewers can read the generated bracket',
+  (select count(*)::int from public.playoff_brackets),
+  1
+);
+select cvf_test.throws_ok(
+  'bracket 12 anonymous viewers cannot mutate bracket matches',
+  $$update public.playoff_matches set label = 'Tampered'$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'bracket 13 unlocking retracts an advancement before downstream scheduling',
+  $$select public.unlock_game(
+      (select game_id from public.playoff_matches where game_id is not null limit 1),
+      'Correcting a playoff score'
+    )$$
+);
+select cvf_test.ok(
+  'bracket 14 retraction clears the downstream slot and source result',
+  exists (
+    select 1 from public.playoff_matches source
+    join public.playoff_matches destination on destination.id = source.winner_to_match_id
+    where source.game_id is not null
+      and source.status = 'ready'
+      and source.winner_team_id is null
+      and source.loser_team_id is null
+      and destination.status = 'pending'
+      and (
+        (source.winner_to_slot = 'home' and destination.home_team_id is null and destination.home_seed is null)
+        or (source.winner_to_slot = 'away' and destination.away_team_id is null and destination.away_seed is null)
+      )
+  )
+);
+select cvf_test.lives_ok(
+  'bracket setup re-advances and schedules the downstream match',
+  $$select public.save_score(
+      (select game_id from public.playoff_matches where game_id is not null limit 1),
+      11, 4, '{"home":[],"away":[]}'::jsonb, '{}'::jsonb
+    );
+    select public.lock_game(
+      (select game_id from public.playoff_matches where game_id is not null limit 1)
+    );
+    select public.advance_playoff_match(
+      (select id from public.playoff_matches where game_id is not null limit 1)
+    );
+    select public.schedule_playoff_match(
+      (select destination.id
+       from public.playoff_matches source
+       join public.playoff_matches destination on destination.id = source.winner_to_match_id
+       where source.game_id is not null limit 1),
+      '2026-08-08', '6:00 PM', 'Championship Field'
+    )$$
+);
+select cvf_test.throws_ok(
+  'bracket 15 unlock is blocked after the downstream game is scheduled',
+  $$select public.unlock_game(
+      (select game_id from public.playoff_matches
+       where status = 'completed' and game_id is not null limit 1),
+      'Too late to retract safely'
+    )$$,
+  '%next playoff match has been scheduled%'
+);
+select cvf_test.ok(
+  'bracket 16 blocked unlock preserves the source result and lock',
+  exists (
+    select 1 from public.playoff_matches match
+    join public.games game on game.id = match.game_id
+    where match.status = 'completed'
+      and match.winner_team_id is not null
+      and game.locked
+  )
+);
+
 select cvf_test.as_owner();
 
 \echo ''
