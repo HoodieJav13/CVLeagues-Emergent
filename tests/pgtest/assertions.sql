@@ -96,6 +96,7 @@ create or replace function cvf_test.as_anon()
 returns void language plpgsql as $$
 begin
   perform set_config('request.jwt.claim.sub', '', false);
+  perform set_config('request.jwt.claims', '{}'::text, false);
   set role anon;
 end;
 $$;
@@ -105,6 +106,11 @@ returns void language plpgsql as $$
 begin
   reset role;
   perform set_config('request.jwt.claim.sub', p_user::text, false);
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal1')::text,
+    false
+  );
   set role authenticated;
 end;
 $$;
@@ -114,6 +120,25 @@ returns void language plpgsql as $$
 begin
   reset role;
   perform set_config('request.jwt.claim.sub', p_user::text, false);
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal2')::text,
+    false
+  );
+  set role authenticated;
+end;
+$$;
+
+create or replace function cvf_test.as_admin_aal1(p_user uuid)
+returns void language plpgsql as $$
+begin
+  reset role;
+  perform set_config('request.jwt.claim.sub', p_user::text, false);
+  perform set_config(
+    'request.jwt.claims',
+    json_build_object('sub', p_user, 'role', 'authenticated', 'aal', 'aal1')::text,
+    false
+  );
   set role authenticated;
 end;
 $$;
@@ -123,6 +148,7 @@ returns void language plpgsql as $$
 begin
   reset role;
   perform set_config('request.jwt.claim.sub', '', false);
+  perform set_config('request.jwt.claims', '{}'::text, false);
   perform set_config('cvf.bypass_lock', '', false);
 end;
 $$;
@@ -231,45 +257,47 @@ select cvf_test.throws_ok(
   '%permission denied%'
 );
 
-select cvf_test.lives_ok(
-  'existing 08 anon can submit clean team registration',
+select cvf_test.throws_ok(
+  'existing 08 anon direct clean team registration is blocked',
   $$insert into public.team_registrations
     (captain_name, captain_phone, sport, team_name, preferred_season, consent_to_contact)
-    values ('Anon Captain', '505-333-3333', 'kickball', 'Anon Team', 'Summer 2026', true)$$
+    values ('Anon Captain', '505-333-3333', 'kickball', 'Anon Team', 'Summer 2026', true)$$,
+  '%permission denied%'
 );
 select cvf_test.throws_ok(
-  'existing 09 anon registration status must stay new',
+  'existing 09 anon pre-triaged registration is blocked',
   $$insert into public.team_registrations
     (captain_name, captain_phone, sport, team_name, preferred_season, consent_to_contact, status)
     values ('Anon Captain', '505-333-3334', 'kickball', 'Bad Team', 'Summer 2026', true, 'contacted')$$,
-  '%violates row-level security%'
+  '%permission denied%'
 );
 select cvf_test.throws_ok(
-  'existing 10 anon registration consent required',
+  'existing 10 anon no-consent registration is blocked',
   $$insert into public.team_registrations
     (captain_name, captain_phone, sport, team_name, preferred_season, consent_to_contact)
     values ('Anon Captain', '505-333-3335', 'kickball', 'No Consent Team', 'Summer 2026', false)$$,
-  null
-);
-select cvf_test.lives_ok(
-  'existing 11 anon can submit clean free agent',
-  $$insert into public.free_agents
-    (first_name, last_name, email, sports, consent_to_contact)
-    values ('Anon', 'Agent', 'anon-agent@cvf.test', array['kickball'], true)$$
+  '%permission denied%'
 );
 select cvf_test.throws_ok(
-  'existing 12 anon free agent status must stay new',
+  'existing 11 anon direct clean free agent is blocked',
+  $$insert into public.free_agents
+    (first_name, last_name, email, sports, consent_to_contact)
+    values ('Anon', 'Agent', 'anon-agent@cvf.test', array['kickball'], true)$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'existing 12 anon pre-triaged free agent is blocked',
   $$insert into public.free_agents
     (first_name, last_name, email, sports, consent_to_contact, status)
     values ('Anon', 'Agent', 'bad-agent@cvf.test', array['kickball'], true, 'contacted')$$,
-  '%violates row-level security%'
+  '%permission denied%'
 );
 select cvf_test.throws_ok(
-  'existing 13 anon free agent consent required',
+  'existing 13 anon no-consent free agent is blocked',
   $$insert into public.free_agents
     (first_name, last_name, email, sports, consent_to_contact)
     values ('Anon', 'Agent', 'noconsent-agent@cvf.test', array['kickball'], false)$$,
-  null
+  '%permission denied%'
 );
 
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
@@ -921,6 +949,56 @@ select cvf_test.ok(
             )
        )
   )
+);
+
+-- ---------------------------------------------------------------------------
+-- Stage 0 launch hardening: MFA authorization and protected intake.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
+select cvf_test.ok(
+  'launch 01 linked AAL1 administrator can resolve identity for MFA routing',
+  public.is_admin_identity()
+);
+select cvf_test.ok(
+  'launch 02 linked AAL1 administrator is not authorized as admin',
+  not public.is_admin()
+);
+select cvf_test.throws_ok(
+  'launch 03 linked AAL1 administrator cannot execute admin RPCs',
+  $$select public.lock_game('50000000-0000-0000-0000-000000000001')$$,
+  '%Admin only%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.ok(
+  'launch 04 linked AAL2 administrator is authorized as admin',
+  public.is_admin()
+);
+
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'launch 05 anonymous role has no direct intake or waiver insert grants',
+  not has_table_privilege('anon', 'public.team_registrations', 'insert')
+  and not has_table_privilege('anon', 'public.free_agents', 'insert')
+  and not has_table_privilege('anon', 'public.waivers', 'insert')
+);
+select cvf_test.ok(
+  'launch 06 public submission policies were removed',
+  not exists (
+    select 1
+      from pg_policies
+     where schemaname = 'public'
+       and policyname in (
+         'team_registrations_public_submit',
+         'free_agents_public_submit',
+         'waivers_public_sign'
+       )
+  )
+);
+select cvf_test.ok(
+  'launch 07 MFA identity helper is callable but admin assertion remains private',
+  has_function_privilege('authenticated', 'public.is_admin_identity()', 'execute')
+  and not has_function_privilege('anon', 'public.assert_admin()', 'execute')
 );
 
 select cvf_test.as_owner();

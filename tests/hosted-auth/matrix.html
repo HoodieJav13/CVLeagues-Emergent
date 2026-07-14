@@ -30,6 +30,9 @@
           <input id="admin-email" type="email" autocomplete="username" />
           <label for="admin-password">Password</label>
           <input id="admin-password" type="password" autocomplete="current-password" />
+          <label for="admin-totp">Authenticator code</label>
+          <input id="admin-totp" inputmode="numeric" autocomplete="one-time-code" />
+          <div id="admin-captcha" class="cf-turnstile" data-sitekey="__TURNSTILE_SITE_KEY__" data-action="hosted_admin_login"></div>
         </section>
         <section>
           <h2>Authenticated non-admin</h2>
@@ -37,6 +40,7 @@
           <input id="nonadmin-email" type="email" autocomplete="username" />
           <label for="nonadmin-password">Password</label>
           <input id="nonadmin-password" type="password" autocomplete="current-password" />
+          <div id="nonadmin-captcha" class="cf-turnstile" data-sitekey="__TURNSTILE_SITE_KEY__" data-action="hosted_nonadmin_login"></div>
         </section>
       </div>
       <button id="run" type="button">Run hosted matrix</button>
@@ -45,6 +49,7 @@
         <pre id="output" aria-live="polite">Waiting for credentials.</pre>
       </div>
     </main>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="/supabase.js"></script>
     <script src="/matrix.js"></script>
   </body>

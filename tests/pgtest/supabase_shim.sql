@@ -1,6 +1,6 @@
 -- Supabase environment shim for plain local Postgres pgtests.
 -- This intentionally models only the pieces the migrations depend on:
--- roles, auth.uid(), auth.users, and extensions. Data API table/function
+-- roles, auth.uid(), auth.jwt(), auth.users, and extensions. Data API table/function
 -- privileges intentionally begin denied, matching new Supabase projects; the
 -- repository migration must grant every client capability explicitly.
 
@@ -37,3 +37,15 @@ as $$
 $$;
 
 grant execute on function auth.uid() to anon, authenticated;
+
+create or replace function auth.jwt()
+returns jsonb
+language sql stable
+as $$
+  select coalesce(
+    nullif(current_setting('request.jwt.claims', true), '')::jsonb,
+    '{}'::jsonb
+  );
+$$;
+
+grant execute on function auth.jwt() to anon, authenticated;

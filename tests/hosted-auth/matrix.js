@@ -4,7 +4,8 @@ const output = document.getElementById("output");
 const runButton = document.getElementById("run");
 const fields = {
   adminEmail: document.getElementById("admin-email"),
-  adminPassword: document.getElementById("admin-password"),
+    adminPassword: document.getElementById("admin-password"),
+    adminTotp: document.getElementById("admin-totp"),
   nonadminEmail: document.getElementById("nonadmin-email"),
   nonadminPassword: document.getElementById("nonadmin-password"),
 };
@@ -79,10 +80,25 @@ function client() {
   });
 }
 
-async function signIn(targetClient, email, password) {
-  const result = await targetClient.auth.signInWithPassword({ email, password });
+function captchaToken(containerId) {
+  return document.querySelector(`#${containerId} input[name="cf-turnstile-response"]`)?.value || "";
+}
+
+async function signIn(targetClient, email, password, captchaTokenValue) {
+  const result = await targetClient.auth.signInWithPassword({ email, password, options: { captchaToken: captchaTokenValue } });
   if (result.error || !result.data.session) throw new Error(result.error?.message || "No Auth session returned.");
   return result.data.session;
+}
+
+async function completeAdminMfa(targetClient, code) {
+  const factors = await targetClient.auth.mfa.listFactors();
+  if (factors.error) throw factors.error;
+  const factor = (factors.data.totp || []).find((entry) => entry.status === "verified");
+  if (!factor) throw new Error("Administrator has no verified TOTP factor. Enroll through the application first.");
+  const challenge = await targetClient.auth.mfa.challenge({ factorId: factor.id });
+  if (challenge.error) throw challenge.error;
+  const verified = await targetClient.auth.mfa.verify({ factorId: factor.id, challengeId: challenge.data.id, code });
+  if (verified.error) throw verified.error;
 }
 
 function rpcArguments(name) {
@@ -111,15 +127,36 @@ async function runMatrix() {
     adminPassword: fields.adminPassword.value,
     nonadminEmail: fields.nonadminEmail.value.trim(),
     nonadminPassword: fields.nonadminPassword.value,
+    adminTotp: fields.adminTotp.value.trim(),
+    adminCaptcha: captchaToken("admin-captcha"),
+    nonadminCaptcha: captchaToken("nonadmin-captcha"),
   };
   Object.values(fields).forEach((field) => { field.value = ""; });
 
   try {
-    requireCondition(credentials.adminEmail && credentials.adminPassword && credentials.nonadminEmail && credentials.nonadminPassword, "Both account credentials are required.");
-    await signIn(admin, credentials.adminEmail, credentials.adminPassword);
+    requireCondition(credentials.adminEmail && credentials.adminPassword && credentials.adminTotp && credentials.nonadminEmail && credentials.nonadminPassword, "Both account credentials and the administrator authenticator code are required.");
+    requireCondition(credentials.adminCaptcha && credentials.nonadminCaptcha, "Complete both human-verification widgets.");
+    await signIn(admin, credentials.adminEmail, credentials.adminPassword, credentials.adminCaptcha);
     credentials.adminPassword = "";
-    await signIn(nonadmin, credentials.nonadminEmail, credentials.nonadminPassword);
+    await signIn(nonadmin, credentials.nonadminEmail, credentials.nonadminPassword, credentials.nonadminCaptcha);
     credentials.nonadminPassword = "";
+    credentials.adminCaptcha = "";
+    credentials.nonadminCaptcha = "";
+
+    await check("MFA authorization", "linked password-only administrator resolves identity", async () => {
+      const data = requireSuccess(await admin.rpc("is_admin_identity"));
+      requireCondition(data === true, "Linked administrator identity did not resolve at AAL1.");
+    });
+    await check("MFA authorization", "linked password-only administrator is not authorized", async () => {
+      const data = requireSuccess(await admin.rpc("is_admin"));
+      requireCondition(data === false, "AAL1 administrator was incorrectly authorized.");
+    });
+    await check("MFA authorization", "linked password-only administrator cannot execute admin RPC", async () => {
+      return requireAdminGuard(await admin.rpc("set_game_status", { p_game_id: config.ids.game, p_status: "postponed" }));
+    });
+
+    await completeAdminMfa(admin, credentials.adminTotp);
+    credentials.adminTotp = "";
     credentials.adminEmail = "";
     credentials.nonadminEmail = "";
 
@@ -137,7 +174,7 @@ async function runMatrix() {
     });
 
     const registration = {
-      id: config.ids.registration,
+      id: crypto.randomUUID(),
       captain_name: `${config.runId} Captain`,
       captain_email: `${config.runId}.captain@example.invalid`,
       sport: "kickball",
@@ -146,7 +183,7 @@ async function runMatrix() {
       consent_to_contact: true,
     };
     const freeAgent = {
-      id: config.ids.freeAgent,
+      id: crypto.randomUUID(),
       first_name: config.runId,
       last_name: "Agent",
       email: `${config.runId}.agent@example.invalid`,
@@ -154,7 +191,7 @@ async function runMatrix() {
       consent_to_contact: true,
     };
     const waiver = {
-      id: config.ids.waiver,
+      id: crypto.randomUUID(),
       signed_name: `${config.runId} Agent`,
       email: `${config.runId}.agent@example.invalid`,
       waiver_version: config.waiverVersion,
@@ -164,17 +201,17 @@ async function runMatrix() {
       user_agent: "cvf-hosted-auth-matrix",
     };
 
-    await check("anonymous submissions", "clean team-interest submission succeeds", async () => {
-      requireSuccess(await anon.from("team_registrations").insert(registration));
+    await check("protected intake", "anonymous direct team-interest write is denied", async () => {
+      return requireDenied(await anon.from("team_registrations").insert(registration));
     });
-    await check("anonymous submissions", "clean free-agent submission succeeds", async () => {
-      requireSuccess(await anon.from("free_agents").insert(freeAgent));
+    await check("protected intake", "anonymous direct free-agent write is denied", async () => {
+      return requireDenied(await anon.from("free_agents").insert(freeAgent));
     });
-    await check("anonymous submissions", "clean current-version waiver submission succeeds", async () => {
-      requireSuccess(await anon.from("waivers").insert(waiver));
+    await check("protected intake", "anonymous direct waiver write is denied", async () => {
+      return requireDenied(await anon.from("waivers").insert(waiver));
     });
-    await check("anonymous submissions", "anonymous intake cannot set triage state", async () => {
-      return requireDenied(await anon.from("team_registrations").insert({ ...registration, id: crypto.randomUUID(), status: "approved" }));
+    await check("protected intake", "authenticated non-admin direct intake is denied by RLS", async () => {
+      return requireDenied(await nonadmin.from("team_registrations").insert(registration));
     });
 
     const publicReads = [

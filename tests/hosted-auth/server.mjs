@@ -50,7 +50,8 @@ function parseEnvFile(path) {
 const frontendEnv = parseEnvFile(join(root, "frontend/.env.local"));
 const supabaseUrl = frontendEnv.REACT_APP_SUPABASE_URL;
 const anonKey = frontendEnv.REACT_APP_SUPABASE_ANON_KEY;
-if (!supabaseUrl || !anonKey) throw new Error("frontend/.env.local must contain both hosted public Supabase variables.");
+const turnstileSiteKey = frontendEnv.REACT_APP_TURNSTILE_SITE_KEY;
+if (!supabaseUrl || !anonKey || !turnstileSiteKey) throw new Error("frontend/.env.local must contain the hosted public Supabase and Turnstile variables.");
 if (new URL(supabaseUrl).hostname !== `${projectRef}.supabase.co`) throw new Error(`Refusing to run: frontend/.env.local is not configured for ${projectRef}.`);
 
 function sqlLiteral(value) {
@@ -135,6 +136,12 @@ insert into public.charges (id, season, profile_id, amount_due_cents, notes)
 values (${sqlLiteral(ids.charge)}::uuid, ${sqlLiteral(season)}, ${sqlLiteral(ids.profile)}::uuid, 1000, ${sqlLiteral(runId)});
 insert into public.payment_entries (id, charge_id, amount_cents, method, note)
 values (${sqlLiteral(ids.payment)}::uuid, ${sqlLiteral(ids.charge)}::uuid, 500, 'matrix', ${sqlLiteral(runId)});
+insert into public.team_registrations (id, captain_name, captain_email, sport, team_name, preferred_season, consent_to_contact)
+values (${sqlLiteral(ids.registration)}::uuid, ${sqlLiteral(`${runId} Captain`)}, ${sqlLiteral(`${runId}.captain@example.invalid`)}, 'kickball', ${sqlLiteral(`${runId} approved team`)}, ${sqlLiteral(season)}, true);
+insert into public.free_agents (id, first_name, last_name, email, sports, consent_to_contact)
+values (${sqlLiteral(ids.freeAgent)}::uuid, ${sqlLiteral(runId)}, 'Agent', ${sqlLiteral(`${runId}.agent@example.invalid`)}, array['kickball'], true);
+insert into public.waivers (id, signed_name, email, waiver_version, accepted_terms, age_confirmed, media_consent, user_agent)
+values (${sqlLiteral(ids.waiver)}::uuid, ${sqlLiteral(`${runId} Agent`)}, ${sqlLiteral(`${runId}.agent@example.invalid`)}, ${sqlLiteral(baseline.current_waiver_version || fixtureWaiverVersion)}, true, true, false, 'cvf-hosted-auth-matrix');
 commit;`);
   fixtureSeeded = true;
 }
@@ -294,6 +301,13 @@ function serveFile(response, path, contentType) {
   response.end(readFileSync(path));
 }
 
+function serveMatrixHtml(response) {
+  const html = readFileSync(join(root, "tests/hosted-auth/matrix.html"), "utf8")
+    .replaceAll("__TURNSTILE_SITE_KEY__", turnstileSiteKey);
+  response.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+  response.end(html);
+}
+
 async function main() {
   baseline = getCounts("baseline");
   seedFixture();
@@ -315,7 +329,7 @@ async function main() {
       if (request.method === "GET" && url.pathname === "/config.json") return safeJsonResponse(response, 200, publicConfig);
       if (request.method === "GET" && url.pathname === "/supabase.js") return serveFile(response, join(root, "frontend/node_modules/@supabase/supabase-js/dist/umd/supabase.js"), "text/javascript; charset=utf-8");
       if (request.method === "GET" && url.pathname === "/matrix.js") return serveFile(response, join(root, "tests/hosted-auth/matrix.js"), "text/javascript; charset=utf-8");
-      if (request.method === "GET" && url.pathname === "/") return serveFile(response, join(root, "tests/hosted-auth/matrix.html"), "text/html; charset=utf-8");
+      if (request.method === "GET" && url.pathname === "/") return serveMatrixHtml(response);
       if (request.method === "POST" && url.pathname === "/results") return await handleResults(request, response);
       response.writeHead(404).end("Not found");
     } catch (error) {
