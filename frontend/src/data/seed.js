@@ -351,11 +351,21 @@ export const paymentEntries = [
   { id: "payment2", charge_id: "charge2", amount_cents: 7500, method: "Cash", paid_at: "2026-06-06T19:00:00Z", note: null, recorded_by: null, created_at: "2026-06-06T19:02:00Z" },
 ];
 
+/* --------------------------- HALL OF FAME ------------------------------- */
+// Draft-only demo inscriptions. The public gate remains false for the
+// admin-curation stage; no public Hall of Fame route ships yet.
+export const hofEntries = [
+  { id: "hof1", entry_type: "player", game_id: null, profile_id: "p1", team_id: null, sport: "kickball", season: CURRENT_SEASON, record_scope: null, title: "The Leadoff Standard", blurb: "A model of consistency at the top of the Sandia lineup.", stat_key: "Curated season runs", stat_value: "18", display_order: 10, created_by: null, created_at: "2026-07-01T18:00:00Z" },
+  { id: "hof2", entry_type: "game", game_id: "g3", profile_id: null, team_id: null, sport: "kickball", season: CURRENT_SEASON, record_scope: null, title: "Extra-Inning Classic", blurb: "The game that set the standard for the first CVF season.", stat_key: "Final", stat_value: "12–9", display_order: 20, created_by: null, created_at: "2026-07-02T18:00:00Z" },
+  { id: "hof3", entry_type: "record", game_id: null, profile_id: "p6", team_id: "t2", sport: "kickball", season: CURRENT_SEASON, record_scope: "season", title: "Rookie Impact", blurb: "A curated snapshot of a breakout first campaign.", stat_key: "Season catches", stat_value: "7", display_order: 30, created_by: null, created_at: "2026-07-03T18:00:00Z" },
+];
+
 /* ------------------------------ SETTINGS --------------------------------- */
 export const settings = {
   current_season: CURRENT_SEASON,
   current_seasons: { kickball: CURRENT_SEASON, flag_football: CURRENT_SEASON },
   registration_open: { kickball: true, flag_football: false },
+  hof_published: false,
 };
 
 /* Assemble the initial shared state object. */
@@ -376,5 +386,6 @@ export const initialState = {
   waivers,
   charges,
   paymentEntries,
+  hofEntries,
   settings,
 };

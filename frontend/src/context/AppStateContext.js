@@ -29,8 +29,9 @@ const AppStateContext = createContext(null);
 // v3: playoff/tournament seed pass — new playoff GAMES (g10 reshaped, g13/g14
 // added) can't reach a persisted state via field backfill, so the demo
 // reseeds again (same precedent as v1→v2).
-// v4: bracket records were added; v5 adds the demo-only manual payments ledger.
-const STORAGE_KEY = "cvf_app_state_v5";
+// v4: bracket records were added; v5 adds the demo-only manual payments ledger;
+// v6 adds the admin Hall of Fame draft.
+const STORAGE_KEY = "cvf_app_state_v6";
 
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
@@ -59,6 +60,7 @@ const migrateState = (s) => ({
   playoffMatches: s.playoffMatches || initialState.playoffMatches,
   charges: s.charges || initialState.charges,
   paymentEntries: s.paymentEntries || initialState.paymentEntries,
+  hofEntries: s.hofEntries || initialState.hofEntries,
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),
@@ -312,6 +314,10 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
+  const setHofPublished = useCallback((published) => {
+    setState((prev) => ({ ...prev, settings: { ...prev.settings, hof_published: published } }));
+  }, []);
+
   const generatePlayoffBracket = useCallback(({ league_id, seed_team_ids }) => {
     setState((prev) => {
       const generated = buildSingleElimBracket({ league_id, teamIds: seed_team_ids, idFactory: newId });
@@ -524,6 +530,7 @@ export function AppStateProvider({ children }) {
     deleteEntity: act(backend.deleteEntity),
     toggleRegistration: act((sport) => backend.toggleRegistration(sport, stateRef.current)),
     setCurrentSeason: act(backend.setCurrentSeason),
+    setHofPublished: act(backend.setHofPublished),
     generatePlayoffBracket: act(backend.generatePlayoffBracket),
     schedulePlayoffMatch: act(backend.schedulePlayoffMatch),
     linkPlayoffGame: act(backend.linkPlayoffGame),
@@ -554,6 +561,7 @@ export function AppStateProvider({ children }) {
         deleteEntity,
         toggleRegistration,
         setCurrentSeason,
+        setHofPublished,
         generatePlayoffBracket,
         schedulePlayoffMatch,
         linkPlayoffGame,

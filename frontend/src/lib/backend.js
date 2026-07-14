@@ -27,6 +27,7 @@ const TABLES = {
   waivers: "waivers",
   charges: "charges",
   paymentEntries: "payment_entries",
+  hofEntries: "hof_entries",
 };
 
 const fail = (error, what) => {
@@ -47,7 +48,7 @@ export async function fetchAppState(isAdmin) {
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
 
-  const [games, leagues, seasons, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries] =
+  const [games, leagues, seasons, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
@@ -68,6 +69,7 @@ export async function fetchAppState(isAdmin) {
       isAdmin ? supabase.from("waivers").select("*").order("signed_at") : Promise.resolve({ data: [] }),
       isAdmin ? supabase.from("charges").select("*").order("created_at", { ascending: false }) : Promise.resolve({ data: [] }),
       isAdmin ? supabase.from("payment_entries").select("*").order("paid_at", { ascending: false }) : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("hof_entries").select("*").order("display_order").order("created_at") : Promise.resolve({ data: [] }),
     ]);
 
   for (const [r, what] of [
@@ -76,6 +78,7 @@ export async function fetchAppState(isAdmin) {
     [playoffMatches, "playoff_matches"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
     [charges, "charges"], [paymentEntries, "payment_entries"],
+    [hofEntries, "hof_entries"],
   ]) fail(r.error, `fetch ${what}`);
 
   // career_baselines rows -> the keyed map the selectors read.
@@ -104,6 +107,7 @@ export async function fetchAppState(isAdmin) {
     waivers: waivers.data || [],
     charges: charges.data || [],
     paymentEntries: paymentEntries.data || [],
+    hofEntries: hofEntries.data || [],
     settings: {
       current_season: settingsRow.data.current_season,
       current_seasons: {
@@ -111,6 +115,7 @@ export async function fetchAppState(isAdmin) {
         flag_football: settingsRow.data.current_flag_football_season || settingsRow.data.current_season,
       },
       registration_open: settingsRow.data.registration_open,
+      hof_published: settingsRow.data.hof_published,
     },
   };
 }
@@ -252,6 +257,11 @@ export async function createEntity(collection, entity) {
     fail(userError, "identify payment recorder");
     row = { ...entity, recorded_by: data.user?.id || null };
   }
+  if (collection === "hofEntries" && !entity.created_by) {
+    const { data, error: userError } = await supabase.auth.getUser();
+    fail(userError, "identify Hall of Fame curator");
+    row = { ...entity, created_by: data.user?.id || null };
+  }
   const { error } = await supabase.from(TABLES[collection]).insert(row);
   fail(error, `create ${collection}`);
 }
@@ -286,6 +296,11 @@ export async function setCurrentSeason(sport, season) {
   if (!column) throw new Error("Unsupported sport.");
   const { error } = await supabase.from("league_settings").update({ [column]: season }).eq("id", 1);
   fail(error, "set current season");
+}
+
+export async function setHofPublished(published) {
+  const { error } = await supabase.from("league_settings").update({ hof_published: published }).eq("id", 1);
+  fail(error, "update Hall of Fame publication");
 }
 
 export async function generatePlayoffBracket({ league_id, seed_team_ids }) {

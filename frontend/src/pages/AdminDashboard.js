@@ -7,6 +7,7 @@ import {
   Archive, NotePencil, Phone, LockSimple, LockSimpleOpen, ClockCounterClockwise, UserPlus,
   CaretRight, Flag, LinkSimple, X,
   CurrencyDollar,
+  Medal,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
@@ -33,6 +34,7 @@ import { EmptyState } from "../components/common/Section";
 import { BACKEND_ENABLED } from "../lib/supabase";
 import { signOutAdmin } from "../lib/backend";
 import PaymentsTab from "../components/admin/PaymentsTab";
+import HallOfFameTab from "../components/admin/HallOfFameTab";
 
 // FINAL DRAFT — Season 1 is admin-only (CLAUDE.md): players are profile
 // records, NOT user accounts. Account-language features (claim/invite counts,
@@ -62,6 +64,7 @@ function Dashboard() {
     { id: "games", label: "Schedule/Games", icon: CalendarBlank },
     { id: "scores", label: "Scores/Stats", icon: ChartBar },
     { id: "payments", label: "Payments", icon: CurrencyDollar },
+    { id: "hof", label: "Hall of Fame", icon: Medal },
   ];
 
   return (
@@ -115,6 +118,7 @@ function Dashboard() {
         <TabsContent value="games" className="mt-3"><GamesTab app={app} /></TabsContent>
         <TabsContent value="scores" className="mt-3"><ScoresTab app={app} /></TabsContent>
         <TabsContent value="payments" className="mt-3"><PaymentsTab app={app} /></TabsContent>
+        <TabsContent value="hof" className="mt-3"><HallOfFameTab app={app} /></TabsContent>
       </Tabs>
     </div>
   );
