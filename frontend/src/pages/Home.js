@@ -156,7 +156,7 @@ export default function Home() {
                 CVF Sports
               </h1>
               <p className="text-label uppercase tracking-widest text-primary mt-1.5">
-                {state.settings.current_season} · Albuquerque, NM
+                Current leagues · Albuquerque, NM
               </p>
             </div>
           </div>

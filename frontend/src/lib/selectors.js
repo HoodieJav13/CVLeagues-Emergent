@@ -19,6 +19,28 @@ export const getGame = (state, id) => state.games.find((g) => g.id === id);
 export const teamName = (state, id) => getTeam(state, id)?.name ?? "TBD";
 export const playerName = (state, id) => getProfile(state, id)?.name ?? "Unknown";
 
+export function currentSeasonForSport(state, sport) {
+  return state.settings?.current_seasons?.[sport]
+    || state.settings?.current_season
+    || state.seasons?.find((season) => season.status === "active")?.name
+    || "";
+}
+
+export function seasonsForSport(state, sport, { kind = "league" } = {}) {
+  const names = new Set(
+    state.leagues
+      .filter((league) => league.sport === sport && (!kind || league.kind === kind))
+      .map((league) => league.season)
+  );
+  if (kind === "league") names.add(currentSeasonForSport(state, sport));
+  const ordered = (state.seasons || []).filter((season) => names.has(season.name));
+  const known = new Set(ordered.map((season) => season.name));
+  return [
+    ...ordered,
+    ...[...names].filter((name) => !known.has(name)).map((name) => ({ name, status: "unknown" })),
+  ];
+}
+
 /* --------------------------- team records -------------------------------- */
 // Derived from completed REGULAR-SEASON games only. Playoff/tournament games
 // are their own record set and never move the standings (playoffs are seeded
@@ -67,30 +89,83 @@ function addStats(target, stats) {
   return target;
 }
 
-// Aggregate a player's season stats for a given sport (current season only).
-// ALL stages count — playoff/tournament stats are part of full-season totals
-// by design; only the standings computation above excludes those games.
-export function playerSeasonStats(state, profile_id, sport) {
+const statContext = (state, row) => {
+  const game = getGame(state, row.game_id);
+  const league = game ? getLeague(state, game.league_id) : null;
+  return { game, league };
+};
+
+// League season totals include regular-season and playoff games for one
+// selected season. Standalone tournaments are deliberately excluded.
+export function playerSeasonStats(state, profile_id, sport, season = currentSeasonForSport(state, sport)) {
   const total = zeroStats(sport);
   state.playerStats
     .filter((s) => s.profile_id === profile_id && s.sport === sport)
+    .filter((s) => {
+      const { game, league } = statContext(state, s);
+      return game
+        && game.status === "completed"
+        && league?.kind !== "tournament"
+        && league?.season === season
+        && game.stage !== "tournament";
+    })
     .forEach((s) => addStats(total, s.stats));
   return total;
 }
 
-// Career = prior-season baseline + current season.
+// League career = prior imported baseline + every league season. Standalone
+// tournaments never affect league career/all-time records.
 export function playerCareerStats(state, profile_id, sport) {
-  const season = playerSeasonStats(state, profile_id, sport);
+  const leagueTotals = zeroStats(sport);
+  state.playerStats
+    .filter((s) => s.profile_id === profile_id && s.sport === sport)
+    .filter((s) => {
+      const { game, league } = statContext(state, s);
+      return game && game.status === "completed" && league?.kind !== "tournament" && game.stage !== "tournament";
+    })
+    .forEach((s) => addStats(leagueTotals, s.stats));
   const baseline = state.careerBaselines?.[profile_id]?.[sport] || {};
-  return addStats({ ...season }, baseline);
+  return addStats(leagueTotals, baseline);
 }
 
-// Per-game log for a player in a sport (joined with game meta).
-export function playerGameLog(state, profile_id, sport) {
+// Tournament totals live in a separate stat domain. tournament_id is the
+// standalone tournament container (a leagues row with kind='tournament').
+export function playerTournamentStats(state, profile_id, sport, tournament_id = null) {
+  const total = zeroStats(sport);
+  state.playerStats
+    .filter((s) => s.profile_id === profile_id && s.sport === sport)
+    .filter((s) => {
+      const { game, league } = statContext(state, s);
+      return game
+        && game.status === "completed"
+        && league?.kind === "tournament"
+        && game.stage === "tournament"
+        && (!tournament_id || league.id === tournament_id);
+    })
+    .forEach((s) => addStats(total, s.stats));
+  return total;
+}
+
+// Per-game log defaults to the league stat domain. Tournament logs must be
+// requested explicitly so the two record systems never blend in the UI.
+export function playerGameLog(state, profile_id, sport, { domain = "league", season = null, tournament_id = null } = {}) {
   return state.playerStats
     .filter((s) => s.profile_id === profile_id && s.sport === sport)
-    .map((s) => ({ ...s, game: getGame(state, s.game_id) }))
-    .filter((s) => s.game)
+    .map((s) => {
+      const { game, league } = statContext(state, s);
+      return { ...s, game, league };
+    })
+    .filter((s) => {
+      if (!s.game || !s.league) return false;
+      if (domain === "tournament") {
+        return s.league.kind === "tournament"
+          && s.game.stage === "tournament"
+          && (!tournament_id || s.league.id === tournament_id);
+      }
+      return s.league.kind !== "tournament"
+        && s.game.stage !== "tournament"
+        && (!season || s.league.season === season);
+    })
     .sort((a, b) => new Date(b.game.date) - new Date(a.game.date));
 }
 
@@ -107,7 +182,8 @@ export function playerSports(state, profile_id) {
     .filter((tp) => tp.profile_id === profile_id)
     .map((tp) => getTeam(state, tp.team_id)?.sport)
     .filter(Boolean);
-  return [...new Set(fromRoster)];
+  const fromStats = state.playerStats.filter((row) => row.profile_id === profile_id).map((row) => row.sport);
+  return [...new Set([...fromRoster, ...fromStats])];
 }
 
 // Teams a player belongs to (with sport + role meta).
@@ -140,19 +216,31 @@ export function teamGames(state, team_id) {
 
 /* ---------------------------- leaderboards ------------------------------- */
 // Build a ranked leaderboard for a sport + stat key.
-// scope: 'season' | 'career'
-export function buildLeaderboard(state, sport, statKey, scope = "season") {
-  const fn = scope === "career" ? playerCareerStats : playerSeasonStats;
-  // candidate players: anyone on a roster for this sport
+// scope: 'season' | 'career' | 'tournament'
+export function buildLeaderboard(state, sport, statKey, scope = "season", context = null) {
+  const fn = scope === "career"
+    ? playerCareerStats
+    : scope === "tournament"
+      ? (s, pid, sp) => playerTournamentStats(s, pid, sp, context)
+      : (s, pid, sp) => playerSeasonStats(s, pid, sp, context || currentSeasonForSport(s, sp));
+  // Include anyone with matching stats even if the roster later becomes
+  // inactive; current roster membership alone is not historical evidence.
   const playerIds = new Set(
-    activeRosterRows(state)
-      .filter((tp) => getTeam(state, tp.team_id)?.sport === sport)
-      .map((tp) => tp.profile_id)
+    state.playerStats.filter((row) => row.sport === sport).map((row) => row.profile_id)
   );
+  activeRosterRows(state)
+    .filter((tp) => getTeam(state, tp.team_id)?.sport === sport)
+    .forEach((tp) => playerIds.add(tp.profile_id));
   return [...playerIds]
     .map((pid) => {
       const profile = getProfile(state, pid);
-      const team = playerTeams(state, pid).find((t) => t.team.sport === sport)?.team;
+      const team = playerTeams(state, pid).find((t) => {
+        const league = getLeague(state, t.team.league_id);
+        if (t.team.sport !== sport) return false;
+        if (scope === "tournament") return league?.id === context;
+        if (scope === "season") return league?.season === (context || currentSeasonForSport(state, sport));
+        return league?.kind !== "tournament";
+      })?.team;
       return { profile, team, value: fn(state, pid, sport)[statKey] || 0 };
     })
     .filter((row) => row.profile && row.value > 0)
@@ -168,7 +256,8 @@ export function teamStatLeaders(state, team_id, highlightKeys) {
   return highlightKeys.map((key) => {
     let best = null;
     roster.forEach((r) => {
-      const val = playerSeasonStats(state, r.profile_id, team.sport)[key] || 0;
+      const season = getLeague(state, team.league_id)?.season || currentSeasonForSport(state, team.sport);
+      const val = playerSeasonStats(state, r.profile_id, team.sport, season)[key] || 0;
       if (!best || val > best.value) best = { profile: r.profile, value: val };
     });
     return { key, ...(best || {}) };

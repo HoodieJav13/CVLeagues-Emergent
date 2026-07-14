@@ -9,7 +9,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
-import { getTeam, getProfile, getLeague, computeTeamRecord, claimStats, teamRoster } from "../lib/selectors";
+import { getTeam, getProfile, getLeague, computeTeamRecord, claimStats, teamRoster, currentSeasonForSport } from "../lib/selectors";
 import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
@@ -21,6 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "../components/ui/dialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "../components/ui/alert-dialog";
 import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
@@ -308,14 +309,15 @@ const fmtDate = (d) => new Date(d + "T00:00:00").toLocaleDateString("en-US", { m
 
 /* ----------------------------- LEAGUES ----------------------------------- */
 function LeaguesTab({ app }) {
-  const { state, createEntity, updateEntity, deleteEntity, toggleRegistration } = app;
+  const { state, createEntity, updateEntity, deleteEntity, toggleRegistration, setCurrentSeason } = app;
   const [modal, setModal] = useState(null); // {id?, name, sport, description}
+  const [seasonModal, setSeasonModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
 
   const save = () => {
-    if (!modal.name?.trim() || !modal.sport) return toast.error("Name and sport required");
-    if (modal.id) updateEntity("leagues", modal.id, { name: modal.name, sport: modal.sport, description: modal.description });
-    else createEntity("leagues", { name: modal.name, sport: modal.sport, season: state.settings.current_season, description: modal.description || "" }, "l");
+    if (!modal.name?.trim() || !modal.sport || !modal.season) return toast.error("Name, sport, and season required");
+    if (modal.id) updateEntity("leagues", modal.id, { name: modal.name, description: modal.description });
+    else createEntity("leagues", { name: modal.name, sport: modal.sport, season: modal.season, kind: "league", description: modal.description || "" }, "l");
     toast.success(modal.id ? "League updated" : "League created");
     setModal(null);
   };
@@ -326,26 +328,44 @@ function LeaguesTab({ app }) {
     return new Set(state.teamPlayers.filter((tp) => teamIds.includes(tp.team_id)).map((tp) => tp.profile_id)).size;
   };
 
+  const saveSeason = () => {
+    const name = seasonModal?.name?.trim();
+    if (!name) return toast.error("Season name required");
+    if (state.seasons.some((season) => season.name.toLowerCase() === name.toLowerCase())) return toast.error("That season already exists");
+    createEntity("seasons", { name, status: "upcoming" }, "season");
+    toast.success("Season created");
+    setSeasonModal(null);
+  };
+
   return (
     <div className="space-y-3">
       <div className="bg-card border border-border rounded-xl p-4">
-        <p className="font-display uppercase tracking-tight text-foreground mb-3">Registration Windows</p>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <p className="font-display uppercase tracking-tight text-foreground">Sport Defaults</p>
+          <Button variant="outline" size="sm" onClick={() => setSeasonModal({ name: "" })}><Plus size={14} /> New Season</Button>
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
           {SPORTS.map((s) => {
             const open = state.settings.registration_open[s.id];
             return (
-              <div key={s.id} className="flex items-center justify-between gap-3 bg-surface-sunken border border-border rounded-lg p-3">
-                <div className="flex items-center gap-2"><SportBadge sport={s.id} /><StatusBadge status={open ? "active" : "archived"} /></div>
-                <button onClick={() => { toggleRegistration(s.id); toast.success(`${s.name} registration ${open ? "closed" : "opened"}`); }} data-testid={`admin-toggle-reg-${s.id}`} className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg ${open ? "text-destructive border border-destructive/40" : "text-primary border border-primary/40"}`}>
-                  <Power size={14} weight="bold" /> {open ? "Close" : "Open"}
-                </button>
+              <div key={s.id} className="space-y-2 bg-surface-sunken border border-border rounded-lg p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2"><SportBadge sport={s.id} /><StatusBadge status={open ? "active" : "archived"} /></div>
+                  <button onClick={() => { toggleRegistration(s.id); toast.success(`${s.name} registration ${open ? "closed" : "opened"}`); }} data-testid={`admin-toggle-reg-${s.id}`} className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg ${open ? "text-destructive border border-destructive/40" : "text-primary border border-primary/40"}`}>
+                    <Power size={14} weight="bold" /> {open ? "Close" : "Open"}
+                  </button>
+                </div>
+                <Select value={currentSeasonForSport(state, s.id)} onValueChange={(value) => { setCurrentSeason(s.id, value); toast.success(`${s.name} now defaults to ${value}`); }}>
+                  <SelectTrigger data-testid={`admin-current-season-${s.id}`} className="bg-card border-border h-9 text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>{state.seasons.map((season) => <SelectItem key={season.name} value={season.name}>{season.name}</SelectItem>)}</SelectContent>
+                </Select>
               </div>
             );
           })}
         </div>
       </div>
 
-      <SectionTitle title="Leagues" count={state.leagues.length} action={<AddBtn onClick={() => setModal({ name: "", sport: "kickball", description: "" })} label="New League" testid="admin-add-league" />} />
+      <SectionTitle title="Leagues" count={state.leagues.length} action={<AddBtn onClick={() => setModal({ name: "", sport: "kickball", season: currentSeasonForSport(state, "kickball"), description: "" })} label="New League" testid="admin-add-league" />} />
       <AdminTable testid="admin-leagues-table" head={["League", "Sport", "Season", "Teams", "Players", "Status", ""]}>
         {state.leagues.length === 0 ? (
           <EmptyRow colSpan={7}>No leagues yet. Create one to start scheduling.</EmptyRow>
@@ -364,7 +384,7 @@ function LeaguesTab({ app }) {
             <TableCell><StatusBadge status={l.status || "active"} /></TableCell>
             <TableCell>
               <div className="flex items-center justify-end">
-                <IconBtn onClick={() => setModal({ id: l.id, name: l.name, sport: l.sport, description: l.description })} icon={PencilSimple} title="Edit league" testid={`admin-edit-league-${l.id}`} />
+                <IconBtn onClick={() => setModal({ id: l.id, name: l.name, sport: l.sport, season: l.season, description: l.description })} icon={PencilSimple} title="Edit league" testid={`admin-edit-league-${l.id}`} />
                 <IconBtn onClick={() => setConfirm({ title: "Delete league?", message: `Delete “${l.name}”? Its ${teamsIn(l.id).length} team(s) and games stay in the data but lose their league link. This cannot be undone.`, onConfirm: () => { deleteEntity("leagues", l.id); toast.success("League deleted"); } })} icon={Trash} title="Delete league" testid={`admin-delete-league-${l.id}`} danger />
               </div>
             </TableCell>
@@ -377,14 +397,24 @@ function LeaguesTab({ app }) {
           <>
             <ModalField label="Name"><Input data-testid="admin-league-name" value={modal.name} onChange={(e) => setModal({ ...modal, name: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
             <ModalField label="Sport">
-              <Select value={modal.sport} onValueChange={(v) => setModal({ ...modal, sport: v })}>
+              <Select value={modal.sport} disabled={!!modal.id} onValueChange={(v) => setModal({ ...modal, sport: v, season: currentSeasonForSport(state, v) })}>
                 <SelectTrigger className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
                 <SelectContent>{SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </ModalField>
+            <ModalField label="Season">
+              <Select value={modal.season} disabled={!!modal.id} onValueChange={(v) => setModal({ ...modal, season: v })}>
+                <SelectTrigger className="bg-surface-sunken border-border"><SelectValue /></SelectTrigger>
+                <SelectContent>{state.seasons.map((s) => <SelectItem key={s.name} value={s.name}>{s.name}</SelectItem>)}</SelectContent>
               </Select>
             </ModalField>
             <ModalField label="Description"><Textarea value={modal.description} onChange={(e) => setModal({ ...modal, description: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
           </>
         )}
+      </Modal>
+
+      <Modal open={!!seasonModal} onClose={() => setSeasonModal(null)} title="New Season" onSave={saveSeason}>
+        {seasonModal && <ModalField label="Season Name"><Input data-testid="admin-season-name" value={seasonModal.name} onChange={(event) => setSeasonModal({ name: event.target.value })} placeholder="Fall 2026" className="bg-surface-sunken border-border" /></ModalField>}
       </Modal>
 
       <ConfirmDialog confirm={confirm} onClose={() => setConfirm(null)} />
@@ -519,7 +549,7 @@ function AssignmentEditor({ app, mode, profile_id, team_id }) {
   const seasonFor = (tId) => {
     const team = getTeam(state, tId);
     const league = team ? getLeague(state, team.league_id) : null;
-    return league?.season || state.settings.current_season;
+    return league?.season || state.settings.current_seasons?.[team?.sport] || state.settings.current_season;
   };
   const pendingSeason = mode === "player" ? (sel ? seasonFor(sel) : null) : seasonFor(team_id);
 

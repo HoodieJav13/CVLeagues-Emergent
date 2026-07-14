@@ -44,6 +44,14 @@ const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
 const FA_STATUS_MAP = { available: "new", invited: "contacted" };
 const migrateState = (s) => ({
   ...s,
+  seasons: s.seasons || initialState.seasons,
+  settings: {
+    ...s.settings,
+    current_seasons: s.settings?.current_seasons || {
+      kickball: s.settings?.current_season || initialState.settings.current_season,
+      flag_football: s.settings?.current_season || initialState.settings.current_season,
+    },
+  },
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),
@@ -237,7 +245,7 @@ export function AppStateProvider({ children }) {
       if (prev.teamPlayers.some((tp) => tp.profile_id === profile_id && tp.team_id === team_id)) return prev; // no dupes
       const team = prev.teams.find((t) => t.id === team_id);
       const league = prev.leagues.find((l) => l.id === team?.league_id);
-      const season = league?.season || prev.settings.current_season;
+      const season = league?.season || prev.settings.current_seasons?.[team?.sport] || prev.settings.current_season;
       return {
         ...prev,
         teamPlayers: [
@@ -283,6 +291,16 @@ export function AppStateProvider({ children }) {
       settings: {
         ...prev.settings,
         registration_open: { ...prev.settings.registration_open, [sport]: !prev.settings.registration_open[sport] },
+      },
+    }));
+  }, []);
+
+  const setCurrentSeason = useCallback((sport, season) => {
+    setState((prev) => ({
+      ...prev,
+      settings: {
+        ...prev.settings,
+        current_seasons: { ...prev.settings.current_seasons, [sport]: season },
       },
     }));
   }, []);
@@ -392,6 +410,7 @@ export function AppStateProvider({ children }) {
     updateEntity: act(backend.updateEntity),
     deleteEntity: act(backend.deleteEntity),
     toggleRegistration: act((sport) => backend.toggleRegistration(sport, stateRef.current)),
+    setCurrentSeason: act(backend.setCurrentSeason),
     assignTempAdmin: act(backend.assignTempAdmin),
     appendAdminNote: act(backend.appendAdminNote),
     lockGame: act(backend.lockGame),
@@ -417,6 +436,7 @@ export function AppStateProvider({ children }) {
         updateEntity,
         deleteEntity,
         toggleRegistration,
+        setCurrentSeason,
         assignTempAdmin,
         appendAdminNote,
         lockGame,

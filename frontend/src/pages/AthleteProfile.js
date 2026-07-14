@@ -3,7 +3,7 @@ import { CalendarX, ShareNetwork, Lock, Trophy, UserCircle, UsersThree } from "@
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import {
-  getProfile, playerSports, playerTeams, playerSeasonStats, playerCareerStats, playerGameLog, getTeam,
+  getProfile, playerSports, playerTeams, playerSeasonStats, playerCareerStats, playerGameLog, getTeam, currentSeasonForSport,
 } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel, sportName, LEADERBOARD_CATEGORIES } from "../lib/statsConfig";
 import { Avatar } from "../components/common/Avatar";
@@ -71,11 +71,12 @@ export default function AthleteProfile() {
             </Button>
           </div>
           <SportTabs sports={sports} testid="profile-public-sport" render={(sport) => {
-            const season = playerSeasonStats(state, profile.id, sport);
+            const currentSeason = currentSeasonForSport(state, sport);
+            const season = playerSeasonStats(state, profile.id, sport, currentSeason);
             return (
               <Card density="default" className="rounded-2xl">
                 <CardContent className="p-[var(--card-spacing)]">
-                <div className="flex items-center gap-2 mb-4"><SportBadge sport={sport} /><span className="text-xs text-muted-foreground uppercase">Season Highlights</span></div>
+                <div className="flex items-center gap-2 mb-4"><SportBadge sport={sport} /><span className="text-xs text-muted-foreground uppercase">{currentSeason} Highlights</span></div>
                 {hasAnyStat(season) ? (
                   <div className="grid grid-cols-3 gap-3">
                     {HIGHLIGHT_STATS[sport].map((key) => (
@@ -161,9 +162,10 @@ const TeamHistory = ({ teams }) => (
 );
 
 const PrivateSport = ({ state, profile, sport }) => {
-  const season = playerSeasonStats(state, profile.id, sport);
+  const currentSeason = currentSeasonForSport(state, sport);
+  const season = playerSeasonStats(state, profile.id, sport, currentSeason);
   const career = playerCareerStats(state, profile.id, sport);
-  const log = playerGameLog(state, profile.id, sport);
+  const log = playerGameLog(state, profile.id, sport, { season: currentSeason });
   const keys = LEADERBOARD_CATEGORIES[sport].map((c) => c.key);
   const empty = !hasAnyStat(season) && !hasAnyStat(career) && log.length === 0;
 
@@ -182,8 +184,8 @@ const PrivateSport = ({ state, profile, sport }) => {
           <thead>
             <tr className="text-muted-foreground text-micro uppercase tracking-widest">
               <th className="text-left font-semibold py-2">Stat</th>
-              <th className="text-right font-semibold py-2 px-3">Season</th>
-              <th className="text-right font-semibold py-2">Career</th>
+              <th className="text-right font-semibold py-2 px-3">{currentSeason}</th>
+              <th className="text-right font-semibold py-2">League Career</th>
             </tr>
           </thead>
           <tbody>
@@ -199,7 +201,7 @@ const PrivateSport = ({ state, profile, sport }) => {
       </div>
 
       {/* game log */}
-      <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-2">Game Log</p>
+      <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-2">{currentSeason} League Game Log</p>
       <div className="space-y-1.5">
         {log.length ? log.map((row) => {
           const opp = getTeam(state, row.game.home_team_id === row.team_id ? row.game.away_team_id : row.game.home_team_id);

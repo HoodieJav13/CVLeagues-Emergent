@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Trophy, Medal } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { buildLeaderboard } from "../lib/selectors";
+import { buildLeaderboard, currentSeasonForSport, seasonsForSport } from "../lib/selectors";
 import { LEADERBOARD_CATEGORIES, SPORTS } from "../lib/statsConfig";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
@@ -16,15 +16,23 @@ export default function Leaderboards() {
   const { state } = useApp();
   const [sport, setSport] = useState("kickball");
   const [scope, setScope] = useState("season");
+  const [season, setSeason] = useState(() => currentSeasonForSport(state, "kickball"));
+  const [tournament, setTournament] = useState("");
   const cats = LEADERBOARD_CATEGORIES[sport];
   const [stat, setStat] = useState(cats[0].key);
 
   const onSport = (s) => {
     setSport(s);
+    setSeason(currentSeasonForSport(state, s));
+    setTournament("");
     setStat(LEADERBOARD_CATEGORIES[s][0].key);
   };
 
-  const rows = buildLeaderboard(state, sport, stat, scope);
+  const seasons = seasonsForSport(state, sport);
+  const tournaments = state.leagues.filter((league) => league.sport === sport && league.kind === "tournament");
+  const tournamentId = tournament || tournaments[0]?.id || null;
+  const context = scope === "season" ? season : scope === "tournament" ? tournamentId : null;
+  const rows = buildLeaderboard(state, sport, stat, scope, context);
   const catLabel = LEADERBOARD_CATEGORIES[sport].find((c) => c.key === stat)?.label;
 
   return (
@@ -42,11 +50,12 @@ export default function Leaderboards() {
 
         {SPORTS.map((s) => (
           <TabsContent key={s.id} value={s.id} className="space-y-4 mt-4">
-            <div className="flex gap-2.5">
+            <div className="flex flex-col sm:flex-row gap-2.5">
               <Tabs value={scope} onValueChange={setScope} className="flex-1">
-                <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-10">
+                <TabsList className="bg-card border border-border w-full grid grid-cols-3 h-10">
                   <TabsTrigger value="season" data-testid="leaderboard-scope-season" className="data-[state=active]:bg-secondary uppercase text-xs font-semibold">Season</TabsTrigger>
                   <TabsTrigger value="career" data-testid="leaderboard-scope-career" className="data-[state=active]:bg-secondary uppercase text-xs font-semibold">Career</TabsTrigger>
+                  <TabsTrigger value="tournament" data-testid="leaderboard-scope-tournament" className="data-[state=active]:bg-secondary uppercase text-xs font-semibold">Tournament</TabsTrigger>
                 </TabsList>
               </Tabs>
               <Select value={stat} onValueChange={setStat}>
@@ -61,9 +70,24 @@ export default function Leaderboards() {
               </Select>
             </div>
 
+            {scope === "season" && (
+              <Select value={season} onValueChange={setSeason}>
+                <SelectTrigger data-testid="leaderboard-season-select" className="bg-card border-border h-10 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>{seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}</SelectContent>
+              </Select>
+            )}
+            {scope === "tournament" && tournaments.length > 0 && (
+              <Select value={tournamentId} onValueChange={setTournament}>
+                <SelectTrigger data-testid="leaderboard-tournament-select" className="bg-card border-border h-10 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>{tournaments.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}</SelectContent>
+              </Select>
+            )}
+
             <div className="flex items-center gap-2">
               <SportBadge sport={s.id} />
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">{scope} · {catLabel}</span>
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                {scope === "season" ? season : scope === "tournament" ? (tournaments.find((item) => item.id === tournamentId)?.name || "No tournaments") : "League career"} · {catLabel}
+              </span>
             </div>
 
             <Card density="compact" className="rounded-2xl overflow-hidden" data-testid="leaderboard-list">
@@ -83,7 +107,7 @@ export default function Leaderboards() {
                   <span className="font-mono-score text-xl font-bold text-primary tabular-nums">{row.value}</span>
                 </div>
               )) : (
-                <EmptyState icon={Trophy} title="No leaders yet" message="Stats appear after completed games are recorded." density="default" />
+                <EmptyState icon={Trophy} title="No leaders yet" message={scope === "tournament" && !tournaments.length ? "No standalone tournaments have been created for this sport." : "Stats appear after completed games are recorded."} density="default" />
               )}
               </CardContent>
             </Card>

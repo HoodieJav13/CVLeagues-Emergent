@@ -29,6 +29,10 @@ export const SPORTS = [
 
 export const CURRENT_SEASON = "Summer 2026";
 
+export const seasons = [
+  { name: CURRENT_SEASON, status: "active", starts_on: "2026-06-01", ends_on: "2026-08-31" },
+];
+
 const AVATAR_COLORS = [
   "#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444",
   "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b",
@@ -335,11 +339,13 @@ export const waivers = [
 /* ------------------------------ SETTINGS --------------------------------- */
 export const settings = {
   current_season: CURRENT_SEASON,
+  current_seasons: { kickball: CURRENT_SEASON, flag_football: CURRENT_SEASON },
   registration_open: { kickball: true, flag_football: false },
 };
 
 /* Assemble the initial shared state object. */
 export const initialState = {
+  seasons,
   profiles,
   leagues,
   teams,

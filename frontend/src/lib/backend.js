@@ -15,6 +15,7 @@ import { supabase } from "./supabase";
 // state collection -> table (collection keys stay camelCase; they're assembled
 // here, not fetched — row FIELDS are the no-translation contract).
 const TABLES = {
+  seasons: "seasons",
   profiles: "profiles",
   leagues: "leagues",
   teams: "teams",
@@ -44,10 +45,11 @@ export async function fetchAppState(isAdmin) {
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
 
-  const [games, leagues, teams, teamPlayers, playerStats, baselines, settingsRow, profiles, freeAgents, registrations, waivers] =
+  const [games, leagues, seasons, teams, teamPlayers, playerStats, baselines, settingsRow, profiles, freeAgents, registrations, waivers] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
+      supabase.from("seasons").select("*").order("starts_on", { ascending: false, nullsFirst: false }),
       supabase.from("teams").select("*").order("name"),
       supabase.from("team_players").select("*"),
       supabase.from("player_stats").select("*"),
@@ -62,7 +64,7 @@ export async function fetchAppState(isAdmin) {
     ]);
 
   for (const [r, what] of [
-    [games, "games"], [leagues, "leagues"], [teams, "teams"], [teamPlayers, "team_players"],
+    [games, "games"], [leagues, "leagues"], [seasons, "seasons"], [teams, "teams"], [teamPlayers, "team_players"],
     [playerStats, "player_stats"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
   ]) fail(r.error, `fetch ${what}`);
@@ -74,6 +76,7 @@ export async function fetchAppState(isAdmin) {
   }
 
   return {
+    seasons: seasons.data || [],
     profiles: profiles.data || [],
     leagues: leagues.data || [],
     teams: teams.data || [],
@@ -89,6 +92,10 @@ export async function fetchAppState(isAdmin) {
     waivers: waivers.data || [],
     settings: {
       current_season: settingsRow.data.current_season,
+      current_seasons: {
+        kickball: settingsRow.data.current_kickball_season || settingsRow.data.current_season,
+        flag_football: settingsRow.data.current_flag_football_season || settingsRow.data.current_season,
+      },
       registration_open: settingsRow.data.registration_open,
     },
   };
@@ -144,13 +151,19 @@ export async function addRegistration(reg, turnstileToken) {
 }
 
 // Approving is the intake->roster linkage: it must create the team via RPC.
-// The league is the active league for the registration's sport ("one active
-// season per sport" — locked decision makes this derivable).
+// The league must match both the registration sport and preferred season.
+// Multiple seasons can coexist, so selecting the first non-archived league is
+// no longer safe.
 export async function updateRegistrationStatus(id, status, state) {
   if (status === "approved") {
     const reg = state.registrations.find((r) => r.id === id);
-    const league = state.leagues.find((l) => l.sport === reg?.sport && l.status !== "archived");
-    if (!league) throw new Error("No active league for this sport — create the league first.");
+    const league = state.leagues.find((l) =>
+      l.kind !== "tournament"
+      && l.sport === reg?.sport
+      && l.season === reg?.preferred_season
+      && l.status !== "archived"
+    );
+    if (!league) throw new Error("No active league matches this registration's sport and season.");
     const { error } = await supabase.rpc("approve_registration", {
       p_registration_id: id,
       p_league_id: league.id,
@@ -201,7 +214,7 @@ export async function createPlayer(profile) {
 export async function assignPlayerToTeam({ profile_id, team_id, jersey_number = null, position = "" }, state) {
   const team = state.teams.find((t) => t.id === team_id);
   const league = state.leagues.find((l) => l.id === team?.league_id);
-  const season = league?.season || state.settings.current_season;
+  const season = league?.season || state.settings.current_seasons?.[team?.sport] || state.settings.current_season;
   const { error } = await supabase.from("team_players").insert({
     profile_id,
     team_id,
@@ -242,6 +255,17 @@ export async function toggleRegistration(sport, state) {
   const next = { ...state.settings.registration_open, [sport]: !state.settings.registration_open[sport] };
   const { error } = await supabase.from("league_settings").update({ registration_open: next }).eq("id", 1);
   fail(error, "toggle registration");
+}
+
+export async function setCurrentSeason(sport, season) {
+  const columns = {
+    kickball: "current_kickball_season",
+    flag_football: "current_flag_football_season",
+  };
+  const column = columns[sport];
+  if (!column) throw new Error("Unsupported sport.");
+  const { error } = await supabase.from("league_settings").update({ [column]: season }).eq("id", 1);
+  fail(error, "set current season");
 }
 
 export async function assignTempAdmin(game_id, profile_id) {

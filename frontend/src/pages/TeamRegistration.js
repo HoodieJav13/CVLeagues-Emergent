@@ -13,6 +13,7 @@ import { Checkbox } from "../components/ui/checkbox";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { TurnstileWidget } from "../components/common/TurnstileWidget";
 import { BACKEND_ENABLED } from "../lib/supabase";
+import { currentSeasonForSport } from "../lib/selectors";
 
 export default function TeamRegistration() {
   const { state, addRegistration } = useApp();
@@ -65,7 +66,7 @@ export default function TeamRegistration() {
         sport: form.sport,
         team_name: form.team_name.trim(),
         estimated_roster_size: form.estimated_roster_size ? Number(form.estimated_roster_size) : null,
-        preferred_season: state.settings.current_season,
+        preferred_season: currentSeasonForSport(state, form.sport),
         consent_to_contact: true,
         notes: form.notes.trim() || null,
       }, turnstileToken);
@@ -156,7 +157,7 @@ export default function TeamRegistration() {
             />
           </Field>
           <Field label="Preferred Season" optional>
-            <Input value={state.settings.current_season} readOnly className="bg-surface-sunken border-border opacity-60 cursor-default" />
+            <Input value={form.sport ? currentSeasonForSport(state, form.sport) : "Select a sport"} readOnly className="bg-surface-sunken border-border opacity-60 cursor-default" />
           </Field>
         </div>
         <Field label="Notes" optional>

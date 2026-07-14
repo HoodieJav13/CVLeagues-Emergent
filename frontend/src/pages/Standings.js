@@ -1,19 +1,34 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Ranking } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { computeStandings } from "../lib/selectors";
+import { computeStandings, currentSeasonForSport, seasonsForSport } from "../lib/selectors";
 import { SectionHeading, EmptyState } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
+import { SPORTS } from "../lib/statsConfig";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 
 export default function Standings() {
   const { state } = useApp();
+  const [sport, setSport] = useState("kickball");
+  const [season, setSeason] = useState(() => currentSeasonForSport(state, "kickball"));
+  const seasons = seasonsForSport(state, sport);
+  const leagues = state.leagues.filter((league) => league.kind !== "tournament" && league.sport === sport && league.season === season);
   return (
     <div className="space-y-8 animate-fade-up">
-      <SectionHeading as="h1" band title="Standings" subtitle={`${state.settings.current_season} · Albuquerque · wins first, point diff breaks ties`} />
-      {state.leagues.length === 0 && (
+      <SectionHeading as="h1" band title="Standings" subtitle={`${season} · Albuquerque · wins first, point diff breaks ties`} />
+      <div className="grid sm:grid-cols-2 gap-2.5">
+        <Filter label="Sport" value={sport} onChange={(value) => { setSport(value); setSeason(currentSeasonForSport(state, value)); }} testid="standings-filter-sport">
+          {SPORTS.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
+        </Filter>
+        <Filter label="Season" value={season} onChange={setSeason} testid="standings-filter-season">
+          {seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
+        </Filter>
+      </div>
+      {leagues.length === 0 && (
         <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
       )}
-      {state.leagues.map((league) => {
+      {leagues.map((league) => {
         const rows = computeStandings(state, league.id);
         return (
           <section key={league.id} data-testid={`standings-league-${league.id}`}>
@@ -68,3 +83,13 @@ export default function Standings() {
     </div>
   );
 }
+
+const Filter = ({ label, value, onChange, testid, children }) => (
+  <div>
+    <label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">{label}</label>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger data-testid={testid} className="bg-card border-border h-10 text-sm"><SelectValue /></SelectTrigger>
+      <SelectContent>{children}</SelectContent>
+    </Select>
+  </div>
+);
