@@ -25,6 +25,9 @@ export default function Standings() {
           {seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
         </Filter>
       </div>
+      <div className="flex justify-end">
+        <Link to="/playoffs" className="inline-flex min-h-11 items-center rounded-xl border border-gold/40 px-4 py-2 text-xs font-bold uppercase tracking-wide text-gold hover:bg-gold/10">View Playoff Brackets</Link>
+      </div>
       {leagues.length === 0 && (
         <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
       )}

@@ -54,6 +54,9 @@ const STATUS_STYLES = {
   // entity lifecycle (teams & leagues)
   draft: { ...SLATE, label: "Draft" },
   active: { ...TEAL, label: "Active" },
+  ready: { ...TEAL, label: "Ready" },
+  bye: { ...SLATE, label: "Bye" },
+  complete: { ...SLATE, label: "Complete" },
   // waiver verification (pending/rejected shared with the entries above)
   verified: { ...TEAL, label: "Verified" },
   duplicate: { ...SLATE, label: "Duplicate" },

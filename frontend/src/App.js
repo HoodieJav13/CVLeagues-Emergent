@@ -7,6 +7,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import Home from "./pages/Home";
 import Schedule from "./pages/Schedule";
 import Standings from "./pages/Standings";
+import Playoffs from "./pages/Playoffs";
 import GameDetail from "./pages/GameDetail";
 import TeamPage from "./pages/TeamPage";
 import Leaderboards from "./pages/Leaderboards";
@@ -43,6 +44,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/schedule" element={<Schedule />} />
               <Route path="/standings" element={<Standings />} />
+              <Route path="/playoffs" element={<Playoffs />} />
               <Route path="/game/:id" element={<GameDetail />} />
               <Route path="/team/:id" element={<TeamPage />} />
               <Route path="/leaderboards" element={<Leaderboards />} />

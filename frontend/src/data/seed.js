@@ -89,7 +89,7 @@ export const profiles = [
 // 'round_robin' | null; varies per season, informational until bracket UI.
 export const leagues = [
   { id: "l1", name: "Duke City Kickball", sport: "kickball", season: CURRENT_SEASON, kind: "league", playoff_format: "single_elim", description: "Albuquerque's premier adult co-ed kickball league. Tuesday & Thursday nights." },
-  { id: "l2", name: "Burque Flag Football", sport: "flag_football", season: CURRENT_SEASON, kind: "league", playoff_format: "round_robin", description: "5-on-5 adult flag football under the lights at the West Mesa fields." },
+  { id: "l2", name: "Burque Flag Football", sport: "flag_football", season: CURRENT_SEASON, kind: "league", playoff_format: "single_elim", description: "5-on-5 adult flag football under the lights at the West Mesa fields." },
 ];
 
 /* ------------------------------- TEAMS ----------------------------------- */
@@ -100,6 +100,8 @@ export const teams = [
   { id: "t4", name: "Bosque Blitz", sport: "flag_football", league_id: "l2", captain_id: "p16", logo_color: "#10b981", founded: "2022" },
   { id: "t5", name: "Mesa Mavericks", sport: "flag_football", league_id: "l2", captain_id: "p21", logo_color: "#ef4444", founded: "2023" },
   { id: "t6", name: "Frontier Force", sport: "flag_football", league_id: "l2", captain_id: "p26", logo_color: "#3b82f6", founded: "2024" },
+  { id: "t7", name: "High Desert Heat", sport: "kickball", league_id: "l1", captain_id: null, logo_color: "#facc15", founded: "2026" },
+  { id: "t8", name: "Route 66 Rush", sport: "flag_football", league_id: "l2", captain_id: null, logo_color: "#ec4899", founded: "2026" },
 ];
 
 /* --------------------------- TEAM_PLAYERS -------------------------------- */
@@ -183,12 +185,11 @@ export const games = [
   { id: "g9", league_id: "l2", sport: "flag_football", home_team_id: "t4", away_team_id: "t6", date: "2026-06-21", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "completed", score_status: "approved", home_score: 21, away_score: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Flag football playoffs (round robin; g10 played, g11/g12 upcoming) ---
   { id: "g10", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t4", date: "2026-06-26", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "completed", score_status: "approved", stage: "playoff", home_score: 20, away_score: 28, periods: { home: [7, 6, 0, 7], away: [7, 7, 7, 7] }, temp_admin_id: null, locked: false, edit_history: [] },
-  { id: "g11", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t4", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
-  { id: "g12", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t5", date: "2026-07-12", time: "7:00 PM", location: "West Mesa Fields, Field B", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g11", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t8", date: "2026-07-05", time: "8:00 PM", location: "West Mesa Fields, Field A", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Kickball playoffs (single elim, after the 07-07 finale; matchups are
   //     mock placeholders — real seeding/bracket UI is a later pass) ---
-  { id: "g13", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t2", date: "2026-07-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
-  { id: "g14", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", date: "2026-07-14", time: "7:00 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g13", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", date: "2026-07-09", time: "6:30 PM", location: "Los Altos Park, Field 2", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  { id: "g14", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t7", date: "2026-07-14", time: "7:00 PM", location: "Los Altos Park, Field 1", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
 ].map((g) => ({ stage: "regular", ...g }));
 
 /* ---------------------------- PLAYER_STATS ------------------------------- */
@@ -352,6 +353,9 @@ export const initialState = {
   teamPlayers,
   games,
   playerStats,
+  playoffBrackets: [],
+  playoffSeeds: [],
+  playoffMatches: [],
   careerBaselines,
   freeAgents,
   registrations,

@@ -45,7 +45,7 @@ export async function fetchAppState(isAdmin) {
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
 
-  const [games, leagues, seasons, teams, teamPlayers, playerStats, baselines, settingsRow, profiles, freeAgents, registrations, waivers] =
+  const [games, leagues, seasons, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
@@ -53,6 +53,9 @@ export async function fetchAppState(isAdmin) {
       supabase.from("teams").select("*").order("name"),
       supabase.from("team_players").select("*"),
       supabase.from("player_stats").select("*"),
+      supabase.from("playoff_brackets").select("*"),
+      supabase.from("playoff_seeds").select("*").order("seed"),
+      supabase.from("playoff_matches").select("*").order("round_number").order("match_number"),
       supabase.from("career_baselines").select("*"),
       supabase.from("league_settings").select("*").eq("id", 1).single(),
       isAdmin
@@ -65,7 +68,8 @@ export async function fetchAppState(isAdmin) {
 
   for (const [r, what] of [
     [games, "games"], [leagues, "leagues"], [seasons, "seasons"], [teams, "teams"], [teamPlayers, "team_players"],
-    [playerStats, "player_stats"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
+    [playerStats, "player_stats"], [playoffBrackets, "playoff_brackets"], [playoffSeeds, "playoff_seeds"],
+    [playoffMatches, "playoff_matches"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
   ]) fail(r.error, `fetch ${what}`);
 
@@ -86,6 +90,9 @@ export async function fetchAppState(isAdmin) {
       edit_history: game.edit_history || [],
     })),
     playerStats: playerStats.data || [],
+    playoffBrackets: playoffBrackets.data || [],
+    playoffSeeds: playoffSeeds.data || [],
+    playoffMatches: playoffMatches.data || [],
     careerBaselines,
     freeAgents: freeAgents.data || [],
     registrations: registrations.data || [],
@@ -266,6 +273,34 @@ export async function setCurrentSeason(sport, season) {
   if (!column) throw new Error("Unsupported sport.");
   const { error } = await supabase.from("league_settings").update({ [column]: season }).eq("id", 1);
   fail(error, "set current season");
+}
+
+export async function generatePlayoffBracket({ league_id, seed_team_ids }) {
+  const { error } = await supabase.rpc("generate_single_elim_bracket", {
+    p_league_id: league_id,
+    p_seed_team_ids: seed_team_ids,
+  });
+  fail(error, "generate playoff bracket");
+}
+
+export async function schedulePlayoffMatch({ match_id, date, time, location }) {
+  const { error } = await supabase.rpc("schedule_playoff_match", {
+    p_match_id: match_id,
+    p_date: date,
+    p_time: time,
+    p_location: location,
+  });
+  fail(error, "schedule playoff match");
+}
+
+export async function linkPlayoffGame({ match_id, game_id }) {
+  const { error } = await supabase.rpc("link_playoff_game", { p_match_id: match_id, p_game_id: game_id });
+  fail(error, "link playoff game");
+}
+
+export async function advancePlayoffMatch(match_id) {
+  const { error } = await supabase.rpc("advance_playoff_match", { p_match_id: match_id });
+  fail(error, "advance playoff match");
 }
 
 export async function assignTempAdmin(game_id, profile_id) {

@@ -43,10 +43,23 @@ describe("computeTeamRecord excludes playoff games", () => {
 });
 
 describe("computeStandings unaffected by the scored playoff game", () => {
-  test("flag football standings order: t4, t6, t5 — as of regular-season end", () => {
+  test("flag football standings order includes the fourth S1 qualifier", () => {
     const rows = computeStandings(state, "l2");
-    expect(rows.map((r) => r.team.id)).toEqual(["t4", "t6", "t5"]);
-    expect(rows.map((r) => r.record.played)).toEqual([2, 2, 2]);
+    expect(rows.map((r) => r.team.id)).toEqual(["t4", "t6", "t8", "t5"]);
+    expect(rows.map((r) => r.record.played)).toEqual([2, 2, 0, 2]);
+  });
+
+  test("head-to-head breaks equal-win ties before point differential", () => {
+    const tied = {
+      ...state,
+      games: [
+        ...state.games,
+        { id: "tie-win", league_id: "l1", status: "completed", stage: "regular", home_team_id: "t2", away_team_id: "t1", home_score: 100, away_score: 0 },
+        { id: "h2h", league_id: "l1", status: "completed", stage: "regular", home_team_id: "t7", away_team_id: "t2", home_score: 1, away_score: 0 },
+      ],
+    };
+    const rows = computeStandings(tied, "l1");
+    expect(rows.findIndex((row) => row.team.id === "t7")).toBeLessThan(rows.findIndex((row) => row.team.id === "t2"));
   });
 });
 

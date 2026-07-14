@@ -7,6 +7,7 @@ const BASE_TITLE = "CVF Sports | Adult Rec Leagues";
 const SEGMENT_TITLES = {
   schedule: "Schedule",
   standings: "Standings",
+  playoffs: "Playoffs",
   game: "Game",
   team: "Team",
   leaderboards: "Leaderboards",

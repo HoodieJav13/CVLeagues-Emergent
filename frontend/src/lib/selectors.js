@@ -65,13 +65,26 @@ export function computeTeamRecord(state, team_id) {
 }
 
 /* ----------------------------- standings --------------------------------- */
-// Sort by wins desc, then point differential desc, then points-for desc.
+// Sort by wins, mini-table head-to-head wins among teams tied on overall wins,
+// then point differential and points scored.
 export function computeStandings(state, league_id) {
   const teams = state.teams.filter((t) => t.league_id === league_id);
-  return teams
-    .map((t) => ({ team: t, record: computeTeamRecord(state, t.id) }))
+  const rows = teams.map((t) => ({ team: t, record: computeTeamRecord(state, t.id) }));
+  const winsByTeam = new Map(rows.map((row) => [row.team.id, row.record.wins]));
+  const headToHeadWins = new Map(rows.map((row) => [row.team.id, 0]));
+
+  state.games.forEach((game) => {
+    if (game.league_id !== league_id || game.status !== "completed" || game.stage === "playoff" || game.stage === "tournament") return;
+    if (winsByTeam.get(game.home_team_id) !== winsByTeam.get(game.away_team_id) || game.home_score === game.away_score) return;
+    const winner = game.home_score > game.away_score ? game.home_team_id : game.away_team_id;
+    if (headToHeadWins.has(winner)) headToHeadWins.set(winner, headToHeadWins.get(winner) + 1);
+  });
+
+  return rows
     .sort((a, b) => {
       if (b.record.wins !== a.record.wins) return b.record.wins - a.record.wins;
+      const h2h = headToHeadWins.get(b.team.id) - headToHeadWins.get(a.team.id);
+      if (h2h !== 0) return h2h;
       if (b.record.diff !== a.record.diff) return b.record.diff - a.record.diff;
       return b.record.pointsFor - a.record.pointsFor;
     })

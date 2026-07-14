@@ -5,6 +5,7 @@ import { freeAgentName } from "../lib/utils";
 import { BACKEND_ENABLED } from "../lib/supabase";
 import * as backend from "../lib/backend";
 import { useRole } from "./RoleContext";
+import { buildSingleElimBracket } from "../lib/brackets";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -28,7 +29,7 @@ const AppStateContext = createContext(null);
 // v3: playoff/tournament seed pass — new playoff GAMES (g10 reshaped, g13/g14
 // added) can't reach a persisted state via field backfill, so the demo
 // reseeds again (same precedent as v1→v2).
-const STORAGE_KEY = "cvf_app_state_v3";
+const STORAGE_KEY = "cvf_app_state_v4";
 
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
@@ -52,6 +53,9 @@ const migrateState = (s) => ({
       flag_football: s.settings?.current_season || initialState.settings.current_season,
     },
   },
+  playoffBrackets: s.playoffBrackets || initialState.playoffBrackets,
+  playoffSeeds: s.playoffSeeds || initialState.playoffSeeds,
+  playoffMatches: s.playoffMatches || initialState.playoffMatches,
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),
@@ -305,6 +309,77 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
+  const generatePlayoffBracket = useCallback(({ league_id, seed_team_ids }) => {
+    setState((prev) => {
+      const generated = buildSingleElimBracket({ league_id, teamIds: seed_team_ids, idFactory: newId });
+      return {
+        ...prev,
+        playoffBrackets: [...prev.playoffBrackets.filter((item) => item.league_id !== league_id), generated.bracket],
+        playoffSeeds: [...prev.playoffSeeds.filter((item) => !prev.playoffBrackets.some((b) => b.league_id === league_id && b.id === item.bracket_id)), ...generated.seeds],
+        playoffMatches: [...prev.playoffMatches.filter((item) => !prev.playoffBrackets.some((b) => b.league_id === league_id && b.id === item.bracket_id)), ...generated.matches],
+      };
+    });
+  }, []);
+
+  const schedulePlayoffMatch = useCallback(({ match_id, date, time, location }) => {
+    setState((prev) => {
+      const match = prev.playoffMatches.find((item) => item.id === match_id);
+      const bracket = prev.playoffBrackets.find((item) => item.id === match?.bracket_id);
+      const league = prev.leagues.find((item) => item.id === bracket?.league_id);
+      if (!match?.home_team_id || !match?.away_team_id || !league) return prev;
+      const game_id = newId("game");
+      const game = {
+        id: game_id, league_id: league.id, sport: league.sport,
+        home_team_id: match.home_team_id, away_team_id: match.away_team_id,
+        date, time, location, status: "upcoming", score_status: "pending", stage: "playoff",
+        home_score: null, away_score: null, periods: { home: [], away: [] }, locked: false, edit_history: [],
+      };
+      return {
+        ...prev,
+        games: [...prev.games, game],
+        playoffMatches: prev.playoffMatches.map((item) => item.id === match_id ? { ...item, game_id } : item),
+      };
+    });
+  }, []);
+
+  const linkPlayoffGame = useCallback(({ match_id, game_id }) => {
+    setState((prev) => ({
+      ...prev,
+      playoffMatches: prev.playoffMatches.map((item) => item.id === match_id ? { ...item, game_id } : item),
+    }));
+  }, []);
+
+  const advancePlayoffMatch = useCallback((match_id) => {
+    setState((prev) => {
+      const source = prev.playoffMatches.find((item) => item.id === match_id);
+      const game = prev.games.find((item) => item.id === source?.game_id);
+      if (!source || !game || !game.locked || game.score_status !== "final" || game.status !== "completed" || game.home_score === game.away_score) return prev;
+      const homeWins = game.home_score > game.away_score;
+      const winner = homeWins ? game.home_team_id : game.away_team_id;
+      const loser = homeWins ? game.away_team_id : game.home_team_id;
+      const winnerSeed = winner === source.home_team_id ? source.home_seed : source.away_seed;
+      const loserSeed = loser === source.home_team_id ? source.home_seed : source.away_seed;
+      const matches = prev.playoffMatches.map((item) => ({ ...item }));
+      const place = (destinationId, slot, team, seed) => {
+        if (!destinationId) return;
+        const destination = matches.find((item) => item.id === destinationId);
+        destination[`${slot}_team_id`] = team;
+        destination[`${slot}_seed`] = seed;
+        if (destination.home_team_id && destination.away_team_id) destination.status = "ready";
+      };
+      place(source.winner_to_match_id, source.winner_to_slot, winner, winnerSeed);
+      place(source.loser_to_match_id, source.loser_to_slot, loser, loserSeed);
+      const updated = matches.find((item) => item.id === match_id);
+      Object.assign(updated, { status: "completed", winner_team_id: winner, loser_team_id: loser });
+      const bracketDone = matches.filter((item) => item.bracket_id === source.bracket_id).every((item) => ["completed", "bye"].includes(item.status));
+      return {
+        ...prev,
+        playoffMatches: matches,
+        playoffBrackets: prev.playoffBrackets.map((item) => item.id === source.bracket_id && bracketDone ? { ...item, status: "complete" } : item),
+      };
+    });
+  }, []);
+
   const assignTempAdmin = useCallback((game_id, profile_id) => {
     setState((prev) => ({
       ...prev,
@@ -337,14 +412,49 @@ export function AppStateProvider({ children }) {
 
   // Deliberate unlock — requires a reason, which is recorded in the history.
   const unlockGame = useCallback((game_id, reason) => {
-    setState((prev) => ({
-      ...prev,
-      games: prev.games.map((g) =>
+    setState((prev) => {
+      const source = prev.playoffMatches.find((match) => match.game_id === game_id && match.status === "completed");
+      const destinationIds = [source?.winner_to_match_id, source?.loser_to_match_id].filter(Boolean);
+      if (destinationIds.some((id) => {
+        const destination = prev.playoffMatches.find((match) => match.id === id);
+        return destination?.game_id || destination?.status === "completed";
+      })) {
+        toast.error("This result cannot be unlocked after a downstream playoff game is scheduled.");
+        return prev;
+      }
+
+      const playoffMatches = source
+        ? prev.playoffMatches.map((match) => {
+            if (match.id === source.id) {
+              return { ...match, status: "ready", winner_team_id: null, loser_team_id: null };
+            }
+            if (match.id === source.winner_to_match_id) {
+              return source.winner_to_slot === "home"
+                ? { ...match, home_team_id: null, home_seed: null, status: "pending" }
+                : { ...match, away_team_id: null, away_seed: null, status: "pending" };
+            }
+            if (match.id === source.loser_to_match_id) {
+              return source.loser_to_slot === "home"
+                ? { ...match, home_team_id: null, home_seed: null, status: "pending" }
+                : { ...match, away_team_id: null, away_seed: null, status: "pending" };
+            }
+            return match;
+          })
+        : prev.playoffMatches;
+
+      return {
+        ...prev,
+        playoffMatches,
+        playoffBrackets: source
+          ? prev.playoffBrackets.map((bracket) => bracket.id === source.bracket_id ? { ...bracket, status: "active" } : bracket)
+          : prev.playoffBrackets,
+        games: prev.games.map((g) =>
         g.id === game_id
           ? { ...g, score_status: "approved", locked: false, edit_history: [...(g.edit_history || []), logEntry("Unlocked", reason)] }
           : g
-      ),
-    }));
+        ),
+      };
+    });
   }, []);
 
   // Postpone / cancel a scheduled game (the UI blocks this on locked games).
@@ -411,6 +521,10 @@ export function AppStateProvider({ children }) {
     deleteEntity: act(backend.deleteEntity),
     toggleRegistration: act((sport) => backend.toggleRegistration(sport, stateRef.current)),
     setCurrentSeason: act(backend.setCurrentSeason),
+    generatePlayoffBracket: act(backend.generatePlayoffBracket),
+    schedulePlayoffMatch: act(backend.schedulePlayoffMatch),
+    linkPlayoffGame: act(backend.linkPlayoffGame),
+    advancePlayoffMatch: act(backend.advancePlayoffMatch),
     assignTempAdmin: act(backend.assignTempAdmin),
     appendAdminNote: act(backend.appendAdminNote),
     lockGame: act(backend.lockGame),
@@ -437,6 +551,10 @@ export function AppStateProvider({ children }) {
         deleteEntity,
         toggleRegistration,
         setCurrentSeason,
+        generatePlayoffBracket,
+        schedulePlayoffMatch,
+        linkPlayoffGame,
+        advancePlayoffMatch,
         assignTempAdmin,
         appendAdminNote,
         lockGame,
