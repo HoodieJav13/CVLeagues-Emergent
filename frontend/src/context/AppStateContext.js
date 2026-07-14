@@ -29,7 +29,8 @@ const AppStateContext = createContext(null);
 // v3: playoff/tournament seed pass — new playoff GAMES (g10 reshaped, g13/g14
 // added) can't reach a persisted state via field backfill, so the demo
 // reseeds again (same precedent as v1→v2).
-const STORAGE_KEY = "cvf_app_state_v4";
+// v4: bracket records were added; v5 adds the demo-only manual payments ledger.
+const STORAGE_KEY = "cvf_app_state_v5";
 
 // Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
 // predate the rename, so legacy values are remapped on load:
@@ -56,6 +57,8 @@ const migrateState = (s) => ({
   playoffBrackets: s.playoffBrackets || initialState.playoffBrackets,
   playoffSeeds: s.playoffSeeds || initialState.playoffSeeds,
   playoffMatches: s.playoffMatches || initialState.playoffMatches,
+  charges: s.charges || initialState.charges,
+  paymentEntries: s.paymentEntries || initialState.paymentEntries,
   // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
   waivers: s.waivers || initialState.waivers,
   registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),

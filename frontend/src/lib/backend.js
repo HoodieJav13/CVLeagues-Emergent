@@ -25,6 +25,8 @@ const TABLES = {
   freeAgents: "free_agents",
   registrations: "team_registrations",
   waivers: "waivers",
+  charges: "charges",
+  paymentEntries: "payment_entries",
 };
 
 const fail = (error, what) => {
@@ -45,7 +47,7 @@ export async function fetchAppState(isAdmin) {
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
 
-  const [games, leagues, seasons, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers] =
+  const [games, leagues, seasons, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
@@ -64,6 +66,8 @@ export async function fetchAppState(isAdmin) {
       isAdmin ? supabase.from("free_agents").select("*").order("created_at") : Promise.resolve({ data: [] }),
       isAdmin ? supabase.from("team_registrations").select("*").order("created_at") : Promise.resolve({ data: [] }),
       isAdmin ? supabase.from("waivers").select("*").order("signed_at") : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("charges").select("*").order("created_at", { ascending: false }) : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("payment_entries").select("*").order("paid_at", { ascending: false }) : Promise.resolve({ data: [] }),
     ]);
 
   for (const [r, what] of [
@@ -71,6 +75,7 @@ export async function fetchAppState(isAdmin) {
     [playerStats, "player_stats"], [playoffBrackets, "playoff_brackets"], [playoffSeeds, "playoff_seeds"],
     [playoffMatches, "playoff_matches"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
+    [charges, "charges"], [paymentEntries, "payment_entries"],
   ]) fail(r.error, `fetch ${what}`);
 
   // career_baselines rows -> the keyed map the selectors read.
@@ -97,6 +102,8 @@ export async function fetchAppState(isAdmin) {
     freeAgents: freeAgents.data || [],
     registrations: registrations.data || [],
     waivers: waivers.data || [],
+    charges: charges.data || [],
+    paymentEntries: paymentEntries.data || [],
     settings: {
       current_season: settingsRow.data.current_season,
       current_seasons: {
@@ -239,7 +246,13 @@ export async function removePlayerFromTeam(teamPlayerId) {
 }
 
 export async function createEntity(collection, entity) {
-  const { error } = await supabase.from(TABLES[collection]).insert(entity);
+  let row = entity;
+  if (collection === "paymentEntries" && !entity.recorded_by) {
+    const { data, error: userError } = await supabase.auth.getUser();
+    fail(userError, "identify payment recorder");
+    row = { ...entity, recorded_by: data.user?.id || null };
+  }
+  const { error } = await supabase.from(TABLES[collection]).insert(row);
   fail(error, `create ${collection}`);
 }
 

@@ -337,6 +337,20 @@ export const waivers = [
   { id: "w6", profile_id: null, signed_name: "Olivia Naranjo", email: "olivia.n@cvf.demo", phone: "505-555-0201", signed_at: "2026-06-09T18:35:00Z", waiver_version: WAIVER_VERSION, accepted_terms: true, age_confirmed: true, media_consent: true, ip_address: "97.123.88.40", user_agent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X)", verification_status: "pending" },
 ];
 
+/* ----------------------------- PAYMENTS --------------------------------- */
+// Demo-only manual ledger data. Live mode reads the admin-only Supabase
+// tables, which start empty until the owner deliberately creates charges.
+export const charges = [
+  { id: "charge1", season: CURRENT_SEASON, kind: "league_registration", profile_id: null, team_id: "t1", amount_due_cents: 60000, notes: "Team registration — first installment received", created_at: "2026-06-01T15:00:00Z" },
+  { id: "charge2", season: CURRENT_SEASON, kind: "league_registration", profile_id: "p6", team_id: null, amount_due_cents: 7500, notes: "Free-agent registration", created_at: "2026-06-03T15:00:00Z" },
+  { id: "charge3", season: CURRENT_SEASON, kind: "league_registration", profile_id: null, team_id: "t4", amount_due_cents: 60000, notes: "Team registration", created_at: "2026-06-04T15:00:00Z" },
+];
+
+export const paymentEntries = [
+  { id: "payment1", charge_id: "charge1", amount_cents: 30000, method: "Venmo", paid_at: "2026-06-05T18:30:00Z", note: "Deposit", recorded_by: null, created_at: "2026-06-05T18:31:00Z" },
+  { id: "payment2", charge_id: "charge2", amount_cents: 7500, method: "Cash", paid_at: "2026-06-06T19:00:00Z", note: null, recorded_by: null, created_at: "2026-06-06T19:02:00Z" },
+];
+
 /* ------------------------------ SETTINGS --------------------------------- */
 export const settings = {
   current_season: CURRENT_SEASON,
@@ -360,5 +374,7 @@ export const initialState = {
   freeAgents,
   registrations,
   waivers,
+  charges,
+  paymentEntries,
   settings,
 };
