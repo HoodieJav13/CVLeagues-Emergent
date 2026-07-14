@@ -1,9 +1,9 @@
 import { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Clock, MapPin } from "@phosphor-icons/react";
+import { ArrowRight, CalendarX, Clock, MapPin, Trophy } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { getTeam } from "../lib/selectors";
-import { SectionHeading } from "../components/common/Section";
+import { EmptyState, SectionHeading } from "../components/common/Section";
 import { GameCard } from "../components/game/GameCard";
 import { SportBadge } from "../components/common/Badges";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
@@ -248,7 +248,7 @@ export default function Home() {
           {upcoming.length ? (
             upcoming.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
-            <p className="text-sm text-muted-foreground">No upcoming games for this filter.</p>
+            <EmptyState icon={CalendarX} title="No upcoming games" message="Try another sport or league filter." density="compact" className="sm:col-span-2 lg:col-span-3" />
           )}
         </div>
       </section>
@@ -268,7 +268,7 @@ export default function Home() {
           {recent.length ? (
             recent.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
-            <p className="text-sm text-muted-foreground">No final scores yet. Results land here after the first games wrap.</p>
+            <EmptyState icon={Trophy} title="No final scores yet" message="Results appear after the first games wrap." density="compact" className="sm:col-span-2 lg:col-span-3" />
           )}
         </div>
       </section>

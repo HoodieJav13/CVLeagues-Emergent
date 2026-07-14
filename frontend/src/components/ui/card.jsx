@@ -2,10 +2,17 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-const Card = React.forwardRef(({ className, ...props }, ref) => (
+const densitySpacing = {
+  compact: "0.875rem",
+  default: "1.25rem",
+  spacious: "1.75rem",
+}
+
+const Card = React.forwardRef(({ className, density = "default", style, ...props }, ref) => (
   <div
     ref={ref}
     className={cn("rounded-xl border border-border bg-card text-card-foreground shadow-card", className)}
+    style={{ "--card-spacing": densitySpacing[density] || densitySpacing.default, ...style }}
     {...props} />
 ))
 Card.displayName = "Card"
@@ -13,7 +20,7 @@ Card.displayName = "Card"
 const CardHeader = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5 p-[var(--card-spacing)]", className)}
     {...props} />
 ))
 CardHeader.displayName = "CardHeader"
@@ -35,14 +42,14 @@ const CardDescription = React.forwardRef(({ className, ...props }, ref) => (
 CardDescription.displayName = "CardDescription"
 
 const CardContent = React.forwardRef(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
+  <div ref={ref} className={cn("px-[var(--card-spacing)] pb-[var(--card-spacing)]", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
 const CardFooter = React.forwardRef(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-6 pt-0", className)}
+    className={cn("flex items-center px-[var(--card-spacing)] pb-[var(--card-spacing)]", className)}
     {...props} />
 ))
 CardFooter.displayName = "CardFooter"

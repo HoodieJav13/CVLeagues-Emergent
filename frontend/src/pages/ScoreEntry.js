@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CaretDown, FloppyDisk, LockSimple, LockSimpleOpen, Plus, Minus } from "@phosphor-icons/react";
+import { CalendarX, FloppyDisk, LockSimple, LockSimpleOpen, Plus, UsersThree } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, teamRoster } from "../lib/selectors";
 import { STAT_GROUPS, HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
-import { SectionHeading } from "../components/common/Section";
+import { EmptyState, SectionHeading } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { EligibilityIndicator } from "../components/common/EligibilityIndicator";
@@ -16,6 +16,8 @@ import { Label } from "../components/ui/label";
 import { RoleGate } from "../components/layout/RoleGate";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Textarea } from "../components/ui/textarea";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
+import { Card, CardContent, CardHeader } from "../components/ui/card";
 
 export default function ScoreEntry() {
   return (
@@ -66,7 +68,7 @@ function Entry() {
   }, [game_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!game) {
-    return <p className="text-muted-foreground">No game available to score.</p>;
+    return <EmptyState icon={CalendarX} title="No game available" message="Schedule a game before entering a score." />;
   }
 
   const home = getTeam(state, game.home_team_id);
@@ -160,14 +162,14 @@ function Entry() {
       </div>
 
       {/* Period scores */}
-      <div className="bg-card border border-border rounded-2xl p-5">
-        <div className="flex items-center justify-between mb-4">
+      <Card density="default" className="rounded-2xl">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
           <p className="font-display uppercase tracking-tight text-foreground">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
           {game.sport === "kickball" && (
             <Button variant="ghost" onClick={addInning} disabled={locked} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
           )}
-        </div>
-        <div className="overflow-x-auto">
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="text-muted-foreground text-micro uppercase tracking-widest">
@@ -187,7 +189,7 @@ function Entry() {
                         disabled={locked} readOnly={locked} aria-readonly={locked}
                         data-testid={`score-${r.side}-period-${i}`}
                         onChange={(e) => setPeriod(r.side, i, e.target.value)}
-                        className="w-11 h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                        className="w-11 h-11 md:h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       />
                     </td>
                   ))}
@@ -196,33 +198,34 @@ function Entry() {
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Per-player stats */}
       <div className="space-y-4">
         {[away, home].map((team) => {
           const roster = teamRoster(state, team.id);
           return (
-            <div key={team.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-              <p className="px-4 py-3 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
+            <Card key={team.id} density="compact" className="rounded-2xl overflow-hidden">
+              <CardHeader className="border-b border-border">
+                <p className="font-display uppercase tracking-tight text-foreground flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logo_color }} /> {team.name} · Player Stats
-              </p>
-              {roster.length === 0 ? (
-                <p className="px-4 py-8 text-center text-caption text-muted-foreground">
-                  This team has no players yet. Assign players before entering a score.
                 </p>
-              ) : roster.map((r) => {
-                const open = expanded === r.profile_id;
+              </CardHeader>
+              {roster.length === 0 ? (
+                <CardContent className="p-0">
+                  <EmptyState icon={UsersThree} title="No players assigned" message="Assign players before entering a score." density="compact" />
+                </CardContent>
+              ) : (
+                <Accordion type="single" collapsible value={expanded || ""} onValueChange={(value) => setExpanded(value || null)}>
+                {roster.map((r) => {
                 const pstats = statsByPlayer[r.profile_id]?.stats || {};
                 const summary = HIGHLIGHT_STATS[team.sport].map((k) => `${pstats[k] || 0} ${statLabel(team.sport, k).split(" ")[0]}`).join(" · ");
                 return (
-                  <div key={r.id} className="border-b border-border last:border-0">
-                    <Button
-                      variant="ghost"
-                      onClick={() => setExpanded(open ? null : r.profile_id)}
+                  <AccordionItem key={r.id} value={r.profile_id} className="last:border-0">
+                    <AccordionTrigger
                       data-testid={`score-player-toggle-${r.profile_id}`}
-                      className="w-full h-auto justify-start gap-3 px-4 py-3 rounded-none normal-case tracking-normal font-normal whitespace-normal text-left text-foreground hover:text-foreground hover:bg-white/5 active:scale-100"
+                      className="min-h-[52px] gap-3 px-4 py-3 font-normal text-foreground hover:no-underline hover:bg-white/5 active:bg-white/10"
                     >
                       <Avatar name={r.profile.name} color={r.profile.avatar_color} size={34} />
                       <div className="flex-1 min-w-0">
@@ -232,10 +235,8 @@ function Entry() {
                         </p>
                         <p className="text-micro text-muted-foreground tabular-nums">{summary}</p>
                       </div>
-                      <CaretDown size={16} weight="bold" className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
-                    </Button>
-                    {open && (
-                      <div className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.profile_id}`}>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.profile_id}`}>
                         {STAT_GROUPS[team.sport].map((grp) => (
                           <div key={grp.group}>
                             <p className="text-micro uppercase tracking-widest text-primary font-semibold mb-1.5">{grp.group}</p>
@@ -248,19 +249,20 @@ function Entry() {
                                     disabled={locked} readOnly={locked} aria-readonly={locked}
                                     data-testid={`score-stat-${r.profile_id}-${st.key}`}
                                     onChange={(e) => setStat(r.profile_id, team.id, st.key, e.target.value)}
-                                    className="h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                                    className="h-11 md:h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   />
                                 </label>
                               ))}
                             </div>
                           </div>
                         ))}
-                      </div>
-                    )}
-                  </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 );
               })}
-            </div>
+              </Accordion>
+              )}
+            </Card>
           );
         })}
       </div>

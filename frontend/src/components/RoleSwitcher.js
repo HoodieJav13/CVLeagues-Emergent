@@ -56,17 +56,14 @@ export const RoleSwitcher = () => {
         <DropdownMenuTrigger asChild>
           <button
             data-testid="role-switcher"
-            className="flex items-center gap-2 bg-white text-black pl-3 pr-3.5 py-2 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.4)] ring-2 ring-primary/40 hover:scale-105 active:scale-95 transition-transform"
+            className="flex items-center gap-2 bg-white text-ink pl-3 pr-3.5 py-2 rounded-full shadow-floating ring-2 ring-primary/40 hover:scale-105 active:scale-95 transition-transform"
           >
             <Eye size={16} weight="bold" />
             <span className="flex flex-col items-start leading-none">
               <span className="text-[9px] font-bold uppercase tracking-widest text-black/50">
                 Demo Preview
               </span>
-              <span
-                className="text-sm font-bold uppercase tracking-tight font-display"
-                style={{ color: "#0f0f0f" }}
-              >
+              <span className="text-sm font-bold uppercase tracking-tight font-display text-ink">
                 {roleMeta.short}
               </span>
             </span>

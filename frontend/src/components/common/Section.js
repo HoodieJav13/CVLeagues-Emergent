@@ -1,3 +1,5 @@
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "../ui/empty";
+
 // Small reusable section heading.
 // `as` controls the heading level ("h1" for a page-level title, default "h2"
 // for sections) — semantic only.
@@ -20,10 +22,13 @@ export const SectionHeading = ({ title, subtitle, action, as: Tag = "h2", band =
   </div>
 );
 
-export const EmptyState = ({ icon: Icon, title, message }) => (
-  <div className="flex flex-col items-center justify-center text-center py-14 px-6">
-    {Icon && <Icon size={40} weight="duotone" className="text-muted-foreground mb-3" />}
-    <p className="font-display uppercase tracking-tight text-subheading text-foreground">{title}</p>
-    {message && <p className="text-caption text-muted-foreground mt-1 max-w-xs">{message}</p>}
-  </div>
+export const EmptyState = ({ icon: Icon, title, message, action, density = "spacious", className = "", ...props }) => (
+  <Empty className={`${density === "compact" ? "py-6 px-4" : density === "default" ? "py-10 px-5" : "py-14 px-6"} ${className}`} {...props}>
+    <EmptyHeader>
+      {Icon && <EmptyMedia><Icon size={density === "compact" ? 30 : 40} weight="duotone" /></EmptyMedia>}
+      <EmptyTitle>{title}</EmptyTitle>
+      {message && <EmptyDescription>{message}</EmptyDescription>}
+    </EmptyHeader>
+    {action && <EmptyContent>{action}</EmptyContent>}
+  </Empty>
 );

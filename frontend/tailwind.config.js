@@ -157,6 +157,7 @@ module.exports = {
                         'sm': 'var(--shadow-sm)',
                         'md': 'var(--shadow-md)',
                         'lg': 'var(--shadow-lg)',
+                        'floating': 'var(--shadow-floating)',
                         // Teal glow (re-tinted from the old cyan) for accent emphasis
                         'glow-cyan': '0 0 20px rgba(91,184,204,0.22), 0 4px 20px rgba(91,184,204,0.12)',
                         'glow-cyan-sm': '0 0 12px rgba(91,184,204,0.16)',

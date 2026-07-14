@@ -1,18 +1,20 @@
 import { useParams, Link } from "react-router-dom";
+import { UsersThree } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { getLeague, getProfile, computeTeamRecord, teamRoster, teamGames, teamStatLeaders } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
 import { SportBadge } from "../components/common/Badges";
 import { PlayerCard } from "../components/player/PlayerCard";
 import { GameCard } from "../components/game/GameCard";
-import { SectionHeading } from "../components/common/Section";
+import { EmptyState, SectionHeading } from "../components/common/Section";
 import { Avatar } from "../components/common/Avatar";
+import { Card, CardContent } from "../components/ui/card";
 
 export default function TeamPage() {
   const { id } = useParams();
   const { state } = useApp();
   const team = state.teams.find((t) => t.id === id);
-  if (!team) return <p className="text-muted-foreground">Team not found.</p>;
+  if (!team) return <EmptyState icon={UsersThree} title="Team not found" message="This team may have been removed or the link is invalid." />;
 
   const league = getLeague(state, team.league_id);
   const record = computeTeamRecord(state, team.id);
@@ -26,7 +28,8 @@ export default function TeamPage() {
   return (
     <div className="space-y-8 animate-fade-up">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${team.logo_color}22, transparent)` }}>
+      <Card density="spacious" className="relative overflow-hidden rounded-2xl" style={{ background: `linear-gradient(135deg, ${team.logo_color}22, transparent)` }}>
+        <CardContent className="p-[var(--card-spacing)]">
         <div className="flex items-center gap-4">
           <span className="w-16 h-16 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-ink" style={{ backgroundColor: team.logo_color }}>
             {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
@@ -49,14 +52,16 @@ export default function TeamPage() {
             Captain: <Link to={`/profile/${captain.id}`} className="text-primary font-semibold">{captain.name}</Link>
           </p>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Stat leaders */}
       <section>
         <SectionHeading title="Stat Leaders" />
         <div className="grid grid-cols-3 gap-3">
           {leaders.map((l) => (
-            <div key={l.key} className="bg-card border border-border rounded-2xl p-4 text-center">
+            <Card key={l.key} density="compact" className="rounded-2xl text-center">
+              <CardContent className="p-[var(--card-spacing)]">
               <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">{statLabel(team.sport, l.key)}</p>
               {l.profile ? (
                 <>
@@ -67,7 +72,8 @@ export default function TeamPage() {
               ) : (
                 <p className="text-muted-foreground text-sm mt-3">—</p>
               )}
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </section>
@@ -76,9 +82,7 @@ export default function TeamPage() {
       <section>
         <SectionHeading title="Roster" subtitle={`${roster.length} players`} />
         {roster.length === 0 ? (
-          <div className="bg-card border border-border rounded-xl p-6 text-center text-caption text-muted-foreground">
-            No players on this roster yet. Names land here once the admin assigns them.
-          </div>
+          <EmptyState icon={UsersThree} title="No players assigned" message="Names appear here once an admin builds the roster." density="default" className="bg-card border border-border rounded-xl" />
         ) : (
           <div className="grid sm:grid-cols-2 gap-3">
             {roster.map((r) => (
@@ -108,8 +112,10 @@ export default function TeamPage() {
 }
 
 const Stat = ({ label, value, accent }) => (
-  <div className="bg-[#0F1416]/60 border border-border rounded-xl p-3 text-center">
-    <p className={`font-mono-score text-xl font-bold ${accent ? "text-teal" : "text-foreground"}`}>{value}</p>
-    <p className="text-micro uppercase tracking-widest text-muted-foreground mt-0.5">{label}</p>
-  </div>
+  <Card density="compact" className="bg-surface/60 text-center">
+    <CardContent className="p-[var(--card-spacing)]">
+      <p className={`font-mono-score text-xl font-bold ${accent ? "text-teal" : "text-foreground"}`}>{value}</p>
+      <p className="text-micro uppercase tracking-widest text-muted-foreground mt-0.5">{label}</p>
+    </CardContent>
+  </Card>
 );

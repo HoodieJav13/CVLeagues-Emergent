@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { ShareNetwork, Lock, Trophy } from "@phosphor-icons/react";
+import { CalendarX, ShareNetwork, Lock, Trophy, UserCircle, UsersThree } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import {
@@ -11,6 +11,8 @@ import { SportBadge } from "../components/common/Badges";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
 import { ComingSoon } from "../components/common/ComingSoon";
+import { EmptyState } from "../components/common/Section";
+import { Card, CardContent } from "../components/ui/card";
 
 export default function AthleteProfile() {
   const { id } = useParams();
@@ -22,14 +24,7 @@ export default function AthleteProfile() {
   const profile = targetId ? getProfile(state, targetId) : null;
 
   if (!profile) {
-    return (
-      <div className="bg-card border border-border rounded-2xl p-8 text-center max-w-md mx-auto mt-8">
-        <p className="font-display uppercase text-foreground text-lg">No profile available</p>
-        <p className="text-sm text-muted-foreground mt-1">
-          {id === "me" ? "Switch to the Player or Captain demo role to view a personal profile." : "This athlete could not be found."}
-        </p>
-      </div>
-    );
+    return <EmptyState icon={UserCircle} title="No profile available" message={id === "me" ? "Switch to the Player or Captain demo role to view a personal profile." : "This athlete could not be found."} className="bg-card border border-border rounded-2xl max-w-md mx-auto mt-8" />;
   }
 
   // PRODUCTION RULE: private tab only for the profile owner or an admin.
@@ -42,7 +37,8 @@ export default function AthleteProfile() {
   return (
     <div className="space-y-6 animate-fade-up">
       {/* Header banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border p-6" style={{ background: `linear-gradient(135deg, ${profile.avatar_color}22, transparent)` }}>
+      <Card density="spacious" className="relative overflow-hidden rounded-2xl" style={{ background: `linear-gradient(135deg, ${profile.avatar_color}22, transparent)` }}>
+        <CardContent className="p-[var(--card-spacing)]">
         <div className="flex items-center gap-4">
           <Avatar name={profile.name} color={profile.avatar_color} size={72} />
           <div className="min-w-0">
@@ -54,7 +50,8 @@ export default function AthleteProfile() {
           </div>
         </div>
         {profile.bio && <p className="text-sm text-muted-foreground mt-4 max-w-lg">{profile.bio}</p>}
-      </div>
+        </CardContent>
+      </Card>
 
       <Tabs defaultValue="public">
         <TabsList className="bg-card border border-border w-full grid grid-cols-2 h-11">
@@ -76,21 +73,25 @@ export default function AthleteProfile() {
           <SportTabs sports={sports} testid="profile-public-sport" render={(sport) => {
             const season = playerSeasonStats(state, profile.id, sport);
             return (
-              <div className="bg-card border border-border rounded-2xl p-5">
+              <Card density="default" className="rounded-2xl">
+                <CardContent className="p-[var(--card-spacing)]">
                 <div className="flex items-center gap-2 mb-4"><SportBadge sport={sport} /><span className="text-xs text-muted-foreground uppercase">Season Highlights</span></div>
                 {hasAnyStat(season) ? (
                   <div className="grid grid-cols-3 gap-3">
                     {HIGHLIGHT_STATS[sport].map((key) => (
-                      <div key={key} className="text-center bg-[#0F1416]/60 rounded-xl p-3 border border-border">
-                        <p className="font-mono-score text-2xl font-bold text-primary leading-none">{season[key] || 0}</p>
-                        <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
-                      </div>
+                      <Card key={key} density="compact" className="bg-surface/60 text-center">
+                        <CardContent className="p-[var(--card-spacing)]">
+                          <p className="font-mono-score text-2xl font-bold text-primary leading-none">{season[key] || 0}</p>
+                          <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground" data-testid="profile-public-nostats">No stats recorded yet for this season.</p>
+                  <EmptyState icon={Trophy} title="No season stats" message="Statistics appear after completed games are recorded." density="compact" className="py-4" data-testid="profile-public-nostats" />
                 )}
-              </div>
+                </CardContent>
+              </Card>
             );
           }} />
           <TeamHistory teams={teams} />
@@ -140,11 +141,12 @@ const SportTabs = ({ sports, render, testid }) => {
 };
 
 const TeamHistory = ({ teams }) => (
-  <div className="bg-card border border-border rounded-2xl p-5">
-    <p className="font-display uppercase tracking-tight text-foreground mb-3">Team History</p>
-    <div className="space-y-2">
+  <Card density="default" className="rounded-2xl">
+    <CardContent className="p-[var(--card-spacing)]">
+    <h3 className="font-display uppercase tracking-tight text-foreground mb-3">Team History</h3>
+    {teams.length ? <div className="space-y-2">
       {teams.map((t) => (
-        <Link key={t.id} to={`/team/${t.team.id}`} className="flex items-center justify-between gap-3 p-2.5 rounded-xl hover:bg-white/5 transition-colors">
+        <Link key={t.id} to={`/team/${t.team.id}`} className="flex items-center justify-between gap-3 min-h-11 p-2.5 rounded-xl hover:bg-white/5 active:bg-white/10 transition-colors">
           <div className="flex items-center gap-2.5 min-w-0">
             <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.team.logo_color }} />
             <span className="font-medium text-foreground truncate">{t.team.name}</span>
@@ -153,8 +155,9 @@ const TeamHistory = ({ teams }) => (
           <span className="text-xs font-mono-score text-muted-foreground">#{t.jersey_number} · {t.record.wins}-{t.record.losses}</span>
         </Link>
       ))}
-    </div>
-  </div>
+    </div> : <EmptyState icon={UsersThree} title="No team history" message="Team assignments appear here." density="compact" />}
+    </CardContent>
+  </Card>
 );
 
 const PrivateSport = ({ state, profile, sport }) => {
@@ -165,11 +168,12 @@ const PrivateSport = ({ state, profile, sport }) => {
   const empty = !hasAnyStat(season) && !hasAnyStat(career) && log.length === 0;
 
   return (
-    <div className="bg-card border border-border rounded-2xl p-5">
+    <Card density="default" className="rounded-2xl">
+      <CardContent className="p-[var(--card-spacing)]">
       <div className="flex items-center gap-2 mb-4"><SportBadge sport={sport} /><span className="text-xs text-muted-foreground uppercase">Full Statistics</span></div>
 
       {empty ? (
-        <p className="text-sm text-muted-foreground" data-testid="profile-private-nostats">No stats recorded yet for this season.</p>
+        <EmptyState icon={Trophy} title="No detailed stats" message="Season and career statistics appear after completed games." density="compact" data-testid="profile-private-nostats" />
       ) : (
       <>
       {/* season vs career table */}
@@ -200,15 +204,16 @@ const PrivateSport = ({ state, profile, sport }) => {
         {log.length ? log.map((row) => {
           const opp = getTeam(state, row.game.home_team_id === row.team_id ? row.game.away_team_id : row.game.home_team_id);
           return (
-            <Link key={row.id} to={`/game/${row.game.id}`} className="flex items-center justify-between gap-2 text-sm p-2 rounded-lg hover:bg-white/5">
+            <Link key={row.id} to={`/game/${row.game.id}`} className="flex items-center justify-between gap-2 min-h-11 text-sm p-2 rounded-lg hover:bg-white/5 active:bg-white/10">
               <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-secondary">vs {opp?.name}</span></span>
               <span className="font-mono-score text-xs text-primary">{keys.slice(0, 3).map((k) => `${row.stats[k] || 0} ${statLabel(sport, k).split(" ")[0]}`).join(" · ")}</span>
             </Link>
           );
-        }) : <p className="text-sm text-muted-foreground">No games logged.</p>}
+        }) : <EmptyState icon={CalendarX} title="No games logged" message="Completed games appear here." density="compact" />}
       </div>
       </>
       )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };

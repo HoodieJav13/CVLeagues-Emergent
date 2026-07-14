@@ -25,6 +25,9 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "../components/ui/table";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
+import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { EmptyState } from "../components/common/Section";
 import { BACKEND_ENABLED } from "../lib/supabase";
 import { signOutAdmin } from "../lib/backend";
 
@@ -80,13 +83,15 @@ function Dashboard() {
         </div>
       </header>
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="bg-card border border-border w-full flex overflow-x-auto h-auto p-1 justify-start">
+        <div className="relative after:pointer-events-none after:absolute after:inset-y-px after:right-px after:w-10 after:rounded-r-xl after:bg-gradient-to-l after:from-card after:to-transparent after:content-[''] md:after:hidden">
+        <TabsList aria-label="Admin sections — scroll horizontally for more" className="bg-card border border-border w-full flex overflow-x-auto h-auto p-1 pr-10 md:pr-1 justify-start">
           {tabs.map((t) => (
             <TabsTrigger key={t.id} value={t.id} data-testid={`admin-tab-${t.id}`} className="data-[state=active]:bg-primary data-[state=active]:text-ink uppercase text-micro font-semibold whitespace-nowrap flex items-center gap-1.5 px-2.5 py-1.5">
               <t.icon size={14} weight="bold" /> {t.label}
             </TabsTrigger>
           ))}
         </TabsList>
+        </div>
         <TabsContent value="overview" className="mt-3"><OverviewTab app={app} onNavigate={setTab} /></TabsContent>
         <TabsContent value="players" className="mt-3"><PlayersTab app={app} /></TabsContent>
         <TabsContent value="registrations" className="mt-3"><RegistrationsTab app={app} /></TabsContent>
@@ -104,14 +109,18 @@ function Dashboard() {
 /* ------------------------------ OVERVIEW ---------------------------------- */
 // Operational queues, ordered by urgency. Counts derive from existing state.
 const QueueCard = ({ count, title, desc, cta, onClick, testid, muted }) => (
-  <div data-testid={testid} className="bg-card border border-border rounded-xl p-4 flex flex-col">
-    <p className={`font-mono-score text-3xl font-bold ${muted || count === 0 ? "text-muted-foreground" : "text-primary"}`}>{count}</p>
-    <p className="font-display uppercase tracking-tight text-foreground mt-1">{title}</p>
-    <p className="text-xs text-muted-foreground mt-0.5 flex-1">{desc}</p>
-    <button onClick={onClick} className="mt-3 self-start flex items-center gap-1 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-1.5 hover:bg-primary/10 transition-colors">
-      {cta} <CaretRight size={12} weight="bold" />
-    </button>
-  </div>
+  <Card density="compact" data-testid={testid} className="flex flex-col">
+    <CardHeader className="pb-2">
+      <p className={`font-mono-score text-3xl font-bold ${muted || count === 0 ? "text-muted-foreground" : "text-primary"}`}>{count}</p>
+      <h3 className="font-display uppercase tracking-tight text-foreground">{title}</h3>
+    </CardHeader>
+    <CardContent className="flex flex-1 flex-col">
+      <p className="text-xs text-muted-foreground flex-1">{desc}</p>
+      <button onClick={onClick} className="mt-3 min-h-11 md:min-h-9 self-start flex items-center gap-1 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-1.5 hover:bg-primary/10 active:bg-primary/20 active:scale-[0.97] transition-all">
+        {cta} <CaretRight size={12} weight="bold" />
+      </button>
+    </CardContent>
+  </Card>
 );
 
 function OverviewTab({ app, onNavigate }) {
@@ -197,12 +206,12 @@ function WaiversTab({ app }) {
 
 /* ---------- shared table & button primitives ---------- */
 const IconBtn = ({ onClick, icon: Icon, testid, danger, title, disabled }) => (
-  <button onClick={onClick} disabled={disabled} title={title} data-testid={testid} className={`p-2 rounded-lg transition-colors ${disabled ? "text-muted-foreground/30 cursor-not-allowed" : danger ? "text-destructive hover:bg-white/10" : "text-muted-foreground hover:text-foreground hover:bg-white/10"}`}>
+  <button onClick={onClick} disabled={disabled} title={title} data-testid={testid} className={`min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center p-2 rounded-lg transition-all active:scale-[0.92] ${disabled ? "text-muted-foreground/30 cursor-not-allowed" : danger ? "text-destructive hover:bg-white/10 active:bg-destructive/15" : "text-muted-foreground hover:text-foreground hover:bg-white/10 active:bg-white/15"}`}>
     <Icon size={16} weight="bold" />
   </button>
 );
 const AddBtn = ({ onClick, label, testid }) => (
-  <button onClick={onClick} data-testid={testid} className="flex items-center gap-1.5 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs px-3.5 py-2 rounded-lg hover:bg-teal-deep transition-colors">
+  <button onClick={onClick} data-testid={testid} className="min-h-11 md:min-h-9 flex items-center gap-1.5 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs px-3.5 py-2 rounded-lg hover:bg-teal-deep active:scale-[0.97] transition-all">
     <Plus size={15} weight="bold" /> {label}
   </button>
 );
@@ -259,9 +268,9 @@ const NoteModal = ({ noteFor, setNoteFor, onSave }) => (
 
 const SectionTitle = ({ title, count, action }) => (
   <div className="flex justify-between items-center gap-3">
-    <p className="font-display uppercase tracking-tight text-foreground">
+    <h2 className="font-display uppercase tracking-tight text-foreground">
       {title} {count != null && <span className="text-sm text-muted-foreground font-sans normal-case tracking-normal">({count})</span>}
-    </p>
+    </h2>
     {action}
   </div>
 );
@@ -282,7 +291,7 @@ const AdminTable = ({ head, children, testid }) => (
 );
 const EmptyRow = ({ colSpan, children }) => (
   <TableRow className="border-border hover:bg-transparent">
-    <TableCell colSpan={colSpan} className="text-center text-xs text-muted-foreground py-8">{children}</TableCell>
+    <TableCell colSpan={colSpan} className="p-0"><EmptyState title="Nothing here yet" message={children} density="compact" /></TableCell>
   </TableRow>
 );
 
@@ -470,7 +479,7 @@ function TeamsTab({ app }) {
             {rosterFor && <AssignmentEditor app={app} mode="team" team_id={rosterFor} />}
           </div>
           <DialogFooter className="shrink-0">
-            <button onClick={() => setRosterFor(null)} data-testid="admin-roster-done" className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-sm">Done</button>
+            <button onClick={() => setRosterFor(null)} data-testid="admin-roster-done" className="min-h-11 w-full sm:w-auto px-5 py-2 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-sm hover:bg-teal-deep active:scale-[0.98] transition-all">Done</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -515,12 +524,12 @@ function AssignmentEditor({ app, mode, profile_id, team_id }) {
   return (
     <div className="space-y-2" data-testid={`assignment-editor-${mode}`}>
       {rows.length === 0 ? (
-        <p className="text-xs text-muted-foreground">No team assignments yet.</p>
+        <EmptyState title="No assignments yet" message="Add the first team or player assignment below." density="compact" />
       ) : rows.map((tp) => {
         const team = getTeam(state, tp.team_id);
         const prof = getProfile(state, tp.profile_id);
         return (
-          <div key={tp.id} data-testid={`assignment-${tp.id}`} className="flex items-center gap-2 bg-surface-sunken border border-border rounded-lg px-2.5 py-2">
+          <div key={tp.id} data-testid={`assignment-${tp.id}`} className="flex items-center gap-2.5 bg-surface-sunken border border-border rounded-lg pl-3 pr-1.5 py-2.5">
             <div className="flex-1 min-w-0 flex items-center gap-1.5">
               {mode === "team" && prof && <EligibilityIndicator status={prof.eligibility_status} />}
               <span className="text-sm text-foreground truncate">{mode === "player" ? (team?.name || "Unknown team") : (prof?.name || "Unknown player")}</span>
@@ -535,14 +544,14 @@ function AssignmentEditor({ app, mode, profile_id, team_id }) {
         <div className="flex items-end gap-2 pt-1">
           <div className="flex-1 min-w-0">
             <Select value={sel} onValueChange={setSel}>
-              <SelectTrigger data-testid="assignment-select" className="bg-surface-sunken border-border h-9"><SelectValue placeholder={mode === "player" ? "Add to team…" : "Add player…"} /></SelectTrigger>
+              <SelectTrigger data-testid="assignment-select" className="bg-surface-sunken border-border h-11 md:h-9"><SelectValue placeholder={mode === "player" ? "Add to team…" : "Add player…"} /></SelectTrigger>
               <SelectContent>
                 {options.map((o) => <SelectItem key={o.id} value={o.id}>{mode === "player" ? `${o.name} (${sportName(o.sport)})` : o.name}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
-          <Input type="number" min="0" value={jersey_number} onChange={(e) => setJersey(e.target.value)} placeholder="#" data-testid="assignment-jersey_number" className="w-16 bg-surface-sunken border-border h-9 text-center" />
-          <button onClick={add} data-testid="assignment-add" className="h-9 px-3 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-xs whitespace-nowrap">Add</button>
+          <Input type="number" min="0" value={jersey_number} onChange={(e) => setJersey(e.target.value)} placeholder="#" data-testid="assignment-jersey_number" className="w-16 bg-surface-sunken border-border h-11 md:h-9 text-center" />
+          <button onClick={add} data-testid="assignment-add" className="h-11 md:h-9 px-4 rounded-lg bg-primary text-primary-foreground font-bold uppercase text-xs whitespace-nowrap hover:bg-teal-deep active:scale-[0.96] transition-all">Add</button>
         </div>
       )}
       {pendingSeason && (
@@ -724,9 +733,7 @@ function RegistrationsTab({ app }) {
     <div className="space-y-3">
       <SectionTitle title="Team Registrations" count={`${newCount} new of ${regs.length}`} />
       {regs.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
-          No team registrations yet. Team Interest submissions land here for triage.
-        </div>
+        <EmptyState icon={ClipboardText} title="No team registrations" message="Team Interest submissions land here for triage." density="default" className="bg-card border border-border rounded-xl" />
       ) : regs.map((r) => (
         <div key={r.id} data-testid={`admin-registration-${r.id}`} className="bg-card border border-border rounded-xl p-3.5">
           <div className="flex items-center gap-2 flex-wrap">
@@ -795,7 +802,7 @@ function GamesTab({ app }) {
                       <LockSimple size={16} weight="bold" />
                     </span>
                   ) : (
-                    <Link to="/score-entry" state={{ game_id: g.id }} title="Enter score" data-testid={`admin-game-enter-score-${g.id}`} className="p-2 rounded-lg text-primary hover:bg-white/10 transition-colors inline-flex">
+                    <Link to="/score-entry" state={{ game_id: g.id }} title="Enter score" data-testid={`admin-game-enter-score-${g.id}`} className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 p-2 rounded-lg text-primary hover:bg-white/10 active:bg-white/15 active:scale-[0.92] transition-all inline-flex items-center justify-center">
                       <PencilSimpleLine size={16} weight="bold" />
                     </Link>
                   )}
@@ -826,7 +833,7 @@ function GamesTab({ app }) {
           <DialogDescription className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</DialogDescription>
           <DialogFooter>
             <button onClick={() => setRescheduleFor(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground">Back</button>
-            <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="px-4 py-2 rounded-lg border border-[#F5B82E]/40 text-gold font-bold uppercase text-sm">Postpone</button>
+            <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="min-h-11 md:min-h-10 px-4 py-2 rounded-lg border border-gold/40 text-gold font-bold uppercase text-sm hover:bg-gold/10 active:scale-[0.97] transition-all">Postpone</button>
             <button onClick={() => { setGameStatus(rescheduleFor, "canceled"); toast.success("Game canceled"); setRescheduleFor(null); }} data-testid="admin-confirm-cancel" className="px-4 py-2 rounded-lg border border-destructive/40 text-destructive font-bold uppercase text-sm">Cancel Game</button>
           </DialogFooter>
         </DialogContent>
@@ -872,8 +879,9 @@ function ScoresTab({ app }) {
     const done = g.status === "completed";
     const hist = g.edit_history || [];
     return (
-      <div key={g.id} data-testid={`${prefix}-${g.id}`} className="bg-card border border-border rounded-xl p-3.5">
-        <div className="flex items-center gap-2 flex-wrap">
+      <Accordion key={g.id} type="single" collapsible value={openHistory[g.id] ? "history" : ""} onValueChange={(value) => setOpenHistory((o) => ({ ...o, [g.id]: value === "history" }))}>
+      <AccordionItem value="history" data-testid={`${prefix}-${g.id}`} className="bg-card border border-border rounded-xl px-3.5 border-b">
+        <div className="flex items-center gap-2 flex-wrap py-3.5">
           <div className="flex-1 min-w-0">
             <p className="font-medium text-foreground truncate flex items-center gap-1.5">
               {g.locked && <LockSimple size={14} weight="bold" className="text-gold shrink-0" />}
@@ -884,11 +892,11 @@ function ScoresTab({ app }) {
           <SportBadge sport={g.sport} />
           <StatusBadge status={g.score_status || "pending"} />
           {g.locked ? (
-            <button disabled title="Locked — unlock to edit" data-testid={`${prefix}-enter-${g.id}`} className="flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground/40 border border-border rounded-lg px-3 py-2 cursor-not-allowed">
+            <button disabled title="Locked — unlock to edit" data-testid={`${prefix}-enter-${g.id}`} className="min-h-11 md:min-h-9 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground/40 border border-border rounded-lg px-3 py-2 cursor-not-allowed">
               <LockSimple size={14} weight="bold" /> Locked
             </button>
           ) : (
-            <Link to="/score-entry" state={{ game_id: g.id }} data-testid={`${prefix}-enter-${g.id}`} className="flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2">
+            <Link to="/score-entry" state={{ game_id: g.id }} data-testid={`${prefix}-enter-${g.id}`} className="min-h-11 md:min-h-9 flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2 hover:bg-primary/10 active:bg-primary/20 active:scale-[0.97] transition-all">
               <PencilSimpleLine size={14} weight="bold" /> {done ? "Edit" : "Enter"}
             </Link>
           )}
@@ -898,40 +906,39 @@ function ScoresTab({ app }) {
             <IconBtn onClick={() => { lockGame(g.id); toast.success("Game marked final & locked"); }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-${g.id}`} disabled={!canMarkFinal(g)} />
           )}
           {hist.length > 0 && (
-            <button onClick={() => setOpenHistory((o) => ({ ...o, [g.id]: !o[g.id] }))} data-testid={`admin-history-${g.id}`} title="Edit history" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground px-1.5 py-1">
+            <AccordionTrigger data-testid={`admin-history-${g.id}`} title="Edit history" className="w-auto min-h-11 md:min-h-9 gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:no-underline active:bg-white/10 rounded-lg">
               <ClockCounterClockwise size={14} weight="bold" /> {hist.length}
-            </button>
+            </AccordionTrigger>
           )}
         </div>
-        {openHistory[g.id] && hist.length > 0 && (
-          <div data-testid={`admin-history-list-${g.id}`} className="mt-2.5 pt-2.5 border-t border-border space-y-1">
+        {hist.length > 0 && (
+          <AccordionContent data-testid={`admin-history-list-${g.id}`} className="mt-2.5 pt-2.5 border-t border-border space-y-1">
             {[...hist].reverse().map((e, i) => (
               <p key={i} className="text-xs text-muted-foreground">
                 <span className="text-muted-foreground/60">{fmtTs(e.created_at)}</span> — <span className="text-foreground">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
               </p>
             ))}
-          </div>
+          </AccordionContent>
         )}
-      </div>
+      </AccordionItem>
+      </Accordion>
     );
   };
 
   return (
     <div className="space-y-3">
-      <div className="bg-card border border-[#F5B82E]/30 rounded-xl p-4">
+      <div className="bg-card border border-gold/30 rounded-xl p-4">
         <p className="font-display uppercase tracking-tight text-foreground mb-1">Games Needing Scores ({needs.length})</p>
         <p className="text-xs text-muted-foreground mb-3">Pending — no score yet · Submitted — awaiting Mark Final.</p>
         {needs.length === 0 ? (
-          <p className="text-xs text-muted-foreground">All caught up — every game is approved or final.</p>
+          <EmptyState title="All caught up" message="Every game is approved or final." density="compact" />
         ) : (
           <div className="space-y-2">{needs.map((g) => renderRow(g, "admin-needs"))}</div>
         )}
       </div>
       <SectionTitle title="All Games" count={state.games.length} />
       {state.games.length === 0 ? (
-        <div className="bg-card border border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
-          No games scheduled yet. Games appear here once a schedule is created.
-        </div>
+        <EmptyState icon={CalendarBlank} title="No games scheduled" message="Games appear here once a schedule is created." density="default" className="bg-card border border-border rounded-xl" />
       ) : (
         state.games.map((g) => renderRow(g, "admin-score"))
       )}
@@ -980,9 +987,7 @@ function AgentsTab({ app }) {
   return (
     <div className="space-y-3">
       {state.freeAgents.length === 0 && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center text-xs text-muted-foreground">
-          No free agent submissions yet. Free Agent intake lands here for triage.
-        </div>
+        <EmptyState icon={PaperPlaneTilt} title="No free agent submissions" message="Free Agent intake lands here for triage." density="default" className="bg-card border border-border rounded-xl" />
       )}
       {state.freeAgents.map((a) => (
         <div key={a.id} data-testid={`admin-agent-${a.id}`} className="bg-card border border-border rounded-xl p-3.5">

@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarBlank, PencilSimpleLine } from "@phosphor-icons/react";
+import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, PencilSimpleLine } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile } from "../lib/selectors";
@@ -8,6 +8,9 @@ import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
 import { Avatar } from "../components/common/Avatar";
 import { can } from "../lib/roles";
+import { EmptyState } from "../components/common/Section";
+import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { AthleteHoverCard } from "../components/player/AthleteHoverCard";
 
 const PERIOD_LABEL = (sport, i) => (sport === "kickball" ? `${i + 1}` : `Q${i + 1}`);
 const PERIOD_HEAD = (sport) => (sport === "kickball" ? "Inning" : "Quarter");
@@ -35,7 +38,7 @@ export default function GameDetail() {
   const { role, roleMeta } = useRole();
   const game = state.games.find((g) => g.id === id);
 
-  if (!game) return <p className="text-muted-foreground">Game not found.</p>;
+  if (!game) return <EmptyState icon={CalendarX} title="Game not found" message="This game may have been removed or the link is invalid." />;
 
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
@@ -61,7 +64,8 @@ export default function GameDetail() {
         <p className="text-caption text-muted-foreground mt-1">{dateStr}</p>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-5 md:p-7">
+      <Card density="spacious" className="rounded-2xl">
+        <CardContent className="p-5 md:p-7">
         {isSpecialStage(game) && (
           <StageBanner stage={game.stage} className="-mx-5 -mt-5 md:-mx-7 md:-mt-7 mb-5 px-5 md:px-7 py-2 rounded-t-2xl" />
         )}
@@ -89,20 +93,23 @@ export default function GameDetail() {
             to="/score-entry"
             state={{ game_id: game.id }}
             data-testid="game-enter-score"
-            className="mt-5 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-4 py-2.5 rounded-xl hover:bg-teal-deep transition-colors"
+            className="mt-5 min-h-11 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-4 py-2.5 rounded-xl hover:bg-teal-deep active:scale-[0.98] transition-all"
           >
             <PencilSimpleLine size={16} weight="bold" /> {completed ? "Edit Score" : "Enter Score"}
           </Link>
         )}
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Period breakdown */}
       {completed && periods.length > 0 && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden">
-          <p className="px-4 py-2.5 border-b border-border text-micro uppercase tracking-widest text-muted-foreground font-semibold">
+        <Card density="compact" className="rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border py-2.5">
+          <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">
             {PERIOD_HEAD(game.sport)} by {PERIOD_HEAD(game.sport).toLowerCase()}
           </p>
-          <div className="p-3 overflow-x-auto">
+          </CardHeader>
+          <CardContent className="p-3 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-muted-foreground">
@@ -125,8 +132,8 @@ export default function GameDetail() {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Player box score */}
@@ -137,10 +144,12 @@ export default function GameDetail() {
             if (!rows.length) return null;
             const cols = BOX[game.sport];
             return (
-              <div key={t.id} className="bg-card border border-border rounded-2xl overflow-hidden">
-                <p className="px-4 py-2.5 border-b border-border font-display uppercase tracking-tight text-foreground flex items-center gap-2">
+              <Card key={t.id} density="compact" className="rounded-2xl overflow-hidden">
+                <CardHeader className="border-b border-border py-2.5">
+                <p className="font-display uppercase tracking-tight text-foreground flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.logo_color }} /> {t.name}
                 </p>
+                </CardHeader>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
@@ -155,10 +164,12 @@ export default function GameDetail() {
                         return (
                           <tr key={s.id} className="border-t border-border">
                             <td className="px-4 py-2.5">
-                              <Link to={`/profile/${p.id}`} className="flex items-center gap-2 hover:text-primary">
-                                <Avatar name={p.name} color={p.avatar_color} size={28} />
-                                <span className="font-medium text-foreground truncate">{p.name}</span>
-                              </Link>
+                              <AthleteHoverCard profile={p} team={t}>
+                                <Link to={`/profile/${p.id}`} className="flex items-center gap-2 hover:text-primary active:opacity-80">
+                                  <Avatar name={p.name} color={p.avatar_color} size={28} />
+                                  <span className="font-medium text-foreground truncate">{p.name}</span>
+                                </Link>
+                              </AthleteHoverCard>
                             </td>
                             {cols.map((c) => (
                               <td key={c.key} className="text-center font-mono-score text-muted-foreground px-2">{s.stats[c.key] || 0}</td>
@@ -169,10 +180,13 @@ export default function GameDetail() {
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
+      )}
+      {completed && gameStats.length === 0 && (
+        <EmptyState title="No player stats recorded" message="The final score is available, but no individual box-score rows were submitted." density="default" className="bg-card border border-border rounded-2xl" />
       )}
     </div>
   );

@@ -4,11 +4,13 @@ import { Trophy, Medal } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { buildLeaderboard } from "../lib/selectors";
 import { LEADERBOARD_CATEGORIES, SPORTS } from "../lib/statsConfig";
-import { SectionHeading } from "../components/common/Section";
+import { EmptyState, SectionHeading } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
 import { Avatar } from "../components/common/Avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { Card, CardContent } from "../components/ui/card";
+import { AthleteHoverCard } from "../components/player/AthleteHoverCard";
 
 export default function Leaderboards() {
   const { state } = useApp();
@@ -64,23 +66,27 @@ export default function Leaderboards() {
               <span className="text-xs text-muted-foreground uppercase tracking-wide">{scope} · {catLabel}</span>
             </div>
 
-            <div className="bg-card border border-border rounded-2xl overflow-hidden" data-testid="leaderboard-list">
+            <Card density="compact" className="rounded-2xl overflow-hidden" data-testid="leaderboard-list">
+              <CardContent className="p-0">
               {rows.length ? rows.map((row, i) => (
-                <div key={row.profile.id} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-white/5 transition-colors">
+                <div key={row.profile.id} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-white/5 active:bg-white/10 transition-colors">
                   <span className={`w-7 text-center font-display font-bold text-lg ${i === 0 ? "text-leader" : i === 1 ? "text-rank-silver" : i === 2 ? "text-rank-bronze" : "text-muted-foreground"}`}>
                     {i < 3 ? <Medal size={20} weight="fill" className="inline" /> : row.rank}
                   </span>
                   <Avatar name={row.profile.name} color={row.profile.avatar_color} size={38} />
                   <div className="flex-1 min-w-0">
-                    <Link to={`/profile/${row.profile.id}`} className="font-display uppercase tracking-tight text-foreground hover:text-primary truncate block text-base">{row.profile.name}</Link>
+                    <AthleteHoverCard profile={row.profile} team={row.team}>
+                      <Link to={`/profile/${row.profile.id}`} className="font-display uppercase tracking-tight text-foreground hover:text-primary truncate block text-base">{row.profile.name}</Link>
+                    </AthleteHoverCard>
                     {row.team && <Link to={`/team/${row.team.id}`} className="text-xs text-muted-foreground hover:text-foreground">{row.team.name}</Link>}
                   </div>
                   <span className="font-mono-score text-xl font-bold text-primary tabular-nums">{row.value}</span>
                 </div>
               )) : (
-                <div className="py-10 text-center text-sm text-muted-foreground">No stats recorded yet.</div>
+                <EmptyState icon={Trophy} title="No leaders yet" message="Stats appear after completed games are recorded." density="default" />
               )}
-            </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         ))}
       </Tabs>
