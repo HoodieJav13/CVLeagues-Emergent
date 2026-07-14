@@ -11,6 +11,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Checkbox } from "../components/ui/checkbox";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { TurnstileWidget } from "../components/common/TurnstileWidget";
+import { BACKEND_ENABLED } from "../lib/supabase";
 
 export default function TeamRegistration() {
   const { state, addRegistration } = useApp();
@@ -26,6 +28,9 @@ export default function TeamRegistration() {
   const [consent_to_contact, setConsentToContact] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -46,24 +51,31 @@ export default function TeamRegistration() {
     setSubmitted(false);
   };
 
-  const submit = () => {
+  const submit = async () => {
     const e = validate();
+    if (BACKEND_ENABLED && !turnstileToken) e.turnstile = "Complete human verification";
     setErrors(e);
     if (Object.keys(e).length) { toast.error("Please fix the highlighted fields"); return; }
-    addRegistration({
-      captain_name: form.captain_name.trim(),
-      captain_phone: form.captain_phone.trim(),
-      captain_email: form.captain_email.trim(),
-      sport: form.sport,
-      team_name: form.team_name.trim(),
-      estimated_roster_size: form.estimated_roster_size ? Number(form.estimated_roster_size) : null,
-      preferred_season: state.settings.current_season,
-      consent_to_contact: true,
-      notes: form.notes.trim() || null,
-    });
-    // PHASE 2: POST to /registrations + send captain confirmation email.
-    setSubmitted(true);
-    toast.success("Team submitted! An admin will review it shortly.");
+    setBusy(true);
+    try {
+      await addRegistration({
+        captain_name: form.captain_name.trim(),
+        captain_phone: form.captain_phone.trim(),
+        captain_email: form.captain_email.trim(),
+        sport: form.sport,
+        team_name: form.team_name.trim(),
+        estimated_roster_size: form.estimated_roster_size ? Number(form.estimated_roster_size) : null,
+        preferred_season: state.settings.current_season,
+        consent_to_contact: true,
+        notes: form.notes.trim() || null,
+      }, turnstileToken);
+      setSubmitted(true);
+      toast.success("Team submitted! An admin will review it shortly.");
+    } catch {
+      setTurnstileReset((value) => value + 1);
+    } finally {
+      setBusy(false);
+    }
   };
 
   const regOpen = form.sport ? state.settings.registration_open[form.sport] : true;
@@ -172,11 +184,19 @@ export default function TeamRegistration() {
 
       <Button
         onClick={submit}
+        disabled={busy}
         data-testid="reg-submit"
         className="w-full h-auto py-4 text-sm font-bold tracking-wide rounded-xl"
       >
-        Submit Team Interest
+        {busy ? "Submitting…" : "Submit Team Interest"}
       </Button>
+      <TurnstileWidget
+        action="team_registration"
+        onToken={setTurnstileToken}
+        onError={(message) => setErrors((current) => ({ ...current, turnstile: message }))}
+        resetSignal={turnstileReset}
+      />
+      {errors.turnstile && <p className="text-xs text-destructive text-center">{errors.turnstile}</p>}
     </div>
   );
 }

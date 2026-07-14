@@ -129,9 +129,18 @@ export async function setGameStatus(game_id, status) {
   fail(error, "set game status");
 }
 
-export async function addRegistration(reg) {
-  const { error } = await supabase.from("team_registrations").insert(reg);
-  fail(error, "submit team interest");
+async function submitPublicIntake(type, payload, turnstile_token) {
+  const response = await fetch("/api/intake", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, payload, turnstile_token, website: "" }),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || "Submission could not be saved.");
+}
+
+export async function addRegistration(reg, turnstileToken) {
+  await submitPublicIntake("team_registration", reg, turnstileToken);
 }
 
 // Approving is the intake->roster linkage: it must create the team via RPC.
@@ -154,9 +163,8 @@ export async function updateRegistrationStatus(id, status, state) {
   }
 }
 
-export async function addFreeAgent(agent) {
-  const { error } = await supabase.from("free_agents").insert(agent);
-  fail(error, "join free agent pool");
+export async function addFreeAgent(agent, turnstileToken) {
+  await submitPublicIntake("free_agent", agent, turnstileToken);
 }
 
 export async function setFreeAgentStatus(id, status) {
@@ -256,12 +264,71 @@ export async function verifyWaiver(waiver_id, decision) {
 }
 
 /* --------------------------------- auth ---------------------------------- */
-export async function signInAdmin(email, password) {
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+export async function signInAdmin(email, password, captchaToken) {
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+    options: { captchaToken },
+  });
   fail(error, "sign in");
 }
 
-export async function signOutAdmin() {
-  const { error } = await supabase.auth.signOut();
+export async function signOutAdmin(scope = "local") {
+  const { error } = await supabase.auth.signOut({ scope });
   fail(error, "sign out");
+}
+
+export async function requestAdminPasswordReset(email, captchaToken) {
+  const redirectTo = `${window.location.origin}/admin/reset-password`;
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo,
+    captchaToken,
+  });
+  fail(error, "request password reset");
+}
+
+export async function updateAdminPassword(password) {
+  const { error } = await supabase.auth.updateUser({ password });
+  fail(error, "update password");
+}
+
+export async function isAdminIdentity() {
+  const { data, error } = await supabase.rpc("is_admin_identity");
+  fail(error, "resolve admin identity");
+  return data === true;
+}
+
+export async function getMfaState() {
+  const [aal, factors] = await Promise.all([
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+    supabase.auth.mfa.listFactors(),
+  ]);
+  fail(aal.error, "read MFA level");
+  fail(factors.error, "read MFA factors");
+  return {
+    currentLevel: aal.data.currentLevel,
+    nextLevel: aal.data.nextLevel,
+    verifiedFactors: [...(factors.data.totp || []), ...(factors.data.phone || [])]
+      .filter((factor) => factor.status === "verified"),
+  };
+}
+
+export async function enrollTotp() {
+  const { data, error } = await supabase.auth.mfa.enroll({
+    factorType: "totp",
+    friendlyName: "CVF Admin Authenticator",
+  });
+  fail(error, "start MFA enrollment");
+  return data;
+}
+
+export async function verifyMfaCode(factorId, code) {
+  const challenge = await supabase.auth.mfa.challenge({ factorId });
+  fail(challenge.error, "start MFA challenge");
+  const verified = await supabase.auth.mfa.verify({
+    factorId,
+    challengeId: challenge.data.id,
+    code,
+  });
+  fail(verified.error, "verify MFA code");
 }

@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer components {
+  .auth-button {
+    @apply w-full bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm py-3 rounded-cvf-md hover:bg-teal-deep transition-colors disabled:opacity-40 disabled:cursor-not-allowed;
+  }
+}
+
 /* ============================================================
    CVF SPORTS — Design tokens (Phase 8 brand pass).
    Dark mode is canonical. Brand = teal action + gold emphasis

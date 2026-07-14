@@ -65,8 +65,10 @@
   },
   "scripts": {
     "start": "craco start",
+    "prebuild": "node scripts/validate-production-env.cjs",
     "build": "craco build",
-    "test": "craco test"
+    "test": "craco test",
+    "test:api": "node --test api/intake.test.cjs"
   },
   "browserslist": {
     "production": [

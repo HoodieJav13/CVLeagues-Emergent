@@ -11,6 +11,8 @@ import { Label } from "../components/ui/label";
 import { Textarea } from "../components/ui/textarea";
 import { Checkbox } from "../components/ui/checkbox";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { TurnstileWidget } from "../components/common/TurnstileWidget";
+import { BACKEND_ENABLED } from "../lib/supabase";
 
 const LEVELS = ["Beginner", "Intermediate", "Advanced"];
 
@@ -40,6 +42,9 @@ export default function FreeAgentSignup() {
   const [consent_to_contact, setConsentToContact] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReset, setTurnstileReset] = useState(0);
+  const [busy, setBusy] = useState(false);
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const toggleSport = (id) => setSports((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
@@ -56,28 +61,35 @@ export default function FreeAgentSignup() {
     return e;
   };
 
-  const submit = () => {
+  const submit = async () => {
     const e = validate();
+    if (BACKEND_ENABLED && !turnstileToken) e.turnstile = "Complete human verification";
     setErrors(e);
     if (Object.keys(e).length) { toast.error("Please fix the highlighted fields"); return; }
-    addFreeAgent({
-      first_name: form.first_name.trim(),
-      last_name: form.last_name.trim(),
-      display_name: form.display_name.trim() || null,
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      sports,
-      experience: form.experience || null,
-      preferred_position: form.preferred_position.trim() || null,
-      availability,
-      emergency_contact_name: form.emergency_contact_name.trim() || null,
-      emergency_contact_phone: form.emergency_contact_phone.trim() || null,
-      consent_to_contact: true,
-      notes: form.notes.trim() || null,
-    });
-    // PHASE 2: POST to /free_agents + notify captains watching for that sport.
-    setSubmitted(true);
-    toast.success("You're in the free agent pool. We'll reach out when a roster spot opens.");
+    setBusy(true);
+    try {
+      await addFreeAgent({
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        display_name: form.display_name.trim() || null,
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        sports,
+        experience: form.experience || null,
+        preferred_position: form.preferred_position.trim() || null,
+        availability,
+        emergency_contact_name: form.emergency_contact_name.trim() || null,
+        emergency_contact_phone: form.emergency_contact_phone.trim() || null,
+        consent_to_contact: true,
+        notes: form.notes.trim() || null,
+      }, turnstileToken);
+      setSubmitted(true);
+      toast.success("You're in the free agent pool. We'll reach out when a roster spot opens.");
+    } catch {
+      setTurnstileReset((value) => value + 1);
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (submitted) {
@@ -218,11 +230,19 @@ export default function FreeAgentSignup() {
 
       <Button
         onClick={submit}
+        disabled={busy}
         data-testid="fa-submit"
         className="w-full h-auto py-4 text-sm font-bold tracking-wide rounded-xl"
       >
-        Join Free Agent Pool
+        {busy ? "Submitting…" : "Join Free Agent Pool"}
       </Button>
+      <TurnstileWidget
+        action="free_agent"
+        onToken={setTurnstileToken}
+        onError={(message) => setErrors((current) => ({ ...current, turnstile: message }))}
+        resetSignal={turnstileReset}
+      />
+      {errors.turnstile && <p className="text-xs text-destructive text-center">{errors.turnstile}</p>}
     </div>
   );
 }

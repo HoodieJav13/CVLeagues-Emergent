@@ -1,18 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 
-/* ============================================================================
- * Supabase client — env-gated (Phase 9b wiring).
- * ----------------------------------------------------------------------------
- * With both env vars set the app runs against the real backend; without them
- * it runs exactly as before on mock seed + localStorage. This keeps `main`
- * shippable in both modes until the hosted project is provisioned.
- *
- *   REACT_APP_SUPABASE_URL       — project URL
- *   REACT_APP_SUPABASE_ANON_KEY  — anon/public key (safe to expose; RLS rules)
- * ========================================================================== */
+/* Production and preview builds fail closed. Mock/localStorage data is a
+ * development-only tool and can never become a deployed fallback. */
 
 const url = process.env.REACT_APP_SUPABASE_URL;
 const anonKey = process.env.REACT_APP_SUPABASE_ANON_KEY;
+export const TURNSTILE_SITE_KEY = process.env.REACT_APP_TURNSTILE_SITE_KEY;
+const productionBuild = process.env.NODE_ENV === "production";
+const hasAnyBackendValue = Boolean(url || anonKey);
+const hasCompleteBackend = Boolean(url && anonKey);
 
-export const BACKEND_ENABLED = Boolean(url && anonKey);
+export const CONFIG_ERROR =
+  hasAnyBackendValue && !hasCompleteBackend
+    ? "Supabase configuration is incomplete."
+    : productionBuild && !hasCompleteBackend
+      ? "This deployment is missing its Supabase public configuration."
+      : productionBuild && !TURNSTILE_SITE_KEY
+        ? "This deployment is missing its public abuse-protection configuration."
+        : null;
+
+export const BACKEND_ENABLED = hasCompleteBackend && !CONFIG_ERROR;
+export const MOCK_MODE = !productionBuild && !BACKEND_ENABLED && !CONFIG_ERROR;
 export const supabase = BACKEND_ENABLED ? createClient(url, anonKey) : null;

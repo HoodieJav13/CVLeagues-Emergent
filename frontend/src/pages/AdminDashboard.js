@@ -72,6 +72,15 @@ function Dashboard() {
             {BACKEND_ENABLED ? "Season 1 · Live Data" : "Season 1 · Demo Data"}
           </span>
           {BACKEND_ENABLED && (
+            <Link
+              to="/admin/security"
+              data-testid="admin-security"
+              className="text-micro uppercase tracking-widest text-muted-foreground hover:text-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap"
+            >
+              Security
+            </Link>
+          )}
+          {BACKEND_ENABLED && (
             <button
               onClick={() => signOutAdmin().catch((e) => toast.error(e.message))}
               data-testid="admin-sign-out"
