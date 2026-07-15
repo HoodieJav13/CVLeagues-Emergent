@@ -3,7 +3,7 @@
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and explicit mock mode remains available for local development. The current frontend expects all sixteen locally verified migrations; hosted Supabase remains at the first-twelve accepted baseline, so hosted mode must not be treated as compatible until the four July 14 migrations pass their separate hosted checkpoint. Preview/production acceptance remains open.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and explicit mock mode remains available for local development. The repository now contains twenty migrations verified by the isolated harness; hosted Supabase remains at the first-twelve accepted baseline, so hosted mode must not be treated as compatible until the eight pending migrations pass their separate hosted checkpoint. Preview/production acceptance remains open.
 
 ## Current Status
 - Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
@@ -14,13 +14,13 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Playoff/tournament mock UI (commit `f8b0a16`): `StageBanner` adds a gold band + trophy icon to GameCard, Schedule, and GameDetail; `computeTeamRecord` excludes playoff/tournament games from standings while season stat totals still include them
-- Extended-runway backend: sixteen migrations apply locally and 144/144 pgtest assertions pass. The hosted project remains at the twelve-migration baseline until owner approval.
+- Extended-runway backend: twenty migrations apply in the isolated harness and 207/207 pgtest assertions pass. The hosted project remains at the twelve-migration baseline until owner approval.
 - Running locally via `npm start` from `frontend/`; always confirm the checked-out branch before editing.
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Dedicated hosted backend is linked and accepted at its July 13 baseline. The real administrator is linked, three-session role resolution and the locked-score flow are hosted-verified, and the 66-check evidence is retained. The four new migrations, expanded matrix, advisors, recovery acceptance, preview/production variables, and live application flows remain open.
+- Dedicated hosted backend is linked and accepted at its July 13 baseline. The real administrator is linked, three-session role resolution and the locked-score flow are hosted-verified, and the 66-check evidence is retained. The eight pending migrations, expanded matrix, advisors, recovery acceptance, preview/production variables, and live application flows remain open.
 
 ## Current Priority
-The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RUNWAY_IMPLEMENTATION.md`](docs/EXTENDED_RUNWAY_IMPLEMENTATION.md). Next is an owner-controlled hosted acceptance: four-migration dry-run/review → approved push → expanded 22-table/13-RPC authorization matrix and advisors → preview/live-flow acceptance → production launch. Attorney-approved New Mexico waiver text remains an independent blocker.
+The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RUNWAY_IMPLEMENTATION.md`](docs/EXTENDED_RUNWAY_IMPLEMENTATION.md). Next is an owner-controlled hosted acceptance: eight-migration dry-run/review → approved push → expanded 22-table/15-RPC authorization matrix and advisors → preview/live-flow acceptance → production launch. Attorney-approved New Mexico waiver text remains an independent blocker.
 
 ## Tech Stack
 - Frontend: React (Create React App), React Router
@@ -31,7 +31,7 @@ The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RU
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
 - Persistence (current fallback): localStorage
-- Backend: Supabase (PostgreSQL + Auth); sixteen migrations are locally verified, the first twelve plus the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. The four-migration hosted extension, expanded authorization acceptance, and preview/production configuration remain open.
+- Backend: Supabase (PostgreSQL + Auth); twenty migrations are verified by the isolated harness, the first twelve plus the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. The eight-migration hosted extension, expanded authorization acceptance, and preview/production configuration remain open.
 - Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
@@ -49,7 +49,11 @@ The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RU
 - **Payments:** manual, admin-only, admin-correctable tracking for Season 1. The UI and ledger are built locally; Stripe, reversal/void accounting, player-visible balances, and automation remain deferred.
 - **Current season is per sport.** Multiple seasons may coexist long term; public views default to the chosen sport's current season and historical seasons remain selectable.
 - **Tournament stats are separate.** They are tracked but excluded from league-season and league-career/all-time totals.
+- **Historical stat classification locks after granular stats exist.** A stat-bearing game cannot move leagues, and its league cannot change season or switch between league/tournament kind. Season-name cascades remain supported.
+- **Career baseline import contract.** A historical season belongs either to `career_baselines` or granular game stats, never both. This accepted import-process constraint is documented and non-blocking for Season 1.
+- **Legacy season compatibility.** `league_settings.current_season` remains temporarily for older consumers but is non-authoritative once the per-sport defaults diverge. Its eventual removal is documented, non-blocking debt.
 - **Team continuity uses identities plus enrollments.** `team_identities` is the persistent brand; each `teams` row is an explicit league/season/sport/tournament enrollment with no automatic roster/payment/history carryover.
+- **Team mutation is RPC-only.** Authenticated clients cannot directly insert, update, or delete persistent identities or enrollment rows; narrow admin RPCs own supported mutations.
 - **Quality-gated, no hard deadline.** Finish each phase's gates; don't drift.
 - **Backend confirmed before Season 1.** Relational linkage (intake→roster→waiver) is built ONCE against real Supabase tables, NOT mock-built first.
 
@@ -74,7 +78,7 @@ The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RU
 - Flow: pending → submitted (score saved) → final (Mark Final, locks game) → approved (on unlock) → submitted (on re-edit).
 - A final game is LOCKED: editing requires deliberate unlock + required reason; every change appends to `editHistory` in mock mode and maps to the append-only `game_edit_history` table in the backend schema.
 
-## Backend Data Model (sixteen migrations locally; first twelve hosted)
+## Backend Data Model (twenty migrations in the local source of truth; first twelve hosted)
 - seasons (natural text key such as `Summer 2026`; referenced by all season-scoped records)
 - profiles (auth_user_id nullable, first/last/display name, email, phone, optional date of birth, emergency contacts, admin notes; age confirmation is recorded on signed waiver rows, not profiles)
 - leagues (sport, season, status, kind: league/tournament, playoff_format; standalone tournaments are league containers with `kind='tournament'`)
@@ -87,7 +91,7 @@ The extended-runway build is locally complete and recorded in [`docs/EXTENDED_RU
 - free_agents (status: new/contacted/assigned/archived, assignedTeamId, adminNotes[])
 - waivers (append-only — see Waiver model)
 - charges + payment_entries (manual payments ledger; every charge targets exactly one of profile_id or team_id, and team charges must match the team's league season)
-- hof_entries + league_settings.hof_published (admin-curated Hall of Fame; unpublished entries are hidden from public reads by RLS)
+- hof_entries + public_hof_entries + league_settings.hof_published (admin-only curation base; published display fields use an explicit safe-field view)
 - playoff_brackets + playoff_seeds + playoff_matches (fixed bracket topology, seed snapshot, scheduled/linked games, manual advancement, third-place path)
 
 ## Stat Categories
@@ -120,18 +124,19 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — July 13 hosted baseline accepted; July 14 extended-runway work is locally complete at 16 migrations and 144/144 pgtest assertions. Hosted application and expanded acceptance remain open.
+9. ◐ Backend wiring — July 13 hosted baseline accepted; July 14 extended-runway work is locally complete at 20 migrations and 207/207 pgtest assertions. Hosted application and expanded acceptance remain open.
 9b. ✅ Extended-runway local build — launch hardening, season/tournament isolation, Season 1 brackets, manual payments, admin Hall of Fame curation, and persistent team enrollment.
 10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
 
 ## Deferred / Backlog
-- Consolidate the seven overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. Preserve existing public/admin semantics and rerun the complete negative matrix.
+- Consolidate the remaining overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. The team overlap disappeared when direct team writes were removed; preserve all remaining public/admin semantics and rerun the complete negative matrix before further consolidation.
 - Season 2 player/captain self-service: signup, email verification, password recovery, safe profile claiming, captain permissions, abuse controls, and a new authorization matrix. This remains outside Season 1 and is also gated by the waiver/eligibility design.
 - Public Hall of Fame route and publication control.
+- Hall of Fame cross-field consistency: optional game/profile/team context is not checked against the selected sport, season, or record scope. Low risk while one administrator curates every row; revisit before expanding curator permissions.
 - Tournament-specific leaderboard/history UI. Tournament rows are safely isolated from league totals now.
-- Payment processor integration, automated reminders/reconciliation, and the unresolved future league/sport context for profile-only charges.
+- Payment processor integration and automated reminders/reconciliation. The unresolved profile-charge context is the same season/sport modeling gap as the legacy `current_season` singleton and should be revisited with it.
 - Double-elimination and round-robin bracket engines; Season 1 is single elimination only.
 
 ## Intake Form Specs (built)

@@ -43,3 +43,28 @@ For schema, Auth, RLS, or security work, also run the relevant negative authoriz
 - Before implementation, provide the stage objective, findings, affected files/systems, proposed changes, tests, risks, rollback, owner actions, and decisions.
 - Before committing, show the complete relevant diff, every test result, remaining risks, and confirmation that unrelated files were untouched. Stop for owner approval.
 - Record verified milestones, evidence, decisions, blockers, completion date, and commit hash in the repository documentation and Notion roadmap when available.
+
+## Reporting Discipline — Risk-Calibrated Detail
+
+Not everything warrants the same depth of report. Before writing up a finding,
+triage it first:
+
+- HIGH STAKES (full detail: diff, reasoning, explicit call-out) — anything
+  touching auth/authorization/RLS/privilege boundaries, money, PII/data
+  exposure, irreversible or hosted actions, or the first instance of a new
+  architectural pattern.
+- LOW STAKES (one-line verdict, no extended narrative) — a repeated instance
+  of an already-established pattern (e.g., the third time the same class of
+  fix is applied), a finding you've already self-classified as non-blocking,
+  UI/display-only changes with passing tests, or routine test/build status.
+
+Lead every finding with a one-line verdict: BLOCKING / NON-BLOCKING (noted)
+/ ALREADY FINE. Reserve full paragraphs of reasoning for BLOCKING items and
+genuinely novel judgment calls. Don't re-explain why an established pattern
+is correct each time it recurs — just confirm it was applied consistently.
+Don't write extended risk narrative for something you've already determined
+doesn't need owner action.
+
+This isn't a license to skip verification — run the same checks. It's a
+constraint on how much prose accompanies a finding that doesn't need a
+decision from the owner.
