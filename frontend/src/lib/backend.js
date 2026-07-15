@@ -281,8 +281,22 @@ export async function updateTeamIdentity(id, patch) {
   const allowed = Object.fromEntries(
     Object.entries(patch).filter(([key]) => ["name", "logo_color", "founded", "status"].includes(key))
   );
-  const { error } = await supabase.from("team_identities").update(allowed).eq("id", id);
+  const { error } = await supabase.rpc("update_team_identity", {
+    p_identity_id: id,
+    p_patch: allowed,
+  });
   fail(error, "update team identity");
+}
+
+export async function updateTeamEnrollment(id, patch) {
+  const allowed = Object.fromEntries(
+    Object.entries(patch).filter(([key]) => ["captain_id", "division", "status"].includes(key))
+  );
+  const { error } = await supabase.rpc("update_team_enrollment", {
+    p_team_id: id,
+    p_patch: allowed,
+  });
+  fail(error, "update team enrollment");
 }
 
 export async function createEntity(collection, entity) {
@@ -306,6 +320,9 @@ export async function updateEntity(collection, id, patch) {
   if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
     return assignFreeAgent(id, patch.assigned_team_id);
   }
+  // Team enrollment identity/container fields are immutable to clients. The
+  // supported captain/division/lifecycle edits route through the narrow RPC.
+  if (collection === "teams") return updateTeamEnrollment(id, patch);
   const { error } = await supabase.from(TABLES[collection]).update(patch).eq("id", id);
   fail(error, `update ${collection}`);
 }

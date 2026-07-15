@@ -92,6 +92,23 @@ begin
 end;
 $$;
 
+create or replace function cvf_test.row_count_is_zero(p_name text, p_sql text)
+returns void
+language plpgsql
+as $$
+declare
+  v_count int;
+begin
+  begin
+    execute p_sql;
+    get diagnostics v_count = row_count;
+    perform cvf_test.record_result(p_name, v_count = 0, format('affected rows=%s', v_count));
+  exception when others then
+    perform cvf_test.record_result(p_name, false, sqlerrm);
+  end;
+end;
+$$;
+
 create or replace function cvf_test.as_anon()
 returns void language plpgsql as $$
 begin
@@ -582,14 +599,14 @@ values (
 
 select cvf_test.as_anon();
 select cvf_test.eq_int(
-  'season2 14 hof unpublished anonymous read returns zero',
-  (select count(*)::int from public.hof_entries),
+  'season2 14 hof unpublished anonymous view read returns zero',
+  (select count(*)::int from public.public_hof_entries),
   0
 );
 select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
 select cvf_test.eq_int(
-  'season2 15 hof unpublished public-role read returns zero',
-  (select count(*)::int from public.hof_entries),
+  'season2 15 hof unpublished public-role view read returns zero',
+  (select count(*)::int from public.public_hof_entries),
   0
 );
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
@@ -601,8 +618,8 @@ select cvf_test.eq_int(
 update public.league_settings set hof_published = true where id = 1;
 select cvf_test.as_anon();
 select cvf_test.eq_int(
-  'season2 17 hof published public read returns rows',
-  (select count(*)::int from public.hof_entries),
+  'season2 17 hof published public view read returns rows',
+  (select count(*)::int from public.public_hof_entries),
   1
 );
 
@@ -612,7 +629,9 @@ select cvf_test.eq_int(
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 
 insert into public.seasons (name, status)
-values ('Fall 2026', 'upcoming');
+values
+  ('Fall 2026', 'upcoming'),
+  ('Spring 2027', 'upcoming');
 
 insert into public.leagues (id, name, sport, season, description)
 values (
@@ -623,6 +642,8 @@ values (
   'Cross-season guard fixture'
 );
 
+-- Owner-only fixture setup; authenticated clients must use enrollment RPCs.
+select cvf_test.as_owner();
 insert into public.teams (id, league_id, name, sport, logo_color)
 values (
   '30000000-0000-0000-0000-000000000101',
@@ -631,15 +652,45 @@ values (
   'kickball',
   '#14B8A6'
 );
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+
+-- ---------------------------------------------------------------------------
+-- Historical stat classification guards (3 assertions).
+-- ---------------------------------------------------------------------------
+select cvf_test.throws_ok(
+  'historical isolation 01 a game with stats cannot move to another league',
+  $$update public.games
+       set league_id = '20000000-0000-0000-0000-000000000101'
+     where id = '50000000-0000-0000-0000-000000000001'$$,
+  '%Recorded statistics lock game%'
+);
+select cvf_test.throws_ok(
+  'historical isolation 02 a league with stats cannot change season',
+  $$update public.leagues
+       set season = 'Fall 2026'
+     where id = '20000000-0000-0000-0000-000000000001'$$,
+  '%Recorded statistics lock league%season%'
+);
+select cvf_test.throws_ok(
+  'historical isolation 03 a league with stats cannot change kind',
+  $$update public.leagues
+       set kind = 'tournament'
+     where id = '20000000-0000-0000-0000-000000000001'$$,
+  '%Recorded statistics lock league%kind%'
+);
 
 select cvf_test.lives_ok(
-  'charge season 01 matching-season team charge succeeds',
+  'charge season 01 matching-season team charges succeed',
   $$insert into public.charges
       (id, season, team_id, amount_due_cents)
     values
       ('a0000000-0000-0000-0000-000000000101',
        'Summer 2026',
        '30000000-0000-0000-0000-000000000001',
+       10000),
+      ('a0000000-0000-0000-0000-000000000103',
+       'Fall 2026',
+       '30000000-0000-0000-0000-000000000101',
        10000)$$
 );
 select cvf_test.throws_ok(
@@ -659,6 +710,8 @@ select cvf_test.throws_ok(
      where id = 'a0000000-0000-0000-0000-000000000101'$$,
   '%must match%'
 );
+-- Owner-only invariant probe; client enrollment identity/container fields are immutable.
+select cvf_test.as_owner();
 select cvf_test.throws_ok(
   'charge season 04 charged team cannot move to another-season league',
   $$update public.teams
@@ -669,8 +722,8 @@ select cvf_test.throws_ok(
 select cvf_test.throws_ok(
   'charge season 05 charged league cannot be reassigned to another season',
   $$update public.leagues
-       set season = 'Fall 2026'
-     where id = '20000000-0000-0000-0000-000000000001'$$,
+       set season = 'Spring 2027'
+     where id = '20000000-0000-0000-0000-000000000101'$$,
   '%cannot change%'
 );
 select cvf_test.lives_ok(
@@ -813,6 +866,42 @@ select cvf_test.throws_ok(
   $$select count(*) from public.payment_entries$$,
   '%permission denied%'
 );
+select cvf_test.throws_ok(
+  'payments auth 01 anon cannot insert charges',
+  $$insert into public.charges (season, profile_id, amount_due_cents)
+    values ('Summer 2026', '10000000-0000-0000-0000-000000000001', 100)$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'payments auth 02 anon cannot update charges',
+  $$update public.charges set amount_due_cents = 999
+    where id = 'a0000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'payments auth 03 anon cannot delete charges',
+  $$delete from public.charges
+    where id = 'a0000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'payments auth 04 anon cannot insert payment entries',
+  $$insert into public.payment_entries (charge_id, amount_cents, method)
+    values ('a0000000-0000-0000-0000-000000000001', 100, 'cash')$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'payments auth 05 anon cannot update payment entries',
+  $$update public.payment_entries set amount_cents = 999
+    where id = 'b0000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'payments auth 06 anon cannot delete payment entries',
+  $$delete from public.payment_entries
+    where id = 'b0000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
 
 select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
 select cvf_test.eq_int('data api 15 non-admin profiles read is RLS-empty', (select count(*)::int from public.profiles), 0);
@@ -826,6 +915,174 @@ select cvf_test.throws_ok(
   'data api 22 non-admin admin RPC call fails its authorization guard',
   $$select public.lock_game('50000000-0000-0000-0000-000000000001')$$,
   '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'payments auth 07 non-admin cannot insert charges',
+  $$insert into public.charges (season, profile_id, amount_due_cents)
+    values ('Summer 2026', '10000000-0000-0000-0000-000000000001', 100)$$,
+  '%row-level security%'
+);
+select cvf_test.row_count_is_zero(
+  'payments auth 08 non-admin cannot update charges',
+  $$update public.charges set amount_due_cents = 999
+     where id = 'a0000000-0000-0000-0000-000000000001'$$
+);
+select cvf_test.row_count_is_zero(
+  'payments auth 09 non-admin cannot delete charges',
+  $$delete from public.charges
+     where id = 'a0000000-0000-0000-0000-000000000001'$$
+);
+select cvf_test.throws_ok(
+  'payments auth 10 non-admin cannot insert payment entries',
+  $$insert into public.payment_entries (charge_id, amount_cents, method)
+    values ('a0000000-0000-0000-0000-000000000001', 100, 'cash')$$,
+  '%row-level security%'
+);
+select cvf_test.row_count_is_zero(
+  'payments auth 11 non-admin cannot update payment entries',
+  $$update public.payment_entries set amount_cents = 999
+     where id = 'b0000000-0000-0000-0000-000000000001'$$
+);
+select cvf_test.row_count_is_zero(
+  'payments auth 12 non-admin cannot delete payment entries',
+  $$delete from public.payment_entries
+     where id = 'b0000000-0000-0000-0000-000000000001'$$
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'payments auth 13 admin can insert a charge',
+  $$insert into public.charges
+      (id, season, profile_id, amount_due_cents, kind, notes)
+    values
+      ('a0000000-0000-0000-0000-000000000099', 'Summer 2026',
+       '10000000-0000-0000-0000-000000000001', 2500, 'other', 'authorization test')$$
+);
+select cvf_test.lives_ok(
+  'payments auth 14 admin can update a charge',
+  $$update public.charges set amount_due_cents = 3000
+     where id = 'a0000000-0000-0000-0000-000000000099'$$
+);
+select cvf_test.lives_ok(
+  'payments auth 15 admin can insert a payment entry',
+  $$insert into public.payment_entries
+      (id, charge_id, amount_cents, method, note)
+    values
+      ('a1000000-0000-0000-0000-000000000099',
+       'a0000000-0000-0000-0000-000000000099', 1000, 'cash', 'authorization test')$$
+);
+select cvf_test.lives_ok(
+  'payments auth 16 admin can update a payment entry',
+  $$update public.payment_entries set amount_cents = 1500
+     where id = 'a1000000-0000-0000-0000-000000000099'$$
+);
+select cvf_test.lives_ok(
+  'payments auth 17 admin can delete a payment entry',
+  $$delete from public.payment_entries
+     where id = 'a1000000-0000-0000-0000-000000000099'$$
+);
+select cvf_test.lives_ok(
+  'payments auth 18 admin can delete a charge after its entries are removed',
+  $$delete from public.charges
+     where id = 'a0000000-0000-0000-0000-000000000099'$$
+);
+
+-- ---------------------------------------------------------------------------
+-- Hall of Fame public-view boundary and explicit CRUD authorization.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+select cvf_test.eq_text(
+  'hof auth 01 public_hof_entries exposes the exact safe-field allowlist',
+  (
+    select string_agg(column_name, ',' order by ordinal_position)
+      from information_schema.columns
+     where table_schema = 'public'
+       and table_name = 'public_hof_entries'
+  ),
+  'id,entry_type,game_id,profile_id,team_id,sport,season,record_scope,title,blurb,stat_key,stat_value,display_order,created_at,updated_at'
+);
+select cvf_test.ok(
+  'hof auth 02 public_hof_entries remains the intentional definer-style boundary',
+  exists (
+    select 1
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+     where n.nspname = 'public'
+       and c.relname = 'public_hof_entries'
+       and not ('security_invoker=true' = any(coalesce(c.reloptions, '{}'::text[])))
+  )
+);
+select cvf_test.ok(
+  'hof auth 03 anon can select public_hof_entries but not hof_entries',
+  has_table_privilege('anon', 'public.public_hof_entries', 'select')
+  and not has_table_privilege('anon', 'public.hof_entries', 'select')
+);
+
+select cvf_test.as_anon();
+select cvf_test.throws_ok(
+  'hof auth 04 public_hof_entries does not expose created_by',
+  $$select created_by from public.public_hof_entries$$,
+  '%does not exist%'
+);
+select cvf_test.throws_ok(
+  'hof auth 05 anon cannot insert Hall of Fame entries',
+  $$insert into public.hof_entries (entry_type, profile_id, title)
+    values ('player', '10000000-0000-0000-0000-000000000001', 'Denied')$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'hof auth 06 anon cannot update Hall of Fame entries',
+  $$update public.hof_entries set title = 'Denied'
+    where id = 'c0000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'hof auth 07 anon cannot delete Hall of Fame entries',
+  $$delete from public.hof_entries
+    where id = 'c0000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.eq_int(
+  'hof auth 08 non-admin base table read is RLS-empty',
+  (select count(*)::int from public.hof_entries),
+  0
+);
+select cvf_test.throws_ok(
+  'hof auth 09 non-admin cannot insert Hall of Fame entries',
+  $$insert into public.hof_entries (entry_type, profile_id, title)
+    values ('player', '10000000-0000-0000-0000-000000000001', 'Denied')$$,
+  '%row-level security%'
+);
+select cvf_test.row_count_is_zero(
+  'hof auth 10 non-admin cannot update Hall of Fame entries',
+  $$update public.hof_entries set title = 'Denied'
+    where id = 'c0000000-0000-0000-0000-000000000001'$$
+);
+select cvf_test.row_count_is_zero(
+  'hof auth 11 non-admin cannot delete Hall of Fame entries',
+  $$delete from public.hof_entries
+    where id = 'c0000000-0000-0000-0000-000000000001'$$
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'hof auth 12 admin can insert a Hall of Fame entry',
+  $$insert into public.hof_entries (id, entry_type, profile_id, title, blurb)
+    values ('c0000000-0000-0000-0000-000000000099', 'player',
+            '10000000-0000-0000-0000-000000000001',
+            'Authorization test', 'Disposable Hall of Fame fixture')$$
+);
+select cvf_test.lives_ok(
+  'hof auth 13 admin can update a Hall of Fame entry',
+  $$update public.hof_entries set title = 'Authorization test updated'
+    where id = 'c0000000-0000-0000-0000-000000000099'$$
+);
+select cvf_test.lives_ok(
+  'hof auth 14 admin can delete a Hall of Fame entry',
+  $$delete from public.hof_entries
+    where id = 'c0000000-0000-0000-0000-000000000099'$$
 );
 
 select cvf_test.as_owner();
@@ -879,6 +1136,10 @@ select cvf_test.ok(
   'data api 32 future tables are not exposed automatically',
   not has_table_privilege('anon', 'public._cvf_default_privilege_test', 'select')
   and not has_table_privilege('authenticated', 'public._cvf_default_privilege_test', 'insert')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'select')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'insert')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'update')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'delete')
 );
 drop table public._cvf_default_privilege_test;
 
@@ -964,8 +1225,104 @@ select cvf_test.ok(
   not public.is_admin()
 );
 select cvf_test.throws_ok(
-  'launch 03 linked AAL1 administrator cannot execute admin RPCs',
+  'launch 03a linked AAL1 administrator cannot save a score',
+  $$select public.save_score('50000000-0000-0000-0000-000000000001', 1, 0, '{}'::jsonb, '{}'::jsonb)$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03b linked AAL1 administrator cannot lock a game',
   $$select public.lock_game('50000000-0000-0000-0000-000000000001')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03c linked AAL1 administrator cannot unlock a game',
+  $$select public.unlock_game('50000000-0000-0000-0000-000000000001', 'MFA bypass check')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03d linked AAL1 administrator cannot change game status',
+  $$select public.set_game_status('50000000-0000-0000-0000-000000000001', 'postponed')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03e linked AAL1 administrator cannot approve a registration',
+  $$select public.approve_registration('60000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', true)$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03f linked AAL1 administrator cannot assign a free agent',
+  $$select public.assign_free_agent('70000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', 31, 'Utility')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03g linked AAL1 administrator cannot verify a waiver',
+  $$select public.verify_waiver('80000000-0000-0000-0000-000000000001', 'verified')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03h linked AAL1 administrator cannot generate a bracket',
+  $$select public.generate_single_elim_bracket(
+    '30000000-0000-0000-0000-000000000001',
+    array[
+      '40000000-0000-0000-0000-000000000001'::uuid,
+      '40000000-0000-0000-0000-000000000002'::uuid,
+      '40000000-0000-0000-0000-000000000003'::uuid,
+      '40000000-0000-0000-0000-000000000004'::uuid
+    ]
+  )$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03i linked AAL1 administrator cannot schedule a playoff match',
+  $$select public.schedule_playoff_match('d0000000-0000-0000-0000-000000000001', date '2099-07-14', '7:00 PM', 'MFA bypass check')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03j linked AAL1 administrator cannot link a playoff game',
+  $$select public.link_playoff_game('d0000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000001')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03k linked AAL1 administrator cannot advance a playoff match',
+  $$select public.advance_playoff_match('d0000000-0000-0000-0000-000000000001')$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03l linked AAL1 administrator cannot enroll a team identity',
+  $$select public.enroll_team_identity(
+    'e0000000-0000-0000-0000-000000000001',
+    '30000000-0000-0000-0000-000000000001',
+    null,
+    null
+  )$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03m linked AAL1 administrator cannot create and enroll a team identity',
+  $$select public.create_team_identity_and_enroll(
+    'MFA bypass identity',
+    '#5BB8CC',
+    '2099',
+    '30000000-0000-0000-0000-000000000001',
+    null,
+    null
+  )$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03n linked AAL1 administrator cannot update a team identity',
+  $$select public.update_team_identity(
+    'e0000000-0000-0000-0000-000000000001',
+    '{"status":"inactive"}'::jsonb
+  )$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'launch 03o linked AAL1 administrator cannot update a team enrollment',
+  $$select public.update_team_enrollment(
+    '30000000-0000-0000-0000-000000000001',
+    '{"status":"inactive"}'::jsonb
+  )$$,
   '%Admin only%'
 );
 
@@ -1161,15 +1518,39 @@ select cvf_test.throws_ok(
 );
 
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'bracket 13 administrator cannot directly mutate bracket headers',
+  $$update public.playoff_brackets set status = 'complete'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'bracket 14 administrator cannot directly mutate locked seeds',
+  $$update public.playoff_seeds set seed = seed$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'bracket 15 administrator cannot directly mutate match topology',
+  $$update public.playoff_matches set label = 'Tampered'$$,
+  '%permission denied%'
+);
+select cvf_test.ok(
+  'bracket 16 authenticated Data API role has read-only bracket table grants',
+  has_table_privilege('authenticated', 'public.playoff_brackets', 'select')
+  and has_table_privilege('authenticated', 'public.playoff_seeds', 'select')
+  and has_table_privilege('authenticated', 'public.playoff_matches', 'select')
+  and not has_table_privilege('authenticated', 'public.playoff_brackets', 'insert,update,delete')
+  and not has_table_privilege('authenticated', 'public.playoff_seeds', 'insert,update,delete')
+  and not has_table_privilege('authenticated', 'public.playoff_matches', 'insert,update,delete')
+);
 select cvf_test.lives_ok(
-  'bracket 13 unlocking retracts an advancement before downstream scheduling',
+  'bracket 17 unlocking retracts an advancement before downstream scheduling',
   $$select public.unlock_game(
       (select game_id from public.playoff_matches where game_id is not null limit 1),
       'Correcting a playoff score'
     )$$
 );
 select cvf_test.ok(
-  'bracket 14 retraction clears the downstream slot and source result',
+  'bracket 18 retraction clears the downstream slot and source result',
   exists (
     select 1 from public.playoff_matches source
     join public.playoff_matches destination on destination.id = source.winner_to_match_id
@@ -1205,7 +1586,7 @@ select cvf_test.lives_ok(
     )$$
 );
 select cvf_test.throws_ok(
-  'bracket 15 unlock is blocked after the downstream game is scheduled',
+  'bracket 19 unlock is blocked after the downstream game is scheduled',
   $$select public.unlock_game(
       (select game_id from public.playoff_matches
        where status = 'completed' and game_id is not null limit 1),
@@ -1214,7 +1595,7 @@ select cvf_test.throws_ok(
   '%next playoff match has been scheduled%'
 );
 select cvf_test.ok(
-  'bracket 16 blocked unlock preserves the source result and lock',
+  'bracket 20 blocked unlock preserves the source result and lock',
   exists (
     select 1 from public.playoff_matches match
     join public.games game on game.id = match.game_id
@@ -1298,10 +1679,11 @@ select cvf_test.throws_ok(
   '%already enrolled%'
 );
 select cvf_test.lives_ok(
-  'team identity 08 canonical brand edits propagate to every enrollment',
-  $$update public.team_identities
-       set name = 'Kick A United', logo_color = '#112233'
-     where id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')$$
+  'team identity 08 canonical brand RPC propagates to every enrollment',
+  $$select public.update_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '{"name":"Kick A United","logo_color":"#112233"}'::jsonb
+    )$$
 );
 select cvf_test.ok(
   'team identity 09 every enrollment reflects the canonical brand',
@@ -1312,24 +1694,102 @@ select cvf_test.ok(
   )
 );
 select cvf_test.lives_ok(
-  'team identity 10 legacy direct brand edits are normalized',
-  $$update public.teams set name = 'Enrollment-only rename'
-     where id = '30000000-0000-0000-0000-000000000001'$$
+  'team identity 10 enrollment RPC supports only mutable enrollment fields',
+  $$select public.update_team_enrollment(
+      '30000000-0000-0000-0000-000000000001',
+      '{"captain_id":"10000000-0000-0000-0000-000000000001","division":"RPC Division","status":"active"}'::jsonb
+    )$$
 );
-select cvf_test.eq_text(
-  'team identity 11 identity remains the source of truth',
-  (select name from public.teams where id = '30000000-0000-0000-0000-000000000001'),
-  'Kick A United'
+select cvf_test.ok(
+  'team identity 11 enrollment RPC persisted captain, division, and status',
+  exists (
+    select 1 from public.teams
+     where id = '30000000-0000-0000-0000-000000000001'
+       and captain_id = '10000000-0000-0000-0000-000000000001'
+       and division = 'RPC Division'
+       and status = 'active'
+  )
+);
+select cvf_test.throws_ok(
+  'team identity 12 admin cannot directly insert an enrollment',
+  $$insert into public.teams
+      (identity_id, league_id, name, sport, logo_color, status)
+    values
+      ((select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+       '20000000-0000-0000-0000-000000000101', 'Bypass', 'kickball', '#000000', 'active')$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'team identity 13 admin cannot directly update an enrollment',
+  $$update public.teams set division = 'Bypass'
+     where id = '30000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'team identity 14 admin cannot directly delete an enrollment',
+  $$delete from public.teams
+     where id = '30000000-0000-0000-0000-000000000001'$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'team identity 15 admin cannot directly insert a persistent identity',
+  $$insert into public.team_identities (name, logo_color) values ('Bypass', '#000000')$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'team identity 16 admin cannot directly update a persistent identity',
+  $$update public.team_identities set status = 'inactive'
+     where id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'team identity 17 admin cannot directly delete a persistent identity',
+  $$delete from public.team_identities
+     where id = (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001')$$,
+  '%permission denied%'
+);
+select cvf_test.ok(
+  'team identity 18 authenticated Data API role has read-only identity and enrollment grants',
+  has_table_privilege('authenticated', 'public.team_identities', 'select')
+  and not has_table_privilege('authenticated', 'public.team_identities', 'insert')
+  and not has_table_privilege('authenticated', 'public.team_identities', 'update')
+  and not has_table_privilege('authenticated', 'public.team_identities', 'delete')
+  and has_table_privilege('authenticated', 'public.teams', 'select')
+  and not has_table_privilege('authenticated', 'public.teams', 'insert')
+  and not has_table_privilege('authenticated', 'public.teams', 'update')
+  and not has_table_privilege('authenticated', 'public.teams', 'delete')
 );
 select cvf_test.lives_ok(
-  'team identity 12 new identity and first enrollment are transactional',
+  'team identity 19 identity lifecycle changes through its RPC',
+  $$select public.update_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '{"status":"inactive"}'::jsonb
+    )$$
+);
+select cvf_test.throws_ok(
+  'team identity 20 inactive identity cannot be enrolled through its RPC',
+  $$select public.enroll_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '20000000-0000-0000-0000-000000000101'
+    )$$,
+  '%Inactive team identities cannot be enrolled%'
+);
+select cvf_test.lives_ok(
+  'team identity 21 identity can be reactivated through its RPC',
+  $$select public.update_team_identity(
+      (select identity_id from public.teams where id = '30000000-0000-0000-0000-000000000001'),
+      '{"status":"active"}'::jsonb
+    )$$
+);
+select cvf_test.lives_ok(
+  'team identity 22 new identity and first enrollment are transactional',
   $$select public.create_team_identity_and_enroll(
       'Future Flyers', '#445566', '2026',
       '20000000-0000-0000-0000-000000000101', null, 'Recreation'
     )$$
 );
 select cvf_test.ok(
-  'team identity 13 transactional enrollment creates only its shell',
+  'team identity 23 transactional enrollment creates only its shell',
   exists (
     select 1 from public.team_identities identity
     join public.teams enrollment on enrollment.identity_id = identity.id
@@ -1344,12 +1804,47 @@ select cvf_test.ok(
   )
 );
 select cvf_test.ok(
-  'team identity 14 approved registrations own a persistent identity',
+  'team identity 24 approved registrations own a persistent identity',
   exists (
     select 1 from public.team_registrations registration
     join public.teams enrollment on enrollment.id = registration.approved_team_id
     join public.team_identities identity on identity.id = enrollment.identity_id
     where registration.status = 'approved' and identity.name = enrollment.name
+  )
+);
+
+select cvf_test.ok(
+  'service role 01 protected intake can insert team registrations',
+  has_table_privilege('service_role', 'public.team_registrations', 'insert')
+);
+select cvf_test.ok(
+  'service role 02 protected intake can insert free agents',
+  has_table_privilege('service_role', 'public.free_agents', 'insert')
+);
+select cvf_test.ok(
+  'service role 03 protected intake cannot read or rewrite submitted PII',
+  not has_table_privilege('service_role', 'public.team_registrations', 'select')
+  and not has_table_privilege('service_role', 'public.team_registrations', 'update')
+  and not has_table_privilege('service_role', 'public.team_registrations', 'delete')
+  and not has_table_privilege('service_role', 'public.free_agents', 'select')
+  and not has_table_privilege('service_role', 'public.free_agents', 'update')
+  and not has_table_privilege('service_role', 'public.free_agents', 'delete')
+);
+select cvf_test.ok(
+  'service role 04 every unrelated public table denies Data API DML',
+  not exists (
+    select 1
+      from pg_catalog.pg_class relation
+      join pg_catalog.pg_namespace namespace on namespace.oid = relation.relnamespace
+     where namespace.nspname = 'public'
+       and relation.relkind in ('r', 'p', 'v', 'm', 'f')
+       and relation.relname not in ('team_registrations', 'free_agents')
+       and (
+         has_table_privilege('service_role', relation.oid, 'select')
+         or has_table_privilege('service_role', relation.oid, 'insert')
+         or has_table_privilege('service_role', relation.oid, 'update')
+         or has_table_privilege('service_role', relation.oid, 'delete')
+       )
   )
 );
 

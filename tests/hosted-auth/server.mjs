@@ -21,7 +21,7 @@ const runId = `cvf-matrix-${new Date().toISOString().slice(0, 10)}-${randomUUID(
 const ids = Object.fromEntries(
   [
     "league", "identityLeague", "homeTeam", "awayTeam", "extraTeam1", "extraTeam2", "profile", "roster",
-    "game", "linkedPlayoffGame", "unknownPlayoffMatch", "seedHistory", "charge", "payment",
+    "game", "linkedPlayoffGame", "unknownPlayoffMatch", "seedHistory", "charge", "payment", "adminCharge", "adminPayment",
     "registration", "freeAgent", "waiver", "hof", "deniedGame", "unknownTeamIdentity",
   ].map((name) => [name, randomUUID()]),
 );
