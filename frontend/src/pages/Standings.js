@@ -91,7 +91,7 @@ const Filter = ({ label, value, onChange, testid, children }) => (
   <div>
     <label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">{label}</label>
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger data-testid={testid} className="bg-card border-border h-10 text-sm"><SelectValue /></SelectTrigger>
+      <SelectTrigger data-testid={testid} className="bg-card border-border"><SelectValue /></SelectTrigger>
       <SelectContent>{children}</SelectContent>
     </Select>
   </div>

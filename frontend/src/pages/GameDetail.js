@@ -89,14 +89,15 @@ export default function GameDetail() {
         </div>
 
         {canScore && (
-          <Link
-            to="/score-entry"
-            state={{ game_id: game.id }}
-            data-testid="game-enter-score"
-            className="mt-5 min-h-11 inline-flex items-center gap-2 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-sm px-4 py-2.5 rounded-xl hover:bg-teal-deep active:scale-[0.98] transition-all"
-          >
-            <PencilSimpleLine size={16} weight="bold" /> {completed ? "Edit Score" : "Enter Score"}
-          </Link>
+          <Button asChild className="mt-5 h-11 md:h-11">
+            <Link
+              to="/score-entry"
+              state={{ game_id: game.id }}
+              data-testid="game-enter-score"
+            >
+              <PencilSimpleLine data-icon="inline-start" weight="bold" /> {completed ? "Edit Score" : "Enter Score"}
+            </Link>
+          </Button>
         )}
         </CardContent>
       </Card>

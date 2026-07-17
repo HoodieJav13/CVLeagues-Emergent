@@ -100,7 +100,7 @@ export default function Schedule() {
         <div className="space-y-6">
           {weekGroups.map((grp) => (
             <section key={grp.key} data-testid={`schedule-week-${grp.key}`}>
-              <h2 className="font-display uppercase tracking-tight text-sm text-muted-foreground mb-2.5">{grp.label}</h2>
+              <h2 className="font-display text-subheading uppercase tracking-tight text-foreground mb-2.5">{grp.label}</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {grp.games.map((g) => <GameCard key={g.id} game={g} />)}
               </div>
@@ -120,7 +120,7 @@ const Filter = ({ label, value, onChange, testid, children }) => (
       {label}
     </label>
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger data-testid={testid} className="bg-card border-border h-10 text-sm">
+      <SelectTrigger data-testid={testid} className="bg-card border-border">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>{children}</SelectContent>
