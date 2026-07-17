@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Ranking } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
@@ -8,30 +8,66 @@ import { SportBadge } from "../components/common/Badges";
 import { SPORTS } from "../lib/statsConfig";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 
+const FilterResultRegion = ({ animate, className, testId, children }) => {
+  const [entered, setEntered] = useState(!animate);
+
+  useEffect(() => {
+    if (!animate) {
+      setEntered(true);
+      return undefined;
+    }
+
+    setEntered(false);
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [animate]);
+
+  return (
+    <div
+      className={`${className} transition-opacity duration-cvf-fast ease-cvf-out ${
+        entered ? "opacity-100" : "opacity-75"
+      } motion-reduce:opacity-100 motion-reduce:transition-none`}
+      data-testid={testId}
+    >
+      {children}
+    </div>
+  );
+};
+
 export default function Standings() {
   const { state } = useApp();
   const [sport, setSport] = useState("kickball");
   const [season, setSeason] = useState(() => currentSeasonForSport(state, "kickball"));
+  const [filterRevision, setFilterRevision] = useState(0);
   const seasons = seasonsForSport(state, sport);
   const leagues = state.leagues.filter((league) => league.kind !== "tournament" && league.sport === sport && league.season === season);
   return (
-    <div className="space-y-8 animate-fade-up">
+    <div className="space-y-8">
       <SectionHeading as="h1" band title="Standings" subtitle={`${season} · Albuquerque · wins first, point diff breaks ties`} />
       <div className="grid sm:grid-cols-2 gap-2.5">
-        <Filter label="Sport" value={sport} onChange={(value) => { setSport(value); setSeason(currentSeasonForSport(state, value)); }} testid="standings-filter-sport">
+        <Filter label="Sport" value={sport} onChange={(value) => { setSport(value); setSeason(currentSeasonForSport(state, value)); setFilterRevision((revision) => revision + 1); }} testid="standings-filter-sport">
           {SPORTS.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
         </Filter>
-        <Filter label="Season" value={season} onChange={setSeason} testid="standings-filter-season">
+        <Filter label="Season" value={season} onChange={(value) => { setSeason(value); setFilterRevision((revision) => revision + 1); }} testid="standings-filter-season">
           {seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
         </Filter>
       </div>
       <div className="flex justify-end">
         <Link to="/playoffs" className="inline-flex min-h-11 items-center rounded-xl border border-gold/40 px-4 py-2 text-xs font-bold uppercase tracking-wide text-gold hover:bg-gold/10">View Playoff Brackets</Link>
       </div>
-      {leagues.length === 0 && (
-        <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
-      )}
-      {leagues.map((league) => {
+      <FilterResultRegion
+        key={`${sport}:${season}:${filterRevision}`}
+        animate={filterRevision > 0}
+        className="space-y-8"
+        testId="standings-results"
+      >
+        {leagues.length === 0 && (
+          <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
+        )}
+        {leagues.map((league) => {
         const rows = computeStandings(state, league.id);
         return (
           <section key={league.id} data-testid={`standings-league-${league.id}`}>
@@ -82,7 +118,8 @@ export default function Standings() {
             </div>
           </section>
         );
-      })}
+        })}
+      </FilterResultRegion>
     </div>
   );
 }

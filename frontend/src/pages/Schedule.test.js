@@ -5,6 +5,8 @@ import Schedule from "./Schedule";
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 let mockState;
+let mockAnimationFrames;
+let mockNextAnimationFrame;
 
 jest.mock("@/lib/utils", () => ({
   cn: (...classes) => classes.filter(Boolean).join(" "),
@@ -18,19 +20,41 @@ jest.mock("../components/game/GameCard", () => ({
   GameCard: ({ game }) => <div data-testid={`game-card-${game.id}`} />,
 }));
 
-jest.mock("../components/ui/select", () => ({
-  Select: ({ children }) => <div>{children}</div>,
-  SelectTrigger: ({ children, ...props }) => <button type="button" {...props}>{children}</button>,
-  SelectValue: () => <span />,
-  SelectContent: ({ children }) => <div>{children}</div>,
-  SelectItem: ({ children }) => <div>{children}</div>,
-}));
+jest.mock("../components/ui/select", () => {
+  const ReactModule = require("react");
+  const SelectContext = ReactModule.createContext(() => {});
+  const nextValue = {
+    "schedule-filter-sport": "flag_football",
+    "schedule-filter-season": "all",
+    "schedule-filter-league": "all",
+    "schedule-filter-team": "all",
+    "schedule-filter-status": "completed",
+  };
+  return {
+    Select: ({ children, onValueChange }) => <SelectContext.Provider value={onValueChange}>{children}</SelectContext.Provider>,
+    SelectTrigger: ({ children, ...props }) => {
+      const onValueChange = ReactModule.useContext(SelectContext);
+      return <button type="button" onClick={() => onValueChange(nextValue[props["data-testid"]])} {...props}>{children}</button>;
+    },
+    SelectValue: () => <span />,
+    SelectContent: ({ children }) => <div>{children}</div>,
+    SelectItem: ({ children }) => <div>{children}</div>,
+  };
+});
 
 describe("Schedule visual contracts", () => {
   let container;
   let root;
 
   beforeEach(() => {
+    mockAnimationFrames = new Map();
+    mockNextAnimationFrame = 1;
+    window.requestAnimationFrame = jest.fn((callback) => {
+      const frame = mockNextAnimationFrame++;
+      mockAnimationFrames.set(frame, callback);
+      return frame;
+    });
+    window.cancelAnimationFrame = jest.fn((frame) => mockAnimationFrames.delete(frame));
     mockState = {
       settings: { current_season: "Summer 2026" },
       seasons: [{ name: "Summer 2026", status: "active" }],
@@ -74,5 +98,38 @@ describe("Schedule visual contracts", () => {
     expect(trigger?.className).toBe("bg-card border-border");
     expect(trigger?.className).not.toContain("h-10");
     expect(trigger?.className).not.toContain("text-sm");
+  });
+
+  test("bridges committed filter results and cancels superseded frames", async () => {
+    await act(async () => root.render(<Schedule />));
+
+    const initial = container.querySelector('[data-testid="schedule-results"]');
+    expect(initial?.className).toContain("opacity-100");
+    expect(initial?.className).toContain("transition-opacity");
+    expect(initial?.className).toContain("duration-cvf-fast");
+    expect(initial?.className).toContain("ease-cvf-out");
+    expect(initial?.className).toContain("motion-reduce:opacity-100");
+    expect(initial?.className).toContain("motion-reduce:transition-none");
+
+    await act(async () => {
+      container.querySelector('[data-testid="schedule-filter-sport"]').click();
+    });
+    const firstFrame = 1;
+    expect(container.querySelector('[data-testid="schedule-results"]')?.className).toContain("opacity-75");
+    expect(mockAnimationFrames.has(firstFrame)).toBe(true);
+
+    await act(async () => {
+      container.querySelector('[data-testid="schedule-filter-season"]').click();
+    });
+    expect(window.cancelAnimationFrame).toHaveBeenCalledWith(firstFrame);
+    const latestFrame = 2;
+    expect(mockAnimationFrames.has(latestFrame)).toBe(true);
+
+    await act(async () => {
+      const callback = mockAnimationFrames.get(latestFrame);
+      mockAnimationFrames.delete(latestFrame);
+      callback();
+    });
+    expect(container.querySelector('[data-testid="schedule-results"]')?.className).toContain("opacity-100");
   });
 });

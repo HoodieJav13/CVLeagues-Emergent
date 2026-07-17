@@ -6,6 +6,9 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 let mockUseApp;
 const mockUnlockGame = jest.fn();
+let mockGameSelectChange;
+let mockAnimationFrames;
+let mockNextAnimationFrame;
 
 jest.mock("@/lib/utils", () => ({
   cn: (...classes) => classes.filter(Boolean).join(" "),
@@ -23,25 +26,51 @@ jest.mock("../components/layout/RoleGate", () => ({
   RoleGate: ({ children }) => children,
 }));
 
+jest.mock("../components/ui/select", () => ({
+  Select: ({ children, onValueChange }) => {
+    mockGameSelectChange = onValueChange;
+    return <div>{children}</div>;
+  },
+  SelectTrigger: ({ children, ...props }) => <button type="button" {...props}>{children}</button>,
+  SelectValue: () => <span />,
+  SelectContent: ({ children }) => <div>{children}</div>,
+  SelectItem: ({ children }) => <div>{children}</div>,
+}));
+
 jest.mock("react-router-dom", () => ({
   useLocation: () => ({ state: { game_id: "game-1" } }),
   useNavigate: () => jest.fn(),
 }), { virtual: true });
 
 const lockedState = {
-  games: [{
-    id: "game-1",
-    sport: "kickball",
-    status: "completed",
-    score_status: "final",
-    locked: true,
-    date: "2026-08-01",
-    time: "6:00 PM",
-    location: "Test Field",
-    home_team_id: "home",
-    away_team_id: "away",
-    periods: { home: [2, 2, 1, 1, 1], away: [1, 1, 1, 1, 0] },
-  }],
+  games: [
+    {
+      id: "game-1",
+      sport: "kickball",
+      status: "completed",
+      score_status: "final",
+      locked: true,
+      date: "2026-08-01",
+      time: "6:00 PM",
+      location: "Test Field",
+      home_team_id: "home",
+      away_team_id: "away",
+      periods: { home: [2, 2, 1, 1, 1], away: [1, 1, 1, 1, 0] },
+    },
+    {
+      id: "game-2",
+      sport: "kickball",
+      status: "completed",
+      score_status: "final",
+      locked: true,
+      date: "2026-08-02",
+      time: "7:00 PM",
+      location: "Second Field",
+      home_team_id: "home",
+      away_team_id: "away",
+      periods: { home: [0, 0, 0, 0, 0], away: [0, 0, 0, 0, 0] },
+    },
+  ],
   teams: [
     { id: "home", name: "Home", sport: "kickball", logo_color: "#fff" },
     { id: "away", name: "Away", sport: "kickball", logo_color: "#000" },
@@ -71,6 +100,15 @@ describe("ScoreEntry locked-game UX", () => {
   beforeEach(() => {
     mockUnlockGame.mockClear();
     mockUseApp = useLockedGameApp;
+    mockGameSelectChange = undefined;
+    mockAnimationFrames = new Map();
+    mockNextAnimationFrame = 1;
+    window.requestAnimationFrame = jest.fn((callback) => {
+      const frame = mockNextAnimationFrame++;
+      mockAnimationFrames.set(frame, callback);
+      return frame;
+    });
+    window.cancelAnimationFrame = jest.fn((frame) => mockAnimationFrames.delete(frame));
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -115,5 +153,37 @@ describe("ScoreEntry locked-game UX", () => {
     expect(container.querySelector('[data-testid="score-add-inning"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-stat-player-1-kicks"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-save"]').disabled).toBe(false);
+  });
+
+  test("bridges only the selector-owned game form after a game change", async () => {
+    await act(async () => root.render(<ScoreEntry />));
+
+    const initial = container.querySelector('[data-testid="score-game-results"]');
+    expect(initial?.className).toContain("opacity-100");
+    expect(initial?.className).toContain("transition-opacity");
+    expect(initial?.className).toContain("duration-cvf-fast");
+    expect(initial?.className).toContain("ease-cvf-out");
+    expect(initial?.className).toContain("motion-reduce:opacity-100");
+    expect(initial?.className).toContain("motion-reduce:transition-none");
+    expect(container.querySelector('[data-testid="score-game-select"]')?.className).not.toContain("transition-opacity");
+    expect(container.querySelector('[data-testid="score-locked-notice"]')?.className).not.toContain("transition-opacity");
+
+    await act(async () => {
+      mockGameSelectChange("game-2");
+    });
+
+    expect(container.querySelector('[data-testid="score-game-results"]')?.className).toContain("opacity-75");
+    expect(container.querySelector('[data-testid="score-game-results"]')?.textContent).toContain("Second Field");
+    const latestFrame = [...mockAnimationFrames.keys()].at(-1);
+    expect(latestFrame).toBeDefined();
+    expect(container.querySelector('[data-testid="score-game-select"]')?.className).not.toContain("transition-opacity");
+    expect(container.querySelector('[data-testid="score-locked-notice"]')?.className).not.toContain("transition-opacity");
+
+    await act(async () => {
+      const callback = mockAnimationFrames.get(latestFrame);
+      mockAnimationFrames.delete(latestFrame);
+      callback();
+    });
+    expect(container.querySelector('[data-testid="score-game-results"]')?.className).toContain("opacity-100");
   });
 });

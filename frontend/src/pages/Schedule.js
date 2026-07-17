@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { CalendarX } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { GameCard } from "../components/game/GameCard";
@@ -7,6 +7,35 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 import { SPORTS } from "../lib/statsConfig";
 import { currentSeasonForSport } from "../lib/selectors";
 
+const FilterResultRegion = ({ animate, className, testId, children }) => {
+  const [entered, setEntered] = useState(!animate);
+
+  useEffect(() => {
+    if (!animate) {
+      setEntered(true);
+      return undefined;
+    }
+
+    setEntered(false);
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [animate]);
+
+  return (
+    <div
+      className={`${className} transition-opacity duration-cvf-fast ease-cvf-out ${
+        entered ? "opacity-100" : "opacity-75"
+      } motion-reduce:opacity-100 motion-reduce:transition-none`}
+      data-testid={testId}
+    >
+      {children}
+    </div>
+  );
+};
+
 export default function Schedule() {
   const { state } = useApp();
   const [sport, setSport] = useState("all");
@@ -14,6 +43,7 @@ export default function Schedule() {
   const [league_id, setLeagueId] = useState("all");
   const [team_id, setTeamId] = useState("all");
   const [status, setStatus] = useState("all");
+  const [filterRevision, setFilterRevision] = useState(0);
 
   const leagues = useMemo(
     () => state.leagues.filter((league) => {
@@ -68,48 +98,53 @@ export default function Schedule() {
   }, [games]);
 
   return (
-    <div className="space-y-5 animate-fade-up">
+    <div className="space-y-5">
       <SectionHeading as="h1" band title="Schedule" subtitle="Current seasons by default · league and tournament schedules stay distinct" />
 
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
-        <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setSeason("current"); setLeagueId("all"); setTeamId("all"); }} testid="schedule-filter-sport">
+        <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setSeason("current"); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-sport">
           <SelectItem value="all">All Sports</SelectItem>
           {SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
         </Filter>
-        <Filter label="Season" value={season} onChange={(v) => { setSeason(v); setLeagueId("all"); setTeamId("all"); }} testid="schedule-filter-season">
+        <Filter label="Season" value={season} onChange={(v) => { setSeason(v); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-season">
           <SelectItem value="current">Current by Sport</SelectItem>
           <SelectItem value="all">All Seasons</SelectItem>
           {state.seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
         </Filter>
-        <Filter label="League" value={league_id} onChange={(v) => { setLeagueId(v); setTeamId("all"); }} testid="schedule-filter-league">
+        <Filter label="League" value={league_id} onChange={(v) => { setLeagueId(v); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-league">
           <SelectItem value="all">All Containers</SelectItem>
           {leagues.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}{l.kind === "tournament" ? " · Tournament" : ""}</SelectItem>)}
         </Filter>
-        <Filter label="Team" value={team_id} onChange={setTeamId} testid="schedule-filter-team">
+        <Filter label="Team" value={team_id} onChange={(v) => { setTeamId(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-team">
           <SelectItem value="all">All Teams</SelectItem>
           {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
         </Filter>
-        <Filter label="Status" value={status} onChange={setStatus} testid="schedule-filter-status">
+        <Filter label="Status" value={status} onChange={(v) => { setStatus(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-status">
           <SelectItem value="all">All</SelectItem>
           <SelectItem value="upcoming">Upcoming</SelectItem>
           <SelectItem value="completed">Completed</SelectItem>
         </Filter>
       </div>
 
-      {games.length ? (
-        <div className="space-y-6">
-          {weekGroups.map((grp) => (
+      <FilterResultRegion
+        key={`${sport}:${season}:${league_id}:${team_id}:${status}:${filterRevision}`}
+        animate={filterRevision > 0}
+        className="space-y-6"
+        testId="schedule-results"
+      >
+        {games.length ? (
+          weekGroups.map((grp) => (
             <section key={grp.key} data-testid={`schedule-week-${grp.key}`}>
               <h2 className="font-display text-subheading uppercase tracking-tight text-foreground mb-2.5">{grp.label}</h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {grp.games.map((g) => <GameCard key={g.id} game={g} />)}
               </div>
             </section>
-          ))}
-        </div>
-      ) : (
-        <EmptyState icon={CalendarX} title="No games found" message="Try adjusting your filters." />
-      )}
+          ))
+        ) : (
+          <EmptyState icon={CalendarX} title="No games found" message="Try adjusting your filters." />
+        )}
+      </FilterResultRegion>
     </div>
   );
 }

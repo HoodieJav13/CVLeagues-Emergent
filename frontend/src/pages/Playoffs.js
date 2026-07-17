@@ -58,7 +58,7 @@ export default function Playoffs() {
   };
 
   return (
-    <div className="space-y-5 animate-fade-up">
+    <div className="space-y-5">
       <SectionHeading as="h1" band title="Playoffs" subtitle="Single elimination · all teams qualify · third-place game included" />
       <div className="grid sm:grid-cols-2 gap-2.5">
         <Filter label="Sport" value={sport} onChange={onSport} testid="playoffs-sport">
@@ -72,14 +72,14 @@ export default function Playoffs() {
       {!league ? (
         <EmptyState icon={Trophy} title="No playoff league" message="A single-elimination league must be configured before a bracket can be created." />
       ) : bracket ? (
-        <>
+        <div key={bracket.id} className="space-y-5 animate-fade-in" data-testid="playoff-bracket-reveal">
           <div className="flex flex-wrap items-center gap-2">
             <SportBadge sport={league.sport} />
             <span className="text-xs uppercase tracking-wide text-muted-foreground">{league.name} · {league.season}</span>
             <StatusBadge status={bracket.status} />
           </div>
           <BracketView state={state} seeds={seeds} matches={matches} isAdmin={isAdmin} app={app} league={league} />
-        </>
+        </div>
       ) : isAdmin ? (
         <section className="bg-card border border-border rounded-2xl p-5 space-y-4">
           <div>

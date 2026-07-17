@@ -51,7 +51,7 @@ export default function GameDetail() {
   const periods = game.periods?.home || [];
 
   return (
-    <div className="space-y-6 animate-fade-up">
+    <div className="space-y-6">
       <Button variant="ghost" onClick={() => navigate(-1)} data-testid="game-back" className="h-auto min-h-[44px] -my-1 p-0 pr-2 gap-1.5 normal-case tracking-normal text-sm font-normal text-muted-foreground hover:text-foreground hover:bg-transparent">
         <ArrowLeft size={16} weight="bold" /> Back
       </Button>

@@ -30,6 +30,35 @@ export default function ScoreEntry() {
 const periodCount = (sport) => (sport === "kickball" ? 5 : 4);
 const periodLabel = (sport, i) => (sport === "kickball" ? `Inning ${i + 1}` : `Q${i + 1}`);
 
+const FilterResultRegion = ({ animate, className, testId, children }) => {
+  const [entered, setEntered] = useState(!animate);
+
+  useEffect(() => {
+    if (!animate) {
+      setEntered(true);
+      return undefined;
+    }
+
+    setEntered(false);
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [animate]);
+
+  return (
+    <div
+      className={`${className} transition-opacity duration-cvf-fast ease-cvf-out ${
+        entered ? "opacity-100" : "opacity-75"
+      } motion-reduce:opacity-100 motion-reduce:transition-none`}
+      data-testid={testId}
+    >
+      {children}
+    </div>
+  );
+};
+
 function Entry() {
   const { state, submitScore, unlockGame } = useApp();
   const { role, roleMeta } = useRole();
@@ -51,6 +80,7 @@ function Entry() {
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [unlockReason, setUnlockReason] = useState("");
   const [unlocking, setUnlocking] = useState(false);
+  const [gameSelectionRevision, setGameSelectionRevision] = useState(0);
 
   // (Re)initialize form whenever the selected game changes.
   useEffect(() => {
@@ -119,7 +149,7 @@ function Entry() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-up max-w-3xl mx-auto">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <SectionHeading as="h1" title="Score Entry" subtitle={role === "temp_admin" ? "Scoring your assigned game" : "Select a game and record the final"} />
 
       {locked && (
@@ -140,7 +170,14 @@ function Entry() {
       )}
 
       {/* Game selector */}
-      <Select value={game_id} onValueChange={setGameId} disabled={role === "temp_admin"}>
+      <Select
+        value={game_id}
+        onValueChange={(value) => {
+          setGameId(value);
+          setGameSelectionRevision((revision) => revision + 1);
+        }}
+        disabled={role === "temp_admin"}
+      >
         <SelectTrigger data-testid="score-game-select" className="bg-card border-border h-12">
           <SelectValue />
         </SelectTrigger>
@@ -156,6 +193,12 @@ function Entry() {
         </SelectContent>
       </Select>
 
+      <FilterResultRegion
+        key={`${game_id}:${gameSelectionRevision}`}
+        animate={gameSelectionRevision > 0}
+        className="space-y-6"
+        testId="score-game-results"
+      >
       <div className="flex items-center gap-2">
         <SportBadge sport={game.sport} />
         <span className="text-xs text-muted-foreground">{game.location} · {game.time}</span>
@@ -270,6 +313,7 @@ function Entry() {
       <Button onClick={save} disabled={locked} data-testid="score-save" className="w-full h-auto py-4 gap-2 text-sm font-bold tracking-wide rounded-xl sticky bottom-20 md:bottom-6 [&_svg]:size-[18px]">
         <FloppyDisk size={18} weight="bold" /> Submit Score
       </Button>
+      </FilterResultRegion>
 
       <Dialog open={unlockOpen} onOpenChange={(open) => !unlocking && setUnlockOpen(open)}>
         <DialogContent data-testid="score-unlock-dialog" className="bg-card border-border">
