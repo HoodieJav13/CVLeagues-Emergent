@@ -13,6 +13,16 @@ Written against: `3f783127ce77bd90ec9c6280dbdfb41c6e2aa640`
 - Review decision: `review-animations` suggestions for 120–160ms timings and custom cubic-bezier curves were not adopted because they would broaden the approved 200ms/300ms/`ease-out` contract. High-frequency press motion was deleted instead.
 - Commit: pending owner checkpoint; no commit, push, PR, deployment, hosted write, or data change was performed.
 
+## Cross-surface accessibility follow-up — 2026-07-17
+
+- Scope: the motion-touched Schedule, Standings, Playoffs, and Score Entry surfaces plus their focused tests; no data, Auth, permission, API, schema, or hosted behavior changed.
+- Names and semantics: every audited Select and playoff-scheduling field is programmatically labeled; Score Entry period controls have explicit names and native row/column header scopes; standings links announce labeled rank and record data.
+- Forms and errors: the required unlock reason now exposes native required/invalid state and a field-linked inline alert instead of relying on a toast alone.
+- Focus: controlled Playoffs and Score Entry dialogs set initial focus inside the dialog, close on Escape, and restore focus to the opener or the stable game selector when the opener disappears after success.
+- Evidence: focused accessibility tests passed 4/4 suites and 8/8 tests; the complete frontend suite passed 20/20 suites and 57/57 tests; the production build compiled successfully; rendered keyboard checks confirmed named comboboxes, visible focus, Escape return, 8.35:1 filter-label contrast, truthful reduced motion, and no browser errors.
+- Risk and rollback: the only visible additions are a Game label and explicit playoff scheduling labels. Roll back this isolated frontend accessibility diff without reverting the verified motion contract.
+- Commit: pending owner checkpoint; no push, PR, deployment, hosted write, or data change was performed.
+
 ## Evidence chain
 
 - Surface: public `/` route rendered through `frontend/src/components/layout/AppLayout.js` at 375px and 1280px, including the global logo, mobile Join bar, Home hero, featured scoreboard, filters, game lists, CTA cards, and bottom navigation.
