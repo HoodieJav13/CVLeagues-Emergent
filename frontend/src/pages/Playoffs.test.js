@@ -147,6 +147,9 @@ describe("Playoffs bracket reveal", () => {
     expect(container.textContent).toContain("Review Seeding");
     expect(container.querySelector('[data-testid="playoffs-sport"]')?.getAttribute("aria-labelledby")).toBe("playoffs-sport-label");
     expect(container.querySelector('#playoffs-sport-label')?.getAttribute("for")).toBe("playoffs-sport");
+    for (const button of container.querySelectorAll('button[aria-label^="Move Team"]')) {
+      expect(button.type).toBe("button");
+    }
 
     await act(async () => {
       container.querySelector('[data-testid="generate-bracket"]').click();
@@ -180,6 +183,7 @@ describe("Playoffs bracket reveal", () => {
     await act(async () => root.render(<Playoffs />));
 
     const dialogTrigger = container.querySelector('[data-testid="schedule-match-match-1"]');
+    expect(dialogTrigger.type).toBe("button");
     await act(async () => {
       dialogTrigger.click();
     });

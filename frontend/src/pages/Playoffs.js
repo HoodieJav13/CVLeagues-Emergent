@@ -97,8 +97,8 @@ export default function Playoffs() {
                   <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logo_color }} />
                   <span className="font-medium text-foreground flex-1">{team.name}</span>
                   <span className="text-xs text-muted-foreground">{record?.wins || 0}-{record?.losses || 0} · {record?.diff > 0 ? "+" : ""}{record?.diff || 0}</span>
-                  <button aria-label={`Move ${team.name} up`} disabled={index === 0} onClick={() => moveSeed(index, -1)} className="p-2 disabled:opacity-25"><ArrowUp size={15} /></button>
-                  <button aria-label={`Move ${team.name} down`} disabled={index === seedIds.length - 1} onClick={() => moveSeed(index, 1)} className="p-2 disabled:opacity-25"><ArrowDown size={15} /></button>
+                  <button type="button" aria-label={`Move ${team.name} up`} disabled={index === 0} onClick={() => moveSeed(index, -1)} className="p-2 disabled:opacity-25"><ArrowUp size={15} /></button>
+                  <button type="button" aria-label={`Move ${team.name} down`} disabled={index === seedIds.length - 1} onClick={() => moveSeed(index, 1)} className="p-2 disabled:opacity-25"><ArrowDown size={15} /></button>
                 </div>
               );
             })}
@@ -159,8 +159,8 @@ const MatchCard = ({ state, match, isAdmin, app, league }) => {
       <TeamSlot state={state} teamId={match.home_team_id} seed={match.home_seed} winner={match.winner_team_id === match.home_team_id} />
       <TeamSlot state={state} teamId={match.away_team_id} seed={match.away_seed} winner={match.winner_team_id === match.away_team_id} />
       {game && <Link to={`/game/${game.id}`} className="block px-3 py-2 border-t border-border text-xs text-primary hover:bg-white/5"><CalendarBlank size={13} className="inline mr-1" />{game.date} · {game.time} · {game.status}</Link>}
-      {isAdmin && match.status === "ready" && !match.game_id && <button ref={scheduleTriggerRef} data-testid={`schedule-match-${match.id}`} onClick={() => setOpen(true)} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-primary hover:bg-primary/10">Schedule or Link Game</button>}
-      {isAdmin && canAdvance && <button data-testid={`advance-match-${match.id}`} onClick={advance} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-gold hover:bg-gold/10">Advance Final Result</button>}
+      {isAdmin && match.status === "ready" && !match.game_id && <button type="button" ref={scheduleTriggerRef} data-testid={`schedule-match-${match.id}`} onClick={() => setOpen(true)} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-primary hover:bg-primary/10">Schedule or Link Game</button>}
+      {isAdmin && canAdvance && <button type="button" data-testid={`advance-match-${match.id}`} onClick={advance} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-gold hover:bg-gold/10">Advance Final Result</button>}
       <ScheduleDialog open={open} setOpen={setOpen} match={match} app={app} compatible={compatible} triggerRef={scheduleTriggerRef} />
     </div>
   );
