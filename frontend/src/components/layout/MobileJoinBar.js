@@ -20,11 +20,18 @@ export const MobileJoinBar = () => {
       <Popover>
         <PopoverTrigger asChild>
           <button
+            type="button"
             data-testid="mobile-join"
             aria-label="Join CVF Sports"
-            className="w-full inline-flex items-center justify-center gap-2 min-h-[44px] bg-primary text-primary-foreground rounded-cvf-md uppercase tracking-widest text-body-strong hover:bg-teal-deep transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group w-full inline-flex items-center justify-center gap-2 min-h-[44px] bg-primary text-primary-foreground rounded-cvf-md uppercase tracking-widest text-body-strong hover:bg-teal-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
-            Join <CaretDown size={16} weight="bold" />
+            Join
+            <CaretDown
+              data-testid="mobile-join-caret"
+              className="transition-transform duration-cvf-fast ease-cvf-out group-data-[state=open]:rotate-180 motion-reduce:!transform-none motion-reduce:transition-none"
+              size={16}
+              weight="bold"
+            />
           </button>
         </PopoverTrigger>
         <PopoverContent align="center" sideOffset={8} className="w-[calc(100vw-2rem)] p-2">

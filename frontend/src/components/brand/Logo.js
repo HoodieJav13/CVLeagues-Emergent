@@ -15,7 +15,7 @@ export const Logo = ({ size = 36, withWord = true, className = "" }) => (
       alt="CVF Sports"
       width={size}
       height={size}
-      className="rounded-lg object-contain transition-transform duration-200 group-hover:scale-105"
+      className="rounded-lg object-contain"
       style={{ width: size, height: size }}
     />
     {withWord && (

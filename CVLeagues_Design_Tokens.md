@@ -119,9 +119,9 @@ Every pill carries a text label + leading dot — never color alone. Only `live`
 ### Typefaces
 | Role | Family | Fallback stack | Notes |
 |---|---|---|---|
-| Display | **Oswald** | `'Oswald', 'Saira Condensed', system-ui, sans-serif` | Scoreboards, team names, page titles. Used with restraint |
-| Body | **Inter** | `'Inter', system-ui, -apple-system, sans-serif` | All reading text |
-| Numeric | **Inter** (tabular) | `font-variant-numeric: tabular-nums` | Scores, standings figures, jersey numbers |
+| Display | **Oswald** | `'Oswald', 'Saira Condensed', system-ui, sans-serif` | Page/section titles, detail-page team identity, score figures. Used with restraint |
+| Body | **Inter** | `'Inter', system-ui, -apple-system, sans-serif` | Reading text and compact scoreboard/card team names |
+| Score figures | **Oswald** (tabular) | `font-variant-numeric: tabular-nums` | Scores, standings figures, jersey numbers |
 
 **Weight ceiling: 700.** Both families load at 400/500/600/700 only (`public/index.html`). `font-extrabold`/`font-black` are **banned app-wide** — the browser synthesizes the missing weight and Oswald renders smeared and platform-inconsistent. (v1 didn't state this; 10 display headings drifted to `font-extrabold`.)
 
@@ -206,9 +206,11 @@ Depth comes primarily from surfaces getting lighter as they rise (sunken → sur
 
 ### Game cards — winner/loser weighting (completed games)
 - Winner row: `--win` text, weight 600, score in `--score-figure`. Loser row: `--loss-text`, regular weight.
+- Compact scoreboard/card team names use Inter, normal casing, `leading-snug`, and wrapping; Oswald remains the display voice for detail-page team identity and score figures.
 - 3px teal leading bar on the winner's side (transparent on the other row so columns align). No whole-card background change.
 - Upcoming: teal left-edge accent + Upcoming pill. Recent result: neutral, Final pill, weighting applied.
 - Card shell: `bg-card border border-border rounded-2xl` (→ 16px token).
+- Home game grids respond to result count: one regular card uses a left-aligned `max-w-2xl` measure, two use two columns from `sm`, and three/four add a third column at `lg`; one featured game stays full width and two split at `md`.
 
 ### Standings table
 - Header row: `--surface-sunken` bg, `--border-strong` bottom border, `text-label` uppercase heads.
@@ -239,6 +241,12 @@ All buttons: `--radius-md`, `text-body-strong` uppercase, min 44px tap target, v
 ### Empty states
 - Centered, `--text-secondary`, one short directive line in the interface's voice (not an apology).
 - Standardized copy: standings — "No games played yet. Standings appear once scores are entered." · roster — "No players assigned. Add a player to start this roster." · score-entry roster — "This team has no players yet. Assign players before entering a score."
+
+### Motion
+- Named contract: `duration-cvf-fast` = 200ms for direct state feedback, `duration-cvf-enter` = 300ms reserved for approved local content entrances, and `ease-cvf-out` = `ease-out`. Do not add a new duration/easing without reviewing the interaction frequency and purpose.
+- Animate only transform or opacity. Hover colors, borders, and shadows update instantly; never use `transition-all` on shared controls or game cards.
+- Home has no whole-page entrance. Filter result replacement uses a 200ms opacity transition with no stagger or layout movement. Mobile Join uses its Radix disclosure state to rotate only the caret.
+- Hover movement is restricted to `(hover: hover) and (pointer: fine)`. Reduced motion removes entrance/keyframe animation and all nonessential transform/opacity transitions while preserving immediate state, color, focus, and content changes.
 
 ---
 

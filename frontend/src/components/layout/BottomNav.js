@@ -41,7 +41,7 @@ export const BottomNav = () => {
             end={item.to === "/"}
             data-testid={`navmobile-${item.label.toLowerCase()}`}
             className={({ isActive }) =>
-              `flex flex-col items-center justify-center gap-0.5 flex-1 transition-all duration-200 active:scale-[0.96] relative pt-0.5 ${
+              `flex flex-col items-center justify-center gap-0.5 flex-1 relative pt-0.5 ${
                 isActive
                   ? "text-primary after:absolute after:top-0 after:inset-x-3 after:h-0.5 after:rounded-b-full after:bg-primary"
                   : "text-muted-foreground hover:text-foreground"

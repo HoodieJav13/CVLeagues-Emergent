@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CalendarX, Clock, MapPin, Trophy } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
@@ -6,15 +6,13 @@ import { getTeam } from "../lib/selectors";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { GameCard } from "../components/game/GameCard";
 import { SportBadge } from "../components/common/Badges";
+import { Button } from "../components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS } from "../lib/statsConfig";
-import logoSrc from "../assets/cvf-logo-transparent.png";
 
 // Sandia ridge backgrounds (brand pass) — self-contained dark dusk scenes,
 // used at full opacity. Replaces the stadium/stock photos.
 import heroBg from "../assets/backgrounds/sandia-wide-hero-bg.svg";
-import teamInterestBg from "../assets/backgrounds/sandia-team-interest-cta-bg.svg";
-import freeAgentBg from "../assets/backgrounds/sandia-free-agent-cta-bg.svg";
 
 const formatGameDate = (game) =>
   new Date(game.date + "T00:00:00").toLocaleDateString("en-US", {
@@ -22,6 +20,41 @@ const formatGameDate = (game) =>
     month: "short",
     day: "numeric",
   });
+
+const gameGridClass = (count) => {
+  if (count === 1) return "grid grid-cols-1 gap-3 max-w-2xl w-full";
+  if (count === 2) return "grid sm:grid-cols-2 gap-3";
+  return "grid sm:grid-cols-2 lg:grid-cols-3 gap-3";
+};
+
+const FilterResultRegion = ({ animate, className, testId, children }) => {
+  const [entered, setEntered] = useState(!animate);
+
+  useEffect(() => {
+    if (!animate) {
+      setEntered(true);
+      return undefined;
+    }
+
+    setEntered(false);
+    const frame = window.requestAnimationFrame(() => setEntered(true));
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [animate]);
+
+  return (
+    <div
+      className={`${className} transition-opacity duration-cvf-fast ease-cvf-out ${
+        entered ? "opacity-100" : "opacity-75"
+      } motion-reduce:opacity-100 motion-reduce:transition-none`}
+      data-testid={testId}
+    >
+      {children}
+    </div>
+  );
+};
 
 // One row of the featured scoreboard. Winner weighting mirrors GameCard's
 // TeamLine semantics (--win / --loss-text, 3px teal leading bar) at the
@@ -49,7 +82,7 @@ const ScoreboardLine = ({ team, score, isWinner, isLoser, completed }) => {
           className="w-3 h-3 rounded-full shrink-0"
           style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }}
         />
-        <span className={`font-display uppercase tracking-tight text-heading md:text-display-lg truncate ${nameEmphasis}`}>
+        <span className={`font-sans normal-case tracking-normal text-xl md:text-2xl leading-snug whitespace-normal break-words ${nameEmphasis}`}>
           {team?.name || "TBD"}
         </span>
       </div>
@@ -75,7 +108,7 @@ const ScoreboardFeature = ({ game, kind, state }) => {
     <Link
       to={`/game/${game.id}`}
       data-testid={`home-scoreboard-${kind}`}
-      className="block bg-card border border-border rounded-2xl p-4 md:p-5 shadow-card transition-all duration-200 hover:border-primary/50 hover:shadow-card-hover"
+      className="block bg-card border border-border rounded-2xl p-4 md:p-5 shadow-card hover:border-primary/50 hover:shadow-card-hover"
     >
       <div className="flex items-center justify-between mb-3">
         <span className="text-label uppercase text-muted-foreground">
@@ -104,6 +137,7 @@ export default function Home() {
   const { state } = useApp();
   const [sport, setSport] = useState("all");
   const [league_id, setLeagueId] = useState("all");
+  const [filterRevision, setFilterRevision] = useState(0);
 
   const leagues = useMemo(
     () => (sport === "all" ? state.leagues : state.leagues.filter((l) => l.sport === sport)),
@@ -141,47 +175,44 @@ export default function Home() {
         .sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null,
     [state.games]
   );
+  const featuredCount = Number(Boolean(latestFinal)) + Number(Boolean(nextUp));
 
   return (
-    <div className="space-y-10 animate-fade-up">
-      {/* IDENTITY BAND — compact lockup, not a marketing hero */}
+    <div className="space-y-10">
+      {/* LEAGUE BAND — the global shell owns the CVF identity lockup. */}
       <section className="relative overflow-hidden rounded-2xl border border-border">
         <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
         <div className="relative px-5 py-6 md:px-8 md:py-7">
-          <div className="flex items-center gap-3.5">
-            <img src={logoSrc} alt="" className="w-14 h-14 md:w-16 md:h-16 shrink-0" />
-            <div className="min-w-0">
-              <h1 className="font-display font-bold uppercase tracking-tight text-display-lg md:text-display-xl text-foreground leading-none">
-                CVF Sports
-              </h1>
-              <p className="text-label uppercase tracking-widest text-primary mt-1.5">
-                Current leagues · Albuquerque, NM
-              </p>
-            </div>
+          <div className="min-w-0">
+            <h1 className="font-display text-display-lg md:text-display-xl uppercase text-foreground">
+              Current Leagues
+            </h1>
+            <p className="text-label uppercase tracking-widest text-primary mt-1.5">
+              Albuquerque, NM
+            </p>
           </div>
-          <div className="mt-5 flex flex-wrap gap-2.5">
-            <Link
-              to="/register-team"
-              data-testid="hero-register-team"
-              className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground font-bold uppercase tracking-wide text-xs px-4 py-2.5 rounded-xl hover:bg-teal-deep transition-colors"
-            >
-              Submit Team Interest <ArrowRight size={14} weight="bold" />
-            </Link>
-            <Link
-              to="/free-agent-signup"
-              data-testid="hero-free-agent"
-              className="inline-flex items-center gap-1.5 border border-white/15 text-foreground font-bold uppercase tracking-wide text-xs px-4 py-2.5 rounded-xl hover:border-primary transition-colors"
-            >
-              Join Free Agent Pool
-            </Link>
+          <div className="mt-5 hidden md:flex flex-wrap gap-2.5" data-testid="home-desktop-join-actions">
+            <Button asChild className="h-11">
+              <Link to="/register-team" data-testid="hero-register-team">
+                Submit Team Interest <ArrowRight size={14} weight="bold" />
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-11">
+              <Link to="/free-agent-signup" data-testid="hero-free-agent">
+                Join Free Agent Pool
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
 
       {/* FEATURED SCOREBOARD — latest final + next game, league-wide */}
       {(latestFinal || nextUp) && (
-        <section className="grid md:grid-cols-2 gap-3" data-testid="home-scoreboard">
+        <section
+          className={featuredCount === 2 ? "grid md:grid-cols-2 gap-3" : "grid grid-cols-1 gap-3"}
+          data-testid="home-scoreboard"
+        >
           {latestFinal && <ScoreboardFeature game={latestFinal} kind="latest" state={state} />}
           {nextUp && <ScoreboardFeature game={nextUp} kind="up-next" state={state} />}
         </section>
@@ -190,7 +221,7 @@ export default function Home() {
       {/* SELECTORS */}
       <section className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-label uppercase text-muted-foreground mb-1.5 block">
+          <label id="home-sport-label" htmlFor="home-sport-select" className="text-label uppercase text-muted-foreground mb-1.5 block">
             Sport
           </label>
           <Select
@@ -198,9 +229,10 @@ export default function Home() {
             onValueChange={(v) => {
               setSport(v);
               setLeagueId("all");
+              setFilterRevision((revision) => revision + 1);
             }}
           >
-            <SelectTrigger data-testid="home-sport-select" className="bg-card border-border h-11">
+            <SelectTrigger id="home-sport-select" aria-labelledby="home-sport-label" data-testid="home-sport-select" className="bg-card border-border h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -214,11 +246,17 @@ export default function Home() {
           </Select>
         </div>
         <div>
-          <label className="text-label uppercase text-muted-foreground mb-1.5 block">
+          <label id="home-league-label" htmlFor="home-league-select" className="text-label uppercase text-muted-foreground mb-1.5 block">
             League
           </label>
-          <Select value={league_id} onValueChange={setLeagueId}>
-            <SelectTrigger data-testid="home-league-select" className="bg-card border-border h-11">
+          <Select
+            value={league_id}
+            onValueChange={(value) => {
+              setLeagueId(value);
+              setFilterRevision((revision) => revision + 1);
+            }}
+          >
+            <SelectTrigger id="home-league-select" aria-labelledby="home-league-label" data-testid="home-league-select" className="bg-card border-border h-11">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -239,18 +277,24 @@ export default function Home() {
           title="Upcoming Games"
           subtitle="Next matchups on the schedule"
           action={
-            <Link to="/schedule" className="text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1 hover:gap-2 transition-all">
-              All <ArrowRight size={14} weight="bold" />
+            <Link to="/schedule" className="group text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1">
+              All
+              <ArrowRight className="cvf-directional-link-icon transition-transform duration-cvf-fast ease-cvf-out motion-reduce:!transform-none motion-reduce:transition-none" size={14} weight="bold" />
             </Link>
           }
         />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <FilterResultRegion
+          key={`${sport}:${league_id}:upcoming:${filterRevision}`}
+          animate={filterRevision > 0}
+          className={gameGridClass(upcoming.length)}
+          testId="home-upcoming-grid"
+        >
           {upcoming.length ? (
             upcoming.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
             <EmptyState icon={CalendarX} title="No upcoming games" message="Try another sport or league filter." density="compact" className="sm:col-span-2 lg:col-span-3" />
           )}
-        </div>
+        </FilterResultRegion>
       </section>
 
       {/* RECENT SCORES */}
@@ -259,44 +303,26 @@ export default function Home() {
           title="Recent Scores"
           subtitle="Latest final results"
           action={
-            <Link to="/standings" className="text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1 hover:gap-2 transition-all">
-              Standings <ArrowRight size={14} weight="bold" />
+            <Link to="/standings" className="group text-primary text-sm font-semibold inline-flex items-center gap-1 min-h-[44px] -my-1">
+              Standings
+              <ArrowRight className="cvf-directional-link-icon transition-transform duration-cvf-fast ease-cvf-out motion-reduce:!transform-none motion-reduce:transition-none" size={14} weight="bold" />
             </Link>
           }
         />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <FilterResultRegion
+          key={`${sport}:${league_id}:recent:${filterRevision}`}
+          animate={filterRevision > 0}
+          className={gameGridClass(recent.length)}
+          testId="home-recent-grid"
+        >
           {recent.length ? (
             recent.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
             <EmptyState icon={Trophy} title="No final scores yet" message="Results appear after the first games wrap." density="compact" className="sm:col-span-2 lg:col-span-3" />
           )}
-        </div>
+        </FilterResultRegion>
       </section>
 
-      {/* CTA CARDS */}
-      <section className="grid md:grid-cols-2 gap-4">
-        {[
-          { to: "/register-team", img: teamInterestBg, title: "Team Interest", desc: "Tell us about your team — an admin will reach out to get you set up.", cta: "Submit Team Interest", testid: "cta-register-team" },
-          { to: "/free-agent-signup", img: freeAgentBg, title: "Join the Free Agent Pool", desc: "No team? No problem. Get in the pool and let captains find you.", cta: "Join Free Agent Pool", testid: "cta-free-agent" },
-        ].map((c) => (
-          <Link
-            key={c.to}
-            to={c.to}
-            data-testid={c.testid}
-            className="group relative overflow-hidden rounded-2xl border border-border min-h-[180px] flex items-end"
-          >
-            <img src={c.img} alt="" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-            <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
-            <div className="relative p-5">
-              <h3 className="font-display uppercase tracking-tight text-xl text-foreground">{c.title}</h3>
-              <p className="text-sm text-muted-foreground mt-1 max-w-sm">{c.desc}</p>
-              <span className="inline-flex items-center gap-1.5 text-primary font-semibold text-sm mt-3 group-hover:gap-2.5 transition-all">
-                {c.cta} <ArrowRight size={15} weight="bold" />
-              </span>
-            </div>
-          </Link>
-        ))}
-      </section>
     </div>
   );
 }

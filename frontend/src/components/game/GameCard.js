@@ -32,7 +32,7 @@ const TeamLine = ({ team, score, isWinner, isLoser, completed }) => {
           className="w-2.5 h-2.5 rounded-full shrink-0"
           style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }}
         />
-        <span className={`font-display uppercase tracking-tight text-base sm:text-sm truncate ${nameEmphasis}`}>
+        <span className={`font-sans normal-case tracking-normal text-base sm:text-sm leading-snug whitespace-normal break-words ${nameEmphasis}`}>
           {team?.name || "TBD"}
         </span>
       </div>
@@ -68,7 +68,7 @@ export const GameCard = ({ game, className = "" }) => {
     <Link
       to={`/game/${game.id}`}
       data-testid={`game-card-${game.id}`}
-      className={`block bg-card border border-border rounded-xl p-4 sm:p-3 shadow-card transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 hover:shadow-card-hover ${
+      className={`block bg-card border border-border rounded-xl p-4 sm:p-3 shadow-card hover:border-primary/50 hover:shadow-card-hover ${
         special ? "border-l-2 border-l-gold" : isUpcoming ? "border-l-2 border-l-teal" : ""
       } ${className}`}
     >

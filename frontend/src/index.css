@@ -198,7 +198,14 @@
 }
 .cvf-status-pulse { animation: cvf-status-pulse 1.4s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) {
+    .animate-fade-up,
+    .animate-fade-in,
     .cvf-status-pulse { animation: none; }
+
+    .delay-75,
+    .delay-150,
+    .delay-225,
+    .delay-300 { animation-delay: 0ms; }
 }
 
 /* Stagger delay utilities */
@@ -206,6 +213,12 @@
 .delay-150 { animation-delay: 150ms; }
 .delay-225 { animation-delay: 225ms; }
 .delay-300 { animation-delay: 300ms; }
+
+/* Directional-link motion is pointer-only; touch-generated hover states must
+   not move navigation affordances. Reduced motion overrides this transform. */
+@media (hover: hover) and (pointer: fine) {
+    .group:hover .cvf-directional-link-icon { transform: translateX(0.25rem); }
+}
 
 /* Band device (v2 brand pass) — public page titles sit on an ink band,
    echoing the logo's stencil-on-band lockup. Ink on near-ink needs edges
