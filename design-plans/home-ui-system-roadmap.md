@@ -23,6 +23,18 @@ Written against: `3f783127ce77bd90ec9c6280dbdfb41c6e2aa640`
 - Risk and rollback: the only visible additions are a Game label and explicit playoff scheduling labels. Roll back this isolated frontend accessibility diff without reverting the verified motion contract.
 - Commit: pending owner checkpoint; no push, PR, deployment, hosted write, or data change was performed.
 
+## React quality follow-up — 2026-07-17
+
+- Scope: React Doctor 0.7.8 full-project diagnostics plus a React best-practices review of the recently changed Home, Schedule, Standings, Playoffs, Score Entry, shared game-card, navigation, button, popover, and motion owners.
+- Focused correction: all four native Playoffs controls now declare `type="button"`; regression coverage verifies the seed-order and scheduling controls cannot accidentally submit a surrounding form. React Doctor findings fell from 132 to 128, with no remaining Playoffs missing-button warning.
+- Best-practices verdict: the approved UI changes introduce no data-fetch waterfalls, heavy runtime dependency, dynamic Tailwind fragment, unnecessary global state, or unbounded animation work. Result-transition helpers remain module-scoped, requestAnimationFrame work is cleaned up, and remounting is limited to keyed result regions.
+- Confirmed follow-up debt: unused `axios@1.8.4` has current high-severity advisories and should be removed in an isolated dependency-hardening change; `react-router-dom@7.5.1` also requires a separately tested upgrade. The unused carousel scaffold omits one subscription cleanup. React Doctor also identified pre-existing render-time ref mutation in Turnstile and impure mock-state updaters; those cross abuse protection and game-lock behavior and require focused tests and a separate owner-approved stage.
+- Reviewed but not adopted: index keys represent fixed, non-reordering period rows; Score Entry's game-selection effect owns required initial synchronization; converting small schedule/game arrays to reducers, Sets, or single-pass loops has no demonstrated user impact; `toSorted()` would broaden browser-runtime assumptions. None warrants a speculative refactor in this UI gate.
+- Artifact review: source inspection found only the expected public Supabase URL/anonymous key and Turnstile site-key inputs. A value-free source-map scan found no service-role marker, private key, JWT, or common AWS, GitHub, or Stripe-secret shape; its one OpenAI-style prefix traced to Tailwind Merge's static default class configuration, not application configuration. Server-side RLS and grants remain the authority boundary; no hosted configuration was changed.
+- Evidence: focused Playoffs tests passed 3/3; the complete frontend suite passed 20/20 suites and 57/57 tests; the production build compiled successfully; `git diff --check` passed. React Doctor remains 39/100 because the top findings are pre-existing dependency, artifact-classification, and unused-carousel issues rather than regressions in the approved UI work.
+- Risk and rollback: this batch changes only four button attributes, their assertions, and this record. Roll back the Playoffs diff independently; dependency, Auth/Turnstile, game-lock, backend, schema, and hosted work remain untouched.
+- Commit: pending owner checkpoint; no push, PR, deployment, hosted write, or data change was performed.
+
 ## Evidence chain
 
 - Surface: public `/` route rendered through `frontend/src/components/layout/AppLayout.js` at 375px and 1280px, including the global logo, mobile Join bar, Home hero, featured scoreboard, filters, game lists, CTA cards, and bottom navigation.
