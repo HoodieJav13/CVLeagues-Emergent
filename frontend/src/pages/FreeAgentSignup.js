@@ -49,6 +49,16 @@ export default function FreeAgentSignup() {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const toggleSport = (id) => setSports((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
   const toggleAvail = (id) => setAvailability((a) => a.includes(id) ? a.filter((x) => x !== id) : [...a, id]);
+  const handleTurnstileToken = (token) => {
+    setTurnstileToken(token);
+    if (!token) return;
+    setErrors((current) => {
+      if (!current.turnstile) return current;
+      const next = { ...current };
+      delete next.turnstile;
+      return next;
+    });
+  };
 
   const validate = () => {
     const e = {};
@@ -238,7 +248,7 @@ export default function FreeAgentSignup() {
       </Button>
       <TurnstileWidget
         action="free_agent"
-        onToken={setTurnstileToken}
+        onToken={handleTurnstileToken}
         onError={(message) => setErrors((current) => ({ ...current, turnstile: message }))}
         resetSignal={turnstileReset}
       />

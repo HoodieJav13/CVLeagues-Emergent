@@ -49,6 +49,66 @@ test("Turnstile validation binds the token to action and hostname", async () => 
   );
 });
 
+test("Turnstile validation rejects malformed and oversized tokens before the network", async () => {
+  const config = { turnstileSecretKey: "test-secret", allowedHostnames: new Set(["preview.example.com"]) };
+  const fetchImpl = async () => assert.fail("Malformed tokens must not reach Siteverify.");
+
+  for (const token of [null, "", 123, "x".repeat(2049)]) {
+    await assert.rejects(
+      _test.verifyTurnstile({ token, action: "free_agent", config, fetchImpl }),
+      /Human verification is required/,
+    );
+  }
+});
+
+test("Turnstile validation rejects a valid token from an unapproved hostname", async () => {
+  const config = { turnstileSecretKey: "test-secret", allowedHostnames: new Set(["preview.example.com"]) };
+  const fetchImpl = async () => ({ ok: true, json: async () => ({ success: true, action: "free_agent", hostname: "attacker.example" }) });
+
+  await assert.rejects(
+    _test.verifyTurnstile({ token: "token", action: "free_agent", config, fetchImpl }),
+    /Human verification failed/,
+  );
+});
+
+test("Turnstile validation fails closed on a non-success Siteverify response", async () => {
+  const config = { turnstileSecretKey: "test-secret", allowedHostnames: new Set(["preview.example.com"]) };
+  const fetchImpl = async () => ({ ok: false });
+
+  await assert.rejects(
+    _test.verifyTurnstile({ token: "token", action: "free_agent", config, fetchImpl }),
+    /temporarily unavailable/,
+  );
+});
+
+test("Turnstile validation fails closed on a Siteverify network error", async () => {
+  const config = { turnstileSecretKey: "test-secret", allowedHostnames: new Set(["preview.example.com"]) };
+  const fetchImpl = async () => { throw new Error("network unavailable"); };
+
+  await assert.rejects(
+    _test.verifyTurnstile({ token: "token", action: "free_agent", config, fetchImpl }),
+    /temporarily unavailable/,
+  );
+});
+
+test("Turnstile validation aborts a stalled Siteverify request and fails closed", async () => {
+  const config = { turnstileSecretKey: "test-secret", allowedHostnames: new Set(["preview.example.com"]) };
+  const nativeSetTimeout = global.setTimeout;
+  global.setTimeout = (callback) => nativeSetTimeout(callback, 0);
+
+  try {
+    const fetchImpl = async (_url, { signal }) => new Promise((resolve, reject) => {
+      signal.addEventListener("abort", () => reject(new Error("aborted")), { once: true });
+    });
+    await assert.rejects(
+      _test.verifyTurnstile({ token: "token", action: "free_agent", config, fetchImpl }),
+      /temporarily unavailable/,
+    );
+  } finally {
+    global.setTimeout = nativeSetTimeout;
+  }
+});
+
 test("server configuration fails closed when any secret setting is absent", () => {
   assert.throws(
     () => _test.readConfig({ SUPABASE_URL: "https://example.supabase.co" }),
