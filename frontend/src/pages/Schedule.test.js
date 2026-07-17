@@ -98,6 +98,9 @@ describe("Schedule visual contracts", () => {
     expect(trigger?.className).toBe("bg-card border-border");
     expect(trigger?.className).not.toContain("h-10");
     expect(trigger?.className).not.toContain("text-sm");
+    expect(trigger?.id).toBe("schedule-filter-sport");
+    expect(trigger?.getAttribute("aria-labelledby")).toBe("schedule-filter-sport-label");
+    expect(container.querySelector('#schedule-filter-sport-label')?.getAttribute("for")).toBe("schedule-filter-sport");
   });
 
   test("bridges committed filter results and cancels superseded frames", async () => {

@@ -151,11 +151,11 @@ export default function Schedule() {
 
 const Filter = ({ label, value, onChange, testid, children }) => (
   <div>
-    <label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">
+    <label id={`${testid}-label`} htmlFor={testid} className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">
       {label}
     </label>
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger data-testid={testid} className="bg-card border-border">
+      <SelectTrigger id={testid} aria-labelledby={`${testid}-label`} data-testid={testid} className="bg-card border-border">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>{children}</SelectContent>

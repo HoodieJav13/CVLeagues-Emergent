@@ -122,8 +122,13 @@ describe("ScoreEntry locked-game UX", () => {
   test("disables editing while locked and re-enables after a reasoned unlock", async () => {
     await act(async () => root.render(<ScoreEntry />));
 
+    expect(container.querySelector('[data-testid="score-game-select"]')?.getAttribute("aria-labelledby")).toBe("score-game-select-label");
+    expect(container.querySelector('#score-game-select-label')?.getAttribute("for")).toBe("score-game-select");
     expect(container.querySelector('[data-testid="score-locked-notice"]')?.textContent).toContain("This game is finalized and locked.");
+    expect(container.querySelector('[data-testid="score-away-period-0"]')?.getAttribute("aria-label")).toBe("Away Inning 1");
     expect(container.querySelector('[data-testid="score-away-period-0"]').disabled).toBe(true);
+    expect(container.querySelector("thead th")?.getAttribute("scope")).toBe("col");
+    expect(container.querySelector("tbody th")?.getAttribute("scope")).toBe("row");
     expect(container.querySelector('[data-testid="score-add-inning"]').disabled).toBe(true);
     expect(container.querySelector('[data-testid="score-save"]').disabled).toBe(true);
 
@@ -137,11 +142,23 @@ describe("ScoreEntry locked-game UX", () => {
     });
 
     const reason = document.querySelector('[data-testid="score-unlock-reason"]');
+    expect(document.activeElement).toBe(reason);
+    await act(async () => {
+      document.querySelector('[data-testid="score-unlock-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(reason?.getAttribute("aria-invalid")).toBe("true");
+    expect(reason?.getAttribute("aria-describedby")).toBe("score-unlock-reason-error");
+    expect(document.querySelector('#score-unlock-reason-error')?.getAttribute("role")).toBe("alert");
+    expect(document.querySelector('#score-unlock-reason-error')?.textContent).toBe("A reason is required to unlock.");
+
     await act(async () => {
       const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
       setValue.call(reason, "Correcting the final score");
       reason.dispatchEvent(new Event("input", { bubbles: true }));
     });
+    expect(reason?.getAttribute("aria-invalid")).toBe("false");
+    expect(reason?.getAttribute("aria-describedby")).toBeNull();
+    expect(document.querySelector('#score-unlock-reason-error')).toBeNull();
 
     await act(async () => {
       document.querySelector('[data-testid="score-unlock-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -153,6 +170,7 @@ describe("ScoreEntry locked-game UX", () => {
     expect(container.querySelector('[data-testid="score-add-inning"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-stat-player-1-kicks"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-save"]').disabled).toBe(false);
+    expect(document.activeElement).toBe(container.querySelector('[data-testid="score-game-select"]'));
   });
 
   test("bridges only the selector-owned game form after a game change", async () => {

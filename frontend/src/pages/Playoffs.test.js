@@ -86,6 +86,42 @@ function useExistingBracketApp() {
   };
 }
 
+function useReadyMatchApp() {
+  return {
+    state: {
+      ...baseState,
+      games: [{
+        id: "game-1",
+        league_id: "league-1",
+        stage: "playoff",
+        home_team_id: "team-1",
+        away_team_id: "team-2",
+        date: "2026-08-10",
+        time: "6:30 PM",
+        status: "upcoming",
+      }],
+      playoffBrackets: [{ id: "bracket-ready", league_id: "league-1", status: "scheduled" }],
+      playoffMatches: [{
+        id: "match-1",
+        bracket_id: "bracket-ready",
+        round_number: 1,
+        match_number: 1,
+        label: "Semifinal",
+        status: "ready",
+        home_team_id: "team-1",
+        away_team_id: "team-2",
+        home_seed: 1,
+        away_seed: 4,
+        game_id: null,
+      }],
+    },
+    generatePlayoffBracket: jest.fn(),
+    linkPlayoffGame: jest.fn(),
+    schedulePlayoffMatch: jest.fn(),
+    advancePlayoffMatch: jest.fn(),
+  };
+}
+
 describe("Playoffs bracket reveal", () => {
   let container;
   let root;
@@ -109,6 +145,8 @@ describe("Playoffs bracket reveal", () => {
 
     expect(container.querySelector('[data-testid="playoff-bracket-reveal"]')).toBeNull();
     expect(container.textContent).toContain("Review Seeding");
+    expect(container.querySelector('[data-testid="playoffs-sport"]')?.getAttribute("aria-labelledby")).toBe("playoffs-sport-label");
+    expect(container.querySelector('#playoffs-sport-label')?.getAttribute("for")).toBe("playoffs-sport");
 
     await act(async () => {
       container.querySelector('[data-testid="generate-bracket"]').click();
@@ -135,5 +173,36 @@ describe("Playoffs bracket reveal", () => {
     expect(reveal?.className).toContain("animate-fade-in");
     expect(reveal?.querySelector('[data-testid="playoff-bracket"]')).not.toBeNull();
     expect(container.textContent).not.toContain("Review Seeding");
+  });
+
+  test("labels every scheduling control in the match dialog", async () => {
+    mockUseApp = useReadyMatchApp;
+    await act(async () => root.render(<Playoffs />));
+
+    const dialogTrigger = container.querySelector('[data-testid="schedule-match-match-1"]');
+    await act(async () => {
+      dialogTrigger.click();
+    });
+
+    const existingMatch = document.querySelector('[data-testid="playoffs-existing-match"]');
+    expect(existingMatch?.getAttribute("aria-labelledby")).toBe("playoffs-existing-match-label");
+    expect(document.querySelector('#playoffs-existing-match-label')?.getAttribute("for")).toBe("playoffs-existing-match");
+    expect(document.activeElement).toBe(existingMatch);
+
+    for (const [id, label] of [
+      ["playoff-match-date", "Date (required)"],
+      ["playoff-match-time", "Time (required)"],
+      ["playoff-match-location", "Location (required)"],
+    ]) {
+      const input = document.getElementById(id);
+      expect(input?.required).toBe(true);
+      expect(document.querySelector(`label[for="${id}"]`)?.textContent).toBe(label);
+    }
+
+    await act(async () => {
+      document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    });
+    expect(document.getElementById("playoff-match-date")).toBeNull();
+    expect(document.activeElement).toBe(dialogTrigger);
   });
 });

@@ -86,6 +86,13 @@ describe("Standings result motion", () => {
     expect(initial?.className).toContain("motion-reduce:opacity-100");
     expect(initial?.className).toContain("motion-reduce:transition-none");
 
+    const sportTrigger = container.querySelector('[data-testid="standings-filter-sport"]');
+    expect(sportTrigger?.id).toBe("standings-filter-sport");
+    expect(sportTrigger?.getAttribute("aria-labelledby")).toBe("standings-filter-sport-label");
+    expect(container.querySelector('#standings-filter-sport-label')?.getAttribute("for")).toBe("standings-filter-sport");
+    expect(container.querySelector('[data-testid="standings-row-kickball-team"]')?.getAttribute("aria-label")).toContain("Kickball Team: rank 1");
+    expect(container.querySelector('[data-testid="standings-row-kickball-team"]')?.getAttribute("aria-label")).toContain("wins");
+
     await act(async () => {
       container.querySelector('[data-testid="standings-filter-sport"]').click();
     });

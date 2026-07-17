@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { CalendarX, FloppyDisk, LockSimple, LockSimpleOpen, Plus, UsersThree } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -79,8 +79,10 @@ function Entry() {
   const [expanded, setExpanded] = useState(null);
   const [unlockOpen, setUnlockOpen] = useState(false);
   const [unlockReason, setUnlockReason] = useState("");
+  const [unlockError, setUnlockError] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [gameSelectionRevision, setGameSelectionRevision] = useState(0);
+  const unlockTriggerRef = useRef(null);
 
   // (Re)initialize form whenever the selected game changes.
   useEffect(() => {
@@ -133,14 +135,19 @@ function Entry() {
 
   const unlock = async () => {
     const reason = unlockReason.trim();
-    if (!reason) return toast.error("A reason is required to unlock");
+    if (!reason) {
+      setUnlockError("A reason is required to unlock.");
+      return toast.error("A reason is required to unlock");
+    }
 
+    setUnlockError("");
     setUnlocking(true);
     try {
       await unlockGame(game.id, reason);
       toast.success("Game unlocked — score entry is editable");
       setUnlockOpen(false);
       setUnlockReason("");
+      setUnlockError("");
     } catch {
       // Backend mode already reports the failure; keep the dialog open for correction.
     } finally {
@@ -162,7 +169,7 @@ function Entry() {
             </div>
           </div>
           {role === "admin" && (
-            <Button type="button" variant="outline" data-testid="score-unlock" onClick={() => setUnlockOpen(true)} className="shrink-0 gap-2">
+            <Button ref={unlockTriggerRef} type="button" variant="outline" data-testid="score-unlock" onClick={() => setUnlockOpen(true)} className="shrink-0 gap-2">
               <LockSimpleOpen size={16} weight="bold" /> Unlock game
             </Button>
           )}
@@ -170,28 +177,31 @@ function Entry() {
       )}
 
       {/* Game selector */}
-      <Select
-        value={game_id}
-        onValueChange={(value) => {
-          setGameId(value);
-          setGameSelectionRevision((revision) => revision + 1);
-        }}
-        disabled={role === "temp_admin"}
-      >
-        <SelectTrigger data-testid="score-game-select" className="bg-card border-border h-12">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {eligible.map((g) => {
-            const h = getTeam(state, g.home_team_id), a = getTeam(state, g.away_team_id);
-            return (
-              <SelectItem key={g.id} value={g.id}>
-                {a.name} @ {h.name} · {new Date(g.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} {g.status === "completed" ? "(Final)" : ""}
-              </SelectItem>
-            );
-          })}
-        </SelectContent>
-      </Select>
+      <div>
+        <Label id="score-game-select-label" htmlFor="score-game-select" className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">Game</Label>
+        <Select
+          value={game_id}
+          onValueChange={(value) => {
+            setGameId(value);
+            setGameSelectionRevision((revision) => revision + 1);
+          }}
+          disabled={role === "temp_admin"}
+        >
+          <SelectTrigger id="score-game-select" aria-labelledby="score-game-select-label" data-testid="score-game-select" className="bg-card border-border h-12">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {eligible.map((g) => {
+              const h = getTeam(state, g.home_team_id), a = getTeam(state, g.away_team_id);
+              return (
+                <SelectItem key={g.id} value={g.id}>
+                  {a.name} @ {h.name} · {new Date(g.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} {g.status === "completed" ? "(Final)" : ""}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+      </div>
 
       <FilterResultRegion
         key={`${game_id}:${gameSelectionRevision}`}
@@ -216,20 +226,21 @@ function Entry() {
           <table className="w-full">
             <thead>
               <tr className="text-muted-foreground text-micro uppercase tracking-widest">
-                <th className="text-left font-semibold pb-2"> </th>
-                {periods.home.map((_, i) => <th key={i} className="font-semibold pb-2 px-1 text-center min-w-[44px]">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</th>)}
-                <th className="font-semibold pb-2 px-2 text-center text-primary">Total</th>
+                <th scope="col" className="text-left font-semibold pb-2"><span className="sr-only">Team</span></th>
+                {periods.home.map((_, i) => <th scope="col" key={i} className="font-semibold pb-2 px-1 text-center min-w-[44px]">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</th>)}
+                <th scope="col" className="font-semibold pb-2 px-2 text-center text-primary">Total</th>
               </tr>
             </thead>
             <tbody>
               {[{ side: "away", team: away, total: awayTotal }, { side: "home", team: home, total: homeTotal }].map((r) => (
                 <tr key={r.side} className="border-t border-border">
-                  <td className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm">{r.team.name}</td>
+                  <th scope="row" className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm">{r.team.name}</th>
                   {periods[r.side].map((v, i) => (
                     <td key={i} className="px-1 py-2">
                       <input
                         type="number" min="0" value={v}
                         disabled={locked} readOnly={locked} aria-readonly={locked}
+                        aria-label={`${r.team.name} ${periodLabel(game.sport, i)}`}
                         data-testid={`score-${r.side}-period-${i}`}
                         onChange={(e) => setPeriod(r.side, i, e.target.value)}
                         className="w-11 h-11 md:h-10 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -315,8 +326,20 @@ function Entry() {
       </Button>
       </FilterResultRegion>
 
-      <Dialog open={unlockOpen} onOpenChange={(open) => !unlocking && setUnlockOpen(open)}>
-        <DialogContent data-testid="score-unlock-dialog" className="bg-card border-border">
+      <Dialog open={unlockOpen} onOpenChange={(open) => {
+        if (unlocking) return;
+        setUnlockOpen(open);
+        if (!open) setUnlockError("");
+      }}>
+        <DialogContent
+          data-testid="score-unlock-dialog"
+          className="bg-card border-border"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            if (unlockTriggerRef.current?.isConnected) unlockTriggerRef.current.focus();
+            else document.getElementById("score-game-select")?.focus();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="font-display uppercase tracking-tight text-foreground">Unlock Game</DialogTitle>
             <DialogDescription>Unlocking allows score edits and records the required reason in the game's edit history.</DialogDescription>
@@ -327,13 +350,20 @@ function Entry() {
               id="score-unlock-reason"
               data-testid="score-unlock-reason"
               value={unlockReason}
-              onChange={(event) => setUnlockReason(event.target.value)}
+              onChange={(event) => {
+                setUnlockReason(event.target.value);
+                if (unlockError) setUnlockError("");
+              }}
+              required
+              aria-invalid={Boolean(unlockError)}
+              aria-describedby={unlockError ? "score-unlock-reason-error" : undefined}
               disabled={unlocking}
               className="bg-surface-sunken border-border"
             />
+            {unlockError && <p id="score-unlock-reason-error" role="alert" className="text-sm text-destructive">{unlockError}</p>}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={unlocking} onClick={() => setUnlockOpen(false)}>Cancel</Button>
+            <Button type="button" variant="outline" disabled={unlocking} onClick={() => { setUnlockOpen(false); setUnlockError(""); }}>Cancel</Button>
             <Button type="button" data-testid="score-unlock-confirm" disabled={unlocking} onClick={unlock}>
               {unlocking ? "Unlocking…" : "Unlock game"}
             </Button>

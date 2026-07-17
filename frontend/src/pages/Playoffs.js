@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowDown, ArrowUp, CalendarBlank, Trophy } from "@phosphor-icons/react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
+import { Label } from "../components/ui/label";
 
 export default function Playoffs() {
   const app = useApp();
@@ -136,6 +137,7 @@ const BracketView = ({ state, seeds, matches, isAdmin, app, league }) => {
 
 const MatchCard = ({ state, match, isAdmin, app, league }) => {
   const [open, setOpen] = useState(false);
+  const scheduleTriggerRef = useRef(null);
   const game = state.games.find((item) => item.id === match.game_id);
   const canAdvance = game?.status === "completed" && game?.score_status === "final" && game?.locked && match.status !== "completed";
   const compatible = state.games.filter((item) =>
@@ -157,9 +159,9 @@ const MatchCard = ({ state, match, isAdmin, app, league }) => {
       <TeamSlot state={state} teamId={match.home_team_id} seed={match.home_seed} winner={match.winner_team_id === match.home_team_id} />
       <TeamSlot state={state} teamId={match.away_team_id} seed={match.away_seed} winner={match.winner_team_id === match.away_team_id} />
       {game && <Link to={`/game/${game.id}`} className="block px-3 py-2 border-t border-border text-xs text-primary hover:bg-white/5"><CalendarBlank size={13} className="inline mr-1" />{game.date} · {game.time} · {game.status}</Link>}
-      {isAdmin && match.status === "ready" && !match.game_id && <button data-testid={`schedule-match-${match.id}`} onClick={() => setOpen(true)} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-primary hover:bg-primary/10">Schedule or Link Game</button>}
+      {isAdmin && match.status === "ready" && !match.game_id && <button ref={scheduleTriggerRef} data-testid={`schedule-match-${match.id}`} onClick={() => setOpen(true)} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-primary hover:bg-primary/10">Schedule or Link Game</button>}
       {isAdmin && canAdvance && <button data-testid={`advance-match-${match.id}`} onClick={advance} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-gold hover:bg-gold/10">Advance Final Result</button>}
-      <ScheduleDialog open={open} setOpen={setOpen} match={match} app={app} compatible={compatible} />
+      <ScheduleDialog open={open} setOpen={setOpen} match={match} app={app} compatible={compatible} triggerRef={scheduleTriggerRef} />
     </div>
   );
 };
@@ -169,7 +171,7 @@ const TeamSlot = ({ state, teamId, seed, winner }) => {
   return <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-border last:border-0 ${winner ? "bg-primary/10" : ""}`}><span className="font-mono-score text-xs text-muted-foreground w-5">{seed ? `#${seed}` : "—"}</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }} /><span className={`text-sm ${winner ? "text-primary font-semibold" : "text-foreground"}`}>{team?.name || "TBD"}</span></div>;
 };
 
-const ScheduleDialog = ({ open, setOpen, match, app, compatible }) => {
+const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) => {
   const [form, setForm] = useState({ date: "", time: "", location: "", game_id: "" });
   const save = async () => {
     try {
@@ -179,7 +181,48 @@ const ScheduleDialog = ({ open, setOpen, match, app, compatible }) => {
       setOpen(false);
     } catch { /* surfaced centrally */ }
   };
-  return <Dialog open={open} onOpenChange={setOpen}><DialogContent className="bg-card border-border"><DialogHeader><DialogTitle className="font-display uppercase">Schedule {match.label}</DialogTitle><DialogDescription>Link a matching playoff game already on the schedule, or create a new one.</DialogDescription></DialogHeader>{compatible.length > 0 && <Filter label="Existing Match" value={form.game_id || "new"} onChange={(value) => setForm({ ...form, game_id: value === "new" ? "" : value })}><SelectItem value="new">Create new game</SelectItem>{compatible.map((game) => <SelectItem key={game.id} value={game.id}>{game.date} · {game.time}</SelectItem>)}</Filter>}{!form.game_id && <div className="grid gap-3"><Input type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} /><Input placeholder="6:30 PM" value={form.time} onChange={(event) => setForm({ ...form, time: event.target.value })} /><Input placeholder="Field / location" value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} /></div>}<DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save} disabled={!form.game_id && (!form.date || !form.time.trim() || !form.location.trim())}>Save</Button></DialogFooter></DialogContent></Dialog>;
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogContent
+        className="bg-card border-border"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          triggerRef.current?.focus();
+        }}
+      >
+        <DialogHeader>
+          <DialogTitle className="font-display uppercase">Schedule {match.label}</DialogTitle>
+          <DialogDescription>Link a matching playoff game already on the schedule, or enter the required date, time, and location.</DialogDescription>
+        </DialogHeader>
+        {compatible.length > 0 && (
+          <Filter label="Existing Match" value={form.game_id || "new"} onChange={(value) => setForm({ ...form, game_id: value === "new" ? "" : value })} testid="playoffs-existing-match">
+            <SelectItem value="new">Create new game</SelectItem>
+            {compatible.map((game) => <SelectItem key={game.id} value={game.id}>{game.date} · {game.time}</SelectItem>)}
+          </Filter>
+        )}
+        {!form.game_id && (
+          <div className="grid gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="playoff-match-date">Date (required)</Label>
+              <Input id="playoff-match-date" name="date" type="date" required value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="playoff-match-time">Time (required)</Label>
+              <Input id="playoff-match-time" name="time" placeholder="6:30 PM" required value={form.time} onChange={(event) => setForm({ ...form, time: event.target.value })} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="playoff-match-location">Location (required)</Label>
+              <Input id="playoff-match-location" name="location" placeholder="Field / location" required value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={save} disabled={!form.game_id && (!form.date || !form.time.trim() || !form.location.trim())}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
-const Filter = ({ label, value, onChange, testid, children }) => <div><label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">{label}</label><Select value={value} onValueChange={onChange}><SelectTrigger data-testid={testid} className="bg-card border-border h-10 text-sm"><SelectValue /></SelectTrigger><SelectContent>{children}</SelectContent></Select></div>;
+const Filter = ({ label, value, onChange, testid, children }) => <div><label id={`${testid}-label`} htmlFor={testid} className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">{label}</label><Select value={value} onValueChange={onChange}><SelectTrigger id={testid} aria-labelledby={`${testid}-label`} data-testid={testid} className="bg-card border-border h-10 text-sm"><SelectValue /></SelectTrigger><SelectContent>{children}</SelectContent></Select></div>;

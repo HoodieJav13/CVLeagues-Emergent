@@ -92,6 +92,7 @@ export default function Standings() {
                   key={team.id}
                   to={`/team/${team.id}`}
                   data-testid={`standings-row-${team.id}`}
+                  aria-label={`${team.name}: rank ${rank}, ${record.wins} wins, ${record.losses} losses, ${record.pointsFor} points for, ${record.diff > 0 ? "+" : ""}${record.diff} point differential`}
                   className={`grid grid-cols-[auto_minmax(0,1fr)_repeat(3,2.75rem)] sm:grid-cols-[auto_minmax(0,1fr)_repeat(4,3.5rem)] gap-1 px-3 py-3 items-center border-b border-border last:border-0 border-l-2 transition-colors hover:bg-white/5 active:bg-white/10 ${
                     rank === 1
                       ? "border-l-gold bg-[var(--leader-bg)]"
@@ -126,9 +127,9 @@ export default function Standings() {
 
 const Filter = ({ label, value, onChange, testid, children }) => (
   <div>
-    <label className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">{label}</label>
+    <label id={`${testid}-label`} htmlFor={testid} className="text-micro uppercase tracking-widest text-muted-foreground font-semibold mb-1 block">{label}</label>
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger data-testid={testid} className="bg-card border-border"><SelectValue /></SelectTrigger>
+      <SelectTrigger id={testid} aria-labelledby={`${testid}-label`} data-testid={testid} className="bg-card border-border"><SelectValue /></SelectTrigger>
       <SelectContent>{children}</SelectContent>
     </Select>
   </div>
