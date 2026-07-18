@@ -6,11 +6,8 @@ import { RoleSwitcher } from "../RoleSwitcher";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { MOCK_MODE } from "../../lib/supabase";
 
-// The Demo Role Preview switcher is an ADMIN-ONLY TESTING TOOL that exists only
-// because this MVP has no real auth (CLAUDE.md). It must NEVER ship in a public
-// build. It renders in local development by default; a production build only
-// includes it when explicitly opted in via REACT_APP_SHOW_ROLE_SWITCHER=true.
-// PHASE 2: delete the switcher entirely — role comes from the authed session.
+// The Demo Role Preview switcher is a local-only testing tool. Hosted roles come
+// from Supabase Auth, and preview/production builds cannot render the switcher.
 const SHOW_ROLE_SWITCHER = process.env.NODE_ENV === "development" && MOCK_MODE;
 
 // App shell: desktop top bar + mobile bottom nav + (dev-only) role switcher.

@@ -1,11 +1,9 @@
 /* ============================================================================
  * ROLES — demo role definitions & permission helpers.
  * ----------------------------------------------------------------------------
- * PRODUCTION RULE (Phase 2): roles are assigned ONLY by an admin via the
- * backend. A captain cannot promote themselves, a player cannot make themselves
- * a captain, a free agent cannot self-assign to a team. The Demo Role Preview
- * switcher below is an ADMIN-ONLY TESTING TOOL that exists purely because this
- * MVP has no real authentication. It must never ship as a user-facing feature.
+ * PRODUCTION RULE: Season 1 recognizes only anonymous and AAL2 administrator
+ * sessions. The additional roles below are development previews for deferred
+ * self-service surfaces and cannot be selected in hosted mode.
  * ========================================================================== */
 
 export const ROLES = {

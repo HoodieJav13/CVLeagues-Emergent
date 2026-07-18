@@ -27,11 +27,9 @@ import { ROLES, ROLE_ORDER } from "../lib/roles";
 /* ============================================================================
  * DEMO ROLE PREVIEW SWITCHER  —  ADMIN-ONLY TESTING TOOL.
  * ----------------------------------------------------------------------------
- * Exists ONLY because this MVP has no real authentication. It lets us preview
- * exactly what each role sees. It is intentionally styled as an injected dev
- * tool (light pill) and is NOT a production user-facing feature.
- *
- * PHASE 2: remove this entirely. Role comes from the authenticated session.
+ * Local mock tool for previewing role-specific surfaces without test accounts.
+ * Hosted administration uses the authenticated AAL2 session instead. This
+ * component is never rendered by a preview or production build.
  * ========================================================================== */
 
 export const RoleSwitcher = () => {

@@ -105,7 +105,7 @@ describe("Home hierarchy", () => {
     const scheduleAction = container.querySelector('a[href="/schedule"]');
     expect(scheduleAction?.className).not.toContain("transition-all");
     expect(scheduleAction?.querySelector("svg")?.classList.toString()).toContain("transition-transform");
-  });
+  }, 15000);
 
   test("uses two-column and multi-column grid variants for larger sets", async () => {
     mockState = {

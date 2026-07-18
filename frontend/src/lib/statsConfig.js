@@ -123,5 +123,6 @@ export const HIGHLIGHT_STATS = {
 export const sportName = (sport) =>
   sport === "kickball" ? "Kickball" : "Flag Football";
 
-// Re-export SPORTS list from the seed (single source of truth) for convenience.
-export { SPORTS } from "../data/seed";
+// Sports are runtime configuration, not demo fixtures, so production can use
+// this list without pulling the development seed into its JavaScript bundle.
+export { SPORTS } from "../data/sports";

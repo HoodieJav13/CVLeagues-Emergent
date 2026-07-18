@@ -14,6 +14,7 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Roster flow (Flow C-lite): Add Player, manual assignment, eligibility indicator — done
 - Functional cleanup: env-gated demo switcher, dormant account surfaces, empty states, destructive confirmations — done
 - Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
+- Mock-state boundary review: COMPLETE locally and awaiting owner acceptance — localStorage is development-only and versioned, production/preview fail closed, optimized artifacts exclude fixtures, and the key admin mock flows match their hosted visible outcomes.
 - Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
 - Competition display and stat isolation: `StageBanner` marks playoff/tournament games, Season 1 has a real single-elimination bracket workflow, and tournament statistics are tracked separately and excluded from league-season and league-career/all-time totals.
 - Extended-runway backend: twenty-one migrations apply in the isolated and real-stack harnesses and 211/211 pgtest assertions pass. The hosted project remains at the twelve-migration baseline until owner approval.
@@ -44,7 +45,7 @@ The extended-runway build is locally complete; its historical implementation rec
 - Business logic: pure selectors in `src/lib/selectors.js`
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
-- Persistence (current fallback): localStorage
+- Persistence: Supabase in hosted mode; versioned localStorage only in explicit local-development mock mode (never a production/preview fallback)
 - Backend: Supabase (PostgreSQL + Auth); twenty-one migrations are verified by the isolated and real-stack harnesses, the first twelve plus the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. The nine-migration hosted extension, expanded authorization acceptance, and preview/production configuration remain open.
 - Deployment target: Vercel (Phase 10)
 
@@ -73,7 +74,7 @@ The extended-runway build is locally complete; its historical implementation rec
 
 ## Roster & Eligibility (Season 1)
 - **Flow C-lite (built):** "Add Player" creates a profile; manual roster assignment sets team + jersey; season auto-stamped.
-- **Do NOT build intake-conversion in mock state** (approve→team, assign→profile). Built once in the backend phase.
+- **Mock intake conversion mirrors hosted outcomes, not backend internals.** Local registration approval and free-agent assignment create the visible team/profile/roster/waiver-link results needed for realistic review. Transactionality, authorization, attribution, and storage invariants remain backend-only concerns.
 - **Eligibility is purely informational.** Never blocks anything in-app. Admin enforces physically IRL.
 - **`<EligibilityIndicator>`:** reusable, icon + tooltip, not color-alone. Shown on rosters, score entry, team pages. Hosted data derives eligibility from the real profile/waiver workflow; mock mode retains seed status for local development.
 
@@ -145,7 +146,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
 
 ## Deferred / Backlog
-- **Next frontend-quality stage — dedicated mock-state review before broader UI work.** The dependency/abuse-protection sequence is complete through axios removal (`6261f90`), React Router 7.18.1 (`4c75a7b`), and Turnstile lifecycle/failure hardening (`e6af8ed`). Before resuming general UI or motion work, inventory every mock-data and localStorage runtime path and verify that production and preview cannot silently fall back to either; distinguish test/demo fixtures from deployable behavior; check persistence reset/migration, stale-fixture leakage, and parity with hosted-data flows; then return findings, proposed changes, tests, risks, and rollback through the normal owner review gate before implementation.
+- **Gate 0 mock-state review — locally complete, owner acceptance pending.** The review now inventories and isolates every mock/localStorage runtime path, validates reset and the supported v7→v8 migration, removes abandoned keys, excludes fixtures from optimized artifacts, preserves production/preview fail-closed behavior, and aligns registration approval, free-agent assignment, and waiver verification with hosted visible outcomes. No broader visual implementation begins until the owner accepts the diff and evidence.
 - Consolidate the remaining overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. The team overlap disappeared when direct team writes were removed; preserve all remaining public/admin semantics and rerun the complete negative matrix before further consolidation.
 - Season 2 player/captain self-service: signup, email verification, password recovery, safe profile claiming, captain permissions, abuse controls, and a new authorization matrix. This remains outside Season 1 and is also gated by the waiver/eligibility design.
 - Public Hall of Fame route and publication control.

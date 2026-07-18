@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { updateEntity, updateTeamIdentity } from "./backend";
+import { fetchAppState, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
 
 jest.mock("./supabase", () => ({
   supabase: {
@@ -62,5 +62,52 @@ describe("RPC-only team mutations", () => {
 
     await expect(updateEntity("teams", "team-1", { status: "inactive" }))
       .rejects.toThrow("update team enrollment: Admin only");
+  });
+
+  test("profile edits strip generated and mock-only fields", async () => {
+    const eq = jest.fn().mockResolvedValue({ error: null });
+    const update = jest.fn(() => ({ eq }));
+    supabase.from.mockReturnValue({ update });
+
+    await updateEntity("profiles", "profile-1", {
+      first_name: "Ari",
+      admin_notes: [{ text: "Called" }],
+      name: "generated",
+      age_confirmed: true,
+      eligibility_status: "verified",
+      claimed: true,
+    });
+
+    expect(supabase.from).toHaveBeenCalledWith("profiles");
+    expect(update).toHaveBeenCalledWith({ first_name: "Ari", admin_notes: [{ text: "Called" }] });
+    expect(eq).toHaveBeenCalledWith("id", "profile-1");
+  });
+
+  test("waiver decisions use the verification RPC", async () => {
+    await verifyWaiver("waiver-1", "verified");
+    expect(supabase.rpc).toHaveBeenCalledWith("verify_waiver", {
+      p_waiver_id: "waiver-1",
+      p_decision: "verified",
+    });
+  });
+
+  test("admin intake fetch errors cannot silently become empty queues", async () => {
+    supabase.from.mockImplementation((table) => {
+      const result = table === "free_agents"
+        ? { data: null, error: { message: "intake unavailable" } }
+        : table === "league_settings"
+          ? { data: { current_season: "Summer 2026", current_kickball_season: "Summer 2026", current_flag_football_season: "Summer 2026", registration_open: {}, hof_published: false }, error: null }
+          : { data: [], error: null };
+      const query = {
+        select: () => query,
+        order: () => query,
+        eq: () => query,
+        single: () => Promise.resolve(result),
+        then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
+      };
+      return query;
+    });
+
+    await expect(fetchAppState(true)).rejects.toThrow("fetch free_agents: intake unavailable");
   });
 });

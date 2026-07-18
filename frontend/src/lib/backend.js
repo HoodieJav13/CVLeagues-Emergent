@@ -79,6 +79,7 @@ export async function fetchAppState(isAdmin) {
     [playerStats, "player_stats"], [playoffBrackets, "playoff_brackets"], [playoffSeeds, "playoff_seeds"],
     [playoffMatches, "playoff_matches"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
+    [freeAgents, "free_agents"], [registrations, "team_registrations"], [waivers, "waivers"],
     [charges, "charges"], [paymentEntries, "payment_entries"],
     [hofEntries, "hof_entries"],
   ]) fail(r.error, `fetch ${what}`);
@@ -224,6 +225,7 @@ const PROFILE_COLS = [
   "first_name", "last_name", "display_name", "email", "phone", "dob", "sports",
   "experience", "bio", "avatar_color", "emergency_contact_name", "emergency_contact_phone",
 ];
+const PROFILE_UPDATE_COLS = [...PROFILE_COLS, "admin_notes"];
 const PALETTE = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
 
 export async function createPlayer(profile) {
@@ -323,7 +325,10 @@ export async function updateEntity(collection, id, patch) {
   // Team enrollment identity/container fields are immutable to clients. The
   // supported captain/division/lifecycle edits route through the narrow RPC.
   if (collection === "teams") return updateTeamEnrollment(id, patch);
-  const { error } = await supabase.from(TABLES[collection]).update(patch).eq("id", id);
+  const row = collection === "profiles"
+    ? Object.fromEntries(Object.entries(patch).filter(([key]) => PROFILE_UPDATE_COLS.includes(key)))
+    : patch;
+  const { error } = await supabase.from(TABLES[collection]).update(row).eq("id", id);
   fail(error, `update ${collection}`);
 }
 

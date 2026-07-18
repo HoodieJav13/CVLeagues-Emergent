@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
-import { getTeam, getProfile, getLeague, computeTeamRecord, claimStats, teamRoster, currentSeasonForSport } from "../lib/selectors";
+import { getTeam, getProfile, getLeague, computeTeamRecord, teamRoster, currentSeasonForSport } from "../lib/selectors";
 import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
@@ -37,9 +37,8 @@ import PaymentsTab from "../components/admin/PaymentsTab";
 import HallOfFameTab from "../components/admin/HallOfFameTab";
 
 // FINAL DRAFT — Season 1 is admin-only (CLAUDE.md): players are profile
-// records, NOT user accounts. Account-language features (claim/invite counts,
-// resend invite, mark claimed, temp-admin score-keepers) are hidden behind
-// this flag — kept dormant, not deleted — pending final-draft review.
+// records, NOT user accounts. Deferred duplicate-detection and temp-admin
+// score-keeper previews remain hidden pending a separate final-draft review.
 const FINAL_DRAFT = false;
 
 export default function AdminDashboard() {
@@ -155,7 +154,7 @@ function OverviewTab({ app, onNavigate }) {
     { count: scoresNeeded, title: "Games Needing Scores", desc: "Enter, review and lock final scores. Pending have no score; submitted await Mark Final.", cta: "Scores/Stats", tab: "scores", testid: "admin-overview-scores" },
     { count: regsToTriage, title: "Registrations to Triage", desc: "Team interest submissions awaiting contact or approval.", cta: "Registrations", tab: "registrations", testid: "admin-overview-registrations" },
     { count: agentsToReview, title: "Free Agents to Review", desc: "Intake submissions awaiting contact or team assignment.", cta: "Free Agents", tab: "agents", testid: "admin-overview-agents" },
-    { count: missingWaivers, title: "Players Missing Waivers", desc: "Profiles with no waiver record on file (mock count until the backend ships).", cta: "Waivers", tab: "waivers", testid: "admin-overview-waivers" },
+    { count: missingWaivers, title: "Players Missing Waivers", desc: "Profiles with no waiver record linked to their player record.", cta: "Waivers", tab: "waivers", testid: "admin-overview-waivers" },
     { count: lockedGames, title: "Locked / Final Games", desc: "Season games marked final and locked against edits.", cta: "Scores/Stats", tab: "scores", testid: "admin-overview-locked", muted: true },
     // FINAL DRAFT: duplicate-profile detection ships at final-draft review.
     // Hidden until then rather than showing a permanently-zero placeholder card.
@@ -172,18 +171,18 @@ function OverviewTab({ app, onNavigate }) {
 }
 
 /* ------------------------------- WAIVERS ---------------------------------- */
-// Mock waiver verification queue (real submission flow ships with the
-// backend). Submitted ≠ eligible: eligibility = admin verification +
-// team/season assignment. Records are append-only — re-signing adds a row.
+// Submitted ≠ eligible: eligibility = admin verification + team/season
+// assignment. Records are append-only — re-signing adds a row.
 function WaiversTab({ app }) {
-  const { state, updateEntity } = app;
+  const { state, verifyWaiver } = app;
   const waivers = state.waivers || [];
   return (
     <div className="space-y-3">
       <div className="bg-card border border-primary/30 rounded-xl p-4">
         <p className="font-display uppercase tracking-tight text-foreground">Waiver Verification Queue</p>
         <p className="text-xs text-muted-foreground mt-1">
-          Waiver submission flow ships with the backend — these are mock records. Records are append-only: re-signing creates a new row.
+          {BACKEND_ENABLED ? "These are live hosted waiver records. " : "These are development-only sample waiver records. "}
+          Records are append-only: re-signing creates a new row.
           A submitted waiver does <span className="text-foreground font-semibold">not</span> equal eligibility — eligibility requires admin verification plus team/season assignment.
         </p>
       </div>
@@ -209,9 +208,9 @@ function WaiversTab({ app }) {
               </TableCell>
               <TableCell>
                 <div className="flex items-center justify-end whitespace-nowrap">
-                  <IconBtn onClick={() => { updateEntity("waivers", w.id, { verification_status: "verified" }); toast.success("Waiver verified — eligibility still requires team/season assignment"); }} icon={CheckCircle} title="Mark verified" testid={`admin-waiver-verify-${w.id}`} disabled={w.verification_status === "verified"} />
-                  <IconBtn onClick={() => { updateEntity("waivers", w.id, { verification_status: "pending" }); toast("Waiver flagged for review"); }} icon={Flag} title="Needs review" testid={`admin-waiver-review-${w.id}`} disabled={w.verification_status === "pending"} />
-                  <IconBtn icon={LinkSimple} title="Link to player record — ships with the backend" testid={`admin-waiver-link-${w.id}`} disabled />
+                  <IconBtn onClick={async () => { try { await verifyWaiver(w.id, "verified"); toast.success("Waiver verified — eligibility still requires team/season assignment"); } catch { /* surfaced centrally */ } }} icon={CheckCircle} title="Mark verified" testid={`admin-waiver-verify-${w.id}`} disabled={w.verification_status === "verified"} />
+                  <IconBtn onClick={async () => { try { await verifyWaiver(w.id, "pending"); toast("Waiver flagged for review"); } catch { /* surfaced centrally */ } }} icon={Flag} title="Needs review" testid={`admin-waiver-review-${w.id}`} disabled={w.verification_status === "pending"} />
+                  <IconBtn icon={LinkSimple} title="Linking an unassigned waiver to a player remains an owner-reviewed workflow" testid={`admin-waiver-link-${w.id}`} disabled />
                 </div>
               </TableCell>
             </TableRow>
@@ -250,7 +249,14 @@ const ConfirmDialog = ({ confirm, onClose }) => (
             <AlertDialogCancel data-testid="admin-confirm-cancel">Cancel</AlertDialogCancel>
             <AlertDialogAction
               data-testid="admin-confirm-accept"
-              onClick={() => { confirm.onConfirm(); onClose(); }}
+              onClick={async () => {
+                try {
+                  await confirm.onConfirm();
+                  onClose();
+                } catch {
+                  // The shared backend action already surfaced the error.
+                }
+              }}
               className="bg-destructive text-foreground hover:bg-destructive/90"
             >
               {confirm.confirmLabel || "Delete"}
@@ -322,12 +328,16 @@ function LeaguesTab({ app }) {
   const [seasonModal, setSeasonModal] = useState(null);
   const [confirm, setConfirm] = useState(null);
 
-  const save = () => {
+  const save = async () => {
     if (!modal.name?.trim() || !modal.sport || !modal.season) return toast.error("Name, sport, and season required");
-    if (modal.id) updateEntity("leagues", modal.id, { name: modal.name, description: modal.description });
-    else createEntity("leagues", { name: modal.name, sport: modal.sport, season: modal.season, kind: "league", description: modal.description || "" }, "l");
-    toast.success(modal.id ? "League updated" : "League created");
-    setModal(null);
+    try {
+      if (modal.id) await updateEntity("leagues", modal.id, { name: modal.name, description: modal.description });
+      else await createEntity("leagues", { name: modal.name, sport: modal.sport, season: modal.season, kind: "league", description: modal.description || "" }, "l");
+      toast.success(modal.id ? "League updated" : "League created");
+      setModal(null);
+    } catch {
+      // Backend errors are surfaced centrally; keep the form open.
+    }
   };
 
   const teamsIn = (league_id) => state.teams.filter((t) => t.league_id === league_id);
@@ -336,13 +346,17 @@ function LeaguesTab({ app }) {
     return new Set(state.teamPlayers.filter((tp) => teamIds.includes(tp.team_id)).map((tp) => tp.profile_id)).size;
   };
 
-  const saveSeason = () => {
+  const saveSeason = async () => {
     const name = seasonModal?.name?.trim();
     if (!name) return toast.error("Season name required");
     if (state.seasons.some((season) => season.name.toLowerCase() === name.toLowerCase())) return toast.error("That season already exists");
-    createEntity("seasons", { name, status: "upcoming" }, "season");
-    toast.success("Season created");
-    setSeasonModal(null);
+    try {
+      await createEntity("seasons", { name, status: "upcoming" }, "season");
+      toast.success("Season created");
+      setSeasonModal(null);
+    } catch {
+      // Backend errors are surfaced centrally; keep the form open.
+    }
   };
 
   return (
@@ -359,11 +373,11 @@ function LeaguesTab({ app }) {
               <div key={s.id} className="space-y-2 bg-surface-sunken border border-border rounded-lg p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2"><SportBadge sport={s.id} /><StatusBadge status={open ? "active" : "archived"} /></div>
-                  <button onClick={() => { toggleRegistration(s.id); toast.success(`${s.name} registration ${open ? "closed" : "opened"}`); }} data-testid={`admin-toggle-reg-${s.id}`} className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg ${open ? "text-destructive border border-destructive/40" : "text-primary border border-primary/40"}`}>
+                  <button onClick={async () => { try { await toggleRegistration(s.id); toast.success(`${s.name} registration ${open ? "closed" : "opened"}`); } catch { /* surfaced centrally */ } }} data-testid={`admin-toggle-reg-${s.id}`} className={`flex items-center gap-1.5 text-xs font-bold uppercase px-3 py-1.5 rounded-lg ${open ? "text-destructive border border-destructive/40" : "text-primary border border-primary/40"}`}>
                     <Power size={14} weight="bold" /> {open ? "Close" : "Open"}
                   </button>
                 </div>
-                <Select value={currentSeasonForSport(state, s.id)} onValueChange={(value) => { setCurrentSeason(s.id, value); toast.success(`${s.name} now defaults to ${value}`); }}>
+                <Select value={currentSeasonForSport(state, s.id)} onValueChange={async (value) => { try { await setCurrentSeason(s.id, value); toast.success(`${s.name} now defaults to ${value}`); } catch { /* surfaced centrally */ } }}>
                   <SelectTrigger data-testid={`admin-current-season-${s.id}`} className="bg-card border-border h-9 text-xs"><SelectValue /></SelectTrigger>
                   <SelectContent>{state.seasons.map((season) => <SelectItem key={season.name} value={season.name}>{season.name}</SelectItem>)}</SelectContent>
                 </Select>
@@ -377,7 +391,9 @@ function LeaguesTab({ app }) {
       <AdminTable testid="admin-leagues-table" head={["League", "Sport", "Season", "Teams", "Players", "Status", ""]}>
         {state.leagues.length === 0 ? (
           <EmptyRow colSpan={7}>No leagues yet. Create one to start scheduling.</EmptyRow>
-        ) : state.leagues.map((l) => (
+        ) : state.leagues.map((l) => {
+          const hasDependents = teamsIn(l.id).length > 0 || state.games.some((game) => game.league_id === l.id);
+          return (
           <TableRow key={l.id} data-testid={`admin-league-${l.id}`} className="border-border">
             <TableCell className="whitespace-nowrap">
               <div className="flex items-center gap-2">
@@ -393,11 +409,23 @@ function LeaguesTab({ app }) {
             <TableCell>
               <div className="flex items-center justify-end">
                 <IconBtn onClick={() => setModal({ id: l.id, name: l.name, sport: l.sport, season: l.season, description: l.description })} icon={PencilSimple} title="Edit league" testid={`admin-edit-league-${l.id}`} />
-                <IconBtn onClick={() => setConfirm({ title: "Delete league?", message: `Delete “${l.name}”? Its ${teamsIn(l.id).length} team(s) and games stay in the data but lose their league link. This cannot be undone.`, onConfirm: () => { deleteEntity("leagues", l.id); toast.success("League deleted"); } })} icon={Trash} title="Delete league" testid={`admin-delete-league-${l.id}`} danger />
+                <IconBtn
+                  onClick={() => setConfirm({
+                    title: "Delete empty league?",
+                    message: `Delete “${l.name}”? Only leagues with no teams or games can be deleted. This cannot be undone.`,
+                    onConfirm: async () => { await deleteEntity("leagues", l.id); toast.success("League deleted"); },
+                  })}
+                  icon={Trash}
+                  title={hasDependents ? "Referenced leagues cannot be deleted" : "Delete empty league"}
+                  testid={`admin-delete-league-${l.id}`}
+                  danger
+                  disabled={hasDependents}
+                />
               </div>
             </TableCell>
           </TableRow>
-        ))}
+          );
+        })}
       </AdminTable>
 
       <Modal open={!!modal} onClose={() => setModal(null)} title={modal?.id ? "Edit League" : "New League"} onSave={save}>
@@ -539,7 +567,7 @@ function TeamsTab({ app }) {
                 {captain ? (<><span className="text-foreground">{captain.name}</span><span className="text-muted-foreground"> · {captain.phone}</span></>) : <span className="text-muted-foreground/60">—</span>}
               </TableCell>
               <TableCell className="text-xs text-foreground text-center">{rosterCount(t.id)}</TableCell>
-              {/* Waiver/eligibility summary is a placeholder until waiver records exist (later stage). */}
+              {/* Enrollment-level waiver rollup is deferred; player-level status remains available in the roster editor. */}
               <TableCell className="text-xs text-muted-foreground/60">—</TableCell>
               <TableCell><StatusBadge status={t.status || "active"} /></TableCell>
               <TableCell>
@@ -550,7 +578,7 @@ function TeamsTab({ app }) {
                     onClick={() => setConfirm({
                       title: `${(t.status || "active") === "active" ? "Deactivate" : "Reactivate"} enrollment?`,
                       message: `${t.name} in ${league?.name || "this container"} will be marked ${(t.status || "active") === "active" ? "inactive" : "active"}. Rosters, games, payments, and history remain linked.`,
-                      onConfirm: () => { updateEntity("teams", t.id, { status: (t.status || "active") === "active" ? "inactive" : "active" }); toast.success("Enrollment status updated"); },
+                      onConfirm: async () => { await updateEntity("teams", t.id, { status: (t.status || "active") === "active" ? "inactive" : "active" }); toast.success("Enrollment status updated"); },
                     })}
                     icon={(t.status || "active") === "active" ? Archive : Power}
                     title={(t.status || "active") === "active" ? "Deactivate enrollment" : "Reactivate enrollment"}
@@ -629,7 +657,7 @@ function TeamsTab({ app }) {
 // team) and the team roster view (mode="team", pick a player) — so there is one
 // source of truth, not two parallel systems. Assignment NEVER touches
 // eligibility. Season is auto-stamped from the team's active league season.
-// PHASE 2: these become real team_players rows; intake-conversion is built then.
+// Hosted mode writes real team_players rows; mock mode mirrors the rendered outcome.
 function AssignmentEditor({ app, mode, profile_id, team_id }) {
   const { state, assignPlayerToTeam, removePlayerFromTeam } = app;
   const [sel, setSel] = useState("");
@@ -648,11 +676,15 @@ function AssignmentEditor({ app, mode, profile_id, team_id }) {
   };
   const pendingSeason = mode === "player" ? (sel ? seasonFor(sel) : null) : seasonFor(team_id);
 
-  const add = () => {
+  const add = async () => {
     if (!sel) return toast.error(mode === "player" ? "Select a team" : "Select a player");
-    assignPlayerToTeam(mode === "player" ? { profile_id, team_id: sel, jersey_number } : { profile_id: sel, team_id, jersey_number });
-    toast.success("Assignment added");
-    setSel(""); setJersey("");
+    try {
+      await assignPlayerToTeam(mode === "player" ? { profile_id, team_id: sel, jersey_number } : { profile_id: sel, team_id, jersey_number });
+      toast.success("Assignment added");
+      setSel(""); setJersey("");
+    } catch {
+      // Backend errors are surfaced centrally.
+    }
   };
 
   return (
@@ -670,7 +702,7 @@ function AssignmentEditor({ app, mode, profile_id, team_id }) {
               {mode === "player" && team && <SportBadge sport={team.sport} />}
             </div>
             <span className="text-micro text-muted-foreground tabular-nums whitespace-nowrap">{tp.jersey_number != null ? `#${tp.jersey_number}` : "—"} · {tp.season}</span>
-            <IconBtn onClick={() => { removePlayerFromTeam(tp.id); toast.success("Assignment removed"); }} icon={X} title="Remove assignment" testid={`assignment-remove-${tp.id}`} danger />
+            <IconBtn onClick={async () => { try { await removePlayerFromTeam(tp.id); toast.success("Assignment removed"); } catch { /* surfaced centrally */ } }} icon={X} title="Remove assignment" testid={`assignment-remove-${tp.id}`} danger />
           </div>
         );
       })}
@@ -698,9 +730,8 @@ function AssignmentEditor({ app, mode, profile_id, team_id }) {
 const blankPlayer = () => ({ first_name: "", last_name: "", display_name: "", email: "", phone: "", dob: "", age_confirmed: false, emergency_contact_name: "", emergency_contact_phone: "", admin_notes: "", eligibility_status: "not_verified" });
 
 function PlayersTab({ app }) {
-  const { state, updateEntity, createPlayer, resendInvite } = app;
+  const { state, updateEntity, createPlayer } = app;
   const [modal, setModal] = useState(null);
-  const counts = claimStats(state);
 
   const teamsFor = (profile_id) => {
     const ids = state.teamPlayers.filter((tp) => tp.profile_id === profile_id).map((tp) => tp.team_id);
@@ -714,7 +745,7 @@ function PlayersTab({ app }) {
     admin_notes: typeof p.admin_notes === "string" ? p.admin_notes : "", eligibility_status: p.eligibility_status || "not_verified",
   });
 
-  const save = () => {
+  const save = async () => {
     if (!modal.first_name.trim() || !modal.last_name.trim()) return toast.error("First and last name are required");
     const display = modal.display_name.trim();
     const data = {
@@ -724,28 +755,19 @@ function PlayersTab({ app }) {
       emergency_contact_name: modal.emergency_contact_name.trim() || null, emergency_contact_phone: modal.emergency_contact_phone.trim() || null,
       admin_notes: modal.admin_notes, eligibility_status: modal.eligibility_status,
     };
-    if (modal.id) { updateEntity("profiles", modal.id, data); toast.success("Player record updated"); }
-    else { createPlayer(data); toast.success("Player created"); }
-    setModal(null);
+    try {
+      if (modal.id) { await updateEntity("profiles", modal.id, data); toast.success("Player record updated"); }
+      else { await createPlayer(data); toast.success("Player created"); }
+      setModal(null);
+    } catch {
+      // Backend errors are surfaced centrally; keep the form open.
+    }
   };
 
   const set = (k, v) => setModal((m) => ({ ...m, [k]: v }));
 
   return (
     <div className="space-y-3">
-      {/* FINAL DRAFT: claimed/unclaimed counts are account metrics — Season 1
-          has no player accounts, so these stay hidden until final-draft review. */}
-      {FINAL_DRAFT && (
-        <div className="grid grid-cols-3 gap-3">
-          {[{ label: "Total", value: counts.total, c: "text-foreground" }, { label: "Claimed", value: counts.claimed, c: "text-teal" }, { label: "Unclaimed", value: counts.unclaimed, c: "text-gold" }].map((s) => (
-            <div key={s.label} className="bg-card border border-border rounded-xl p-4 text-center">
-              <p className={`font-mono-score text-2xl font-bold ${s.c}`}>{s.value}</p>
-              <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-      )}
-
       <SectionTitle title="Player Records" count={state.profiles.length} action={<AddBtn onClick={() => setModal(blankPlayer())} label="Add Player" testid="admin-add-player" />} />
       <AdminTable testid="admin-players-table" head={["Player", "Email", "Phone", "Sports", "Team(s)", "Season", "Eligibility", "Notes", ""]}>
         {state.profiles.length === 0 ? (
@@ -765,8 +787,7 @@ function PlayersTab({ app }) {
               <TableCell><div className="flex gap-1">{(p.sports || []).map((s) => <SportBadge key={s} sport={s} />)}</div></TableCell>
               <TableCell className="text-xs text-foreground whitespace-nowrap">{pTeams.length ? pTeams.map((t) => t.name).join(", ") : <span className="text-muted-foreground/60">Unassigned</span>}</TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{state.settings.current_season}</TableCell>
-              {/* Eligibility is purely INFORMATIONAL (CLAUDE.md) — it gates nothing.
-                  PHASE 2: this flag becomes real waiver verification status. */}
+              {/* Eligibility is informational and derived from waiver verification; it gates nothing. */}
               <TableCell>
                 <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap">
                   <EligibilityIndicator status={p.eligibility_status} />
@@ -777,17 +798,6 @@ function PlayersTab({ app }) {
               <TableCell>
                 <div className="flex items-center justify-end whitespace-nowrap">
                   <IconBtn onClick={() => openEdit(p)} icon={PencilSimple} title="Edit player record" testid={`admin-edit-player-${p.id}`} />
-                  {/* FINAL DRAFT: resend-invite / mark-claimed are account features — no player accounts in Season 1. */}
-                  {FINAL_DRAFT && !p.claimed && (
-                    <button onClick={() => { resendInvite(p.id); toast.success(`Invite resent to ${p.name}`); }} data-testid={`admin-resend-${p.id}`} className="flex items-center gap-1 text-xs font-semibold text-primary border border-primary/40 rounded-lg px-2.5 py-1.5">
-                      <PaperPlaneTilt size={13} weight="bold" /> Resend
-                    </button>
-                  )}
-                  {FINAL_DRAFT && (
-                    <button onClick={() => updateEntity("profiles", p.id, { claimed: !p.claimed })} data-testid={`admin-toggle-claim-${p.id}`} className="text-xs text-muted-foreground hover:text-foreground px-2">
-                      {p.claimed ? "Unclaim" : "Mark claimed"}
-                    </button>
-                  )}
                 </div>
               </TableCell>
             </TableRow>
@@ -847,20 +857,31 @@ function PlayersTab({ app }) {
 /* -------------------------- REGISTRATIONS -------------------------------- */
 // Team Interest triage. Status vocabulary per CLAUDE.md:
 // new / contacted / approved / archived.
-// FINAL DRAFT: approving should eventually auto-create the team record —
-// for Season 1, approval is a status change only (review at final draft).
+// Approval mirrors the hosted transaction's visible outcome: team identity,
+// first enrollment, captain profile, roster row, and late waiver linkage.
 function RegistrationsTab({ app }) {
   const { state, updateRegistrationStatus, appendAdminNote } = app;
   const regs = state.registrations;
   const newCount = regs.filter((r) => r.status === "new").length;
   const [noteFor, setNoteFor] = useState(null); // {id, text}
 
-  const setStatus = (r, status, msg) => { updateRegistrationStatus(r.id, status); toast.success(msg); };
-  const saveNote = () => {
+  const setStatus = async (r, status, msg) => {
+    try {
+      await updateRegistrationStatus(r.id, status);
+      toast.success(msg);
+    } catch {
+      // Backend errors are surfaced centrally.
+    }
+  };
+  const saveNote = async () => {
     if (!noteFor.text?.trim()) return toast.error("Note text required");
-    appendAdminNote("registrations", noteFor.id, noteFor.text.trim());
-    toast.success("Note added");
-    setNoteFor(null);
+    try {
+      await appendAdminNote("registrations", noteFor.id, noteFor.text.trim());
+      toast.success("Note added");
+      setNoteFor(null);
+    } catch {
+      // Backend errors are surfaced centrally.
+    }
   };
 
   return (
@@ -898,11 +919,15 @@ function GamesTab({ app }) {
   const [modal, setModal] = useState(null); // {id, date, time, location}
   const [rescheduleFor, setRescheduleFor] = useState(null); // game_id
 
-  const save = () => {
+  const save = async () => {
     if (!modal.date || !modal.time?.trim()) return toast.error("Date and time required");
-    updateEntity("games", modal.id, { date: modal.date, time: modal.time, location: modal.location });
-    toast.success("Game updated");
-    setModal(null);
+    try {
+      await updateEntity("games", modal.id, { date: modal.date, time: modal.time, location: modal.location });
+      toast.success("Game updated");
+      setModal(null);
+    } catch {
+      // Backend errors are surfaced centrally; keep the form open.
+    }
   };
 
   return (
@@ -940,12 +965,12 @@ function GamesTab({ app }) {
                       <PencilSimpleLine size={16} weight="bold" />
                     </Link>
                   )}
-                  <IconBtn onClick={() => { lockGame(g.id); toast.success("Game marked final & locked"); }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-game-${g.id}`} disabled={!canMarkFinal(g)} />
+                  <IconBtn onClick={async () => { try { await lockGame(g.id); toast.success("Game marked final & locked"); } catch { /* surfaced centrally */ } }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-game-${g.id}`} disabled={!canMarkFinal(g)} />
                   <IconBtn onClick={() => setRescheduleFor(g.id)} icon={CalendarX} title={g.locked ? "Locked — unlock in Scores/Stats first" : "Postpone / cancel"} testid={`admin-postpone-${g.id}`} disabled={g.locked} />
                   {/* FINAL DRAFT: temp-admin score-keepers are non-admin logins —
                       out of scope for admin-only Season 1, hidden until review. */}
                   {FINAL_DRAFT && (
-                    <Select value={g.temp_admin_id || "none"} onValueChange={(v) => { assignTempAdmin(g.id, v === "none" ? null : v); toast.success(v === "none" ? "Temp admin cleared" : "Temp admin assigned"); }}>
+                    <Select value={g.temp_admin_id || "none"} onValueChange={async (v) => { try { await assignTempAdmin(g.id, v === "none" ? null : v); toast.success(v === "none" ? "Temp admin cleared" : "Temp admin assigned"); } catch { /* surfaced centrally */ } }}>
                       <SelectTrigger data-testid={`admin-tempadmin-${g.id}`} className="bg-surface-sunken border-border h-9 w-36 text-xs"><SelectValue placeholder="Temp admin" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="none">No temp admin</SelectItem>
@@ -967,8 +992,8 @@ function GamesTab({ app }) {
           <DialogDescription className="text-sm text-muted-foreground py-1">Updates the public schedule and logs to the game's edit history.</DialogDescription>
           <DialogFooter>
             <button onClick={() => setRescheduleFor(null)} className="px-4 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground">Back</button>
-            <button onClick={() => { setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); }} data-testid="admin-confirm-postpone" className="min-h-11 md:min-h-10 px-4 py-2 rounded-lg border border-gold/40 text-gold font-bold uppercase text-sm hover:bg-gold/10 active:scale-[0.97] transition-all">Postpone</button>
-            <button onClick={() => { setGameStatus(rescheduleFor, "canceled"); toast.success("Game canceled"); setRescheduleFor(null); }} data-testid="admin-confirm-cancel" className="px-4 py-2 rounded-lg border border-destructive/40 text-destructive font-bold uppercase text-sm">Cancel Game</button>
+            <button onClick={async () => { try { await setGameStatus(rescheduleFor, "postponed"); toast.success("Game postponed"); setRescheduleFor(null); } catch { /* surfaced centrally */ } }} data-testid="admin-confirm-postpone" className="min-h-11 md:min-h-10 px-4 py-2 rounded-lg border border-gold/40 text-gold font-bold uppercase text-sm hover:bg-gold/10 active:scale-[0.97] transition-all">Postpone</button>
+            <button onClick={async () => { try { await setGameStatus(rescheduleFor, "canceled"); toast.success("Game canceled"); setRescheduleFor(null); } catch { /* surfaced centrally */ } }} data-testid="admin-confirm-cancel" className="px-4 py-2 rounded-lg border border-destructive/40 text-destructive font-bold uppercase text-sm">Cancel Game</button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1001,11 +1026,15 @@ function ScoresTab({ app }) {
     .filter((g) => g.score_status === "pending" || g.score_status === "submitted")
     .sort((x, y) => x.date.localeCompare(y.date));
 
-  const doUnlock = () => {
+  const doUnlock = async () => {
     if (!unlockFor.reason?.trim()) return toast.error("A reason is required to unlock");
-    unlockGame(unlockFor.id, unlockFor.reason.trim());
-    toast.success("Game unlocked — further edits will be recorded");
-    setUnlockFor(null);
+    try {
+      await unlockGame(unlockFor.id, unlockFor.reason.trim());
+      toast.success("Game unlocked — further edits will be recorded");
+      setUnlockFor(null);
+    } catch {
+      // Backend errors are surfaced centrally; keep the form open.
+    }
   };
 
   const renderRow = (g, prefix) => {
@@ -1037,7 +1066,7 @@ function ScoresTab({ app }) {
           {g.locked ? (
             <IconBtn onClick={() => setUnlockFor({ id: g.id, reason: "" })} icon={LockSimpleOpen} title="Unlock game" testid={`admin-unlock-${g.id}`} />
           ) : (
-            <IconBtn onClick={() => { lockGame(g.id); toast.success("Game marked final & locked"); }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-${g.id}`} disabled={!canMarkFinal(g)} />
+            <IconBtn onClick={async () => { try { await lockGame(g.id); toast.success("Game marked final & locked"); } catch { /* surfaced centrally */ } }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-${g.id}`} disabled={!canMarkFinal(g)} />
           )}
           {hist.length > 0 && (
             <AccordionTrigger data-testid={`admin-history-${g.id}`} title="Edit history" className="w-auto min-h-11 md:min-h-9 gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:no-underline active:bg-white/10 rounded-lg">
@@ -1098,24 +1127,36 @@ function AgentsTab({ app }) {
   const [noteFor, setNoteFor] = useState(null); // {id, text}
   const [assignFor, setAssignFor] = useState(null); // {id, team_id}
 
-  const setStatus = (a, status, msg) => { setFreeAgentStatus(a.id, status); toast.success(msg); };
-  const saveNote = () => {
+  const setStatus = async (a, status, msg) => {
+    try {
+      await setFreeAgentStatus(a.id, status);
+      toast.success(msg);
+    } catch {
+      // Backend errors are surfaced centrally.
+    }
+  };
+  const saveNote = async () => {
     if (!noteFor.text?.trim()) return toast.error("Note text required");
-    appendAdminNote("freeAgents", noteFor.id, noteFor.text.trim());
-    toast.success("Note added");
-    setNoteFor(null);
+    try {
+      await appendAdminNote("freeAgents", noteFor.id, noteFor.text.trim());
+      toast.success("Note added");
+      setNoteFor(null);
+    } catch {
+      // Backend errors are surfaced centrally.
+    }
   };
 
   const assignAgent = assignFor && state.freeAgents.find((a) => a.id === assignFor.id);
   const eligibleTeams = assignAgent ? state.teams.filter((t) => assignAgent.sports.includes(t.sport)) : [];
-  const saveAssign = () => {
+  const saveAssign = async () => {
     if (!assignFor.team_id) return toast.error("Select a team");
-    // PHASE 2: real assignment creates a team_players record AFTER waiver
-    // verification. For now we only record the intended team on the agent —
-    // it does NOT add them to the team roster.
-    updateEntity("freeAgents", assignFor.id, { assigned_team_id: assignFor.team_id, status: "assigned" });
-    toast.success("Free agent assigned");
-    setAssignFor(null);
+    try {
+      await updateEntity("freeAgents", assignFor.id, { assigned_team_id: assignFor.team_id, status: "assigned" });
+      toast.success("Free agent assigned and added to the roster");
+      setAssignFor(null);
+    } catch {
+      // Backend errors are surfaced centrally; keep the form open.
+    }
   };
 
   return (
@@ -1151,7 +1192,7 @@ function AgentsTab({ app }) {
         {assignFor && (
           <>
             <p className="text-sm text-muted-foreground">
-              Records the intended team on this free agent. Roster placement happens through waiver verification — this does not add them to the roster.
+              Assigns this free agent to the selected team, creates or links their player record, and adds a waiver-aware roster assignment.
             </p>
             <ModalField label={`Team (${assignAgent?.sports.map(sportName).join(" / ")})`}>
               <Select value={assignFor.team_id} onValueChange={(v) => setAssignFor({ ...assignFor, team_id: v })}>

@@ -2,10 +2,10 @@
  * CVF SPORTS — SEED / MOCK DATA
  * ----------------------------------------------------------------------------
  * This file is the SINGLE SOURCE OF TRUTH for all demo data. It is shaped like
- * a future relational/Supabase schema so it can be swapped for real DB tables
- * with minimal refactor.
+ * the relational/Supabase state shape so the same selectors and pages can be
+ * reviewed locally. Production artifacts exclude this module.
  *
- * PHASE 2 (backend) MAPPING:
+ * BACKEND MAPPING:
  *   profiles      -> public.profiles        (linked to auth.users)
  *   leagues       -> public.leagues
  *   teams         -> public.teams
@@ -22,10 +22,7 @@
  * that updating one game propagates everywhere automatically.
  * ========================================================================== */
 
-export const SPORTS = [
-  { id: "kickball", name: "Kickball" },
-  { id: "flag_football", name: "Flag Football" },
-];
+export { SPORTS } from "./sports";
 
 export const CURRENT_SEASON = "Summer 2026";
 
@@ -328,7 +325,7 @@ export const freeAgents = [
 
 /* ---------------------------- REGISTRATIONS ------------------------------ */
 export const registrations = [
-  { id: "reg1", team_name: "Westside Warriors", sport: "kickball", captain_name: "Felix Ortega", captain_email: "felix.o@cvf.demo", captain_phone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "new", created_at: "2026-06-04" },
+  { id: "reg1", team_name: "Westside Warriors", sport: "kickball", preferred_season: CURRENT_SEASON, captain_name: "Felix Ortega", captain_email: "felix.o@cvf.demo", captain_phone: "505-555-0301", roster: [{ name: "Felix Ortega", email: "felix.o@cvf.demo" }, { name: "Dana Roybal", email: "dana.r@cvf.demo" }, { name: "Marco Silva", email: "marco.s@cvf.demo" }, { name: "Lena Trujillo", email: "lena.t@cvf.demo" }, { name: "Ray Gonzales", email: "ray.g@cvf.demo" }], status: "new", created_at: "2026-06-04" },
 ];
 
 /* ------------------------------- WAIVERS ---------------------------------- */

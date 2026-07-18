@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { initialState } from "../data/seed";
-import { freeAgentName } from "../lib/utils";
 import { BACKEND_ENABLED } from "../lib/supabase";
 import * as backend from "../lib/backend";
 import { useRole } from "./RoleContext";
@@ -15,79 +13,18 @@ import { buildSingleElimBracket } from "../lib/brackets";
  * `games` + `playerStats` at render time (see lib/selectors.js), a single
  * score update propagates across the entire app automatically.
  *
- * PHASE 2: replace these local-state actions with Supabase mutations
- * (insert/update/delete) + realtime subscriptions. The function signatures can
- * stay the same so pages don't need rewriting.
+ * Hosted actions delegate to the Supabase adapter; development mock actions
+ * preserve the same signatures for local review without backend fixtures.
  * ========================================================================== */
 
 const AppStateContext = createContext(null);
 
-// Lightweight localStorage persistence so the demo survives page refreshes.
-// PHASE 2: this entire layer is replaced by Supabase queries + realtime.
-// v2: Phase 9a snake_case field rename — pre-rename (v1) persisted state is
-// deliberately abandoned rather than field-migrated; the demo reseeds.
-// v3: playoff/tournament seed pass — new playoff GAMES (g10 reshaped, g13/g14
-// added) can't reach a persisted state via field backfill, so the demo
-// reseeds again (same precedent as v1→v2).
-// v4: bracket records were added; v5 adds the demo-only manual payments ledger;
-// v6 adds the admin Hall of Fame draft; v7 adds persistent team identities.
-const STORAGE_KEY = "cvf_app_state_v7";
-
-// Status-vocabulary migration (CLAUDE.md data model). Persisted demo state may
-// predate the rename, so legacy values are remapped on load:
-//   registrations: pending→new, rejected→archived
-//   free agents:   available→new, invited→contacted; `name` backfilled from
-//                  the first_name/last_name/display_name shape the intake form
-//                  writes, so both legacy and new-shape records still display.
-//   games:         score_status added alongside status (upcoming→pending,
-//                  completed→approved). "final" now strictly means LOCKED via
-//                  Mark Final, so legacy "final" records get locked: true.
-//                  locked / edit_history / admin_notes backfilled when missing.
-const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
-const FA_STATUS_MAP = { available: "new", invited: "contacted" };
-const migrateState = (s) => ({
-  ...s,
-  seasons: s.seasons || initialState.seasons,
-  settings: {
-    ...s.settings,
-    current_seasons: s.settings?.current_seasons || {
-      kickball: s.settings?.current_season || initialState.settings.current_season,
-      flag_football: s.settings?.current_season || initialState.settings.current_season,
-    },
-  },
-  playoffBrackets: s.playoffBrackets || initialState.playoffBrackets,
-  playoffSeeds: s.playoffSeeds || initialState.playoffSeeds,
-  playoffMatches: s.playoffMatches || initialState.playoffMatches,
-  charges: s.charges || initialState.charges,
-  paymentEntries: s.paymentEntries || initialState.paymentEntries,
-  hofEntries: s.hofEntries || initialState.hofEntries,
-  teamIdentities: s.teamIdentities || initialState.teamIdentities,
-  // Mock waiver records (Stage 4) — backfill for states persisted before they existed.
-  waivers: s.waivers || initialState.waivers,
-  registrations: (s.registrations || []).map((r) => ({ ...r, status: REG_STATUS_MAP[r.status] || r.status, admin_notes: r.admin_notes || [] })),
-  freeAgents: (s.freeAgents || []).map((f) => ({ ...f, status: FA_STATUS_MAP[f.status] || f.status, name: freeAgentName(f), admin_notes: f.admin_notes || [], assigned_team_id: f.assigned_team_id ?? null })),
-  // Flow C-lite: profiles carry an informational eligibility flag; roster
-  // assignments carry an auto-stamped season. Backfilled for older states.
-  profiles: (s.profiles || []).map((p) => ({ ...p, eligibility_status: p.eligibility_status || "not_verified" })),
-  teamPlayers: (s.teamPlayers || []).map((tp) => ({ ...tp, season: tp.season || (s.settings?.current_season ?? initialState.settings.current_season) })),
-  games: (s.games || []).map((g) => ({
-    ...g,
-    score_status: g.score_status || (g.status === "completed" ? "approved" : "pending"),
-    locked: g.locked ?? g.score_status === "final",
-    edit_history: g.edit_history || [],
-    stage: g.stage || "regular", // migration 9 shape; pre-playoff states backfill as regular season
-  })),
-  leagues: (s.leagues || []).map((l) => ({ ...l, kind: l.kind || "league", playoff_format: l.playoff_format ?? null })),
-});
-
-const loadState = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return migrateState(raw ? JSON.parse(raw) : initialState);
-  } catch {
-    return initialState;
-  }
-};
+// Mock fixtures and persistence are a development-only module. The compile-time
+// production branch prevents webpack from including seed records in deployed
+// artifacts; production and preview are always backend mode.
+const mockState = process.env.NODE_ENV === "production" ? null : require("./mockState");
+const initialState = mockState?.initialState;
+const loadState = () => mockState.loadMockState();
 
 let idCounter = 1000;
 const newId = (prefix) => `${prefix}_${Date.now()}_${idCounter++}`;
@@ -99,8 +36,8 @@ const logEntry = (action, reason) => ({ action, created_at: new Date().toISOStri
 const PLAYER_COLORS = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
 
 export function AppStateProvider({ children }) {
-  // Backend mode (Phase 9b): state comes from Supabase and starts null until
-  // the first fetch resolves. Mock mode: seed + localStorage, unchanged.
+  // Backend mode starts null until the first Supabase fetch resolves. Mock mode
+  // loads only the validated, development-only fixture store.
   const { role } = useRole();
   const isAdmin = BACKEND_ENABLED && role === "admin";
   const [state, setState] = useState(BACKEND_ENABLED ? null : loadState);
@@ -113,7 +50,7 @@ export function AppStateProvider({ children }) {
   useEffect(() => {
     if (BACKEND_ENABLED) return; // persistence is Supabase's job in backend mode
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      mockState.persistMockState(window.localStorage, state);
     } catch {
       /* ignore quota errors */
     }
@@ -186,7 +123,88 @@ export function AppStateProvider({ children }) {
   const updateRegistrationStatus = useCallback((id, status) => {
     setState((prev) => ({
       ...prev,
-      registrations: prev.registrations.map((r) => (r.id === id ? { ...r, status } : r)),
+      ...(() => {
+        const registration = prev.registrations.find((record) => record.id === id);
+        if (!registration || status !== "approved") {
+          return { registrations: prev.registrations.map((record) => record.id === id ? { ...record, status } : record) };
+        }
+
+        const league = prev.leagues.find((item) =>
+          item.kind !== "tournament"
+          && item.sport === registration.sport
+          && item.season === registration.preferred_season
+          && item.status !== "archived"
+        );
+        if (!league) throw new Error("No active league matches this registration's sport and season.");
+        if (!["new", "contacted"].includes(registration.status)) {
+          throw new Error(`Registration is already ${registration.status}.`);
+        }
+
+        const identityId = newId("ti");
+        const teamId = newId("t");
+        const profileId = newId("p");
+        const assignmentId = newId("tp");
+        const nameParts = registration.captain_name.trim().split(/\s+/);
+        const lastName = nameParts.length > 1 ? nameParts.pop() : "";
+        const firstName = nameParts.join(" ") || registration.captain_name.trim();
+        const logoColor = PLAYER_COLORS[prev.teamIdentities.length % PLAYER_COLORS.length];
+        const linkedWaivers = prev.waivers.map((waiver) =>
+          !waiver.profile_id && registration.captain_email && waiver.email?.toLowerCase() === registration.captain_email.toLowerCase()
+            ? { ...waiver, profile_id: profileId }
+            : waiver
+        );
+        const eligible = linkedWaivers.some((waiver) => waiver.profile_id === profileId && waiver.verification_status === "verified");
+
+        return {
+          registrations: prev.registrations.map((record) => record.id === id ? {
+            ...record,
+            status: "approved",
+            approved_team_id: teamId,
+            processed_at: new Date().toISOString(),
+          } : record),
+          teamIdentities: [...prev.teamIdentities, {
+            id: identityId,
+            name: registration.team_name,
+            logo_color: logoColor,
+            founded: null,
+            status: "active",
+          }],
+          teams: [...prev.teams, {
+            id: teamId,
+            identity_id: identityId,
+            league_id: league.id,
+            name: registration.team_name,
+            logo_color: logoColor,
+            founded: null,
+            sport: league.sport,
+            captain_id: profileId,
+            division: null,
+            status: "active",
+          }],
+          profiles: [...prev.profiles, {
+            id: profileId,
+            first_name: firstName,
+            last_name: lastName,
+            display_name: null,
+            name: `${firstName} ${lastName}`.trim(),
+            email: registration.captain_email || null,
+            phone: registration.captain_phone || null,
+            sports: [registration.sport],
+            avatar_color: PLAYER_COLORS[prev.profiles.length % PLAYER_COLORS.length],
+            eligibility_status: eligible ? "verified" : "not_verified",
+          }],
+          teamPlayers: [...prev.teamPlayers, {
+            id: assignmentId,
+            team_id: teamId,
+            profile_id: profileId,
+            season: league.season,
+            jersey_number: null,
+            position: "",
+            roster_status: eligible ? "eligible" : "pending_waiver",
+          }],
+          waivers: linkedWaivers,
+        };
+      })(),
     }));
   }, []);
 
@@ -209,14 +227,14 @@ export function AppStateProvider({ children }) {
   }, []);
 
   /* ----------------- ROSTER BUILDING (Flow C-lite) --------------------- */
-  // Minimal mock roster building per CLAUDE.md. Creating a player and
+  // Development roster building per CLAUDE.md. Creating a player and
   // assigning them to a team are SEPARATE, additive actions. Assignment NEVER
   // sets eligibility — the two are independent. We do NOT build intake
   // conversion here (approve→team / assign→profile); that relational linkage
   // is built once in the backend phase against real tables.
 
   // Create a bare profile record. New players start unassigned with eligibility
-  // not yet verified. PHASE 2: insert into public.profiles (auth_user_id nullable).
+  // not yet verified. Hosted mode inserts public.profiles through the adapter.
   const createPlayer = useCallback((profile) => {
     setState((prev) => {
       const first = (profile.first_name || "").trim();
@@ -246,9 +264,7 @@ export function AppStateProvider({ children }) {
   // Put a player on a team. The season is AUTO-STAMPED from the team's active
   // league season. Same team_players relationship is read/written by both the
   // player modal and the team roster view — one source of truth.
-  // PHASE 2: this becomes a real team_players row; roster_status
-  // (pending_waiver/eligible/inactive/removed) and the intake→roster
-  // conversion are introduced there, NOT here.
+  // Hosted mode creates a real team_players row with roster_status.
   const assignPlayerToTeam = useCallback(({ profile_id, team_id, jersey_number = null, position = "" }) => {
     setState((prev) => {
       if (!profile_id || !team_id) return prev;
@@ -266,8 +282,8 @@ export function AppStateProvider({ children }) {
     });
   }, []);
 
-  // Remove a single roster assignment (by team_players row id). In mock state a
-  // removed player simply loses the row. PHASE 2: soft-delete via roster_status.
+  // Mock mode removes the rendered assignment; hosted mode preserves history by
+  // setting roster_status to removed. Both produce the same visible outcome.
   const removePlayerFromTeam = useCallback((teamPlayerId) => {
     setState((prev) => ({ ...prev, teamPlayers: prev.teamPlayers.filter((tp) => tp.id !== teamPlayerId) }));
   }, []);
@@ -337,10 +353,69 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const updateEntity = useCallback((collection, id, patch) => {
-    setState((prev) => ({
-      ...prev,
-      [collection]: prev[collection].map((e) => (e.id === id ? { ...e, ...patch } : e)),
-    }));
+    setState((prev) => {
+      if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
+        const agent = prev.freeAgents.find((item) => item.id === id);
+        const team = prev.teams.find((item) => item.id === patch.assigned_team_id);
+        const league = prev.leagues.find((item) => item.id === team?.league_id);
+        if (!agent || !team || !league) throw new Error("Free agent assignment is missing its player, team, or league.");
+        if (["assigned", "archived"].includes(agent.status)) throw new Error(`Free agent is already ${agent.status}.`);
+
+        const emailMatches = agent.email
+          ? prev.profiles.filter((profile) => profile.email?.toLowerCase() === agent.email.toLowerCase())
+          : [];
+        const existing = emailMatches.length === 1 ? emailMatches[0] : null;
+        const profileId = agent.profile_id || existing?.id || newId("p");
+        if (prev.teamPlayers.some((assignment) => assignment.team_id === team.id && assignment.profile_id === profileId && assignment.season === league.season)) {
+          throw new Error(`Player is already on this roster for ${league.season}.`);
+        }
+        const waivers = prev.waivers.map((waiver) =>
+          !waiver.profile_id && agent.email && waiver.email?.toLowerCase() === agent.email.toLowerCase()
+            ? { ...waiver, profile_id: profileId }
+            : waiver
+        );
+        const eligible = waivers.some((waiver) => waiver.profile_id === profileId && waiver.verification_status === "verified");
+        const profiles = existing || agent.profile_id
+          ? prev.profiles
+          : [...prev.profiles, {
+              id: profileId,
+              first_name: agent.first_name || agent.name?.split(" ")[0] || "Player",
+              last_name: agent.last_name || agent.name?.split(" ").slice(1).join(" ") || "",
+              display_name: agent.display_name || null,
+              name: agent.display_name || agent.name,
+              email: agent.email || null,
+              phone: agent.phone || null,
+              sports: agent.sports || [],
+              experience: agent.experience || null,
+              avatar_color: PLAYER_COLORS[prev.profiles.length % PLAYER_COLORS.length],
+              eligibility_status: eligible ? "verified" : "not_verified",
+            }];
+        return {
+          ...prev,
+          profiles,
+          waivers,
+          teamPlayers: [...prev.teamPlayers, {
+            id: newId("tp"),
+            team_id: team.id,
+            profile_id: profileId,
+            season: league.season,
+            jersey_number: null,
+            position: "",
+            roster_status: eligible ? "eligible" : "pending_waiver",
+          }],
+          freeAgents: prev.freeAgents.map((item) => item.id === id ? {
+            ...item,
+            ...patch,
+            profile_id: profileId,
+          } : item),
+        };
+      }
+
+      return {
+        ...prev,
+        [collection]: prev[collection].map((entity) => entity.id === id ? { ...entity, ...patch } : entity),
+      };
+    });
   }, []);
 
   const deleteEntity = useCallback((collection, id) => {
@@ -373,6 +448,27 @@ export function AppStateProvider({ children }) {
 
   const setHofPublished = useCallback((published) => {
     setState((prev) => ({ ...prev, settings: { ...prev.settings, hof_published: published } }));
+  }, []);
+
+  const verifyWaiver = useCallback((waiverId, decision) => {
+    setState((prev) => {
+      const waiver = prev.waivers.find((item) => item.id === waiverId);
+      if (!waiver) throw new Error("Waiver not found.");
+      return {
+        ...prev,
+        waivers: prev.waivers.map((item) => item.id === waiverId ? {
+          ...item,
+          verification_status: decision,
+          verified_by: "demo-admin",
+          verified_at: new Date().toISOString(),
+        } : item),
+        teamPlayers: decision === "verified" && waiver.profile_id
+          ? prev.teamPlayers.map((assignment) => assignment.profile_id === waiver.profile_id && assignment.roster_status === "pending_waiver"
+              ? { ...assignment, roster_status: "eligible" }
+              : assignment)
+          : prev.teamPlayers,
+      };
+    });
   }, []);
 
   const generatePlayoffBracket = useCallback(({ league_id, seed_team_ids }) => {
@@ -535,28 +631,15 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
-  // Resend mock invite — flips a profile's claimed flag display intent only.
-  // PHASE 2: trigger a real invite email via backend (e.g. Resend/Supabase).
-  const resendInvite = useCallback((profile_id) => {
-    setState((prev) => ({
-      ...prev,
-      profiles: prev.profiles.map((p) =>
-        p.id === profile_id ? { ...p, inviteResentAt: new Date().toISOString() } : p
-      ),
-    }));
-  }, []);
-
   // Restore the original seed data (clears any demo edits).
   const resetState = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
-    setState(initialState);
+    setState(mockState.resetMockState());
   }, []);
 
   /* ---------------- BACKEND MODE: same signatures, real writes ----------- */
   // Every action delegates to the adapter (RPCs for multi-table mutations),
-  // then refetches. Errors surface as toasts here because most call sites
-  // fire-and-forget (mock heritage); tightening them to await is follow-up
-  // polish, not a correctness need.
+  // then refetches. Errors surface centrally and are rethrown so UI callers
+  // withhold success feedback and keep their dialogs open when a write fails.
   const act = useCallback(
     (fn) =>
       async (...args) => {
@@ -591,6 +674,7 @@ export function AppStateProvider({ children }) {
     toggleRegistration: act((sport) => backend.toggleRegistration(sport, stateRef.current)),
     setCurrentSeason: act(backend.setCurrentSeason),
     setHofPublished: act(backend.setHofPublished),
+    verifyWaiver: act(backend.verifyWaiver),
     generatePlayoffBracket: act(backend.generatePlayoffBracket),
     schedulePlayoffMatch: act(backend.schedulePlayoffMatch),
     linkPlayoffGame: act(backend.linkPlayoffGame),
@@ -600,7 +684,6 @@ export function AppStateProvider({ children }) {
     lockGame: act(backend.lockGame),
     unlockGame: act(backend.unlockGame),
     setGameStatus: act(backend.setGameStatus),
-    resendInvite: () => {}, // real invite email is a Phase-2 feature (Resend)
     resetState: () => toast.info("Demo reset is mock-mode only."),
   };
 
@@ -625,6 +708,7 @@ export function AppStateProvider({ children }) {
         toggleRegistration,
         setCurrentSeason,
         setHofPublished,
+        verifyWaiver,
         generatePlayoffBracket,
         schedulePlayoffMatch,
         linkPlayoffGame,
@@ -634,7 +718,6 @@ export function AppStateProvider({ children }) {
         lockGame,
         unlockGame,
         setGameStatus,
-        resendInvite,
         resetState,
       };
 

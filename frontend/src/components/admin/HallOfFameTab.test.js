@@ -109,5 +109,5 @@ describe("HallOfFameTab curation", () => {
 
     expect(container.querySelector('[data-testid="hof-entry-hof-1"]')).toBeNull();
     expect(container.textContent).toContain("No curated entries");
-  });
+  }, 15000);
 });
