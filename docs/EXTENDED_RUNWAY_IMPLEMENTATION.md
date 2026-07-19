@@ -1,8 +1,12 @@
 # CVF Leagues — Extended Runway Implementation Record
 
+> **Historical record:** This document preserves the July 14–15 extended-runway implementation, decisions, and verification handoff. It is not the live project-status or owner-action source. Use [`../CLAUDE.md`](../CLAUDE.md) for current product status, locked decisions, roadmap, and owner actions, and [`../supabase/README.md`](../supabase/README.md) for current schema, migration, and hosted-verification state.
+
 ## Status
 
 Local implementation completed on July 14, 2026. Hosted migration, hosted verification, deployment, secrets, legal approval, and final launch acceptance remain owner-controlled.
+
+**Later acceptance note (July 17):** the subsequently approved hosted migration, service-role catalog verification, advisor review, and expanded 150/150 real-session authorization matrix are recorded in [`../supabase/README.md`](../supabase/README.md) and [`../supabase/evidence/hosted-auth-matrix-2026-07-17-final.md`](../supabase/evidence/hosted-auth-matrix-2026-07-17-final.md). The dated facts and handoff below remain unchanged as historical evidence of the earlier checkpoint.
 
 Companion decision record: [CVF Leagues — Extended Runway Product Decisions](https://app.notion.com/p/39d075acdeec815ca1cff7814196a4ed).
 
@@ -65,7 +69,9 @@ Revoking authenticated table DML can also remove privileges that invoker-context
 - After hosted application, rollback should use a reviewed forward migration. Do not reset production, repair migration history, or destructively remove identity/bracket data.
 - Team enrollments deactivate instead of deleting, preserving games, rosters, charges, and history.
 
-## Owner checkpoint: hosted acceptance
+## Historical hosted-acceptance handoff
+
+The following checklist records the handoff at completion of the extended-runway pass. The current authoritative owner-action queue is in [`CLAUDE.md`](../CLAUDE.md#owner-action-queue).
 
 Do not perform these steps implicitly:
 

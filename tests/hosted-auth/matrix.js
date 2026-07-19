@@ -2,10 +2,12 @@
 
 const output = document.getElementById("output");
 const runButton = document.getElementById("run");
+const mfaStep = document.getElementById("mfa-step");
+const mfaContinueButton = document.getElementById("mfa-continue");
 const fields = {
   adminEmail: document.getElementById("admin-email"),
-    adminPassword: document.getElementById("admin-password"),
-    adminTotp: document.getElementById("admin-totp"),
+  adminPassword: document.getElementById("admin-password"),
+  adminTotp: document.getElementById("admin-totp"),
   nonadminEmail: document.getElementById("nonadmin-email"),
   nonadminPassword: document.getElementById("nonadmin-password"),
 };
@@ -82,6 +84,43 @@ function client() {
 
 function captchaToken(containerId) {
   return document.querySelector(`#${containerId} input[name="cf-turnstile-response"]`)?.value || "";
+}
+
+function missingInitialFields(credentials) {
+  return [
+    ["administrator email", credentials.adminEmail],
+    ["administrator password", credentials.adminPassword],
+    ["non-admin email", credentials.nonadminEmail],
+    ["non-admin password", credentials.nonadminPassword],
+  ].filter(([, value]) => !value).map(([label]) => label);
+}
+
+function requestAdminTotp() {
+  mfaStep.hidden = false;
+  fields.adminTotp.value = "";
+  fields.adminTotp.focus();
+  log("ACTION REQUIRED: Enter a fresh administrator authenticator code to continue with AAL2 checks.");
+
+  return new Promise((resolve) => {
+    const submit = () => {
+      const code = fields.adminTotp.value.trim();
+      if (!code) {
+        log("WAITING: Administrator authenticator code is required.");
+        fields.adminTotp.focus();
+        return;
+      }
+      mfaContinueButton.removeEventListener("click", submit);
+      fields.adminTotp.removeEventListener("keydown", submitOnEnter);
+      fields.adminTotp.value = "";
+      mfaStep.hidden = true;
+      resolve(code);
+    };
+    const submitOnEnter = (event) => {
+      if (event.key === "Enter") submit();
+    };
+    mfaContinueButton.addEventListener("click", submit);
+    fields.adminTotp.addEventListener("keydown", submitOnEnter);
+  });
 }
 
 async function signIn(targetClient, email, password, captchaTokenValue) {
@@ -163,30 +202,40 @@ const ADMIN_RPC_NAMES = [
 async function runMatrix() {
   runButton.disabled = true;
   output.textContent = "";
+  const credentials = {
+    adminEmail: fields.adminEmail.value.trim(),
+    adminPassword: fields.adminPassword.value,
+    nonadminEmail: fields.nonadminEmail.value.trim(),
+    nonadminPassword: fields.nonadminPassword.value,
+    adminCaptcha: captchaToken("admin-captcha"),
+    nonadminCaptcha: captchaToken("nonadmin-captcha"),
+  };
+
+  const missing = missingInitialFields(credentials);
+  if (missing.length > 0) {
+    log(`MISSING: ${missing.join(", ")}.`);
+    runButton.disabled = false;
+    return;
+  }
+  if (!credentials.adminCaptcha || !credentials.nonadminCaptcha) {
+    log("MISSING: Complete both human-verification widgets.");
+    runButton.disabled = false;
+    return;
+  }
+
   startedAt = new Date().toISOString();
   config = await fetch("/config.json", { cache: "no-store" }).then((response) => response.json());
   anon = client();
   admin = client();
   nonadmin = client();
 
-  const credentials = {
-    adminEmail: fields.adminEmail.value.trim(),
-    adminPassword: fields.adminPassword.value,
-    nonadminEmail: fields.nonadminEmail.value.trim(),
-    nonadminPassword: fields.nonadminPassword.value,
-    adminTotp: fields.adminTotp.value.trim(),
-    adminCaptcha: captchaToken("admin-captcha"),
-    nonadminCaptcha: captchaToken("nonadmin-captcha"),
-  };
-  Object.values(fields).forEach((field) => { field.value = ""; });
-
   try {
-    requireCondition(credentials.adminEmail && credentials.adminPassword && credentials.adminTotp && credentials.nonadminEmail && credentials.nonadminPassword, "Both account credentials and the administrator authenticator code are required.");
-    requireCondition(credentials.adminCaptcha && credentials.nonadminCaptcha, "Complete both human-verification widgets.");
     await signIn(admin, credentials.adminEmail, credentials.adminPassword, credentials.adminCaptcha);
     credentials.adminPassword = "";
+    fields.adminPassword.value = "";
     await signIn(nonadmin, credentials.nonadminEmail, credentials.nonadminPassword, credentials.nonadminCaptcha);
     credentials.nonadminPassword = "";
+    fields.nonadminPassword.value = "";
     credentials.adminCaptcha = "";
     credentials.nonadminCaptcha = "";
 
@@ -204,10 +253,12 @@ async function runMatrix() {
       });
     }
 
-    await completeAdminMfa(admin, credentials.adminTotp);
-    credentials.adminTotp = "";
+    const adminTotp = await requestAdminTotp();
+    await completeAdminMfa(admin, adminTotp);
     credentials.adminEmail = "";
     credentials.nonadminEmail = "";
+    fields.adminEmail.value = "";
+    fields.nonadminEmail.value = "";
 
     await check("identity", "anonymous is_admin() is false", async () => {
       const data = requireSuccess(await anon.rpc("is_admin"));
@@ -428,24 +479,6 @@ async function runMatrix() {
       const data = requireSuccess(await admin.from("games").select("locked,score_status").eq("id", config.ids.game).single());
       requireCondition(data.locked === false && data.score_status === "approved", "Game did not unlock.");
     });
-    await check("admin RPC success", "approve_registration succeeds", async () => {
-      const data = requireSuccess(await admin.rpc("approve_registration", rpcArguments("approve_registration")));
-      requireCondition(Boolean(data?.identity_id && data?.team_id && data?.captain_profile_id), "Approval did not return linked identity, enrollment, and captain IDs.");
-    });
-    await check("admin RPC success", "assign_free_agent succeeds", async () => {
-      const data = requireSuccess(await admin.rpc("assign_free_agent", rpcArguments("assign_free_agent")));
-      requireCondition(Boolean(data?.profile_id && data?.team_player_id), "Assignment did not return linked IDs.");
-    });
-    await check("admin RPC success", "verify_waiver succeeds and updates eligibility", async () => {
-      requireSuccess(await admin.rpc("verify_waiver", rpcArguments("verify_waiver")));
-      const data = requireSuccess(await admin.from("waivers").select("verification_status,profile_id").eq("id", config.ids.waiver).single());
-      requireCondition(data.verification_status === "verified" && data.profile_id, "Waiver did not become verified and linked.");
-    });
-    await check("edit history", "admin RPCs created append-only history with unlock reason", async () => {
-      const data = requireSuccess(await admin.from("game_edit_history").select("action,reason").eq("game_id", config.ids.game));
-      requireCondition(data.length >= 6, "Expected RPC history rows were not created.");
-      requireCondition(data.some((row) => row.action === "Unlocked" && row.reason === "hosted matrix verified unlock reason"), "Unlock reason was not retained.");
-    });
 
     let scheduledPlayoffGame;
     await check("playoff RPC success", "administrator generates a fixed single-elimination bracket", async () => {
@@ -495,6 +528,25 @@ async function runMatrix() {
       requireSuccess(await admin.rpc("advance_playoff_match", { p_match_id: match.id }));
       const result = requireSuccess(await anon.from("playoff_matches").select("status,winner_team_id").eq("id", match.id).single());
       requireCondition(result.status === "completed" && result.winner_team_id, "Final result did not advance publicly.");
+    });
+
+    await check("admin RPC success", "approve_registration succeeds", async () => {
+      const data = requireSuccess(await admin.rpc("approve_registration", rpcArguments("approve_registration")));
+      requireCondition(Boolean(data?.identity_id && data?.team_id && data?.captain_profile_id), "Approval did not return linked identity, enrollment, and captain IDs.");
+    });
+    await check("admin RPC success", "assign_free_agent succeeds", async () => {
+      const data = requireSuccess(await admin.rpc("assign_free_agent", rpcArguments("assign_free_agent")));
+      requireCondition(Boolean(data?.profile_id && data?.team_player_id), "Assignment did not return linked IDs.");
+    });
+    await check("admin RPC success", "verify_waiver succeeds and updates eligibility", async () => {
+      requireSuccess(await admin.rpc("verify_waiver", rpcArguments("verify_waiver")));
+      const data = requireSuccess(await admin.from("waivers").select("verification_status,profile_id").eq("id", config.ids.waiver).single());
+      requireCondition(data.verification_status === "verified" && data.profile_id, "Waiver did not become verified and linked.");
+    });
+    await check("edit history", "admin RPCs created append-only history with unlock reason", async () => {
+      const data = requireSuccess(await admin.from("game_edit_history").select("action,reason").eq("game_id", config.ids.game));
+      requireCondition(data.length >= 6, "Expected RPC history rows were not created.");
+      requireCondition(data.some((row) => row.action === "Unlocked" && row.reason === "hosted matrix verified unlock reason"), "Unlock reason was not retained.");
     });
 
     await check("team identity RPC success", "administrator enrolls a persistent identity cross-sport without history", async () => {
@@ -583,6 +635,8 @@ async function runMatrix() {
   } finally {
     credentials.adminPassword = "";
     credentials.nonadminPassword = "";
+    Object.values(fields).forEach((field) => { field.value = ""; });
+    mfaStep.hidden = true;
     await Promise.allSettled([admin?.auth.signOut({ scope: "local" }), nonadmin?.auth.signOut({ scope: "local" })]);
     const finishedAt = new Date().toISOString();
     log("Finalizing sanitized report and privileged fixture cleanup…");

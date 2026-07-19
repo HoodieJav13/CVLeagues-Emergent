@@ -30,8 +30,6 @@
           <input id="admin-email" type="email" autocomplete="username" />
           <label for="admin-password">Password</label>
           <input id="admin-password" type="password" autocomplete="current-password" />
-          <label for="admin-totp">Authenticator code</label>
-          <input id="admin-totp" inputmode="numeric" autocomplete="one-time-code" />
           <div id="admin-captcha" class="cf-turnstile" data-sitekey="__TURNSTILE_SITE_KEY__" data-action="hosted_admin_login"></div>
         </section>
         <section>
@@ -44,6 +42,13 @@
         </section>
       </div>
       <button id="run" type="button">Run hosted matrix</button>
+      <section id="mfa-step" class="card" hidden>
+        <h2>Administrator MFA required</h2>
+        <p>Password-only authorization checks passed. Enter a fresh code from the administrator authenticator to continue with the AAL2 checks.</p>
+        <label for="admin-totp">Authenticator code</label>
+        <input id="admin-totp" inputmode="numeric" autocomplete="one-time-code" maxlength="8" />
+        <button id="mfa-continue" type="button">Verify code and continue</button>
+      </section>
       <div class="card">
         <h2>Sanitized output</h2>
         <pre id="output" aria-live="polite">Waiting for credentials.</pre>

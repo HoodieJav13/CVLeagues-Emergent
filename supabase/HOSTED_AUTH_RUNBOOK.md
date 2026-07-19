@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook verifies the CVF Leagues hosted Data API, RLS, Auth-role, privileged-RPC, append-only, game-lock, and Hall of Fame publication boundaries with real anonymous, authenticated non-admin, and administrator sessions.
+This runbook is authoritative for the repeatable hosted authorization procedure. It verifies the CVF Leagues hosted Data API, RLS, Auth-role, 15 privileged RPCs, append-only records, RPC-only mutation boundaries, payments, game locks, and Hall of Fame publication behavior across 22 exposed tables with real anonymous, authenticated non-admin, and administrator sessions.
 
 The harness creates a uniquely namespaced disposable fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline.
 
@@ -39,7 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-Do not continue if linkage or migration history differs from the expected project and all sixteen repository migrations. If the four July 14 migrations are still pending, stop and complete the separately approved dry-run/push procedure first.
+For the current 22-table/15-RPC harness, do not continue if the linked project is unexpected, the repository inventory is not exactly 22 migrations, the hosted ledger does not match all 22 in filename order, or `supabase db push --dry-run` reports a pending migration. Stop and complete any separately approved migration review/push procedure before running the matrix. If the repository adds another exposed table or privileged RPC, revise the harness and this inventory gate before treating a rerun as current-surface acceptance.
+
+Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md) records 150/150 checks passed with fixture cleanup and baseline restoration both passing.
 
 ## Run
 
@@ -75,6 +77,7 @@ The command exits nonzero if any browser/API assertion, residue query, or baseli
 - Direct anonymous team-interest, free-agent, and waiver writes are denied.
 - Direct authenticated non-admin intake is denied by RLS.
 - Public positive submissions are exercised through the deployed Turnstile-verified application endpoint, not through the Data API matrix.
+- A privileged post-push catalog check confirms that `service_role` has INSERT only on `team_registrations` and `free_agents`, cannot read or rewrite their submitted PII, and has no DML privilege on unrelated public tables. The browser harness never receives the service secret.
 
 ### Public and private reads
 
@@ -84,7 +87,7 @@ The command exits nonzero if any browser/API assertion, residue query, or baseli
 
 ### Admin RPC denial
 
-Anonymous execution is denied for all thirteen client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each:
+Anonymous execution is denied for all 15 client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each:
 
 - `save_score`
 - `lock_game`
@@ -99,19 +102,29 @@ Anonymous execution is denied for all thirteen client-facing admin RPCs. A real 
 - `advance_playoff_match`
 - `enroll_team_identity`
 - `create_team_identity_and_enroll`
+- `update_team_identity`
+- `update_team_enrollment`
 
 ### Direct-write and append-only guards
 
 - Anonymous game insertion fails.
 - Non-admin score mutation fails or affects zero rows.
+- Anonymous and non-admin bracket mutations fail.
+- Administrators cannot bypass playoff RPCs with direct writes to bracket headers, seed snapshots, or match topology.
+- Administrators cannot bypass team RPCs with direct writes to persistent identities or enrollment rows.
 - Signed waiver fields cannot be mutated.
 - Game edit history cannot be updated or deleted.
 - A locked game's score and stage cannot be changed directly.
 - An empty unlock reason fails.
 
+### Payments authorization
+
+- Anonymous and authenticated non-admin sessions cannot insert, update, or delete charges or payment entries.
+- The administrator can complete create, update, and delete round trips for charges and payment entries.
+
 ### Administrator positive path
 
-- All thirteen admin RPCs succeed with valid disposable records.
+- All 15 admin RPCs succeed with valid disposable records.
 - Score, lifecycle, intake conversion, roster assignment, and waiver verification effects persist.
 - Locking and reasoned unlocking create append-only history, including the exact unlock reason.
 - A four-team bracket is generated, one match is scheduled, another existing game is linked, and a final locked result advances.
@@ -120,8 +133,9 @@ Anonymous execution is denied for all thirteen client-facing admin RPCs. A real 
 ### Hall of Fame gate
 
 - Administrator can create and read an unpublished fixture entry.
-- Anonymous and non-admin sessions cannot see it while unpublished.
-- Both public roles can see it only after the administrator enables publication.
+- Anonymous and non-admin sessions cannot write the admin-only base table or see an unpublished entry through `public_hof_entries`.
+- `public_hof_entries` rejects curator-only fields such as `created_by`, and both public roles can see the allowlisted row only after the administrator enables publication.
+- Administrator update and delete round trips succeed on the base table.
 - Cleanup restores the pre-run publication setting.
 
 ### Cleanup
@@ -145,7 +159,7 @@ Run this matrix after any change to:
 
 - RLS policies or Data API grants
 - `admin_users`, `is_admin()`, or Auth-role resolution
-- Any of the thirteen admin RPCs
+- Any of the 15 admin RPCs
 - Game lock/stage enforcement or edit history
 - Profiles or the `public_profiles` allowlist
 - Intake or waiver policies and triggers
