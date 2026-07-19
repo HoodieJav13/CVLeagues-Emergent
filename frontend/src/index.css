@@ -243,6 +243,259 @@
     margin: 0;
 }
 
+/* Pass 4 structural identity system. These lines encode brand, state, stage,
+   or team identity; they are never used as ambient texture. */
+.cvf-structural-corner {
+    --cvf-structural-color: var(--cvf-teal);
+    position: absolute;
+    z-index: 3;
+    width: 5rem;
+    height: 3.25rem;
+    color: var(--cvf-structural-color);
+    pointer-events: none;
+}
+.cvf-structural-corner[data-position="top-right"] { top: 0; right: 0; }
+.cvf-structural-corner[data-position="top-left"] { top: 0; left: 0; transform: scaleX(-1); }
+.cvf-structural-corner[data-position="bottom-right"] { right: 0; bottom: 0; transform: scaleY(-1); }
+.cvf-structural-corner[data-position="bottom-left"] { bottom: 0; left: 0; transform: scale(-1); }
+.cvf-structural-corner > span {
+    position: absolute;
+    top: 0.6rem;
+    right: 0;
+    display: block;
+    width: 3.5rem;
+    height: 2px;
+    background: currentColor;
+    transform: rotate(-16deg);
+    transform-origin: right center;
+}
+.cvf-structural-corner > span:nth-child(2) {
+    top: 1.3rem;
+    width: 2.75rem;
+    transform: rotate(-31deg);
+}
+.cvf-structural-corner > span:nth-child(3) {
+    top: 2rem;
+    width: 2rem;
+    transform: rotate(-47deg);
+}
+.cvf-structural-corner::before,
+.cvf-structural-corner::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: currentColor;
+}
+.cvf-structural-corner::before { width: 4.5rem; height: 2px; }
+.cvf-structural-corner::after { width: 2px; height: 3.25rem; }
+.cvf-structural-corner--feature { width: 6rem; height: 3.75rem; }
+.cvf-structural-corner--feature::before { width: 5.5rem; }
+.cvf-structural-corner--feature::after { height: 3.75rem; }
+.cvf-structural-corner--compact { width: 2rem; height: 2rem; }
+.cvf-structural-corner--compact::before { width: 2rem; }
+.cvf-structural-corner--compact::after { height: 2rem; }
+.cvf-structural-corner--compact > span { top: 0.45rem; width: 1.75rem; }
+.cvf-structural-corner--compact > span:nth-child(2) { top: 0.95rem; width: 1.35rem; }
+.cvf-structural-corner--compact > span:nth-child(3) { top: 1.4rem; width: 1rem; }
+
+.cvf-identity-badge {
+    --cvf-identity-color: var(--border-strong);
+    position: relative;
+    display: inline-flex;
+    width: 4rem;
+    height: 4rem;
+    flex: 0 0 4rem;
+    align-items: center;
+    justify-content: center;
+    isolation: isolate;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+.cvf-identity-badge::before,
+.cvf-identity-badge__field {
+    position: absolute;
+    inset: 0;
+    clip-path: polygon(29% 0, 71% 0, 100% 29%, 100% 71%, 71% 100%, 29% 100%, 0 71%, 0 29%);
+}
+.cvf-identity-badge::before {
+    content: "";
+    background: var(--cvf-identity-color);
+}
+.cvf-identity-badge__field {
+    inset: 2px;
+    z-index: 1;
+    background: var(--surface-raised);
+}
+.cvf-identity-badge__field::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(145deg, color-mix(in srgb, var(--cvf-identity-color) 22%, transparent), transparent 58%);
+}
+.cvf-identity-badge__initials { position: relative; z-index: 3; }
+.cvf-identity-badge .cvf-structural-corner--badge {
+    top: 0.15rem;
+    right: -0.5rem;
+    z-index: 2;
+    width: 2rem;
+    height: 2rem;
+}
+.cvf-identity-badge .cvf-structural-corner--badge::before,
+.cvf-identity-badge .cvf-structural-corner--badge::after { display: none; }
+.cvf-identity-badge .cvf-structural-corner--badge > span {
+    top: 0.35rem;
+    width: 2rem;
+    height: 2px;
+    background: var(--cvf-identity-color);
+    transform: rotate(-22deg);
+}
+.cvf-identity-badge .cvf-structural-corner--badge > span:nth-child(2) {
+    top: 0.9rem;
+    width: 1.55rem;
+    transform: rotate(-39deg);
+}
+.cvf-identity-badge .cvf-structural-corner--badge > span:nth-child(3) {
+    top: 1.35rem;
+    width: 1.5rem;
+    transform: rotate(-55deg);
+}
+
+.cvf-stat-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid hsl(var(--border));
+    border-radius: var(--radius-lg);
+    background: hsl(var(--card));
+}
+.cvf-stat-strip__cell { padding: 1rem; text-align: center; }
+.cvf-stat-strip__cell + .cvf-stat-strip__cell { border-left: 1px solid hsl(var(--border)); }
+.cvf-stat-strip__label {
+    color: var(--text-secondary);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.cvf-stat-strip__value {
+    margin: 0.35rem 0 0;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: var(--text-heading);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+}
+
+.cvf-home-hero { min-height: 13.5rem; isolation: isolate; }
+.cvf-home-hero__backdrop { opacity: 0.58; filter: saturate(0.72) contrast(1.08); }
+.cvf-home-hero__scrim {
+    z-index: 1;
+    background: linear-gradient(90deg, rgb(10 14 16 / 0.98) 0%, rgb(10 14 16 / 0.92) 48%, rgb(10 14 16 / 0.25) 100%);
+}
+.cvf-home-hero__focal { display: none; }
+.cvf-home-hero__mobile-mark { color: var(--cvf-teal); }
+
+.cvf-event-frame {
+    border-width: 2px;
+    border-color: rgb(60 70 75 / 0.9);
+    background: linear-gradient(145deg, rgb(23 29 32 / 0.72), rgb(10 14 16 / 0.36));
+    box-shadow: none;
+}
+.cvf-event-frame[data-game-state="upcoming"] { border-color: rgb(91 184 204 / 0.72); }
+.cvf-event-frame[data-game-stage="playoff"],
+.cvf-event-frame[data-game-stage="championship"] { border-color: rgb(245 184 46 / 0.72); }
+.cvf-game-score { font-size: 2.75rem; line-height: 1; }
+.cvf-upcoming-focal { display: flex; min-width: 0; flex-direction: column; align-items: center; }
+.cvf-upcoming-focal__date {
+    color: var(--text-secondary);
+    font-size: var(--text-label);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+.cvf-upcoming-focal__time {
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 2.75rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+    .cvf-identity-badge {
+        width: 4.5rem;
+        height: 4.5rem;
+        flex-basis: 4.5rem;
+        font-size: 1.375rem;
+    }
+    .cvf-home-hero__focal {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 2;
+        display: block;
+        width: 38%;
+        height: 100%;
+        overflow: hidden;
+        border-left: 2px solid rgb(91 184 204 / 0.7);
+        clip-path: polygon(22% 0, 100% 0, 100% 100%, 0 100%);
+        background: var(--surface-sunken);
+    }
+    .cvf-home-hero__focal > img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: 75% center;
+        opacity: 0.95;
+        filter: saturate(0.9) contrast(1.18);
+    }
+    .cvf-home-hero__focal::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        bottom: 1.5rem;
+        width: 78%;
+        height: 3px;
+        background: var(--cvf-gold);
+    }
+    .cvf-home-hero__ridge {
+        position: absolute;
+        right: 5%;
+        bottom: 2.2rem;
+        width: 78%;
+        height: 28%;
+        border-top: 2px solid rgb(91 184 204 / 0.95);
+        clip-path: polygon(0 80%, 18% 48%, 35% 62%, 53% 20%, 71% 55%, 86% 38%, 100% 66%, 100% 100%, 0 100%);
+        background: rgb(10 14 16 / 0.28);
+    }
+    .cvf-home-hero__focal .cvf-structural-corner--hero {
+        top: 0;
+        right: 0;
+        width: 9rem;
+        height: 6rem;
+    }
+    .cvf-home-hero__focal .cvf-structural-corner--hero::before { width: 8rem; height: 3px; }
+    .cvf-home-hero__focal .cvf-structural-corner--hero::after { width: 3px; height: 5rem; }
+    .cvf-home-hero__focal .cvf-structural-corner--hero > span { top: 1.15rem; width: 7.5rem; height: 3px; }
+    .cvf-home-hero__focal .cvf-structural-corner--hero > span:nth-child(2) { top: 2.25rem; width: 5.75rem; }
+    .cvf-home-hero__focal .cvf-structural-corner--hero > span:nth-child(3) { top: 3.35rem; width: 4rem; }
+    .cvf-home-hero__mobile-mark { display: none; }
+    .cvf-game-score { font-size: 3.5rem; }
+    .cvf-upcoming-focal__time { font-size: 3rem; }
+}
+
+@media (max-width: 767px) {
+    .cvf-home-hero { min-height: 0; }
+    .cvf-home-hero__scrim { background: linear-gradient(90deg, rgb(10 14 16 / 0.96), rgb(10 14 16 / 0.68)); }
+}
+
 /* General stat figures: body face, tabular for column alignment. */
 .stat-value {
     font-family: var(--font-body);

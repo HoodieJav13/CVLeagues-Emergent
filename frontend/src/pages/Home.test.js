@@ -78,6 +78,8 @@ describe("Home hierarchy", () => {
     expect(container.querySelector('[data-testid="home-league-select"]')?.getAttribute("aria-labelledby")).toBe("home-league-label");
     expect(container.querySelector('label[for="home-sport-select"]')).not.toBeNull();
     expect(container.querySelector('label[for="home-league-select"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="home-hero"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="home-hero-focal"]')).not.toBeNull();
   });
 
   test("uses count-aware grids and readable compact team names", async () => {
@@ -97,6 +99,7 @@ describe("Home hierarchy", () => {
     const featured = container.querySelector('[data-testid="home-scoreboard-up-next"]');
     expect(featured?.className).not.toContain("transition-");
     expect(featured?.className).not.toContain("transition-all");
+    expect(featured?.querySelectorAll('[data-cvf-identity-badge="true"]')).toHaveLength(2);
 
     const teamName = [...container.querySelectorAll("span")]
       .find((element) => element.textContent === "The Exceptionally Long Westside Roadrunners");

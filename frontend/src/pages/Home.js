@@ -9,6 +9,7 @@ import { SportBadge } from "../components/common/Badges";
 import { Button } from "../components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS } from "../lib/statsConfig";
+import { StructuralCorner, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 
 // Sandia ridge backgrounds (brand pass) — self-contained dark dusk scenes,
 // used at full opacity. Replaces the stadium/stock photos.
@@ -78,10 +79,7 @@ const ScoreboardLine = ({ team, score, isWinner, isLoser, completed }) => {
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
-        <span
-          className="w-3 h-3 rounded-full shrink-0"
-          style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }}
-        />
+        <StructuralIdentityBadge team={team} className="shrink-0" />
         <span className={`font-sans normal-case tracking-normal text-xl md:text-2xl leading-snug whitespace-normal break-words ${nameEmphasis}`}>
           {team?.name || "TBD"}
         </span>
@@ -108,8 +106,9 @@ const ScoreboardFeature = ({ game, kind, state }) => {
     <Link
       to={`/game/${game.id}`}
       data-testid={`home-scoreboard-${kind}`}
-      className="block bg-card border border-border rounded-2xl p-4 md:p-5 shadow-card hover:border-primary/50 hover:shadow-card-hover"
+      className="relative overflow-hidden block bg-card border border-border rounded-2xl p-4 md:p-5 shadow-card hover:border-primary/50 hover:shadow-card-hover"
     >
+      <StructuralCorner tone={completed ? "neutral" : "teal"} size="feature" />
       <div className="flex items-center justify-between mb-3">
         <span className="text-label uppercase text-muted-foreground">
           {kind === "latest" ? "Latest Final" : "Up Next"}
@@ -180,10 +179,16 @@ export default function Home() {
   return (
     <div className="space-y-10">
       {/* LEAGUE BAND — the global shell owns the CVF identity lockup. */}
-      <section className="relative overflow-hidden rounded-2xl border border-border">
-        <img src={heroBg} alt="" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
-        <div className="relative px-5 py-6 md:px-8 md:py-7">
+      <section className="cvf-home-hero relative overflow-hidden rounded-2xl border border-border" data-testid="home-hero">
+        <img src={heroBg} alt="" className="cvf-home-hero__backdrop absolute inset-0 w-full h-full object-cover" />
+        <div className="cvf-home-hero__scrim absolute inset-0" aria-hidden="true" />
+        <div className="cvf-home-hero__focal" aria-hidden="true" data-testid="home-hero-focal">
+          <img src={heroBg} alt="" />
+          <span className="cvf-home-hero__ridge" />
+          <StructuralCorner tone="gold" size="hero" />
+        </div>
+        <StructuralCorner className="cvf-home-hero__mobile-mark" size="compact" />
+        <div className="relative z-10 px-5 py-6 md:px-8 md:py-8 md:max-w-[62%]">
           <div className="min-w-0">
             <h1 className="font-display text-display-xl uppercase text-foreground">
               Current Leagues

@@ -11,6 +11,7 @@ import { can } from "../lib/roles";
 import { EmptyState } from "../components/common/Section";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { AthleteHoverCard } from "../components/player/AthleteHoverCard";
+import { StructuralCorner, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 
 const PERIOD_LABEL = (sport, i) => (sport === "kickball" ? `${i + 1}` : `Q${i + 1}`);
 const PERIOD_HEAD = (sport) => (sport === "kickball" ? "Inning" : "Quarter");
@@ -45,6 +46,7 @@ export default function GameDetail() {
   const completed = game.status === "completed";
   const gameStats = state.playerStats.filter((s) => s.game_id === game.id);
   const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const shortDate = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
   // Temp admin can only score their assigned game.
   const canScore = can.enterScores(role) && (role === "admin" || roleMeta.assignedGameId === game.id);
@@ -64,8 +66,15 @@ export default function GameDetail() {
         <p className="text-caption text-muted-foreground mt-1">{dateStr}</p>
       </div>
 
-      <Card density="spacious" className="rounded-2xl">
-        <CardContent className="p-5 md:p-7">
+      <Card
+        density="spacious"
+        className="cvf-event-frame relative overflow-hidden rounded-2xl"
+        data-game-state={game.status}
+        data-game-stage={game.stage}
+        data-testid="game-event-frame"
+      >
+        <StructuralCorner tone={isSpecialStage(game) ? "gold" : completed ? "neutral" : "teal"} size="feature" />
+        <CardContent className="relative z-10 p-5 md:p-7">
         {isSpecialStage(game) && (
           <StageBanner stage={game.stage} className="-mx-5 -mt-5 md:-mx-7 md:-mt-7 mb-5 px-5 md:px-7 py-2 rounded-t-2xl" />
         )}
@@ -74,11 +83,18 @@ export default function GameDetail() {
           <StatusBadge status={game.status} />
         </div>
 
-        <div className="grid grid-cols-3 items-center gap-2">
+        <div className={`grid items-center gap-2 ${completed ? "grid-cols-3" : "grid-cols-2 md:grid-cols-3"}`}>
           <TeamHead team={away} score={game.away_score} completed={completed} win={completed && game.away_score > game.home_score} />
-          <div className="text-center">
-            <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">{completed ? "Final" : "VS"}</span>
-          </div>
+          {completed ? (
+            <div className="text-center">
+              <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">Final</span>
+            </div>
+          ) : (
+            <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 text-center md:order-none md:col-span-1 md:mt-0" dateTime={game.date}>
+              <span className="cvf-upcoming-focal__date">{shortDate}</span>
+              <span className="cvf-upcoming-focal__time">{game.time}</span>
+            </time>
+          )}
           <TeamHead team={home} score={game.home_score} completed={completed} win={completed && game.home_score > game.away_score} home />
         </div>
 
@@ -194,14 +210,12 @@ export default function GameDetail() {
 }
 
 const TeamHead = ({ team, score, completed, win, home }) => (
-  <Link to={`/team/${team.id}`} className="flex flex-col items-center text-center group">
-    <span className="w-12 h-12 rounded-2xl flex items-center justify-center font-display font-bold text-lg text-ink mb-2" style={{ backgroundColor: team.logo_color }}>
-      {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-    </span>
+  <Link to={`/team/${team.id}`} className="flex min-w-0 flex-col items-center rounded-cvf-md text-center group">
+    <StructuralIdentityBadge team={team} className="mb-2" />
     <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
     <span className="text-micro text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
     {completed && (
-      <span className={`mt-1 font-mono-score tabular-nums text-score-lg font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>
+      <span className={`cvf-game-score mt-1 font-mono-score tabular-nums font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>
     )}
   </Link>
 );
