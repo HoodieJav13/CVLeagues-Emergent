@@ -61,6 +61,37 @@ Broadcast/editorial governs by default. Culture is texture, not wallpaper. Cinem
 - Full Zia sun icon used decoratively outside the logo lockup.
 - Stock or placeholder photography used to "fill" a zone before real photos exist — use the designed fallback instead.
 
+## Pass 3 decision — ray-line implementation (ADDENDUM)
+
+**Decision: `pass3-slice-structural-line` is the base direction.** Between the two Pass 3 treatments, structural/edge-grammar wins on owner review of real captures — the textured/atmospheric treatment was too low-opacity to register as a deliberate motif at any viewport, while the structural treatment reads clearly, ties color to state (teal/gold/neutral corner marks matching Upcoming/Advanced/Eliminated), and remains legible at 390px.
+
+- Ray-line motif renders going forward as **corner marks / edge accents on cards and identity badges**, not background texture or atmosphere. This supersedes the "textured surface" option in the original contract's culture-layer section — both were legitimate hypotheses at Pass 2; this is the resolved answer.
+- **New scope for Pass 4:** the Game Detail team-badge treatment (octagon outline + ray mark, replacing flat color-fill initials) is a standout result and extends to Team and Profile page identity badges, not just Game Detail. This was not in the original Pass 3 slice boundary — record it here as approved scope before Pass 4 begins.
+- Corner-mark weight should stay proportionate at small sizes (390px) but may warrant slightly more visual weight on primary/featured surfaces (hero, featured score card) in Pass 4 rollout — evaluate rather than assume during systemization.
+
+## Boldness calibration (ADDENDUM 2)
+
+**Observed pattern:** execution has trended more conservative than intended, independent of the contract's actual content. The Textured branch technically satisfied every contract line item while rendering at near-imperceptible opacity — compliant, but not *present*, despite an explicit owner instruction for the culture layer to be more present. This is a process failure, not a one-off misjudgment: an executing agent resolving ambiguity will round down toward "safe" by default, and nothing in the prior process asked "is this distinctive" — only "is this broken."
+
+**Corrective rules, effective immediately:**
+
+- Where a pass involves a genuine visual-direction choice (not a bug fix or contract restoration), produce the contract-compliant option **and** one deliberately bolder variant that pushes size/weight/opacity past what feels comfortable, explicitly labeled as such. The owner chooses between real alternatives, not between two conservative readings of the same idea.
+- **Visibility floor:** any motif, accent, or texture introduced for visual identity must be spottable in a still screenshot cold, with no prior knowledge it's there. If it can't be found without being told where to look, it's under threshold and doesn't satisfy "present" — regardless of how correct it is on paper.
+- This does not loosen the anti-pattern list or the public/operational density split — those remain. It specifically targets the gap between "technically compliant" and "actually distinctive."
+
+## Audit methodology & reference anchors (ADDENDUM 3)
+
+**The problem, precisely:** prior audits could only answer "is this broken against the written contract" — a question that structurally resolves to "already fine" whenever nothing is provably wrong, with no mechanism to flag "correct, but not distinctive enough to matter." That gap is exactly what Boldness Calibration (Addendum 2) caught after the fact, at cost. This addendum closes it going in, and adds a second failure mode this project should guard against: engineering effort that's disproportionate to the visual payoff it buys.
+
+**Reference anchors (the missing Pass 2 step, closed now):**
+- **Apple Sports** — glanceable live scores, speed, personalized competition tracking. Primary anchor for Home and Schedule registers.
+- **"World Cup 2026, simplified"** (sheets.works, Awwwards-recognized) — data-viz tournament/bracket treatment. Primary anchor for Standings/Playoffs registers.
+- Future reference-gathering should pull from Awwwards' "Data Visualization" and "Mobile & Apps" categories, not "Sports" — that category is dominated by one-page brand-campaign microsites, the wrong comparison class for a live-data utility app.
+
+**New required audit finding category — VISUALLY INSUFFICIENT.** Distinct from BLOCKING, NON-BLOCKING, and ALREADY FINE. Any element that passes contract-compliance must still be checked against the reference anchors above: would this be mistaken for reference-tier work, or does it read as a competent template? If the honest answer is "competent template," log it as VISUALLY INSUFFICIENT with a proposed direction — do not fold it into ALREADY FINE. Not a bug, but not done.
+
+**Effort-vs-impact accounting.** Any pass proposing a visual-direction change states, in concrete terms: (a) the actual visual delta (size/color/position/opacity numbers, not descriptive language), and (b) implementation cost (files, components, new dependencies touched). If cost is high and stated delta is marginal, flag it for owner reconsideration rather than shipping it as complete — this is the direct fix for changes that are "more trouble on the backend than actual frontend impact." This does not apply to foundational/integrity work like Gate 0, which is correctly judged on safety and correctness, not visual ROI — it applies specifically to styling, motion, and identity work going forward.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

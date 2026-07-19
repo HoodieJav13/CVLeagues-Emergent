@@ -57,6 +57,15 @@ The extended-runway build is locally complete; its historical implementation rec
 - Use existing shared components and design tokens — no new UI libraries, no rogue hex colors (map to tokens).
 - Mobile-first: every view works at iPhone SE width (375px) and up.
 
+## Visual Direction and Audit Method — Binding
+
+- [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md), including all three addenda, governs every visual audit and implementation pass. The structural-line treatment is the selected Pass 3 base, and its identity-badge language extends to Team and Profile in Pass 4.
+- For a genuine visual-direction choice, present the contract-compliant treatment and a deliberately bolder variant. Both must remain inside the contract; the bolder option must visibly push concrete size, weight, or opacity values instead of becoming a second conservative interpretation.
+- Identity motifs must clear the contract's cold-screenshot visibility floor. Ambiguity does not default to the least noticeable safe option; make the compliant distinction clearly visible, then let the owner choose between meaningful alternatives.
+- Audit Home and Schedule against Apple Sports and Standings and Playoffs against “World Cup 2026, simplified” by sheets.works. Use exactly four finding verdicts: **BLOCKING / NON-BLOCKING / VISUALLY INSUFFICIENT / ALREADY FINE**.
+- **VISUALLY INSUFFICIENT** means an element may be correct and contract-compliant but still reads as a competent template rather than reference-tier work. Log it with capture evidence and a proposed direction; never fold it into ALREADY FINE.
+- Every proposed styling, motion, or identity change must state its concrete visual delta (size, color, position, opacity, or timing) and implementation cost (files, components, dependencies). High-cost work with marginal visible impact returns to the owner for reconsideration instead of being presented as complete.
+
 ## Product Decisions — Locked
 - **Admin-only for Season 1, with MFA required.** Only the admin logs in, and administration requires a verified AAL2/TOTP session. Players are profile records, not accounts.
 - **Auth User ≠ Player.** `profiles.auth_user_id` is nullable so a player can claim an account later without losing history.

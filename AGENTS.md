@@ -44,6 +44,14 @@ For schema, Auth, RLS, or security work, also run the relevant negative authoriz
 - Before committing, show the complete relevant diff, every test result, remaining risks, and confirmation that unrelated files were untouched. Stop for owner approval.
 - Record verified milestones, evidence, decisions, blockers, completion date, and commit hash in the repository documentation and Notion roadmap when available.
 
+## Visual-pass calibration
+
+- Before any visual audit or implementation pass, read [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md) in full. Its Pass 3 decision, boldness calibration, and audit-methodology addenda are binding.
+- Genuine visual-direction choices require both a compliant treatment and a deliberately bolder contract-compliant variant. A motif or accent must be obvious in a cold still screenshot; ambiguity must not silently resolve toward the least visible option.
+- Use Apple Sports as the Home/Schedule reference anchor and “World Cup 2026, simplified” by sheets.works as the Standings/Playoffs anchor.
+- Visual findings use four verdicts: **BLOCKING / NON-BLOCKING / VISUALLY INSUFFICIENT / ALREADY FINE**. VISUALLY INSUFFICIENT catches work that is correct but still reads as a competent template against the reference anchors; include capture evidence and a proposed direction.
+- Styling, motion, and identity proposals must state their concrete visual delta and implementation cost. Flag high-cost, marginal-delta work for owner reconsideration rather than shipping it as complete.
+
 ## Reporting Discipline — Risk-Calibrated Detail
 
 Not everything warrants the same depth of report. Before writing up a finding,
@@ -58,12 +66,13 @@ triage it first:
   fix is applied), a finding you've already self-classified as non-blocking,
   UI/display-only changes with passing tests, or routine test/build status.
 
-Lead every finding with a one-line verdict: BLOCKING / NON-BLOCKING (noted)
-/ ALREADY FINE. Reserve full paragraphs of reasoning for BLOCKING items and
-genuinely novel judgment calls. Don't re-explain why an established pattern
-is correct each time it recurs — just confirm it was applied consistently.
-Don't write extended risk narrative for something you've already determined
-doesn't need owner action.
+Lead every finding with a one-line verdict: BLOCKING / NON-BLOCKING (noted) /
+VISUALLY INSUFFICIENT / ALREADY FINE. Reserve full paragraphs of reasoning for
+BLOCKING items, VISUALLY INSUFFICIENT findings that need a proposed direction,
+and genuinely novel judgment calls. Don't re-explain why an established
+pattern is correct each time it recurs — just confirm it was applied
+consistently. Don't write extended risk narrative for something you've already
+determined doesn't need owner action.
 
 This isn't a license to skip verification — run the same checks. It's a
 constraint on how much prose accompanies a finding that doesn't need a
