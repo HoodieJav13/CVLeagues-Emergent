@@ -42,7 +42,7 @@ export default function AthleteProfile() {
         <div className="flex items-center gap-4">
           <Avatar name={profile.name} color={profile.avatar_color} size={72} />
           <div className="min-w-0">
-            <h1 className="font-display uppercase text-display-lg text-foreground">{profile.name}</h1>
+            <h1 className="font-display uppercase text-display-xl text-foreground">{profile.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
               {sports.map((s) => <SportBadge key={s} sport={s} />)}
               <span className="text-xs text-muted-foreground">{profile.experience}</span>

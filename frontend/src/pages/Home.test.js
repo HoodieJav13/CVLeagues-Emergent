@@ -65,6 +65,8 @@ describe("Home hierarchy", () => {
     });
 
     expect(container.querySelector("h1")?.textContent).toBe("Current Leagues");
+    expect(container.querySelector("h1")?.className).toContain("text-display-xl");
+    expect(container.querySelector("h1")?.className).not.toContain("text-display-lg");
     expect(container.textContent).not.toContain("CVF Sports");
     expect(container.querySelectorAll('a[href="/register-team"]')).toHaveLength(1);
     expect(container.querySelectorAll('a[href="/free-agent-signup"]')).toHaveLength(1);

@@ -58,7 +58,7 @@ export default function GameDetail() {
 
       {/* Page-level matchup title. */}
       <div data-testid="game-detail-heading">
-        <h1 className="font-display uppercase text-display-lg text-foreground">
+        <h1 className="font-display uppercase text-display-xl text-foreground">
           {away?.name || "TBD"} <span className="text-muted-foreground">vs</span> {home?.name || "TBD"}
         </h1>
         <p className="text-caption text-muted-foreground mt-1">{dateStr}</p>

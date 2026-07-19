@@ -35,7 +35,7 @@ export default function TeamPage() {
             {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
           </span>
           <div className="min-w-0">
-            <h1 className="font-display uppercase text-display-lg text-foreground">{team.name}</h1>
+            <h1 className="font-display uppercase text-display-xl text-foreground">{team.name}</h1>
             <div className="flex items-center gap-2 mt-2">
               <SportBadge sport={team.sport} />
               <span className="text-xs text-muted-foreground">{league?.name}</span>

@@ -185,7 +185,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-surface-sunken via-transparent to-transparent" />
         <div className="relative px-5 py-6 md:px-8 md:py-7">
           <div className="min-w-0">
-            <h1 className="font-display text-display-lg md:text-display-xl uppercase text-foreground">
+            <h1 className="font-display text-display-xl uppercase text-foreground">
               Current Leagues
             </h1>
             <p className="text-label uppercase tracking-widest text-primary mt-1.5">

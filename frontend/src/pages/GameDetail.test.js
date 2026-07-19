@@ -66,6 +66,10 @@ describe("GameDetail score action", () => {
   test("renders an authorized score link through the shared Button contract", async () => {
     await act(async () => root.render(<GameDetail />));
 
+    const title = container.querySelector('[data-testid="game-detail-heading"] h1');
+    expect(title?.className).toContain("text-display-xl");
+    expect(title?.className).not.toContain("text-display-lg");
+
     const action = container.querySelector('[data-testid="game-enter-score"]');
     expect(action?.tagName).toBe("A");
     expect(action?.getAttribute("href")).toBe("/score-entry");
