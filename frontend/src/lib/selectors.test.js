@@ -7,6 +7,7 @@
  *   - player league-season totals INCLUDE playoffs but EXCLUDE tournaments
  * ========================================================================== */
 import {
+  applyCompetitionRanks,
   buildLeaderboard,
   computeTeamRecord,
   computeStandings,
@@ -18,6 +19,46 @@ import {
 import { initialState } from "../data/seed";
 
 const state = initialState;
+
+describe("standard competition leaderboard ranks", () => {
+  const rankValues = (values) => applyCompetitionRanks(values.map((value, index) => ({ id: index, value })))
+    .map(({ rank, rankLabel, tied }) => ({ rank, rankLabel, tied }));
+
+  test("labels a clean 1/2/3 result without tie prefixes", () => {
+    expect(rankValues([30, 20, 10])).toEqual([
+      { rank: 1, rankLabel: "1", tied: false },
+      { rank: 2, rankLabel: "2", tied: false },
+      { rank: 3, rankLabel: "3", tied: false },
+    ]);
+  });
+
+  test("renders a two-way tie at first as T1/T1 and skips to third", () => {
+    expect(rankValues([30, 30, 10])).toEqual([
+      { rank: 1, rankLabel: "T1", tied: true },
+      { rank: 1, rankLabel: "T1", tied: true },
+      { rank: 3, rankLabel: "3", tied: false },
+    ]);
+  });
+
+  test("renders a three-way tie at first and skips to fourth", () => {
+    expect(rankValues([30, 30, 30, 10])).toEqual([
+      { rank: 1, rankLabel: "T1", tied: true },
+      { rank: 1, rankLabel: "T1", tied: true },
+      { rank: 1, rankLabel: "T1", tied: true },
+      { rank: 4, rankLabel: "4", tied: false },
+    ]);
+  });
+
+  test("renders a tie at third as T3/T3 and skips to fifth", () => {
+    expect(rankValues([50, 40, 30, 30, 10])).toEqual([
+      { rank: 1, rankLabel: "1", tied: false },
+      { rank: 2, rankLabel: "2", tied: false },
+      { rank: 3, rankLabel: "T3", tied: true },
+      { rank: 3, rankLabel: "T3", tied: true },
+      { rank: 5, rankLabel: "5", tied: false },
+    ]);
+  });
+});
 
 describe("computeTeamRecord excludes playoff games", () => {
   test("t4 record is 2-0 from regular season only (playoff win g10 not counted)", () => {

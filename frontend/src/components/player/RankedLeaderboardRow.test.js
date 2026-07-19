@@ -1,6 +1,6 @@
 import React, { act } from "react";
 import { createRoot } from "react-dom/client";
-import { RankedLeaderboardRow } from "./RankedLeaderboardRow";
+import { FeaturedLeaderboardHero, RankedLeaderboardRow } from "./RankedLeaderboardRow";
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -55,5 +55,28 @@ describe("RankedLeaderboardRow", () => {
 
     expect(container.querySelector('[data-testid="leaderboard-row-p4"]')?.dataset.rankTier).toBe("field");
     expect(container.querySelector('[aria-label="Rank 4"]')?.textContent).toBe("4");
+  });
+
+  test("renders a tied category leader as a fallback-first gold hero", async () => {
+    await act(async () => root.render(<FeaturedLeaderboardHero
+      statLabel="Sacks"
+      titleId="sacks-title"
+      row={{
+        rank: 1,
+        rankLabel: "T1",
+        tied: true,
+        value: 5,
+        profile: { id: "p20", name: "Diego Chavez", avatar_color: "#FB923C" },
+        team: { id: "t4", name: "Bosque Blitz" },
+      }}
+    />));
+
+    const hero = container.querySelector('[data-testid="leaderboard-hero-p20"]');
+    expect(hero?.dataset.rankLabel).toBe("T1");
+    expect(hero?.dataset.tied).toBe("true");
+    expect(container.querySelector('#sacks-title')?.textContent).toBe("Sacks");
+    expect(container.querySelector('[data-testid="leaderboard-hero-identity-p20"]')).not.toBeNull();
+    expect(container.querySelector('[aria-label="Rank T1"]')?.textContent).toBe("T1");
+    expect(container.querySelector('[aria-label="5 Sacks"]')?.textContent).toBe("5");
   });
 });

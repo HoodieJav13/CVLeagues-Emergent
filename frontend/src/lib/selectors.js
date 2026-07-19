@@ -228,6 +228,26 @@ export function teamGames(state, team_id) {
 }
 
 /* ---------------------------- leaderboards ------------------------------- */
+// Apply standard competition ranking to an already value-sorted result set.
+// Equal values share a T-rank and consume every occupied place (1, T2, T2, 4).
+export function applyCompetitionRanks(rows) {
+  const valueCounts = rows.reduce((counts, row) => {
+    counts.set(row.value, (counts.get(row.value) || 0) + 1);
+    return counts;
+  }, new Map());
+
+  let previousValue;
+  let previousRank = 0;
+
+  return rows.map((row, index) => {
+    const rank = index > 0 && row.value === previousValue ? previousRank : index + 1;
+    const tied = valueCounts.get(row.value) > 1;
+    previousValue = row.value;
+    previousRank = rank;
+    return { ...row, rank, rankLabel: tied ? `T${rank}` : `${rank}`, tied };
+  });
+}
+
 // Build a ranked leaderboard for a sport + stat key.
 // scope: 'season' | 'career' | 'tournament'
 export function buildLeaderboard(state, sport, statKey, scope = "season", context = null) {
@@ -244,7 +264,7 @@ export function buildLeaderboard(state, sport, statKey, scope = "season", contex
   activeRosterRows(state)
     .filter((tp) => getTeam(state, tp.team_id)?.sport === sport)
     .forEach((tp) => playerIds.add(tp.profile_id));
-  return [...playerIds]
+  const sortedRows = [...playerIds]
     .map((pid) => {
       const profile = getProfile(state, pid);
       const team = playerTeams(state, pid).find((t) => {
@@ -257,8 +277,9 @@ export function buildLeaderboard(state, sport, statKey, scope = "season", contex
       return { profile, team, value: fn(state, pid, sport)[statKey] || 0 };
     })
     .filter((row) => row.profile && row.value > 0)
-    .sort((a, b) => b.value - a.value)
-    .map((row, i) => ({ ...row, rank: i + 1 }));
+    .sort((a, b) => b.value - a.value);
+
+  return applyCompetitionRanks(sortedRows);
 }
 
 // Team stat leaders: top player on a team for each highlight stat.
