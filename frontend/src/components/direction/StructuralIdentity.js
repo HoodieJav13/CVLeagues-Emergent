@@ -45,8 +45,8 @@ export const StructuralIdentityBadge = ({ className = "", color, name, team, tes
       data-testid={testId}
       style={{ "--cvf-identity-color": identityColor }}
     >
+      <span className="cvf-identity-badge__offset" />
       <span className="cvf-identity-badge__field" />
-      <StructuralCorner color={identityColor} size="badge" />
       <span className="cvf-identity-badge__initials">{initials(displayName)}</span>
     </span>
   );

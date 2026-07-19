@@ -19,7 +19,7 @@ describe("structural identity primitives", () => {
     container.remove();
   });
 
-  test("renders a team-colored octagonal fallback with three structural rays", async () => {
+  test("renders a team-colored octagonal fallback with an offset outline", async () => {
     await act(async () => root.render(
       <StructuralIdentityBadge team={{ name: "Rio Runners", logo_color: "#5BB8CC" }} testId="identity" />
     ));
@@ -28,7 +28,8 @@ describe("structural identity primitives", () => {
     expect(badge?.textContent).toBe("RR");
     expect(badge?.getAttribute("aria-hidden")).toBe("true");
     expect(badge?.style.getPropertyValue("--cvf-identity-color")).toBe("#5BB8CC");
-    expect(badge?.querySelectorAll(".cvf-structural-corner > span")).toHaveLength(3);
+    expect(badge?.querySelector(".cvf-identity-badge__offset")).not.toBeNull();
+    expect(badge?.querySelector(".cvf-structural-corner")).toBeNull();
   });
 
   test("allows the structural corner to encode a state tone and position", async () => {

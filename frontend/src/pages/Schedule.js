@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { CalendarX } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { GameCard } from "../components/game/GameCard";
+import { CompetitionRow } from "../components/game/CompetitionRow";
 import { SectionHeading, EmptyState } from "../components/common/Section";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS } from "../lib/statsConfig";
@@ -135,9 +135,9 @@ export default function Schedule() {
         {games.length ? (
           weekGroups.map((grp) => (
             <section key={grp.key} data-testid={`schedule-week-${grp.key}`}>
-              <h2 className="font-display text-subheading uppercase tracking-tight text-foreground mb-2.5">{grp.label}</h2>
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {grp.games.map((g) => <GameCard key={g.id} game={g} />)}
+              <h2 className="cvf-competition-group__heading">{grp.label}</h2>
+              <div className="cvf-competition-register">
+                {grp.games.map((g) => <CompetitionRow key={g.id} game={g} />)}
               </div>
             </section>
           ))

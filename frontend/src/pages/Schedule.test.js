@@ -16,8 +16,8 @@ jest.mock("../context/AppStateContext", () => ({
   useApp: () => ({ state: mockState }),
 }));
 
-jest.mock("../components/game/GameCard", () => ({
-  GameCard: ({ game }) => <div data-testid={`game-card-${game.id}`} />,
+jest.mock("../components/game/CompetitionRow", () => ({
+  CompetitionRow: ({ game }) => <div data-testid={`competition-row-${game.id}`} />,
 }));
 
 jest.mock("../components/ui/select", () => {
@@ -88,11 +88,9 @@ describe("Schedule visual contracts", () => {
 
     const heading = container.querySelector('[data-testid^="schedule-week-"] h2');
     expect(heading?.textContent).toBe("Week of Jul 19");
-    expect(heading?.className).toContain("font-display");
-    expect(heading?.className).toContain("text-subheading");
-    expect(heading?.className).toContain("text-foreground");
-    expect(heading?.className).not.toContain("text-sm");
-    expect(heading?.className).not.toContain("text-muted-foreground");
+    expect(heading?.className).toBe("cvf-competition-group__heading");
+    expect(container.querySelector(".cvf-competition-register")).not.toBeNull();
+    expect(container.querySelector('[data-testid="competition-row-game-1"]')).not.toBeNull();
 
     const trigger = container.querySelector('[data-testid="schedule-filter-sport"]');
     expect(trigger?.className).toBe("bg-card border-border");
