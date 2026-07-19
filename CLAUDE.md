@@ -5,36 +5,35 @@ This file is the authoritative repository source for current product status, loc
 ## What This Is
 A mobile-first web app for running adult recreational kickball and flag football leagues in Albuquerque, NM. Public users view schedules, standings, scores, teams, and stats. An admin (the owner) manages everything. Built free as a player-first alternative to GameChanger, focused on adult rec leagues.
 
-Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and explicit mock mode remains available for local development. The repository now contains twenty-one migrations verified by the isolated and real-stack harnesses; hosted Supabase remains at the first-twelve accepted baseline, so hosted mode must not be treated as compatible until the nine pending migrations pass their separate hosted checkpoint. Preview/production acceptance remains open.
+Frontend was generated via Emergent (React + CRA), polished with a design-system-first UI pass, extended in Claude Code, and given a full visual-token upgrade. The Supabase adapter is env-gated and explicit mock mode remains available for local development. The accepted backend state contains twenty-two migrations, passes 213/213 database assertions, and is applied to the dedicated hosted project with a 150/150 real-session authorization matrix. Preview/production acceptance remains open.
 
 ## Current Status
-- Public site: all pages working; the eight-step score-entry flow is verified in mock mode only
+- Public site: all pages working; the existing eight-step aggregate score-entry flow is verified in mock mode, while the event-ledger pilot described below is not yet built
 - Intake forms (Free Agent + Team Interest): rebuilt to spec, feeding shared state
 - Admin dashboard: COMPLETE locally — 11 tabs including brackets, manual payments, and Hall of Fame curation; triage workflows, game lock + edit history, waiver queue, and operational overview
 - Roster flow (Flow C-lite): Add Player, manual assignment, eligibility indicator — done
 - Functional cleanup: env-gated demo switcher, dormant account surfaces, empty states, destructive confirmations — done
-- Structural tweaks: player sport-tabs, schedule week-grouping, modal overflow fixes — done
-- Mock-state boundary review: COMPLETE locally and awaiting owner acceptance — localStorage is development-only and versioned, production/preview fail closed, optimized artifacts exclude fixtures, and the key admin mock flows match their hosted visible outcomes.
-- Visual upgrade (Phase 8a, four batches): design tokens, typography (Oswald/Inter), status pills, game cards (3-per-row desktop), standings, focus rings, empty-state styling, copy fixes — done
+- Structural tweaks: player sport-tabs, schedule competition register, modal overflow fixes — done
+- Mock-state boundary review: COMPLETE and owner-accepted in `a2839cc` — localStorage is development-only and versioned, production/preview fail closed, optimized artifacts exclude fixtures, and the key admin mock flows match their hosted visible outcomes.
+- Visual foundation: design tokens, typography (Oswald/Inter), status language, focus rings, empty-state styling, accessibility, and motion-system cleanup — done.
+- Pass 4 visual elevation: Batch 0 Home/Game Detail identity, Batch 1 Schedule competition register, Batch 2 Standings hierarchy, and Batch 2.5 multi-category Leaderboards dashboard are committed on `main`. Team/Profile, Playoffs, and forms remain later approved batches.
 - Competition display and stat isolation: `StageBanner` marks playoff/tournament games, Season 1 has a real single-elimination bracket workflow, and tournament statistics are tracked separately and excluded from league-season and league-career/all-time totals.
-- Extended-runway backend: twenty-one migrations apply in the isolated and real-stack harnesses and 211/211 pgtest assertions pass. The hosted project remains at the twelve-migration baseline until owner approval.
+- Extended-runway backend: all twenty-two migrations apply in the isolated and real-stack harnesses and 213/213 pgtest assertions pass. All twenty-two are applied hosted with the clean baseline preserved.
 - Running locally via `npm start` from `frontend/`; always confirm the checked-out branch before editing.
 - Navbar logo at `src/assets/cvf-logo-transparent.png`
-- Dedicated hosted backend is linked and accepted at its July 13 baseline. The real administrator is linked, three-session role resolution and the locked-score flow are hosted-verified, and the 66-check evidence is retained. The nine pending migrations, expanded matrix, advisors, recovery acceptance, preview/production variables, and live application flows remain open.
+- Dedicated hosted backend is linked and accepted at the current twenty-two-migration state. The least-privilege service-role catalog check, both advisors, AAL1/AAL2 authorization behavior, and the expanded 150/150 matrix are evidenced. Recovery/session-revocation acceptance, preview/production variables, live application flows, and deployment remain open.
 
 ## Current Priority
-The extended-runway build is locally complete; its historical implementation record is [`docs/EXTENDED_RUNWAY_IMPLEMENTATION.md`](docs/EXTENDED_RUNWAY_IMPLEMENTATION.md). Next is an owner-controlled hosted acceptance: nine-migration dry-run/review → approved push → expanded 22-table/15-RPC authorization matrix and advisors → preview/live-flow acceptance → production launch. Attorney-approved New Mexico waiver text remains an independent blocker.
+Reconcile the preserved service-role hardening, hosted evidence, Pass 1R audit, and live documentation onto current `main`, then execute the scorekeeping/event-ledger roadmap one gated stage at a time: rules/invariants → RPC and direct-write hardening → Event Ledger Lite schema → deterministic projections and correction/finalization → admin-only flag-football pilot/practice mode → field test and second-sport/live decision. Resume Pass 4 with Team/Profile only after that pilot decision. Attorney-approved New Mexico waiver text remains an independent launch blocker.
 
 ## Owner Action Queue
 
 - **Launch remains blocked on attorney-approved waiver text regardless of all other gates closing.** After approval, insert the final text as a new immutable `waiver_versions` row; never substitute draft or fallback legal text.
-- Confirm a current off-platform database backup/export and recovery plan before any hosted migration push.
-- Review `supabase migration list` and `supabase db push --dry-run`, then approve the hosted push separately if and only if the expected nine migrations are shown.
-- Verify hosted TOTP configuration and the real administrator's factor enrollment, AAL2 elevation, recovery, session revocation, and any break-glass decision.
+- Complete the real administrator's recovery and session-revocation acceptance; decide whether a break-glass administrator is warranted. TOTP enrollment and AAL2 elevation are already complete.
 - Enter preview/production Supabase and Turnstile environment values personally, without exposing a service-role or secret key to React.
-- After the approved push, require the 22-table/15-RPC hosted authorization matrix, service-role catalog checks, migration-history verification, and both Supabase advisors to pass.
-- Create real Season 1 league and team records only after the clean hosted state is accepted.
-- Run live hosted application flows and a dedicated visual-consistency audit of brackets, payments, and Hall of Fame across desktop and mobile before approving preview.
+- Create the real Season 1 league and team records when operational setup begins; the clean hosted state is already accepted.
+- Review the sport-rules/correction matrix before the Event Ledger Lite schema is locked, then field-test the admin-only flag-football pilot before approving a second sport or live use.
+- Run live hosted application flows and the remaining visual-consistency acceptance across desktop and mobile before approving preview.
 - Approve production deployment only after every technical, visual, operational, and legal gate above is closed.
 
 ## Tech Stack
@@ -46,7 +45,7 @@ The extended-runway build is locally complete; its historical implementation rec
 - Roles: `src/lib/roles.js`
 - Seed/mock data: `src/data/seed.js`
 - Persistence: Supabase in hosted mode; versioned localStorage only in explicit local-development mock mode (never a production/preview fallback)
-- Backend: Supabase (PostgreSQL + Auth); twenty-one migrations are verified by the isolated and real-stack harnesses, the first twelve plus the real admin link are applied and verified in the dedicated hosted project, and the local frontend is configured for hosted mode. The nine-migration hosted extension, expanded authorization acceptance, and preview/production configuration remain open.
+- Backend: Supabase (PostgreSQL + Auth); twenty-two migrations are verified by the isolated and real-stack harnesses and applied to the dedicated hosted project. The real administrator, expanded authorization matrix, least-privilege service-role boundary, and both advisors are accepted. Preview/production configuration and live-flow acceptance remain open.
 - Deployment target: Vercel (Phase 10)
 
 ## Architecture Rules — Read Before Editing
@@ -59,10 +58,10 @@ The extended-runway build is locally complete; its historical implementation rec
 
 ## Visual Direction and Audit Method — Binding
 
-- [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md), including all three addenda, governs every visual audit and implementation pass. The structural-line treatment is the selected Pass 3 base, and its identity-badge language extends to Team and Profile in Pass 4.
+- [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md), including all four addenda, governs every visual audit and implementation pass. Structural surface lines remain the selected Pass 3 base; Addendum 4 replaces badge rays with the octagon plus offset outline, establishes copper for rank-three semantics, and adds OT7 as the Leaderboards/stats reference anchor.
 - For a genuine visual-direction choice, present the contract-compliant treatment and a deliberately bolder variant. Both must remain inside the contract; the bolder option must visibly push concrete size, weight, or opacity values instead of becoming a second conservative interpretation.
 - Identity motifs must clear the contract's cold-screenshot visibility floor. Ambiguity does not default to the least noticeable safe option; make the compliant distinction clearly visible, then let the owner choose between meaningful alternatives.
-- Audit Home and Schedule against Apple Sports and Standings and Playoffs against “World Cup 2026, simplified” by sheets.works. Use exactly four finding verdicts: **BLOCKING / NON-BLOCKING / VISUALLY INSUFFICIENT / ALREADY FINE**.
+- Audit Home and Schedule against Apple Sports, Standings and Playoffs against “World Cup 2026, simplified” by sheets.works, and Leaderboards/stats against OT7. Use exactly four finding verdicts: **BLOCKING / NON-BLOCKING / VISUALLY INSUFFICIENT / ALREADY FINE**.
 - **VISUALLY INSUFFICIENT** means an element may be correct and contract-compliant but still reads as a competent template rather than reference-tier work. Log it with capture evidence and a proposed direction; never fold it into ALREADY FINE.
 - Every proposed styling, motion, or identity change must state its concrete visual delta (size, color, position, opacity, or timing) and implementation cost (files, components, dependencies). High-cost work with marginal visible impact returns to the owner for reconsideration instead of being presented as complete.
 
@@ -71,6 +70,8 @@ The extended-runway build is locally complete; its historical implementation rec
 - **Auth User ≠ Player.** `profiles.auth_user_id` is nullable so a player can claim an account later without losing history.
 - **Sports at launch:** kickball and flag football only.
 - **Payments:** manual, admin-only, admin-correctable tracking for Season 1. The UI and ledger are built locally; Stripe, reversal/void accounting, player-visible balances, and automation remain deferred.
+- **Score corrections have one authority per game.** Legacy aggregate games retain the current reasoned unlock/edit/relock workflow. Once a game begins event-ledger scoring, immutable ledger events become its only correction source; it never returns to aggregate editing.
+- **Ledger projections are derived, not independently editable.** For event-ledger games, `games` scores, `player_stats`, standings/playoff effects, and `game_edit_history` are system outputs. A post-final correction opens an AAL2 reasoned correction session, appends void/replacement events, then atomically reprojects, preserves/re-establishes the final lock, handles playoff effects, and writes append-only history. `game_edit_history` is audit output only, never a competing score input.
 - **Current season is per sport.** Multiple seasons may coexist long term; public views default to the chosen sport's current season and historical seasons remain selectable.
 - **Tournament stats are separate.** They are tracked but excluded from league-season and league-career/all-time totals.
 - **Historical stat classification locks after granular stats exist.** A stat-bearing game cannot move leagues, and its league cannot change season or switch between league/tournament kind. Season-name cascades remain supported.
@@ -97,13 +98,25 @@ The extended-runway build is locally complete; its historical implementation rec
 - The append-only waiver schema and hosted submission RPC exist. The public waiver experience remains gated on attorney-approved immutable waiver text and abuse protection; it must never use fallback legal text. The admin Waivers tab can consume hosted records, while its remaining placeholder copy/UI cleanup is separate frontend work.
 - LEGAL: waiver language reviewed by a New Mexico attorney before launch.
 
-## Score Lifecycle (built, working)
+## Score Lifecycle
+
+### Existing aggregate flow (built)
+
 - Two parallel fields: `status` (upcoming/completed/postponed/canceled) = game lifecycle; `score_status` (pending/submitted/approved/disputed/final) = score lifecycle. Intentionally separate.
 - Flow: pending → submitted (score saved) → final (Mark Final, locks game) → approved (on unlock) → submitted (on re-edit).
 - A final game is LOCKED: editing requires deliberate unlock + required reason; every change appends to `editHistory` in mock mode and maps to the append-only `game_edit_history` table in the backend schema.
 
-## Backend Data Model (twenty-one migrations in the local source of truth; first twelve hosted)
+### Event Ledger Lite correction contract (planned)
+
+- A game chooses aggregate or ledger mode explicitly. Starting ledger mode is one-way.
+- Ordinary scoring and corrections append domain events; clients never directly mutate score/stat projections or edit history.
+- Finalization projects the ledger deterministically and locks the public result.
+- After finalization, public results remain locked while an AAL2 administrator drafts a reasoned correction. Applying it atomically appends void/replacement events, rebuilds every affected projection, reconciles bracket advancement, records system-generated append-only history, and returns the game to a final locked state.
+- Legacy aggregate unlock/edit remains available only to games that have never entered ledger mode. The two correction mechanisms never write the same game's authoritative score.
+
+## Backend Data Model (twenty-two migrations; all hosted and locally replayable)
 - seasons (natural text key such as `Summer 2026`; referenced by all season-scoped records)
+- league_settings (singleton publication/registration settings plus per-sport current-season defaults; legacy `current_season` is compatibility-only)
 - profiles (auth_user_id nullable, first/last/display name, email, phone, optional date of birth, emergency contacts, admin notes; age confirmation is recorded on signed waiver rows, not profiles)
 - leagues (sport, season, status, kind: league/tournament, playoff_format; standalone tournaments are league containers with `kind='tournament'`)
 - team_identities (persistent canonical name, color, founded year, lifecycle)
@@ -111,6 +124,8 @@ The extended-runway build is locally complete; its historical implementation rec
 - team_players (team_id, profile_id, season natural-key reference, jersey_number, roster_status: pending_waiver/eligible/inactive/removed)
 - games (league_id, home/away team, date, location, stage: regular/playoff/tournament, status, score_status, locked, editHistory, scores, submitted_by, approved_by); database guards keep stages consistent with league kind and prevent changing a locked game's stage
 - player_stats (profile_id, game_id, team_id, sport-specific fields)
+- career_baselines (controlled historical aggregates that must not overlap granular game seasons)
+- game_edit_history (append-only locked-game audit records)
 - team_registrations (status: new/contacted/approved/archived, adminNotes[])
 - free_agents (status: new/contacted/assigned/archived, assignedTeamId, adminNotes[])
 - waivers (append-only — see Waiver model)
@@ -122,13 +137,15 @@ The extended-runway build is locally complete; its historical implementation rec
 Flag Football — Passing (comp/att/comp%/yds/TD/INT), Rushing (carries/yds/TD/1st), Receiving (catches/yds/TD/1st), Defense (flag pulls/sacks/INT), Scoring (TD/1-2-3pt conversions).
 Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists/errors).
 
-## Security (local controls verified; hosted extension pending)
-- Row Level Security is enabled on all 22 local exposed tables — non-negotiable. The hosted accepted baseline currently contains 18 tables.
+## Security (local and hosted controls verified)
+- Row Level Security is enabled on all 22 exposed tables locally and hosted — non-negotiable.
 - Data API grants are explicitly allowlisted for anonymous and authenticated roles; RLS and API exposure grants remain separate controls.
 - `public_profiles` is an intentional definer-style security boundary with an exact safe-field allowlist and forbidden-PII regression tests.
 - Public scoreboard reads are allowed. Anonymous intake and waiver submissions pass through the Turnstile-verified server endpoint; direct Data API inserts are denied.
 - Only admin writes league data, edits scores, changes roles.
 - Game lock and append-only edit history are database-enforced; RLS separately restricts role access.
+- Playoff topology and team identity/enrollment mutation are RPC-only; direct authenticated table writes are revoked.
+- `service_role` has only `INSERT` on `team_registrations` and `free_agents`, no other public-table privilege, no public-sequence privilege, and no public-function execution. Platform-owned `supabase_admin` default ACLs are an accepted Supabase boundary; current objects are explicitly re-revoked.
 - The env-gated demo Role Switcher is replaced entirely by real Supabase Auth.
 
 ## General Working Rules
@@ -148,14 +165,15 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 7. ✅ Structural tweaks
 8a. ✅ Visual upgrade (4 batches)
 8b. ✅ Frontend cleanup: logo placement, favicon, mobile nav CTAs, tap targets, accessibility (H1s, labels), real <form> elements, "My Team" filter
-9. ◐ Backend wiring — July 13 hosted baseline accepted; July 14–15 extended-runway work is locally complete at 21 migrations and 211/211 pgtest assertions. Hosted application and expanded acceptance remain open.
-9b. ✅ Extended-runway local build — launch hardening, season/tournament isolation, Season 1 brackets, manual payments, admin Hall of Fame curation, and persistent team enrollment.
-10. Deploy + soft launch (domain, backups, clean reset, Season 1) — follows live backend verification
+9. ✅ Backend wiring and hosted acceptance — 22 migrations, 213/213 database assertions, least-privilege service-role catalog, both advisors, and 150/150 real-session authorization checks accepted.
+9b. ✅ Extended-runway build — launch hardening, season/tournament isolation, Season 1 brackets, manual payments, admin Hall of Fame curation, and persistent team enrollment.
+9c. ▶ Scorekeeping integrity program — Stage 0 evidence reconciliation; Stage 1 rules/correction matrix; Stage 2 RPC/direct-write hardening; Stage 3 Event Ledger Lite; Stage 4 deterministic projections/corrections; Stage 5 flag-football pilot/practice mode; Stage 6 field test and rollout decision.
+9d. ◐ Pass 4 visual elevation — Batches 0–2.5 complete; Team/Profile, Playoffs, and forms resume after the scorekeeping pilot decision.
+10. Deploy + soft launch (domain, recovery, live-flow acceptance, Season 1) — remains blocked by final waiver text and the remaining owner gates
 
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
 
 ## Deferred / Backlog
-- **Gate 0 mock-state review — locally complete, owner acceptance pending.** The review now inventories and isolates every mock/localStorage runtime path, validates reset and the supported v7→v8 migration, removes abandoned keys, excludes fixtures from optimized artifacts, preserves production/preview fail-closed behavior, and aligns registration approval, free-agent assignment, and waiver verification with hosted visible outcomes. No broader visual implementation begins until the owner accepts the diff and evidence.
 - Consolidate the remaining overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. The team overlap disappeared when direct team writes were removed; preserve all remaining public/admin semantics and rerun the complete negative matrix before further consolidation.
 - Season 2 player/captain self-service: signup, email verification, password recovery, safe profile claiming, captain permissions, abuse controls, and a new authorization matrix. This remains outside Season 1 and is also gated by the waiver/eligibility design.
 - Public Hall of Fame route and publication control.

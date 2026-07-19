@@ -12,6 +12,7 @@
 - Enable RLS on every exposed table and test anonymous, authenticated non-admin, and admin behavior. Data API grants and RLS are separate controls; verify both.
 - Keep waivers and game edit history append-only.
 - A locked game may be edited only after an explicit unlock reason is recorded.
+- For a game that has entered event-ledger scoring, ledger events are the only correction authority. Score/stat projections and `game_edit_history` are system outputs, not parallel writable correction inputs; ledger mode never falls back to aggregate editing.
 - Production and preview must never silently fall back to mock or localStorage data.
 - Never expose service-role or secret keys to the frontend. Use environment variables and let the owner enter secrets.
 - Public profile reads must use an explicit safe-field allowlist and must not expose PII.
@@ -46,9 +47,9 @@ For schema, Auth, RLS, or security work, also run the relevant negative authoriz
 
 ## Visual-pass calibration
 
-- Before any visual audit or implementation pass, read [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md) in full. Its Pass 3 decision, boldness calibration, and audit-methodology addenda are binding.
+- Before any visual audit or implementation pass, read [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md) in full. All addenda are binding, including Addendum 4's badge-outline revision, copper rank-three token, tie convention, and OT7 Leaderboards/stats anchor.
 - Genuine visual-direction choices require both a compliant treatment and a deliberately bolder contract-compliant variant. A motif or accent must be obvious in a cold still screenshot; ambiguity must not silently resolve toward the least visible option.
-- Use Apple Sports as the Home/Schedule reference anchor and “World Cup 2026, simplified” by sheets.works as the Standings/Playoffs anchor.
+- Use Apple Sports as the Home/Schedule reference anchor, “World Cup 2026, simplified” by sheets.works as the Standings/Playoffs anchor, and OT7 as the Leaderboards/stats anchor.
 - Visual findings use four verdicts: **BLOCKING / NON-BLOCKING / VISUALLY INSUFFICIENT / ALREADY FINE**. VISUALLY INSUFFICIENT catches work that is correct but still reads as a competent template against the reference anchors; include capture evidence and a proposed direction.
 - Styling, motion, and identity proposals must state their concrete visual delta and implementation cost. Flag high-cost, marginal-delta work for owner reconsideration rather than shipping it as complete.
 

@@ -14,7 +14,7 @@ Plans 001-004 were written against `3f78312` after the Gate 2 rendered Home, Sch
 | 008 | Bridge journey state replacement with opacity | MEDIUM | DONE |
 | 009 | Reveal a newly generated playoff bracket | LOW | DONE |
 
-Plans 001-004 were completed and verified on 2026-07-16. Plans 005-009 were completed and verified on 2026-07-17. Rendered verification corrected the shared Select/Dialog duration specificity so the named 200ms contract wins over tailwindcss-animate's 150ms state variant. No commit was created; the repository owner checkpoint remains pending.
+Plans 001-004 were completed and verified on 2026-07-16. Plans 005-009 were completed and verified on 2026-07-17. Rendered verification corrected the shared Select/Dialog duration specificity so the named 200ms contract wins over tailwindcss-animate's 150ms state variant. The implementation landed in `3bc4ad6` and its completion record in `db78e08`; no owner checkpoint remains pending for this plan set.
 
 ## Recommended execution order
 
