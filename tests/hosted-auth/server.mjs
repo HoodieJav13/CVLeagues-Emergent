@@ -4,6 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { validateBrowserResult } from "./result_validation.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((pairs, value, index, values) => {
@@ -284,10 +285,7 @@ async function handleResults(request, response) {
   if (completed) return safeJsonResponse(response, 409, { error: "Result already recorded." });
   try {
     const browserResult = await readJson(request);
-    const serialized = JSON.stringify(browserResult);
-    if (/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+|Bearer\s+\S+|password|refresh_token|access_token/i.test(serialized)) {
-      throw new Error("Result payload contained a forbidden credential-shaped field.");
-    }
+    validateBrowserResult(browserResult);
     const cleanupResult = await cleanupFixture();
     mkdirSync(dirname(reportPath), { recursive: true });
     writeFileSync(reportPath, makeReport(browserResult, cleanupResult), { mode: 0o600, flag: "wx" });
