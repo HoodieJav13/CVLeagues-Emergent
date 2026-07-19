@@ -92,6 +92,21 @@ Broadcast/editorial governs by default. Culture is texture, not wallpaper. Cinem
 
 **Effort-vs-impact accounting.** Any pass proposing a visual-direction change states, in concrete terms: (a) the actual visual delta (size/color/position/opacity numbers, not descriptive language), and (b) implementation cost (files, components, new dependencies touched). If cost is high and stated delta is marginal, flag it for owner reconsideration rather than shipping it as complete — this is the direct fix for changes that are "more trouble on the backend than actual frontend impact." This does not apply to foundational/integrity work like Gate 0, which is correctly judged on safety and correctness, not visual ROI — it applies specifically to styling, motion, and identity work going forward.
 
+## Batch 1–2 revisions & Anchor C (ADDENDUM 4)
+
+**Identity badge revision (owner-directed, Batch 1).** The 24–32px ray strokes originally specified for identity badges are replaced by a **3px team-color outline offset toward the lower-right**. The ray/corner-mark motif remains the treatment for surface-level elements — cards, heroes, rails, section accents — but no longer appears on badges. Rays live at surface level; badges carry the octagon + offset outline. Supersedes the badge portion of R1's spec; all future badge work (Team, Profile, compact table marks) follows the outline treatment.
+
+**Copper token (replaces bronze).** Rank-3 medal treatment collided with flag-football orange. Bronze is retired in favor of a distinctly warm copper — visually separated from `--cvf-orange` by being darker, browner, and less saturated (reference family: `#B87352`; final value set in tokens, not hardcoded per the no-hex-in-components rule). Add as a named token (e.g. `--cvf-copper`) with a defined role: rank-3/medal semantics only. It is not a general accent and must not migrate into other uses.
+
+**Tie convention (mandatory, all ranked surfaces).** Tied values share rank: `T3 / T3`, next rank skips (`5`). Shared rank means shared rail/medal treatment — three players tied for first are all gold, not gold/silver/copper. Applies to Leaderboards, Standings tiebreak displays, and any future ranked view. Rendering tied stats as distinct ranks is a data-honesty violation, not a style choice.
+
+**Anchor C — OT7 Leaders page (https://otseven.com/stats).** Overtime's spring football league. Better matched to CVF's scale and player-first positioning than Anchors A/B for leaders/stats surfaces specifically. Qualities to draw on:
+1. Multi-category dashboard — all stat categories rendered simultaneously as stacked modules, no category dropdown; a player finds their own name by scrolling, not filtering.
+2. Featured-leader hero per category — rank 1 as a distinct hero block (identity zone, name, team, large value) above the rank 2+ list. Maps directly onto CVF's fallback-first badge zones; photo-ready later.
+3. T-rank tie convention (codified above).
+4. **Do not copy:** 10-deep lists. At CVF roster sizes a top-10 is the whole league. Cap at top 5 per category module with an expansion for full leaders.
+Anchor A remains primary for Home/Schedule; Anchor B for Standings/Playoffs; Anchor C for Leaderboards/stats surfaces.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.
