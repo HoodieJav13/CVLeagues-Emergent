@@ -1140,6 +1140,9 @@ select cvf_test.ok(
   and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'insert')
   and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'update')
   and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'delete')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'truncate')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'references')
+  and not has_table_privilege('service_role', 'public._cvf_default_privilege_test', 'trigger')
 );
 drop table public._cvf_default_privilege_test;
 
@@ -1149,6 +1152,7 @@ select cvf_test.ok(
   'data api 33 future functions are not executable automatically',
   not has_function_privilege('anon', 'public._cvf_default_privilege_test()', 'execute')
   and not has_function_privilege('authenticated', 'public._cvf_default_privilege_test()', 'execute')
+  and not has_function_privilege('service_role', 'public._cvf_default_privilege_test()', 'execute')
 );
 drop function public._cvf_default_privilege_test();
 
@@ -1822,16 +1826,22 @@ select cvf_test.ok(
   has_table_privilege('service_role', 'public.free_agents', 'insert')
 );
 select cvf_test.ok(
-  'service role 03 protected intake cannot read or rewrite submitted PII',
+  'service role 03 protected intake has no privilege beyond insert',
   not has_table_privilege('service_role', 'public.team_registrations', 'select')
   and not has_table_privilege('service_role', 'public.team_registrations', 'update')
   and not has_table_privilege('service_role', 'public.team_registrations', 'delete')
+  and not has_table_privilege('service_role', 'public.team_registrations', 'truncate')
+  and not has_table_privilege('service_role', 'public.team_registrations', 'references')
+  and not has_table_privilege('service_role', 'public.team_registrations', 'trigger')
   and not has_table_privilege('service_role', 'public.free_agents', 'select')
   and not has_table_privilege('service_role', 'public.free_agents', 'update')
   and not has_table_privilege('service_role', 'public.free_agents', 'delete')
+  and not has_table_privilege('service_role', 'public.free_agents', 'truncate')
+  and not has_table_privilege('service_role', 'public.free_agents', 'references')
+  and not has_table_privilege('service_role', 'public.free_agents', 'trigger')
 );
 select cvf_test.ok(
-  'service role 04 every unrelated public table denies Data API DML',
+  'service role 04 every unrelated public table denies all table privileges',
   not exists (
     select 1
       from pg_catalog.pg_class relation
@@ -1844,6 +1854,34 @@ select cvf_test.ok(
          or has_table_privilege('service_role', relation.oid, 'insert')
          or has_table_privilege('service_role', relation.oid, 'update')
          or has_table_privilege('service_role', relation.oid, 'delete')
+         or has_table_privilege('service_role', relation.oid, 'truncate')
+         or has_table_privilege('service_role', relation.oid, 'references')
+         or has_table_privilege('service_role', relation.oid, 'trigger')
+       )
+  )
+);
+select cvf_test.ok(
+  'service role 05 every public function denies execute',
+  not exists (
+    select 1
+      from pg_catalog.pg_proc function
+      join pg_catalog.pg_namespace namespace on namespace.oid = function.pronamespace
+     where namespace.nspname = 'public'
+       and has_function_privilege('service_role', function.oid, 'execute')
+  )
+);
+select cvf_test.ok(
+  'service role 06 every public sequence denies all sequence privileges',
+  not exists (
+    select 1
+      from pg_catalog.pg_class sequence
+      join pg_catalog.pg_namespace namespace on namespace.oid = sequence.relnamespace
+     where namespace.nspname = 'public'
+       and sequence.relkind = 'S'
+       and (
+         has_sequence_privilege('service_role', sequence.oid, 'usage')
+         or has_sequence_privilege('service_role', sequence.oid, 'select')
+         or has_sequence_privilege('service_role', sequence.oid, 'update')
        )
   )
 );
