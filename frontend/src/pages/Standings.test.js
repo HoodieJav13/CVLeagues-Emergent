@@ -48,8 +48,8 @@ describe("Standings result motion", () => {
       settings: { current_seasons: { kickball: "Summer 2026", flag_football: "Summer 2026" } },
       seasons: [{ name: "Summer 2026", status: "active" }],
       leagues: [
-        { id: "kickball-league", name: "Kickball", sport: "kickball", season: "Summer 2026", kind: "league" },
-        { id: "football-league", name: "Football", sport: "flag_football", season: "Summer 2026", kind: "league" },
+        { id: "kickball-league", name: "Kickball", sport: "kickball", season: "Summer 2026", kind: "league", playoff_format: "single_elim" },
+        { id: "football-league", name: "Football", sport: "flag_football", season: "Summer 2026", kind: "league", playoff_format: "single_elim" },
       ],
       teams: [
         { id: "kickball-team", name: "Kickball Team", league_id: "kickball-league", logo_color: "#fff" },
@@ -90,8 +90,12 @@ describe("Standings result motion", () => {
     expect(sportTrigger?.id).toBe("standings-filter-sport");
     expect(sportTrigger?.getAttribute("aria-labelledby")).toBe("standings-filter-sport-label");
     expect(container.querySelector('#standings-filter-sport-label')?.getAttribute("for")).toBe("standings-filter-sport");
-    expect(container.querySelector('[data-testid="standings-row-kickball-team"]')?.getAttribute("aria-label")).toContain("Kickball Team: rank 1");
-    expect(container.querySelector('[data-testid="standings-row-kickball-team"]')?.getAttribute("aria-label")).toContain("wins");
+    const row = container.querySelector('[data-testid="standings-row-kickball-team"]');
+    expect(row?.getAttribute("aria-label")).toContain("Kickball Team: playoff seed 1");
+    expect(row?.getAttribute("aria-label")).toContain("wins");
+    expect(row?.dataset.playoffQualified).toBe("true");
+    expect(row?.querySelector('[data-cvf-identity-badge="true"]')).not.toBeNull();
+    expect(container.textContent).toContain("All teams qualify · final standings set playoff seeds");
 
     await act(async () => {
       container.querySelector('[data-testid="standings-filter-sport"]').click();
