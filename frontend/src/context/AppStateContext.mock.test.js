@@ -63,4 +63,39 @@ describe("mock mode visible hosted parity", () => {
     ]));
     expect(currentApp.state.waivers.find((waiver) => waiver.email === agent.email)?.profile_id).toBe(assigned.profile_id);
   });
+
+  test("[INV-24][INV-32][INV-37] mock correction keeps the result final and appends before/after audit", async () => {
+    const game = currentApp.state.games.find((item) => item.id === "g1");
+    await act(async () => currentApp.lockGame(game.id));
+
+    const correctedPeriods = {
+      home: [game.periods.home[0] + 1, ...game.periods.home.slice(1)],
+      away: [...game.periods.away],
+    };
+    await act(async () => currentApp.submitScore({
+      game_id: game.id,
+      home_score: game.home_score + 1,
+      away_score: game.away_score,
+      periods: correctedPeriods,
+      statsByPlayer: {},
+      correction_reason: "Official scorebook correction",
+      override_reason: "Player run attribution was not collected",
+    }));
+
+    const corrected = currentApp.state.games.find((item) => item.id === game.id);
+    const audit = corrected.edit_history.at(-1);
+    expect(corrected).toMatchObject({
+      home_score: game.home_score + 1,
+      away_score: game.away_score,
+      score_status: "final",
+      locked: true,
+    });
+    expect(audit).toMatchObject({
+      action: "Final score corrected",
+      reason: "Official scorebook correction",
+      override_reason: "Player run attribution was not collected",
+    });
+    expect(audit.before_state.home_score).toBe(game.home_score);
+    expect(audit.after_state.home_score).toBe(game.home_score + 1);
+  });
 });

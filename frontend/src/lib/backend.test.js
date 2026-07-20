@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { fetchAppState, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
+import { fetchAppState, submitScore, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
 
 jest.mock("./supabase", () => ({
   supabase: {
@@ -88,6 +88,53 @@ describe("RPC-only team mutations", () => {
     expect(supabase.rpc).toHaveBeenCalledWith("verify_waiver", {
       p_waiver_id: "waiver-1",
       p_decision: "verified",
+    });
+  });
+
+  test("[INV-04] aggregate box-score saves use only the hardened submit RPC", async () => {
+    await submitScore({
+      game_id: "game-1",
+      home_score: 2,
+      away_score: 1,
+      periods: { home: [2], away: [1] },
+      statsByPlayer: {
+        "player-1": { team_id: "home", stats: { runs: 2 } },
+      },
+      override_reason: "Official result confirmed",
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith("submit_score", {
+      p_game_id: "game-1",
+      p_home_score: 2,
+      p_away_score: 1,
+      p_periods: { home: [2], away: [1] },
+      p_stats: { "player-1": { team_id: "home", stats: { runs: 2 } } },
+      p_override_reason: "Official result confirmed",
+    });
+    expect(supabase.from).not.toHaveBeenCalled();
+  });
+
+  test("[INV-24][INV-32] final corrections use the reasoned correction RPC", async () => {
+    await submitScore({
+      game_id: "game-1",
+      home_score: 8,
+      away_score: 6,
+      periods: { home: [8, 0, 0, 0], away: [6, 0, 0, 0] },
+      statsByPlayer: {
+        "player-1": { team_id: "home", stats: { passYards: -3 } },
+      },
+      correction_reason: "Correcting transcription",
+      override_reason: "Official scorebook controls",
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith("correct_final_score", {
+      p_game_id: "game-1",
+      p_home_score: 8,
+      p_away_score: 6,
+      p_periods: { home: [8, 0, 0, 0], away: [6, 0, 0, 0] },
+      p_stats: { "player-1": { team_id: "home", stats: { passYards: -3 } } },
+      p_reason: "Correcting transcription",
+      p_override_reason: "Official scorebook controls",
     });
   });
 

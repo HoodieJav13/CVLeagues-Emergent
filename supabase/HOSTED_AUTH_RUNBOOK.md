@@ -39,9 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-For the current 22-table/15-RPC harness, do not continue if the linked project is unexpected, the repository inventory is not exactly 22 migrations, the hosted ledger does not match all 22 in filename order, or `supabase db push --dry-run` reports a pending migration. Stop and complete any separately approved migration review/push procedure before running the matrix. If the repository adds another exposed table or privileged RPC, revise the harness and this inventory gate before treating a rerun as current-surface acceptance.
+For the current 22-table/15-RPC harness, do not continue if the linked project is unexpected, the repository inventory is not exactly 23 migrations, the hosted ledger does not match all 23 in filename order, or `supabase db push --dry-run` reports a pending migration. Migration 23 remains local-only until its separately approved hosted review/push; therefore this runbook describes the post-Migration-23 acceptance surface but must not be run against hosted yet. If the repository adds another exposed table or privileged RPC, revise the harness and this inventory gate before treating a rerun as current-surface acceptance.
 
-Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md) records 150/150 checks passed with fixture cleanup and baseline restoration both passing.
+Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md) records the Migration-22 baseline at 150/150 with fixture cleanup and baseline restoration both passing. After Migration 23 is separately approved and pushed, the revised harness must pass 154/154.
 
 ## Run
 
@@ -89,9 +89,9 @@ The command exits nonzero if any browser/API assertion, residue query, or baseli
 
 Anonymous execution is denied for all 15 client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each:
 
-- `save_score`
+- `submit_score`
 - `lock_game`
-- `unlock_game`
+- `correct_final_score`
 - `set_game_status`
 - `approve_registration`
 - `assign_free_agent`
@@ -109,13 +109,14 @@ Anonymous execution is denied for all 15 client-facing admin RPCs. A real authen
 
 - Anonymous game insertion fails.
 - Non-admin score mutation fails or affects zero rows.
+- Administrators cannot directly update an unlocked score, insert score-bearing games, insert player stats, or insert game history; those paths are RPC-only.
 - Anonymous and non-admin bracket mutations fail.
 - Administrators cannot bypass playoff RPCs with direct writes to bracket headers, seed snapshots, or match topology.
 - Administrators cannot bypass team RPCs with direct writes to persistent identities or enrollment rows.
 - Signed waiver fields cannot be mutated.
 - Game edit history cannot be updated or deleted.
 - A locked game's score and stage cannot be changed directly.
-- An empty unlock reason fails.
+- An empty final-score correction reason fails.
 
 ### Payments authorization
 
@@ -126,7 +127,7 @@ Anonymous execution is denied for all 15 client-facing admin RPCs. A real authen
 
 - All 15 admin RPCs succeed with valid disposable records.
 - Score, lifecycle, intake conversion, roster assignment, and waiver verification effects persist.
-- Locking and reasoned unlocking create append-only history, including the exact unlock reason.
+- Initial score submission, locking, and a reasoned final-score correction create append-only history. The correction preserves the completed/final/locked state and records the exact reason, before/after snapshots, any SOFT override reason, and validation warnings.
 - A four-team bracket is generated, one match is scheduled, another existing game is linked, and a final locked result advances.
 - An existing identity enrolls into another sport with no roster or payment carryover, and a new identity plus first enrollment is created atomically.
 

@@ -65,6 +65,7 @@ export const STAT_GROUPS = {
         { key: "flagPulls", label: "Flag Pulls" },
         { key: "sacks", label: "Sacks" },
         { key: "defInts", label: "INTs" },
+        { key: "safeties", label: "Safeties" },
       ],
     },
     {

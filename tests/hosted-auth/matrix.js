@@ -142,9 +142,24 @@ async function completeAdminMfa(targetClient, code) {
 
 function rpcArguments(name) {
   return {
-    save_score: { p_game_id: config.ids.game, p_home_score: 1, p_away_score: 0, p_periods: { home: [1, 0, 0, 0, 0], away: [0, 0, 0, 0, 0] }, p_stats: {} },
+    submit_score: {
+      p_game_id: config.ids.game,
+      p_home_score: 1,
+      p_away_score: 0,
+      p_periods: { home: [1, 0, 0, 0, 0], away: [0, 0, 0, 0, 0] },
+      p_stats: {},
+      p_override_reason: "Hosted matrix uses a team-only aggregate score",
+    },
     lock_game: { p_game_id: config.ids.game },
-    unlock_game: { p_game_id: config.ids.game, p_reason: "matrix negative authorization check" },
+    correct_final_score: {
+      p_game_id: config.ids.game,
+      p_home_score: 2,
+      p_away_score: 0,
+      p_periods: { home: [2, 0, 0, 0, 0], away: [0, 0, 0, 0, 0] },
+      p_stats: {},
+      p_reason: "Hosted matrix verified final-score correction reason",
+      p_override_reason: "Hosted matrix uses a team-only aggregate score",
+    },
     set_game_status: { p_game_id: config.ids.game, p_status: "postponed" },
     approve_registration: { p_registration_id: config.ids.registration, p_league_id: config.ids.league, p_create_captain_profile: true },
     assign_free_agent: { p_free_agent_id: config.ids.freeAgent, p_team_id: config.ids.homeTeam, p_jersey_number: 31, p_position: "Utility" },
@@ -182,9 +197,9 @@ function rpcArguments(name) {
 }
 
 const ADMIN_RPC_NAMES = [
-  "save_score",
+  "submit_score",
   "lock_game",
-  "unlock_game",
+  "correct_final_score",
   "set_game_status",
   "approve_registration",
   "assign_free_agent",
@@ -396,6 +411,31 @@ async function runMatrix() {
       location: config.runId,
     })));
     await check("direct-write guards", "non-admin direct score update is denied", async () => requireNoWrite(await nonadmin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
+    await check("direct-write guards", "administrator cannot directly update an unlocked score", async () => requireDenied(await admin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
+    await check("direct-write guards", "administrator cannot insert a score-bearing game directly", async () => requireDenied(await admin.from("games").insert({
+      id: config.ids.deniedGame,
+      league_id: config.ids.league,
+      sport: "kickball",
+      home_team_id: config.ids.homeTeam,
+      away_team_id: config.ids.awayTeam,
+      date: "2099-07-14",
+      time: "6:45 PM",
+      location: config.runId,
+      home_score: 1,
+      away_score: 0,
+    })));
+    await check("direct-write guards", "administrator cannot insert player stats directly", async () => requireDenied(await admin.from("player_stats").insert({
+      game_id: config.ids.game,
+      profile_id: config.ids.profile,
+      team_id: config.ids.homeTeam,
+      sport: "kickball",
+      stats: { runs: 1 },
+    })));
+    await check("direct-write guards", "administrator cannot insert game history directly", async () => requireDenied(await admin.from("game_edit_history").insert({
+      game_id: config.ids.game,
+      action: "Bypass",
+      reason: config.runId,
+    })));
     await check("direct-write guards", "non-admin direct bracket insertion is denied", async () => requireDenied(await nonadmin.from("playoff_brackets").insert({ league_id: config.ids.league, bracket_size: 4 })));
     await check("direct-write guards", "non-admin cannot alter a team identity", async () => requireNoWrite(await nonadmin.from("team_identities").update({ name: "Changed" }).eq("name", `${config.runId} home`).select()));
     await check("direct-write guards", "administrator cannot directly insert a team identity", async () => requireDenied(await admin.from("team_identities").insert({ name: `${config.runId} bypass identity`, logo_color: "#000000" })));
@@ -461,8 +501,8 @@ async function runMatrix() {
       requireSuccess(await admin.rpc("set_game_status", { p_game_id: config.ids.game, p_status: "postponed" }));
       requireSuccess(await admin.rpc("set_game_status", { p_game_id: config.ids.game, p_status: "upcoming" }));
     });
-    await check("admin RPC success", "save_score succeeds and writes score", async () => {
-      requireSuccess(await admin.rpc("save_score", rpcArguments("save_score")));
+    await check("admin RPC success", "submit_score succeeds and writes score", async () => {
+      requireSuccess(await admin.rpc("submit_score", rpcArguments("submit_score")));
       const data = requireSuccess(await admin.from("games").select("home_score,away_score,score_status").eq("id", config.ids.game).single());
       requireCondition(data.home_score === 1 && data.away_score === 0 && data.score_status === "submitted", "Saved score did not persist.");
     });
@@ -471,13 +511,19 @@ async function runMatrix() {
       const data = requireSuccess(await admin.from("games").select("locked,score_status").eq("id", config.ids.game).single());
       requireCondition(data.locked === true && data.score_status === "final", "Game did not lock.");
     });
-    await check("locked-game guards", "empty unlock reason is rejected", async () => requireDenied(await admin.rpc("unlock_game", { p_game_id: config.ids.game, p_reason: "   " })));
+    await check("locked-game guards", "empty correction reason is rejected", async () => {
+      const args = { ...rpcArguments("correct_final_score"), p_reason: "   " };
+      requireDenied(await admin.rpc("correct_final_score", args));
+    });
     await check("locked-game guards", "direct locked score update is rejected", async () => requireDenied(await admin.from("games").update({ home_score: 77 }).eq("id", config.ids.game).select()));
     await check("locked-game guards", "direct locked stage update is rejected", async () => requireDenied(await admin.from("games").update({ stage: "playoff" }).eq("id", config.ids.game).select()));
-    await check("admin RPC success", "unlock_game succeeds with a reason", async () => {
-      requireSuccess(await admin.rpc("unlock_game", { p_game_id: config.ids.game, p_reason: "hosted matrix verified unlock reason" }));
-      const data = requireSuccess(await admin.from("games").select("locked,score_status").eq("id", config.ids.game).single());
-      requireCondition(data.locked === false && data.score_status === "approved", "Game did not unlock.");
+    await check("admin RPC success", "correct_final_score succeeds with a reason and preserves final lock", async () => {
+      requireSuccess(await admin.rpc("correct_final_score", rpcArguments("correct_final_score")));
+      const data = requireSuccess(await admin.from("games").select("home_score,away_score,locked,score_status,status").eq("id", config.ids.game).single());
+      requireCondition(
+        data.home_score === 2 && data.away_score === 0 && data.locked === true && data.score_status === "final" && data.status === "completed",
+        "Corrected game did not remain completed, final, and locked.",
+      );
     });
 
     let scheduledPlayoffGame;
@@ -516,12 +562,13 @@ async function runMatrix() {
     });
     await check("playoff RPC success", "administrator advances a final locked playoff result", async () => {
       requireCondition(Boolean(scheduledPlayoffGame), "Scheduled playoff game was unavailable.");
-      requireSuccess(await admin.rpc("save_score", {
+      requireSuccess(await admin.rpc("submit_score", {
         p_game_id: scheduledPlayoffGame,
         p_home_score: 3,
         p_away_score: 1,
         p_periods: { home: [3], away: [1] },
         p_stats: {},
+        p_override_reason: "Hosted matrix uses a team-only aggregate playoff score",
       }));
       requireSuccess(await admin.rpc("lock_game", { p_game_id: scheduledPlayoffGame }));
       const match = requireSuccess(await admin.from("playoff_matches").select("id").eq("game_id", scheduledPlayoffGame).single());
@@ -543,10 +590,16 @@ async function runMatrix() {
       const data = requireSuccess(await admin.from("waivers").select("verification_status,profile_id").eq("id", config.ids.waiver).single());
       requireCondition(data.verification_status === "verified" && data.profile_id, "Waiver did not become verified and linked.");
     });
-    await check("edit history", "admin RPCs created append-only history with unlock reason", async () => {
-      const data = requireSuccess(await admin.from("game_edit_history").select("action,reason").eq("game_id", config.ids.game));
+    await check("edit history", "admin RPCs created append-only correction history with before/after state", async () => {
+      const data = requireSuccess(await admin.from("game_edit_history").select("action,reason,before_state,after_state,override_reason").eq("game_id", config.ids.game));
       requireCondition(data.length >= 6, "Expected RPC history rows were not created.");
-      requireCondition(data.some((row) => row.action === "Unlocked" && row.reason === "hosted matrix verified unlock reason"), "Unlock reason was not retained.");
+      requireCondition(data.some((row) => (
+        row.action === "Final score corrected"
+        && row.reason === "Hosted matrix verified final-score correction reason"
+        && row.before_state?.home_score === 1
+        && row.after_state?.home_score === 2
+        && row.override_reason === "Hosted matrix uses a team-only aggregate score"
+      )), "Correction reason, before/after state, or override reason was not retained.");
     });
 
     await check("team identity RPC success", "administrator enrolls a persistent identity cross-sport without history", async () => {

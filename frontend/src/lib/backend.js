@@ -7,7 +7,7 @@ import { supabase } from "./supabase";
  * sweep made row fields identical to DB columns), so selectors and pages are
  * agnostic to which mode is running.
  *
- * Multi-table mutations (score save, lock/unlock, approve, assign, verify)
+ * Multi-table mutations (score submit/correction, lock, approve, assign, verify)
  * go through the SECURITY DEFINER RPCs from supabase/migrations — the client
  * never composes multi-statement writes itself.
  * ========================================================================== */
@@ -44,7 +44,7 @@ export async function fetchAppState(isAdmin) {
   const gamesQ = isAdmin
     ? supabase
         .from("games")
-        .select("*, edit_history:game_edit_history(action, reason, created_at)")
+        .select("*, edit_history:game_edit_history(action, reason, override_reason, validation_warnings, before_state, after_state, created_at)")
         .order("date")
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
@@ -127,31 +127,39 @@ export async function fetchAppState(isAdmin) {
 /* ------------------------------- mutations ------------------------------- */
 // Signatures mirror the AppStateContext actions one-to-one.
 
-export async function submitScore({ game_id, home_score, away_score, periods, statsByPlayer }) {
+export async function submitScore({
+  game_id,
+  home_score,
+  away_score,
+  periods,
+  statsByPlayer,
+  correction_reason = "",
+  override_reason = "",
+}) {
   const p_stats = {};
   for (const [profile_id, v] of Object.entries(statsByPlayer || {})) {
-    if (v && Object.values(v.stats || {}).some((n) => Number(n) > 0)) {
+    if (v && Object.values(v.stats || {}).some((n) => Number(n) !== 0)) {
       p_stats[profile_id] = { team_id: v.team_id, stats: v.stats };
     }
   }
-  const { error } = await supabase.rpc("save_score", {
+  const rpc = correction_reason.trim() ? "correct_final_score" : "submit_score";
+  const args = {
     p_game_id: game_id,
     p_home_score: Number(home_score),
     p_away_score: Number(away_score),
     p_periods: periods,
     p_stats,
-  });
-  fail(error, "save score");
+    p_override_reason: override_reason.trim() || null,
+  };
+  if (rpc === "correct_final_score") args.p_reason = correction_reason.trim();
+  const { data, error } = await supabase.rpc(rpc, args);
+  fail(error, correction_reason.trim() ? "correct final score" : "submit score");
+  return data;
 }
 
 export async function lockGame(game_id) {
   const { error } = await supabase.rpc("lock_game", { p_game_id: game_id });
   fail(error, "mark final");
-}
-
-export async function unlockGame(game_id, reason) {
-  const { error } = await supabase.rpc("unlock_game", { p_game_id: game_id, p_reason: reason });
-  fail(error, "unlock game");
 }
 
 export async function setGameStatus(game_id, status) {

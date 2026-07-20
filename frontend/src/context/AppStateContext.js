@@ -4,6 +4,7 @@ import { BACKEND_ENABLED } from "../lib/supabase";
 import * as backend from "../lib/backend";
 import { useRole } from "./RoleContext";
 import { buildSingleElimBracket } from "../lib/brackets";
+import { enforceAggregateValidation } from "../lib/scoreValidation";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -30,7 +31,23 @@ let idCounter = 1000;
 const newId = (prefix) => `${prefix}_${Date.now()}_${idCounter++}`;
 
 // One entry in a game's mock audit log (Stage 3 — real audit table in Phase 2).
-const logEntry = (action, reason) => ({ action, created_at: new Date().toISOString(), ...(reason ? { reason } : {}) });
+const logEntry = (action, reason, extra = {}) => ({
+  action,
+  created_at: new Date().toISOString(),
+  ...(reason ? { reason } : {}),
+  ...extra,
+});
+
+const scoreSnapshot = (game, playerStats) => ({
+  home_score: game.home_score,
+  away_score: game.away_score,
+  periods: game.periods,
+  player_stats: Object.fromEntries(
+    playerStats
+      .filter((row) => row.game_id === game.id)
+      .map((row) => [row.profile_id, { team_id: row.team_id, stats: row.stats }])
+  ),
+});
 
 // Brand avatar palette (mirrors seed.js) for newly created profiles.
 const PLAYER_COLORS = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
@@ -77,26 +94,59 @@ export function AppStateProvider({ children }) {
   // per-player stat rows for that game. Everything downstream re-derives.
   // score_status goes to "submitted" — admin promotes to "final" (locked)
   // via the Mark Final action. Every save appends to the edit history.
-  const submitScore = useCallback(({ game_id, home_score, away_score, periods, statsByPlayer }) => {
+  const submitScore = useCallback(({
+    game_id,
+    home_score,
+    away_score,
+    periods,
+    statsByPlayer,
+    correction_reason = "",
+    override_reason = "",
+  }) => {
+    const current = stateRef.current;
+    const game = current.games.find((item) => item.id === game_id);
+    if (!game) throw new Error("[INV-04] The controlled score mutation target no longer exists.");
+
+    const validation = enforceAggregateValidation({
+      game,
+      home_score,
+      away_score,
+      periods,
+      statsByPlayer,
+      teamPlayers: current.teamPlayers,
+      teams: current.teams,
+    }, override_reason);
+
+    const correction = game.locked === true;
+    if (correction && (game.status !== "completed" || game.score_status !== "final")) {
+      throw new Error(`[INV-24] Game ${game.id} must be completed, final, and locked before correction.`);
+    }
+    if (correction && !correction_reason.trim()) {
+      throw new Error("[INV-24] Correcting a final game requires a reason.");
+    }
+    if (!correction && correction_reason.trim()) {
+      throw new Error("[INV-30] A correction reason is valid only for a final locked game.");
+    }
+
+    const source = correction
+      ? current.playoffMatches.find((match) => match.game_id === game_id && match.status === "completed")
+      : null;
+    const newWinner = Number(home_score) > Number(away_score) ? game.home_team_id : game.away_team_id;
+    if (source && source.winner_team_id !== newWinner) {
+      const destinationIds = [source.winner_to_match_id, source.loser_to_match_id].filter(Boolean);
+      const blocked = destinationIds.some((id) => {
+        const destination = current.playoffMatches.find((match) => match.id === id);
+        return destination?.game_id || destination?.status === "completed";
+      });
+      if (blocked) {
+        throw new Error("[INV-32] Winner-changing correction is blocked because a dependent playoff game is scheduled or completed.");
+      }
+    }
+
     setState((prev) => {
-      const games = prev.games.map((g) =>
-        g.id === game_id
-          ? {
-              ...g,
-              status: "completed",
-              score_status: "submitted",
-              home_score: Number(home_score),
-              away_score: Number(away_score),
-              periods: periods || g.periods,
-              edit_history: [...(g.edit_history || []), logEntry(g.status === "completed" ? "Score edited" : "Score saved")],
-            }
-          : g
-      );
-      // Drop any existing stat rows for this game, then add the new ones.
-      const game = prev.games.find((g) => g.id === game_id);
       const kept = prev.playerStats.filter((s) => s.game_id !== game_id);
       const fresh = Object.entries(statsByPlayer || {})
-        .filter(([, v]) => v && Object.values(v.stats || {}).some((n) => Number(n) > 0))
+        .filter(([, v]) => v && Object.values(v.stats || {}).some((n) => Number(n) !== 0))
         .map(([profile_id, v]) => ({
           id: newId("s"),
           game_id,
@@ -105,8 +155,69 @@ export function AppStateProvider({ children }) {
           sport: game.sport,
           stats: v.stats,
         }));
-      return { ...prev, games, playerStats: [...kept, ...fresh] };
+
+      const beforeState = scoreSnapshot(game, prev.playerStats);
+      const nextGame = {
+        ...game,
+        status: "completed",
+        score_status: correction ? "final" : "submitted",
+        locked: correction,
+        home_score: Number(home_score),
+        away_score: Number(away_score),
+        periods: periods || game.periods,
+      };
+      const afterState = scoreSnapshot(nextGame, [...kept, ...fresh]);
+      nextGame.edit_history = [
+        ...(game.edit_history || []),
+        logEntry(
+          correction ? "Final score corrected" : game.status === "completed" ? "Score edited" : "Score saved",
+          correction ? correction_reason.trim() : null,
+          {
+            before_state: beforeState,
+            after_state: afterState,
+            override_reason: override_reason.trim() || null,
+            validation_warnings: validation.soft,
+          }
+        ),
+      ];
+
+      let playoffMatches = prev.playoffMatches;
+      if (correction) {
+        const newLoser = newWinner === game.home_team_id ? game.away_team_id : game.home_team_id;
+        if (source && source.winner_team_id !== newWinner) {
+          const winnerSeed = newWinner === source.home_team_id ? source.home_seed : source.away_seed;
+          const loserSeed = newLoser === source.home_team_id ? source.home_seed : source.away_seed;
+          playoffMatches = prev.playoffMatches.map((match) => {
+            if (match.id === source.id) {
+              return { ...match, winner_team_id: newWinner, loser_team_id: newLoser };
+            }
+            let updated = match;
+            if (match.id === source.winner_to_match_id) {
+              updated = source.winner_to_slot === "home"
+                ? { ...match, home_team_id: newWinner, home_seed: winnerSeed }
+                : { ...match, away_team_id: newWinner, away_seed: winnerSeed };
+            }
+            if (match.id === source.loser_to_match_id) {
+              updated = source.loser_to_slot === "home"
+                ? { ...match, home_team_id: newLoser, home_seed: loserSeed }
+                : { ...match, away_team_id: newLoser, away_seed: loserSeed };
+            }
+            if (updated !== match) {
+              return { ...updated, status: updated.home_team_id && updated.away_team_id ? "ready" : "pending" };
+            }
+            return match;
+          });
+        }
+      }
+
+      return {
+        ...prev,
+        games: prev.games.map((item) => item.id === game_id ? nextGame : item),
+        playerStats: [...kept, ...fresh],
+        playoffMatches,
+      };
     });
+    return validation;
   }, []);
 
   /* --------------------------- REGISTRATIONS ---------------------------- */
@@ -572,53 +683,6 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
-  // Deliberate unlock — requires a reason, which is recorded in the history.
-  const unlockGame = useCallback((game_id, reason) => {
-    setState((prev) => {
-      const source = prev.playoffMatches.find((match) => match.game_id === game_id && match.status === "completed");
-      const destinationIds = [source?.winner_to_match_id, source?.loser_to_match_id].filter(Boolean);
-      if (destinationIds.some((id) => {
-        const destination = prev.playoffMatches.find((match) => match.id === id);
-        return destination?.game_id || destination?.status === "completed";
-      })) {
-        toast.error("This result cannot be unlocked after a downstream playoff game is scheduled.");
-        return prev;
-      }
-
-      const playoffMatches = source
-        ? prev.playoffMatches.map((match) => {
-            if (match.id === source.id) {
-              return { ...match, status: "ready", winner_team_id: null, loser_team_id: null };
-            }
-            if (match.id === source.winner_to_match_id) {
-              return source.winner_to_slot === "home"
-                ? { ...match, home_team_id: null, home_seed: null, status: "pending" }
-                : { ...match, away_team_id: null, away_seed: null, status: "pending" };
-            }
-            if (match.id === source.loser_to_match_id) {
-              return source.loser_to_slot === "home"
-                ? { ...match, home_team_id: null, home_seed: null, status: "pending" }
-                : { ...match, away_team_id: null, away_seed: null, status: "pending" };
-            }
-            return match;
-          })
-        : prev.playoffMatches;
-
-      return {
-        ...prev,
-        playoffMatches,
-        playoffBrackets: source
-          ? prev.playoffBrackets.map((bracket) => bracket.id === source.bracket_id ? { ...bracket, status: "active" } : bracket)
-          : prev.playoffBrackets,
-        games: prev.games.map((g) =>
-        g.id === game_id
-          ? { ...g, score_status: "approved", locked: false, edit_history: [...(g.edit_history || []), logEntry("Unlocked", reason)] }
-          : g
-        ),
-      };
-    });
-  }, []);
-
   // Postpone / cancel a scheduled game (the UI blocks this on locked games).
   const setGameStatus = useCallback((game_id, status) => {
     setState((prev) => ({
@@ -682,7 +746,6 @@ export function AppStateProvider({ children }) {
     assignTempAdmin: act(backend.assignTempAdmin),
     appendAdminNote: act(backend.appendAdminNote),
     lockGame: act(backend.lockGame),
-    unlockGame: act(backend.unlockGame),
     setGameStatus: act(backend.setGameStatus),
     resetState: () => toast.info("Demo reset is mock-mode only."),
   };
@@ -716,7 +779,6 @@ export function AppStateProvider({ children }) {
         assignTempAdmin,
         appendAdminNote,
         lockGame,
-        unlockGame,
         setGameStatus,
         resetState,
       };

@@ -5,7 +5,7 @@ import ScoreEntry from "./ScoreEntry";
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 let mockUseApp;
-const mockUnlockGame = jest.fn();
+const mockSubmitScore = jest.fn();
 let mockGameSelectChange;
 let mockAnimationFrames;
 let mockNextAnimationFrame;
@@ -81,16 +81,9 @@ const lockedState = {
 };
 
 function useLockedGameApp() {
-  const [state, setState] = useState(lockedState);
-  const unlockGame = async (gameId, reason) => {
-    mockUnlockGame(gameId, reason);
-    setState((current) => ({
-      ...current,
-      games: current.games.map((game) => game.id === gameId ? { ...game, locked: false, score_status: "approved" } : game),
-    }));
-  };
+  const [state] = useState(lockedState);
 
-  return { state, submitScore: jest.fn(), unlockGame };
+  return { state, submitScore: mockSubmitScore };
 }
 
 describe("ScoreEntry locked-game UX", () => {
@@ -98,7 +91,8 @@ describe("ScoreEntry locked-game UX", () => {
   let root;
 
   beforeEach(() => {
-    mockUnlockGame.mockClear();
+    mockSubmitScore.mockClear();
+    mockSubmitScore.mockResolvedValue(undefined);
     mockUseApp = useLockedGameApp;
     mockGameSelectChange = undefined;
     mockAnimationFrames = new Map();
@@ -119,7 +113,7 @@ describe("ScoreEntry locked-game UX", () => {
     container.remove();
   });
 
-  test("disables editing while locked and re-enables after a reasoned unlock", async () => {
+  test("[INV-24][INV-32] drafts, cancels, and completes a reasoned correction without unlocking", async () => {
     await act(async () => root.render(<ScoreEntry />));
 
     expect(container.querySelector('[data-testid="score-game-select"]')?.getAttribute("aria-labelledby")).toBe("score-game-select-label");
@@ -138,18 +132,18 @@ describe("ScoreEntry locked-game UX", () => {
     expect(container.querySelector('[data-testid="score-stat-player-1-kicks"]').disabled).toBe(true);
 
     await act(async () => {
-      container.querySelector('[data-testid="score-unlock"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      container.querySelector('[data-testid="score-correction-start"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    const reason = document.querySelector('[data-testid="score-unlock-reason"]');
+    const reason = document.querySelector('[data-testid="score-correction-reason"]');
     expect(document.activeElement).toBe(reason);
     await act(async () => {
-      document.querySelector('[data-testid="score-unlock-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document.querySelector('[data-testid="score-correction-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
     expect(reason?.getAttribute("aria-invalid")).toBe("true");
-    expect(reason?.getAttribute("aria-describedby")).toBe("score-unlock-reason-error");
-    expect(document.querySelector('#score-unlock-reason-error')?.getAttribute("role")).toBe("alert");
-    expect(document.querySelector('#score-unlock-reason-error')?.textContent).toBe("A reason is required to unlock.");
+    expect(reason?.getAttribute("aria-describedby")).toBe("score-correction-reason-error");
+    expect(document.querySelector('#score-correction-reason-error')?.getAttribute("role")).toBe("alert");
+    expect(document.querySelector('#score-correction-reason-error')?.textContent).toBe("A correction reason is required.");
 
     await act(async () => {
       const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
@@ -158,19 +152,52 @@ describe("ScoreEntry locked-game UX", () => {
     });
     expect(reason?.getAttribute("aria-invalid")).toBe("false");
     expect(reason?.getAttribute("aria-describedby")).toBeNull();
-    expect(document.querySelector('#score-unlock-reason-error')).toBeNull();
+    expect(document.querySelector('#score-correction-reason-error')).toBeNull();
 
     await act(async () => {
-      document.querySelector('[data-testid="score-unlock-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document.querySelector('[data-testid="score-correction-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
     });
 
-    expect(mockUnlockGame).toHaveBeenCalledWith("game-1", "Correcting the final score");
-    expect(container.querySelector('[data-testid="score-locked-notice"]')).toBeNull();
+    expect(container.querySelector('[data-testid="score-locked-notice"]')?.textContent).toContain("published result locked");
     expect(container.querySelector('[data-testid="score-away-period-0"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-add-inning"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-stat-player-1-kicks"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-save"]').disabled).toBe(false);
-    expect(document.activeElement).toBe(container.querySelector('[data-testid="score-game-select"]'));
+
+    await act(async () => {
+      container.querySelector('[data-testid="score-correction-cancel"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(container.querySelector('[data-testid="score-away-period-0"]').disabled).toBe(true);
+    expect(container.querySelector('[data-testid="score-away-period-0"]').value).toBe("1");
+    expect(mockSubmitScore).not.toHaveBeenCalled();
+
+    await act(async () => {
+      container.querySelector('[data-testid="score-correction-start"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    const secondReason = document.querySelector('[data-testid="score-correction-reason"]');
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+      setValue.call(secondReason, "Correcting the final score");
+      secondReason.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector('[data-testid="score-correction-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    await act(async () => {
+      container.querySelector('[data-testid="score-save"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(document.querySelector('[data-testid="score-soft-warnings"]')?.textContent).toContain("[INV-05]");
+    const override = document.querySelector('[data-testid="score-override-reason"]');
+    await act(async () => {
+      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+      setValue.call(override, "Official book has team-only totals");
+      override.dispatchEvent(new Event("input", { bubbles: true }));
+      document.querySelector('[data-testid="score-override-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+    expect(mockSubmitScore).toHaveBeenCalledWith(expect.objectContaining({
+      game_id: "game-1",
+      correction_reason: "Correcting the final score",
+      override_reason: "Official book has team-only totals",
+    }));
   });
 
   test("bridges only the selector-owned game form after a game change", async () => {

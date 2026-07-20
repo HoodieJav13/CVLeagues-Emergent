@@ -2,15 +2,15 @@
 
 This file is authoritative for CVF Leagues schema, migration ledger, backend invariants, and hosted verification state. Current product status, roadmap, and owner actions live in [`../CLAUDE.md`](../CLAUDE.md). This dedicated Supabase project must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-17
+## Verified status — 2026-07-19
 
-- Twenty-two migration files are present in filename order. A real local Supabase reset applies all twenty-two, and both the real-stack and independent pgtest runs pass 213/213.
-- The linked hosted project has all twenty-two migrations applied with its clean row baseline preserved. The service-role privilege catalog passes exactly at the accepted customer-controlled boundary.
+- Twenty-three migration files are present in filename order. A real local Supabase reset applies all twenty-three, and both the real-stack and independent pgtest runs pass 231/231.
+- The linked hosted project has the first twenty-two migrations applied with its clean row baseline preserved. Migration 23 (`aggregate_scoring_hardening`) is local-only pending owner-gated hosted application and revised authorization acceptance. The service-role privilege catalog passes exactly at the accepted customer-controlled boundary.
 - Hosted verification confirms the two remediated function attributes, 38/38 foreign-key index coverage, and the expected clean row-count baseline.
 - Hosted Security and Performance Advisors were rerun against all twenty-two migrations: 23 Security and 24 Performance findings have the itemized dispositions below. None was introduced by the service-role hardening migration.
 - `supabase/config.toml` is present; unused local Storage and Analytics services are intentionally disabled.
 - The real Auth administrator is linked through `admin_users`, and administration requires verified AAL2/TOTP. The final hosted matrix verified fail-closed anonymous, authenticated non-admin, password-only linked-admin, and AAL2 administrator behavior across the current surface.
-- The expanded hosted authorization matrix passed 150/150 browser/API checks across 22 tables and all 15 administrator RPCs. Fixture cleanup and exact baseline restoration both passed. See [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md). The immutable [`July 13 evidence`](evidence/hosted-auth-matrix-2026-07-13.md) remains the accepted 66/66 twelve-migration baseline.
+- The Migration-22 hosted authorization matrix passed 150/150 browser/API checks across 22 tables and all 15 administrator RPCs. Fixture cleanup and exact baseline restoration both passed. The runbook is revised for Migration 23's replacement scoring RPCs but must not be run against hosted until the migration receives separate push approval. See [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md). The immutable [`July 13 evidence`](evidence/hosted-auth-matrix-2026-07-13.md) remains the accepted 66/66 twelve-migration baseline.
 - Launch hardening requires AAL2/TOTP for administration and routes public intake through a Turnstile-verified server boundary. Recovery/session revocation, preview/production values, live hosted application acceptance, and deployment remain open.
 - No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
 
@@ -28,7 +28,7 @@ Owner-confirmed on 2026-07-10:
 - Database password: owner confirmed it is stored securely; its value and storage details are not recorded here
 - Backup capability: Free-plan project; regular off-platform logical exports remain required before launch
 
-The project is linked and all twenty-two migrations are applied with migration history, structural catalog checks, clean row counts, both advisors reconfirmed, and the expanded real-session authorization matrix accepted at 150/150. The immutable twelve-migration baseline remains in [`evidence/hosted-auth-matrix-2026-07-13.md`](evidence/hosted-auth-matrix-2026-07-13.md); the current accepted run is [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md).
+The project is linked and the first twenty-two migrations are applied with migration history, structural catalog checks, clean row counts, both advisors reconfirmed, and the Migration-22 real-session authorization matrix accepted at 150/150. Migration 23 is local-only. The immutable twelve-migration baseline remains in [`evidence/hosted-auth-matrix-2026-07-13.md`](evidence/hosted-auth-matrix-2026-07-13.md); the current accepted hosted run is [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md).
 
 ## Migration inventory
 
@@ -56,6 +56,7 @@ The project is linked and all twenty-two migrations are applied with migration h
 | `20260714202756_expose_safe_hof_entries.sql` | Makes the HOF base table admin-only and exposes published display fields through an allowlisted view |
 | `20260715004338_restrict_service_role_to_intake_inserts.sql` | Restricts the server secret to INSERT-only protected team/free-agent intake access |
 | `20260715201257_fully_restrict_service_role_privileges.sql` | Removes the remaining service-role table administration, sequence, and public-function privileges and hardens migration-owner defaults |
+| `20260720031319_aggregate_scoring_hardening.sql` | Adds two-tier aggregate validation, makes score/stat/history mutation RPC-only, and replaces bare unlock with reasoned atomic final correction |
 
 ## Completed database hardening
 
@@ -66,6 +67,7 @@ The project is linked and all twenty-two migrations are applied with migration h
 - Games with granular statistics cannot change leagues; leagues with granular statistics cannot change season or league/tournament kind.
 - Bracket headers, seed snapshots, and match topology are read-only through the Data API; all mutations use the verified playoff RPC workflow.
 - Team identities and enrollments are read-only through the Data API; creation, enrollment, brand propagation, and supported lifecycle edits use admin-guarded RPCs.
+- Aggregate score/stat/history mutation is RPC-only locally. `submit_score` and `correct_final_score` enforce HARD invariants, require a recorded reason for SOFT overrides, and preserve append-only audit; the final correction never unlocks the public result. Hosted adoption remains separately gated.
 - Career-baseline imports must not overlap seasons represented by granular game statistics. The legacy `current_season` setting is compatibility-only once sport defaults diverge; both are documented non-blocking contracts.
 - Anonymous and authenticated Data API privileges are explicitly allowlisted; future tables and functions are private by default.
 - `service_role` access is explicitly limited to `INSERT` on `team_registrations` and `free_agents`; it has no other current public-table privilege, no public-sequence privilege, and no public-function `EXECUTE`. Future objects created by the repository migration owner (`postgres`) inherit no `service_role` access. Supabase platform-owned `supabase_admin` default ACLs cannot be altered by customer migrations; this is an accepted platform boundary, not an unresolved application grant, and every current object is re-revoked explicitly.
@@ -140,7 +142,7 @@ The harness requires local PostgreSQL binaries and permission to allocate Postgr
 
 ## Future hosted migration procedure
 
-The hosted ledger currently contains all twenty-two repository migrations. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+The hosted ledger currently contains the first twenty-two repository migrations; Migration 23 is the sole local-only migration. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
 Before a future hosted migration:
 
@@ -163,8 +165,8 @@ After an approved push, immediately re-run migration listing, compare hosted his
 
 - **Admin identity:** `admin_users` is distinct from player profiles; Auth User is not Player.
 - **RLS:** all 22 local and hosted tables enable RLS. API privileges are separately allowlisted and covered by catalog assertions plus the accepted hosted authorization matrix.
-- **Game locks:** score, lifecycle, lock, and competition-stage changes are blocked while locked unless the approved unlock transaction records a non-empty reason.
-- **Edit history:** game history rows are insert-only and immutable.
+- **Game locks:** local Migration 23 retires aggregate unlock. A final correction requires AAL2 plus a non-empty reason and atomically preserves the completed/final/locked state; unsafe winner-changing playoff corrections remain blocked after downstream scheduling.
+- **Edit history:** game history rows are RPC-written, append-only, and immutable. Aggregate before/after snapshots are audit evidence only and never projection input.
 - **Competition stages:** tournament containers accept only tournament games; league containers accept regular/playoff games.
 - **Waivers:** signature fields are immutable, re-signing inserts a new row, and profile linkage is one-shot.
 - **Public profiles:** `public_profiles` intentionally uses definer-style view behavior to read through private `profiles` RLS. Its exact allowlist is `id`, `first_name`, `last_name`, `display_name`, `name`, `sports`, `experience`, `bio`, `avatar_color`, `claimed`, `eligibility_status`, and `created_at`. Email, phone, date of birth, emergency contacts, admin notes, Auth user IDs, and waiver details are absent and regression-tested.
@@ -172,7 +174,7 @@ After an approved push, immediately re-run migration listing, compare hosted his
 - **Intake:** direct anonymous Data API writes are denied. Public submissions use the Turnstile-verified server endpoint and cannot set or read triage state.
 - **Hall of Fame:** the base table is admin-only; public roles can read only the allowlisted view, and it remains empty until the settings gate is enabled.
 - **Payments:** exactly one payer is required per charge, and a team charge must match the team's league season.
-- **Playoffs:** fixed bracket topology and seed snapshots are public-read/admin-write; advancement requires a final locked result, and unsafe upstream unlocks are blocked.
+- **Playoffs:** fixed bracket topology and seed snapshots are public-read/RPC-write; advancement requires a final locked result, and winner-changing aggregate corrections are blocked once a dependent game is scheduled or completed.
 - **Team identity:** one canonical brand may enroll once per league/tournament; enrollment creates no roster, payment, game, stat, waiver, or registration history.
 
 ## Owner action authority

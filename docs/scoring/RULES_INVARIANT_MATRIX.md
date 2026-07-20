@@ -23,7 +23,7 @@ the owner resolves the discrepancy.
 | Player attribution | Player-attributed events may reference only the immutable participant snapshot captured when the scoring session begins. Team-only events must explicitly omit the player rather than use a placeholder profile. |
 | Forfeit | A forfeit is represented as a canceled game with an explicit winning team and losing team. It contributes one win and one loss, but no numeric score, points-for/against, periods, or player statistics. |
 | Mercy rule | Neither sport has a mercy rule at this time. An administrator may not silently infer one. A future mercy rule requires a versioned rule change. |
-| Post-final correction | Ledger-mode corrections use void/replacement events. Aggregate-mode games retain the legacy unlock/edit workflow. The two mechanisms never govern the same game. |
+| Post-final correction | Aggregate-mode games use reasoned atomic `correct_final_score` while remaining final/locked. Ledger-mode corrections use void/replacement events. The two mechanisms never govern the same game. |
 
 ### Kickball
 
@@ -67,7 +67,7 @@ All kickball stats are nonnegative integer counts.
 | Regulation | Four quarters. Operational clock length may be configured separately, but the scoring projection always has four regulation periods. | Regulation scoring events reference `Q1`–`Q4`. |
 | Touchdown | +6 team points. Every touchdown has exactly one scorer. A passing TD also credits exactly one passer and exactly one receiver; a rushing TD credits the rusher; a pick-six credits the intercepting defender. | `tds` identifies scorers and excludes passing credit. `passTDs` is never added to score a second time. |
 | Conversion | +1, +2, or +3 team points according to the recorded attempt. Only the player who scores the conversion receives `onePoint`, `twoPoint`, or `threePoint`; no separate passing-conversion statistic is kept. | Conversion event value and the scorer's conversion key must agree. |
-| Safety | +2 team points and attribution to the player who caused the safety. The ledger must preserve both team and player attribution even though the current `statsConfig` has no `safeties` key. | Safety points reconcile directly from effective safety events. A later projection may add a `safeties` count, but must not discard ledger attribution. |
+| Safety | +2 team points and attribution to the player who caused the safety. Sequence 2 adds the `safeties` player count; the later ledger must preserve the same team and player attribution. | Safety points reconcile from player `safeties` in aggregate mode and effective safety events in ledger mode. |
 | Interception | A thrown interception credits `ints + 1` to the passer and `defInts + 1` to the intercepting defender. If returned for a touchdown, that same play also produces a +6 pick-six scoring event and `tds + 1` for the defender. | Team `ints` equals opponent team `defInts`; the interception itself is not points. |
 | Overtime | No final tie is allowed. CVF uses college-style alternating possessions: each team receives one possession in an overtime round from the configured overtime start spot; after the first round, a touchdown requires a two-point attempt; beginning with the third round, teams alternate conversion attempts rather than full possessions. Rounds continue until both teams have had the required opportunity and the score is unequal. | Each round is a distinct `OTn` period. A game cannot finalize midway through an equal-opportunity round unless a defensive score ends the contest under the possession rule. |
 | Mercy | None. | No automatic early-final rule exists. |
@@ -100,6 +100,7 @@ Count statistics are nonnegative integers. `passYards`, `rushYards`, and
 | `flagPulls` | Defensive flag-pull event credited to a defender. | Independent tally. |
 | `sacks` | Sack event credited to a defender. | Independent tally. |
 | `defInts` | Defensive interception event credited to the interceptor. | Team total equals opponent `ints`; a pick-six also increments `tds`. |
+| `safeties` | Safety event credited to the responsible defender. | Team score contribution is `2 * sum(safeties)`. |
 | `tds` | Any touchdown scored by this player: receiving, rushing, or defensive. It explicitly excludes a passer's passing credit. | Team score contribution is `6 * sum(tds)`. |
 | `onePoint` | Successful one-point conversion scored by this player. | Team score contribution is `1 * sum(onePoint)`. |
 | `twoPoint` | Successful two-point conversion scored by this player. | Team score contribution is `2 * sum(twoPoint)`. |
@@ -107,7 +108,7 @@ Count statistics are nonnegative integers. `passYards`, `rushYards`, and
 
 For a flag-football team, the score must reconcile to:
 
-`6 × tds + onePoint + 2 × twoPoint + 3 × threePoint + 2 × effective safety events`
+`6 × tds + onePoint + 2 × twoPoint + 3 × threePoint + 2 × safeties`
 
 The formula uses scorer touchdowns, not `passTDs`, because a passing
 touchdown deliberately creates both passer and receiver credit.
@@ -125,7 +126,7 @@ touchdown deliberately creates both passer and receiver credit.
 | `INV-05` | Kickball team score equals team `runs`; RBIs do not create score and team RBIs cannot exceed team runs. |
 | `INV-06` | Flag-football scoring reconciles to the formula in Section A, with passing credit excluded from duplicate point calculation. |
 | `INV-07` | Team flag-football totals reconcile as `completions = catches`, `passYards = recYards`, `passTDs = recTDs`, and one team's `ints = opponent defInts`. |
-| `INV-08` | A final playoff game and every final flag-football game has a winner. Kickball ties are permitted only when the snapshotted non-playoff competition rules allow them. |
+| `INV-08` | In Season 1, every final kickball and flag-football game has a winner. A tied kickball game continues into extra innings; a tied flag-football game continues under its overtime rules. Playoff finals also cannot tie. |
 | `INV-09` | A forfeit has lifecycle status `canceled`, explicit winner and loser teams, and a final locked outcome; it contributes W/L only and has null score, empty periods, and no player-stat projection. |
 | `INV-10` | The applicable rule version, regulation-period count, overtime start setting, sport, league, season, stage, and team participants are snapshotted before the first ledger event and cannot change afterward. |
 | `INV-11` | A scoring session snapshots the eligible participants for both teams when it opens. Every player-attributed event references exactly one snapshotted participant on the event's credited team. |
@@ -150,8 +151,8 @@ touchdown deliberately creates both passer and receiver credit.
 |---|---|
 | `INV-21` | The ledger-mode state graph is `scheduled → live → final/locked`. A final game may enter `correction-drafting`, then only `re-finalized` or the prior `final/locked` state through cancellation. Unsupported transitions fail. |
 | `INV-22` | `scheduled → live` occurs only through the scoring-session start RPC after rule, team, and participant snapshots succeed. |
-| `INV-23` | `live → final/locked` occurs only through atomic finalization after every sport rule and reconciliation check passes. |
-| `INV-24` | Opening a correction requires a nonblank reason and a currently final, locked ledger-mode game. It does not unlock or mutate the published projection. |
+| `INV-23` | Finalization occurs only through the sanctioned AAL2 path after every applicable HARD rule passes: aggregate games move from completed/submitted-or-approved to final/locked through `lock_game`; future ledger games move from live to final/locked through atomic ledger finalization. |
+| `INV-24` | A post-final correction requires a nonblank reason and a currently final, locked game. Aggregate correction applies atomically without an intermediate unlock; a future ledger correction session does not mutate the published projection until commit. |
 | `INV-25` | While a correction is drafting, public readers continue to see the prior final locked score, periods, stats, winner, and bracket consequences. Draft events and session metadata are not public. |
 | `INV-26` | Re-finalization atomically replaces the published projection and returns the game to final/locked. Cancellation discards the draft's effect and leaves the prior published projection byte-for-byte unchanged. |
 | `INV-27` | Scheduled games expose schedule metadata only; live ledger games remain admin-only during the pilot; final/locked games expose only their committed public projection and allowlisted public fields. |
@@ -162,9 +163,9 @@ touchdown deliberately creates both passer and receiver credit.
 |---|---|
 | `INV-28` | Every score-bearing game declares exactly one mode: `aggregate` or `ledger`. |
 | `INV-29` | A game may move from aggregate to ledger only through a controlled one-way conversion before any ledger session starts. A ledger-mode game can never return to aggregate mode. |
-| `INV-30` | A ledger-mode game can never use legacy unlock/edit. An aggregate-mode game can never append ledger correction events. No game's history contains both correction authorities. |
-| `INV-31` | Legacy aggregate games retain the existing required-reason unlock and append-only edit-history workflow until separately migrated. Existing aggregate history is not rewritten as synthetic ledger history. |
-| `INV-32` | Ledger finalization folds the effective ordered ledger, validates all rules and reconciliations, rebuilds `games` and `player_stats`, revises safe bracket consequences, retains/reapplies the game lock, and appends the system-generated history record in one transaction. All commit or none commit. |
+| `INV-30` | Each game has exactly one correction authority: aggregate-mode games use `correct_final_score`; ledger-mode games use void/replacement events. No game can use both or return from ledger mode to aggregate mutation. |
+| `INV-31` | Aggregate correction replaces score/stat projections atomically, records reason and before/after audit output, and preserves the final lock. Existing aggregate history is never rewritten as synthetic ledger history when ledger mode is introduced. |
+| `INV-32` | Every aggregate correction and future ledger finalization is atomic across validation, `games`, `player_stats`, safe bracket consequences, retained/reapplied lock, and system-written history. Ledger finalization additionally folds the effective ordered ledger. All effects commit or none commit. |
 | `INV-33` | Projection rows are deterministic cached output: the same effective ledger and rule snapshot produce the same game, player-stat, outcome, and bracket projection. Projection values are never independent correction input. |
 | `INV-34` | A failed finalization changes no ledger effectiveness, projection, lock, or bracket state. Any `failed` audit entry is system-generated outside the rolled-back projection transaction and contains metadata only. |
 
@@ -176,7 +177,7 @@ touchdown deliberately creates both passer and receiver credit.
 |---|---|
 | `INV-35` | For a ledger-mode game, effective ledger events are the sole authority for score, periods, player stats, outcome, and bracket consequences. |
 | `INV-36` | Post-final corrections append void and replacement events. Original events are immutable and remain auditable. |
-| `INV-37` | `game_edit_history` is audit output only. It records correction `opened`, `finalized`, `canceled`, or `failed`, plus actor, server timestamp, required reason, and session reference; it contains no authoritative score/stat values and is never projection input. |
+| `INV-37` | `game_edit_history` is audit output only and is never projection input. Ledger correction rows record `opened`, `finalized`, `canceled`, or `failed`, plus actor, server timestamp, required reason, and session reference. Aggregate-mode saves/corrections may additionally retain non-authoritative before/after score-stat snapshots, validation warnings, and their override reason, as decided for Sequence 2 on July 19, 2026. |
 | `INV-38` | Only controlled RPCs write `game_edit_history`. Direct client insert, update, delete, truncate, trigger, and references privileges are denied, and its existing append-only database guard remains active. |
 | `INV-39` | Neither clients nor administrators manually correct `games` or `player_stats` projection rows. Rebuilding from the effective ledger is the only ledger-mode correction path. |
 
@@ -255,9 +256,9 @@ found no evidence of corrupted live data.
 | **BLOCKING before ledger pilot** | `ScoreEntry` hardcodes five kickball innings instead of snapshotting a variable regulation count. | `INV-10` |
 | **BLOCKING before ledger pilot** | All form stats are clamped nonnegative, so valid negative pass/rush/receiving yardage cannot be entered. | `INV-03` |
 | **BLOCKING before ledger pilot** | Current score entry reads the mutable roster and has no participant snapshot. | `INV-11`, `INV-12` |
-| **BLOCKING before ledger pilot** | `save_score` accepts aggregate JSON without enforcing period sums, sport keys/types, participant/team attribution, or cross-stat reconciliation. | `INV-01`–`INV-08` |
+| **RESOLVED LOCALLY IN SEQUENCE 2** | `submit_score` and `correct_final_score` enforce aggregate HARD rules server-side and require a recorded override reason for SOFT reconciliation warnings; Migration 23 remains local until separately approved for hosted application. | `INV-01`–`INV-08` |
 | **BLOCKING before ledger pilot** | Current status/standings logic ignores canceled games and has no explicit forfeit outcome, so it cannot represent the approved W/L-only forfeit rule. | `INV-09` |
-| **BLOCKING before ledger pilot** | The existing flag stat dictionary has no `safeties` projection key even though a safety must retain player attribution. | `INV-13` |
+| **RESOLVED LOCALLY IN SEQUENCE 2** | `safeties` is now an allowlisted player stat and is included in flag score reconciliation; Migration 23 remains local until separately approved for hosted application. | `INV-13` |
 | **BLOCKING before ledger pilot** | The existing UI has no flag-football overtime entry model. | `INV-01`, `INV-08`, `INV-10` |
-| **BLOCKING before ledger pilot** | Authenticated admin clients currently have direct score/stat and history-write surfaces; `temp_admin` also exists in mock score entry. | `INV-04`, `INV-19`, `INV-38` |
-| **NON-BLOCKING (planned separation)** | Existing aggregate unlock blocks when downstream playoff games are scheduled. The ledger correction contract now distinguishes same-winner corrections from winner-changing corrections without weakening legacy aggregate safety. | `INV-30`, bracket-safety matrix |
+| **RESOLVED LOCALLY IN SEQUENCE 2** | Migration 23 revokes direct score/stat/history mutation, retires aggregate unlock, and the Score Entry route no longer admits `temp_admin`; hosted application remains separately gated. | `INV-04`, `INV-19`, `INV-38` |
+| **RESOLVED LOCALLY IN SEQUENCE 2** | Aggregate final correction preserves downstream advancement for same-winner changes, atomically reprojects unscheduled destinations for winner changes, and blocks winner changes after a dependent game is scheduled or completed. | `INV-30`–`INV-32`, bracket-safety matrix |

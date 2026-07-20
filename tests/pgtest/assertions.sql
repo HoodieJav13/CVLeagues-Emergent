@@ -319,31 +319,54 @@ select cvf_test.throws_ok(
 
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 select cvf_test.throws_ok(
-  'existing 14 locked game score update raises',
+  'existing 14 [INV-04] direct game score update is privilege-blocked',
   $$update public.games
        set home_score = 9
      where id = '50000000-0000-0000-0000-000000000003'$$,
-  '%final and locked%'
+  '%permission denied%'
 );
 select cvf_test.throws_ok(
-  'existing 15 unlock_game requires reason',
+  'existing 15 [INV-30] legacy unlock RPC is retired',
   $$select public.unlock_game('50000000-0000-0000-0000-000000000003', '')$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'existing 16 [INV-24] final correction requires a reason',
+  $$select public.correct_final_score(
+       '50000000-0000-0000-0000-000000000003',
+       9, 5,
+       '{"home":[3,2,2,1,1],"away":[1,1,1,1,1]}'::jsonb,
+       '{
+         "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":9}},
+         "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":5}}
+       }'::jsonb,
+       '')$$,
   '%requires a reason%'
 );
 select cvf_test.lives_ok(
-  'existing 16 unlock_game with reason succeeds',
-  $$select public.unlock_game('50000000-0000-0000-0000-000000000003', 'correcting score')$$
+  'existing 17 [INV-24][INV-32] reasoned correction preserves final lock',
+  $$select public.correct_final_score(
+       '50000000-0000-0000-0000-000000000003',
+       9, 5,
+       '{"home":[3,2,2,1,1],"away":[1,1,1,1,1]}'::jsonb,
+       '{
+         "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":9}},
+         "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":5}}
+       }'::jsonb,
+       'Correcting the official final')$$
 );
-select cvf_test.eq_text(
-  'existing 17 unlocked game score_status approved',
-  (select score_status from public.games where id = '50000000-0000-0000-0000-000000000003'),
-  'approved'
-);
-select cvf_test.eq_int(
-  'existing 18 unlock writes history row',
-  (select count(*)::int from public.game_edit_history
-    where game_id = '50000000-0000-0000-0000-000000000003' and action = 'Unlocked' and reason = 'correcting score'),
-  1
+select cvf_test.ok(
+  'existing 18 [INV-32][INV-39] correction writes before/after audit and stays final',
+  (select locked and score_status = 'final' and home_score = 9
+     from public.games where id = '50000000-0000-0000-0000-000000000003')
+  and exists (
+    select 1 from public.game_edit_history
+    where game_id = '50000000-0000-0000-0000-000000000003'
+      and action = 'Final score corrected'
+      and reason = 'Correcting the official final'
+      and before_state ->> 'home_score' = '8'
+      and after_state ->> 'home_score' = '9'
+  )
 );
 
 select cvf_test.throws_ok(
@@ -1230,7 +1253,9 @@ select cvf_test.ok(
 );
 select cvf_test.throws_ok(
   'launch 03a linked AAL1 administrator cannot save a score',
-  $$select public.save_score('50000000-0000-0000-0000-000000000001', 1, 0, '{}'::jsonb, '{}'::jsonb)$$,
+  $$select public.submit_score(
+       '50000000-0000-0000-0000-000000000001', 1, 0,
+       '{"home":[1],"away":[0]}'::jsonb, '{}'::jsonb, 'AAL1 bypass check')$$,
   '%Admin only%'
 );
 select cvf_test.throws_ok(
@@ -1239,8 +1264,11 @@ select cvf_test.throws_ok(
   '%Admin only%'
 );
 select cvf_test.throws_ok(
-  'launch 03c linked AAL1 administrator cannot unlock a game',
-  $$select public.unlock_game('50000000-0000-0000-0000-000000000001', 'MFA bypass check')$$,
+  'launch 03c linked AAL1 administrator cannot correct a final score',
+  $$select public.correct_final_score(
+       '50000000-0000-0000-0000-000000000003', 9, 5,
+       '{"home":[3,2,2,1,1],"away":[1,1,1,1,1]}'::jsonb,
+       '{}'::jsonb, 'MFA bypass check', 'AAL1 bypass check')$$,
   '%Admin only%'
 );
 select cvf_test.throws_ok(
@@ -1484,9 +1512,10 @@ select cvf_test.throws_ok(
 );
 select cvf_test.lives_ok(
   'bracket setup score and lock scheduled game',
-  $$select public.save_score(
+  $$select public.submit_score(
       (select game_id from public.playoff_matches where game_id is not null limit 1),
-      10, 4, '{"home":[],"away":[]}'::jsonb, '{}'::jsonb
+      10, 4, '{"home":[10],"away":[4]}'::jsonb, '{}'::jsonb,
+      'Bracket fixture records team totals only'
     );
     select public.lock_game(
       (select game_id from public.playoff_matches where game_id is not null limit 1)
@@ -1547,41 +1576,31 @@ select cvf_test.ok(
   and not has_table_privilege('authenticated', 'public.playoff_matches', 'insert,update,delete')
 );
 select cvf_test.lives_ok(
-  'bracket 17 unlocking retracts an advancement before downstream scheduling',
-  $$select public.unlock_game(
+  'bracket 17 [INV-32] winner correction retracts and reapplies before downstream scheduling',
+  $$select public.correct_final_score(
       (select game_id from public.playoff_matches where game_id is not null limit 1),
-      'Correcting a playoff score'
+      4, 10, '{"home":[4],"away":[10]}'::jsonb, '{}'::jsonb,
+      'Correcting the playoff winner', 'Bracket fixture records team totals only'
     )$$
 );
 select cvf_test.ok(
-  'bracket 18 retraction clears the downstream slot and source result',
+  'bracket 18 [INV-32] correction replaces downstream slot and source result atomically',
   exists (
     select 1 from public.playoff_matches source
     join public.playoff_matches destination on destination.id = source.winner_to_match_id
     where source.game_id is not null
-      and source.status = 'ready'
-      and source.winner_team_id is null
-      and source.loser_team_id is null
-      and destination.status = 'pending'
+      and source.status = 'completed'
+      and source.winner_team_id is not null
+      and source.loser_team_id is not null
       and (
-        (source.winner_to_slot = 'home' and destination.home_team_id is null and destination.home_seed is null)
-        or (source.winner_to_slot = 'away' and destination.away_team_id is null and destination.away_seed is null)
+        (source.winner_to_slot = 'home' and destination.home_team_id = source.winner_team_id and destination.home_seed is not null)
+        or (source.winner_to_slot = 'away' and destination.away_team_id = source.winner_team_id and destination.away_seed is not null)
       )
   )
 );
 select cvf_test.lives_ok(
-  'bracket setup re-advances and schedules the downstream match',
-  $$select public.save_score(
-      (select game_id from public.playoff_matches where game_id is not null limit 1),
-      11, 4, '{"home":[],"away":[]}'::jsonb, '{}'::jsonb
-    );
-    select public.lock_game(
-      (select game_id from public.playoff_matches where game_id is not null limit 1)
-    );
-    select public.advance_playoff_match(
-      (select id from public.playoff_matches where game_id is not null limit 1)
-    );
-    select public.schedule_playoff_match(
+  'bracket setup schedules the corrected downstream match',
+  $$select public.schedule_playoff_match(
       (select destination.id
        from public.playoff_matches source
        join public.playoff_matches destination on destination.id = source.winner_to_match_id
@@ -1590,16 +1609,17 @@ select cvf_test.lives_ok(
     )$$
 );
 select cvf_test.throws_ok(
-  'bracket 19 unlock is blocked after the downstream game is scheduled',
-  $$select public.unlock_game(
+  'bracket 19 [INV-32] winner-changing correction is blocked after downstream scheduling',
+  $$select public.correct_final_score(
       (select game_id from public.playoff_matches
        where status = 'completed' and game_id is not null limit 1),
-      'Too late to retract safely'
+      11, 4, '{"home":[11],"away":[4]}'::jsonb, '{}'::jsonb,
+      'Too late to retract safely', 'Bracket fixture records team totals only'
     )$$,
-  '%next playoff match has been scheduled%'
+  '%[INV-32]%next playoff game is scheduled or completed%'
 );
 select cvf_test.ok(
-  'bracket 20 blocked unlock preserves the source result and lock',
+  'bracket 20 [INV-32] blocked correction preserves the source result and lock',
   exists (
     select 1 from public.playoff_matches match
     join public.games game on game.id = match.game_id
@@ -1815,6 +1835,219 @@ select cvf_test.ok(
     join public.team_identities identity on identity.id = enrollment.identity_id
     where registration.status = 'approved' and identity.name = enrollment.name
   )
+);
+
+-- ---------------------------------------------------------------------------
+-- Sequence 2 aggregate scoring hardening and correction contract.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.ok(
+  'aggregate 01 [INV-04][INV-38] authenticated grants expose schedule columns but no score/stat/history mutation',
+  has_column_privilege('authenticated', 'public.games', 'date', 'update')
+  and not has_column_privilege('authenticated', 'public.games', 'home_score', 'update')
+  and not has_column_privilege('authenticated', 'public.games', 'periods', 'update')
+  and not has_table_privilege('authenticated', 'public.player_stats', 'insert')
+  and not has_table_privilege('authenticated', 'public.player_stats', 'update')
+  and not has_table_privilege('authenticated', 'public.player_stats', 'delete')
+  and not has_table_privilege('authenticated', 'public.game_edit_history', 'insert')
+);
+select cvf_test.throws_ok(
+  'aggregate 02 [INV-04] AAL2 admin direct player-stat insert is denied',
+  $$insert into public.player_stats (game_id, profile_id, team_id, sport, stats)
+    values (
+      '50000000-0000-0000-0000-000000000002',
+      '10000000-0000-0000-0000-000000000001',
+      '30000000-0000-0000-0000-000000000001',
+      'kickball', '{"runs":1}'::jsonb
+    )$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'aggregate 03 [INV-38] AAL2 admin direct history insert is denied',
+  $$insert into public.game_edit_history (game_id, action)
+    values ('50000000-0000-0000-0000-000000000002', 'Bypass')$$,
+  '%permission denied%'
+);
+select cvf_test.ok(
+  'aggregate 04 [INV-19][INV-30] only hardened scoring RPCs remain client-executable',
+  has_function_privilege('authenticated', 'public.submit_score(uuid,integer,integer,jsonb,jsonb,text)', 'execute')
+  and has_function_privilege('authenticated', 'public.correct_final_score(uuid,integer,integer,jsonb,jsonb,text,text)', 'execute')
+  and not has_function_privilege('authenticated', 'public.save_score(uuid,integer,integer,jsonb,jsonb)', 'execute')
+  and not has_function_privilege('authenticated', 'public.unlock_game(uuid,text)', 'execute')
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'aggregate 05 [INV-19] authenticated non-admin cannot submit score',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000002', 2, 1,
+      '{"home":[2],"away":[1]}'::jsonb, '{}'::jsonb, 'not authorized')$$,
+  '%Admin only%'
+);
+select cvf_test.as_anon();
+select cvf_test.throws_ok(
+  'aggregate 06 [INV-19] anonymous caller cannot execute submit score',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000002', 2, 1,
+      '{"home":[2],"away":[1]}'::jsonb, '{}'::jsonb, 'not authorized')$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'aggregate 07 [INV-01][INV-03] HARD kickball period mismatch names values',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000002', 2, 1,
+      '{"home":[1],"away":[1]}'::jsonb, '{}'::jsonb, 'not reached')$$,
+  '%[INV-01]%period sum 1 does not equal entered score 2%'
+);
+select cvf_test.throws_ok(
+  'aggregate 08 [INV-08] HARD regular-season kickball tie is rejected',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000002', 3, 3,
+      '{"home":[1,2],"away":[2,1]}'::jsonb,
+      '{
+        "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":3}},
+        "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":3}}
+      }'::jsonb)$$,
+  '%[INV-08]%Season 1 final scores cannot be tied%3-3%'
+);
+select cvf_test.throws_ok(
+  'aggregate 09 [INV-05] SOFT kickball mismatch requires override reason',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000002', 2, 1,
+      '{"home":[2],"away":[1]}'::jsonb,
+      '{
+        "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":1}},
+        "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":1}}
+      }'::jsonb)$$,
+  '%SOFT validation requires an override reason%'
+);
+select cvf_test.lives_ok(
+  'aggregate 10 [INV-05] SOFT kickball mismatch saves with recorded override',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000002', 2, 1,
+      '{"home":[2],"away":[1]}'::jsonb,
+      '{
+        "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":1}},
+        "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":1}}
+      }'::jsonb,
+      'Official book includes one unassigned home run')$$
+);
+select cvf_test.ok(
+  'aggregate 11 [INV-05][INV-37] override reason and warning are audit output',
+  exists (
+    select 1 from public.game_edit_history
+    where game_id = '50000000-0000-0000-0000-000000000002'
+      and override_reason = 'Official book includes one unassigned home run'
+      and jsonb_array_length(validation_warnings) > 0
+      and validation_warnings -> 0 ->> 'invId' = 'INV-05'
+  )
+);
+select public.lock_game('50000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'aggregate 12 [INV-24] correction RPC rejects a blank reason',
+  $$select public.correct_final_score(
+      '50000000-0000-0000-0000-000000000002', 3, 1,
+      '{"home":[3],"away":[1]}'::jsonb,
+      '{
+        "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":3}},
+        "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":1}}
+      }'::jsonb,
+      '   ')$$,
+  '%requires a reason%'
+);
+select cvf_test.lives_ok(
+  'aggregate 13 [INV-24][INV-32] correction commits score stats history and lock atomically',
+  $$select public.correct_final_score(
+      '50000000-0000-0000-0000-000000000002', 3, 1,
+      '{"home":[3],"away":[1]}'::jsonb,
+      '{
+        "10000000-0000-0000-0000-000000000002":{"team_id":"30000000-0000-0000-0000-000000000002","stats":{"runs":3}},
+        "10000000-0000-0000-0000-000000000001":{"team_id":"30000000-0000-0000-0000-000000000001","stats":{"runs":1}}
+      }'::jsonb,
+      'Official correction after review')$$
+);
+select cvf_test.ok(
+  'aggregate 14 [INV-32][INV-37] completed correction exposes immutable before and after audit',
+  (select locked and score_status = 'final' and home_score = 3 and away_score = 1
+     from public.games where id = '50000000-0000-0000-0000-000000000002')
+  and exists (
+    select 1 from public.game_edit_history
+    where game_id = '50000000-0000-0000-0000-000000000002'
+      and action = 'Final score corrected'
+      and reason = 'Official correction after review'
+      and before_state ->> 'home_score' = '2'
+      and after_state ->> 'home_score' = '3'
+  )
+);
+
+select cvf_test.as_owner();
+insert into public.team_players (team_id, profile_id, season, roster_status)
+values
+  ('30000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000004', 'Summer 2026', 'eligible'),
+  ((select id from public.teams
+     where league_id = '20000000-0000-0000-0000-000000000002'
+       and id <> '30000000-0000-0000-0000-000000000005'
+     order by created_at limit 1),
+   '10000000-0000-0000-0000-000000000001', 'Summer 2026', 'eligible');
+insert into public.games
+  (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+values
+  ('50000000-0000-0000-0000-000000000501',
+   '20000000-0000-0000-0000-000000000002', 'flag_football',
+   '30000000-0000-0000-0000-000000000005',
+   (select id from public.teams
+    where league_id = '20000000-0000-0000-0000-000000000002'
+      and id <> '30000000-0000-0000-0000-000000000005'
+    order by created_at limit 1),
+   '2026-09-01', '7:00 PM', 'Flag Test Field');
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'aggregate 15 [INV-10] HARD flag period structure rejects a non-four-quarter final',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000501', 8, 0,
+      '{"home":[8],"away":[0]}'::jsonb, '{}'::jsonb, 'not reached')$$,
+  '%[INV-10]%four quarters%'
+);
+select cvf_test.throws_ok(
+  'aggregate 16 [INV-06] SOFT flag point mismatch requires override reason',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000501', 8, 0,
+      '{"home":[8,0,0,0],"away":[0,0,0,0]}'::jsonb,
+      jsonb_build_object(
+        '10000000-0000-0000-0000-000000000004', jsonb_build_object(
+          'team_id', '30000000-0000-0000-0000-000000000005',
+          'stats', jsonb_build_object('tds', 1)
+        )
+      ))$$,
+  '%SOFT validation requires an override reason%'
+);
+select cvf_test.lives_ok(
+  'aggregate 17 [INV-06] SOFT flag mismatch saves with recorded override',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000501', 8, 0,
+      '{"home":[8,0,0,0],"away":[0,0,0,0]}'::jsonb,
+      jsonb_build_object(
+        '10000000-0000-0000-0000-000000000004', jsonb_build_object(
+          'team_id', '30000000-0000-0000-0000-000000000005',
+          'stats', jsonb_build_object('tds', 1)
+        )
+      ),
+      'Official sheet includes an unattributed conversion')$$
+);
+select cvf_test.lives_ok(
+  'aggregate 18 [INV-03][INV-13] signed yardage and player safety pass HARD validation',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000501', 2, 0,
+      '{"home":[0,2,0,0],"away":[0,0,0,0]}'::jsonb,
+      jsonb_build_object(
+        '10000000-0000-0000-0000-000000000004', jsonb_build_object(
+          'team_id', '30000000-0000-0000-0000-000000000005',
+          'stats', jsonb_build_object('passYards', -4, 'recYards', -4, 'safeties', 1)
+        )
+      ))$$
 );
 
 select cvf_test.ok(

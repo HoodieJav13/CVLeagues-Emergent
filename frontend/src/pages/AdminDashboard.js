@@ -4,7 +4,7 @@ import {
   Trophy, UsersThree, UserCircle, CalendarBlank, PencilSimpleLine, PaperPlaneTilt,
   Plus, Trash, PencilSimple, CheckCircle, Power, CalendarX,
   Gauge, ClipboardText, Signature, ChartBar,
-  Archive, NotePencil, Phone, LockSimple, LockSimpleOpen, ClockCounterClockwise, UserPlus,
+  Archive, NotePencil, Phone, LockSimple, ClockCounterClockwise, UserPlus,
   CaretRight, Flag, LinkSimple, X,
   CurrencyDollar,
   Medal,
@@ -955,18 +955,12 @@ function GamesTab({ app }) {
               <TableCell><StatusBadge status={g.score_status || "pending"} /></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-0.5 whitespace-nowrap">
-                  <IconBtn onClick={() => setModal({ id: g.id, date: g.date, time: g.time, location: g.location })} icon={PencilSimple} title={g.locked ? "Locked — unlock in Scores/Stats to edit" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
-                  {g.locked ? (
-                    <span title="Locked — unlock in Scores/Stats to edit" data-testid={`admin-game-enter-score-${g.id}`} className="p-2 inline-flex text-muted-foreground/30 cursor-not-allowed">
-                      <LockSimple size={16} weight="bold" />
-                    </span>
-                  ) : (
-                    <Link to="/score-entry" state={{ game_id: g.id }} title="Enter score" data-testid={`admin-game-enter-score-${g.id}`} className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 p-2 rounded-lg text-primary hover:bg-white/10 active:bg-white/15 active:scale-[0.92] transition-all inline-flex items-center justify-center">
-                      <PencilSimpleLine size={16} weight="bold" />
-                    </Link>
-                  )}
+                  <IconBtn onClick={() => setModal({ id: g.id, date: g.date, time: g.time, location: g.location })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
+                  <Link to="/score-entry" state={{ game_id: g.id }} title={g.locked ? "Correct final result" : "Enter score"} data-testid={`admin-game-enter-score-${g.id}`} className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 p-2 rounded-lg text-primary hover:bg-white/10 active:bg-white/15 active:scale-[0.92] transition-all inline-flex items-center justify-center">
+                    <PencilSimpleLine size={16} weight="bold" />
+                  </Link>
                   <IconBtn onClick={async () => { try { await lockGame(g.id); toast.success("Game marked final & locked"); } catch { /* surfaced centrally */ } }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-game-${g.id}`} disabled={!canMarkFinal(g)} />
-                  <IconBtn onClick={() => setRescheduleFor(g.id)} icon={CalendarX} title={g.locked ? "Locked — unlock in Scores/Stats first" : "Postpone / cancel"} testid={`admin-postpone-${g.id}`} disabled={g.locked} />
+                  <IconBtn onClick={() => setRescheduleFor(g.id)} icon={CalendarX} title={g.locked ? "Final game — status editing is locked" : "Postpone / cancel"} testid={`admin-postpone-${g.id}`} disabled={g.locked} />
                   {/* FINAL DRAFT: temp-admin score-keepers are non-admin logins —
                       out of scope for admin-only Season 1, hidden until review. */}
                   {FINAL_DRAFT && (
@@ -984,7 +978,7 @@ function GamesTab({ app }) {
           );
         })}
       </AdminTable>
-      <p className="text-micro text-muted-foreground">Actions: edit game · enter score · mark final & lock · postpone/cancel. Locked games must be unlocked in Scores/Stats before editing.</p>
+      <p className="text-micro text-muted-foreground">Actions: edit game · enter/correct score · mark final & lock · postpone/cancel. Final corrections require a reason and preserve the lock.</p>
 
       <Dialog open={!!rescheduleFor} onOpenChange={(o) => !o && setRescheduleFor(null)}>
         <DialogContent className="bg-card border-border max-h-[90vh] overflow-y-auto" data-testid="admin-reschedule-modal">
@@ -1013,29 +1007,17 @@ function GamesTab({ app }) {
 
 /* --------------------------- SCORES / STATS ------------------------------- */
 // Operational score flow: pending → submitted (score saved) → final (Mark
-// Final, which LOCKS the game). Unlock is deliberate: confirm + required
-// reason, recorded in the game's edit history (mock audit log).
+// Final, which LOCKS the game). Final corrections are drafted locally and
+// applied atomically with a required reason; the published game never unlocks.
 const canMarkFinal = (g) => !g.locked && (g.score_status === "submitted" || g.score_status === "approved");
 
 function ScoresTab({ app }) {
-  const { state, lockGame, unlockGame } = app;
-  const [unlockFor, setUnlockFor] = useState(null); // {id, reason}
+  const { state, lockGame } = app;
   const [openHistory, setOpenHistory] = useState({});
 
   const needs = state.games
     .filter((g) => g.score_status === "pending" || g.score_status === "submitted")
     .sort((x, y) => x.date.localeCompare(y.date));
-
-  const doUnlock = async () => {
-    if (!unlockFor.reason?.trim()) return toast.error("A reason is required to unlock");
-    try {
-      await unlockGame(unlockFor.id, unlockFor.reason.trim());
-      toast.success("Game unlocked — further edits will be recorded");
-      setUnlockFor(null);
-    } catch {
-      // Backend errors are surfaced centrally; keep the form open.
-    }
-  };
 
   const renderRow = (g, prefix) => {
     const a = getTeam(state, g.away_team_id), h = getTeam(state, g.home_team_id);
@@ -1054,17 +1036,13 @@ function ScoresTab({ app }) {
           </div>
           <SportBadge sport={g.sport} />
           <StatusBadge status={g.score_status || "pending"} />
+          <Link to="/score-entry" state={{ game_id: g.id }} data-testid={`${prefix}-enter-${g.id}`} className="min-h-11 md:min-h-9 flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2 hover:bg-primary/10 active:bg-primary/20 active:scale-[0.97] transition-all">
+            <PencilSimpleLine size={14} weight="bold" /> {g.locked ? "Correct" : done ? "Edit" : "Enter"}
+          </Link>
           {g.locked ? (
-            <button disabled title="Locked — unlock to edit" data-testid={`${prefix}-enter-${g.id}`} className="min-h-11 md:min-h-9 flex items-center gap-1.5 text-xs font-bold uppercase text-muted-foreground/40 border border-border rounded-lg px-3 py-2 cursor-not-allowed">
-              <LockSimple size={14} weight="bold" /> Locked
-            </button>
-          ) : (
-            <Link to="/score-entry" state={{ game_id: g.id }} data-testid={`${prefix}-enter-${g.id}`} className="min-h-11 md:min-h-9 flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2 hover:bg-primary/10 active:bg-primary/20 active:scale-[0.97] transition-all">
-              <PencilSimpleLine size={14} weight="bold" /> {done ? "Edit" : "Enter"}
-            </Link>
-          )}
-          {g.locked ? (
-            <IconBtn onClick={() => setUnlockFor({ id: g.id, reason: "" })} icon={LockSimpleOpen} title="Unlock game" testid={`admin-unlock-${g.id}`} />
+            <span className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center text-gold" title="Final result remains locked during correction">
+              <LockSimple size={16} weight="bold" />
+            </span>
           ) : (
             <IconBtn onClick={async () => { try { await lockGame(g.id); toast.success("Game marked final & locked"); } catch { /* surfaced centrally */ } }} icon={CheckCircle} title={canMarkFinal(g) ? "Mark final & lock" : "Mark final — needs a submitted or approved score"} testid={`admin-mark-final-${g.id}`} disabled={!canMarkFinal(g)} />
           )}
@@ -1079,6 +1057,9 @@ function ScoresTab({ app }) {
             {[...hist].reverse().map((e, i) => (
               <p key={i} className="text-xs text-muted-foreground">
                 <span className="text-muted-foreground/60">{fmtTs(e.created_at)}</span> — <span className="text-foreground">{e.action}</span>{e.reason ? <span> · “{e.reason}”</span> : null}
+                {e.before_state && e.after_state ? <span> · {e.before_state.away_score ?? "—"}-{e.before_state.home_score ?? "—"} → {e.after_state.away_score ?? "—"}-{e.after_state.home_score ?? "—"}</span> : null}
+                {e.override_reason ? <span> · Override: “{e.override_reason}”</span> : null}
+                {e.validation_warnings?.length ? <span> · {e.validation_warnings.length} warning{e.validation_warnings.length === 1 ? "" : "s"}</span> : null}
               </p>
             ))}
           </AccordionContent>
@@ -1105,17 +1086,6 @@ function ScoresTab({ app }) {
       ) : (
         state.games.map((g) => renderRow(g, "admin-score"))
       )}
-
-      <Modal open={!!unlockFor} onClose={() => setUnlockFor(null)} title="Unlock Game" onSave={doUnlock}>
-        {unlockFor && (
-          <>
-            <p className="text-sm text-muted-foreground">Unlocking allows score edits. This will be recorded in the game's edit history.</p>
-            <ModalField label="Reason (required)">
-              <Textarea data-testid="admin-unlock-reason" value={unlockFor.reason} onChange={(e) => setUnlockFor({ ...unlockFor, reason: e.target.value })} className="bg-surface-sunken border-border" />
-            </ModalField>
-          </>
-        )}
-      </Modal>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CalendarX, FloppyDisk, LockSimple, LockSimpleOpen, Plus, UsersThree } from "@phosphor-icons/react";
+import { CalendarX, FloppyDisk, LockSimple, PencilSimpleLine, Plus, UsersThree } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
@@ -18,10 +18,11 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 import { Textarea } from "../components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
+import { SIGNED_STAT_KEYS, validateAggregateScore } from "../lib/scoreValidation";
 
 export default function ScoreEntry() {
   return (
-    <RoleGate allow={["admin", "temp_admin"]} title="Score Entry">
+    <RoleGate allow={["admin"]} title="Score Entry">
       <Entry />
     </RoleGate>
   );
@@ -60,16 +61,14 @@ const FilterResultRegion = ({ animate, className, testId, children }) => {
 };
 
 function Entry() {
-  const { state, submitScore, unlockGame } = useApp();
-  const { role, roleMeta } = useRole();
+  const { state, submitScore } = useApp();
+  const { role } = useRole();
   const navigate = useNavigate();
   const location = useLocation();
 
-  // temp_admin can only score their assigned game; admin sees all.
   const eligible = useMemo(() => {
-    if (role === "temp_admin") return state.games.filter((g) => g.id === roleMeta.assignedGameId);
     return [...state.games].sort((a, b) => (a.status === b.status ? 0 : a.status === "upcoming" ? -1 : 1));
-  }, [state.games, role, roleMeta]);
+  }, [state.games]);
 
   const [game_id, setGameId] = useState(location.state?.game_id || eligible[0]?.id || "");
   const game = state.games.find((g) => g.id === game_id);
@@ -77,12 +76,17 @@ function Entry() {
   const [periods, setPeriods] = useState({ home: [], away: [] });
   const [statsByPlayer, setStatsByPlayer] = useState({});
   const [expanded, setExpanded] = useState(null);
-  const [unlockOpen, setUnlockOpen] = useState(false);
-  const [unlockReason, setUnlockReason] = useState("");
-  const [unlockError, setUnlockError] = useState("");
-  const [unlocking, setUnlocking] = useState(false);
+  const [correctionOpen, setCorrectionOpen] = useState(false);
+  const [correctionReason, setCorrectionReason] = useState("");
+  const [correctionError, setCorrectionError] = useState("");
+  const [correctionDraft, setCorrectionDraft] = useState(false);
+  const [overrideOpen, setOverrideOpen] = useState(false);
+  const [overrideReason, setOverrideReason] = useState("");
+  const [overrideError, setOverrideError] = useState("");
+  const [validation, setValidation] = useState({ hard: [], soft: [] });
+  const [saving, setSaving] = useState(false);
   const [gameSelectionRevision, setGameSelectionRevision] = useState(0);
-  const unlockTriggerRef = useRef(null);
+  const correctionTriggerRef = useRef(null);
 
   // (Re)initialize form whenever the selected game changes.
   useEffect(() => {
@@ -97,6 +101,10 @@ function Entry() {
     });
     setStatsByPlayer(existing);
     setExpanded(null);
+    setCorrectionDraft(false);
+    setCorrectionReason("");
+    setOverrideReason("");
+    setValidation({ hard: [], soft: [] });
   }, [game_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!game) {
@@ -106,6 +114,7 @@ function Entry() {
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
   const locked = game.locked === true;
+  const editable = !locked || correctionDraft;
   const homeTotal = periods.home.reduce((a, b) => a + (Number(b) || 0), 0);
   const awayTotal = periods.away.reduce((a, b) => a + (Number(b) || 0), 0);
 
@@ -118,46 +127,104 @@ function Entry() {
   const setStat = (profile_id, team_id, key, val) =>
     setStatsByPlayer((prev) => ({
       ...prev,
-      [profile_id]: { team_id, stats: { ...(prev[profile_id]?.stats || {}), [key]: Math.max(0, Number(val) || 0) } },
+      [profile_id]: {
+        team_id,
+        stats: {
+          ...(prev[profile_id]?.stats || {}),
+          [key]: SIGNED_STAT_KEYS.has(key) ? Number(val) || 0 : Math.max(0, Number(val) || 0),
+        },
+      },
     }));
 
-  const save = async () => {
+  const payload = () => ({
+    game,
+    home_score: homeTotal,
+    away_score: awayTotal,
+    periods,
+    statsByPlayer,
+    teamPlayers: state.teamPlayers,
+    teams: state.teams,
+  });
+
+  const performSave = async (softOverride = "") => {
+    setSaving(true);
     try {
-      await submitScore({ game_id: game.id, home_score: homeTotal, away_score: awayTotal, periods, statsByPlayer });
-      toast.success(`${away.name} ${awayTotal} – ${homeTotal} ${home.name} saved!`, {
-        description: "Standings, records, stats & leaderboards updated.",
+      await submitScore({
+        game_id: game.id,
+        home_score: homeTotal,
+        away_score: awayTotal,
+        periods,
+        statsByPlayer,
+        correction_reason: correctionDraft ? correctionReason.trim() : "",
+        override_reason: softOverride.trim(),
+      });
+      toast.success(correctionDraft ? "Final result corrected and re-locked" : `${away.name} ${awayTotal} – ${homeTotal} ${home.name} saved!`, {
+        description: correctionDraft ? "The reason and before/after values were added to audit history." : "Standings, records, stats & leaderboards updated.",
       });
       navigate(`/game/${game.id}`);
     } catch {
       // Backend mode already reports the failure; keep the form open for correction.
+    } finally {
+      setSaving(false);
     }
   };
 
-  const unlock = async () => {
-    const reason = unlockReason.trim();
-    if (!reason) {
-      setUnlockError("A reason is required to unlock.");
-      return toast.error("A reason is required to unlock");
+  const save = async () => {
+    const result = validateAggregateScore(payload());
+    setValidation(result);
+    if (result.hard.length) {
+      toast.error(result.hard[0].message);
+      return;
     }
+    if (result.soft.length) {
+      setOverrideOpen(true);
+      return;
+    }
+    await performSave();
+  };
 
-    setUnlockError("");
-    setUnlocking(true);
-    try {
-      await unlockGame(game.id, reason);
-      toast.success("Game unlocked — score entry is editable");
-      setUnlockOpen(false);
-      setUnlockReason("");
-      setUnlockError("");
-    } catch {
-      // Backend mode already reports the failure; keep the dialog open for correction.
-    } finally {
-      setUnlocking(false);
+  const beginCorrection = () => {
+    const reason = correctionReason.trim();
+    if (!reason) {
+      setCorrectionError("A correction reason is required.");
+      return;
     }
+    setCorrectionError("");
+    setCorrectionDraft(true);
+    setCorrectionOpen(false);
+    window.requestAnimationFrame(() => document.querySelector('[data-testid="score-away-period-0"]')?.focus());
+  };
+
+  const cancelCorrection = () => {
+    const n = periodCount(game.sport);
+    const fill = (arr) => Array.from({ length: n }, (_, i) => arr?.[i] ?? 0);
+    const existing = {};
+    state.playerStats.filter((row) => row.game_id === game.id).forEach((row) => {
+      existing[row.profile_id] = { team_id: row.team_id, stats: { ...row.stats } };
+    });
+    setPeriods({ home: fill(game.periods?.home), away: fill(game.periods?.away) });
+    setStatsByPlayer(existing);
+    setCorrectionDraft(false);
+    setCorrectionReason("");
+    setOverrideReason("");
+    setValidation({ hard: [], soft: [] });
+    correctionTriggerRef.current?.focus();
+  };
+
+  const confirmOverride = async () => {
+    const reason = overrideReason.trim();
+    if (!reason) {
+      setOverrideError("An override reason is required to save with warnings.");
+      return;
+    }
+    setOverrideError("");
+    setOverrideOpen(false);
+    await performSave(reason);
   };
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <SectionHeading as="h1" title="Score Entry" subtitle={role === "temp_admin" ? "Scoring your assigned game" : "Select a game and record the final"} />
+      <SectionHeading as="h1" title="Score Entry" subtitle="Select a game and record the final" />
 
       {locked && (
         <div data-testid="score-locked-notice" role="status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
@@ -165,13 +232,17 @@ function Entry() {
             <LockSimple size={20} weight="bold" className="text-primary shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-foreground">This game is finalized and locked.</p>
-              <p className="text-sm text-muted-foreground">Unlock it to make changes.</p>
+              <p className="text-sm text-muted-foreground">A correction keeps the published result locked until the audited replacement saves.</p>
             </div>
           </div>
           {role === "admin" && (
-            <Button ref={unlockTriggerRef} type="button" variant="outline" data-testid="score-unlock" onClick={() => setUnlockOpen(true)} className="shrink-0 gap-2">
-              <LockSimpleOpen size={16} weight="bold" /> Unlock game
-            </Button>
+            correctionDraft ? (
+              <Button type="button" variant="outline" data-testid="score-correction-cancel" onClick={cancelCorrection} className="shrink-0">Cancel correction</Button>
+            ) : (
+              <Button ref={correctionTriggerRef} type="button" variant="outline" data-testid="score-correction-start" onClick={() => setCorrectionOpen(true)} className="shrink-0 gap-2">
+                <PencilSimpleLine size={16} weight="bold" /> Correct final result
+              </Button>
+            )
           )}
         </div>
       )}
@@ -185,7 +256,6 @@ function Entry() {
             setGameId(value);
             setGameSelectionRevision((revision) => revision + 1);
           }}
-          disabled={role === "temp_admin"}
         >
           <SelectTrigger id="score-game-select" aria-labelledby="score-game-select-label" data-testid="score-game-select" className="bg-card border-border h-12">
             <SelectValue />
@@ -219,7 +289,7 @@ function Entry() {
         <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
           <p className="font-display uppercase tracking-tight text-foreground">{game.sport === "kickball" ? "Innings" : "Quarters"}</p>
           {game.sport === "kickball" && (
-            <Button variant="ghost" onClick={addInning} disabled={locked} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
+            <Button variant="ghost" onClick={addInning} disabled={!editable} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
           )}
         </CardHeader>
         <CardContent className="overflow-x-auto">
@@ -239,7 +309,7 @@ function Entry() {
                     <td key={i} className="px-1 py-2">
                       <input
                         type="number" min="0" value={v}
-                        disabled={locked} readOnly={locked} aria-readonly={locked}
+                        disabled={!editable} readOnly={!editable} aria-readonly={!editable}
                         aria-label={`${r.team.name} ${periodLabel(game.sport, i)}`}
                         data-testid={`score-${r.side}-period-${i}`}
                         onChange={(e) => setPeriod(r.side, i, e.target.value)}
@@ -299,8 +369,8 @@ function Entry() {
                                 <label key={st.key} className="flex flex-col gap-1">
                                   <span className="text-micro text-muted-foreground truncate">{st.label}</span>
                                   <input
-                                    type="number" min="0" value={pstats[st.key] || 0}
-                                    disabled={locked} readOnly={locked} aria-readonly={locked}
+                                    type="number" min={SIGNED_STAT_KEYS.has(st.key) ? undefined : "0"} value={pstats[st.key] ?? 0}
+                                    disabled={!editable} readOnly={!editable} aria-readonly={!editable}
                                     data-testid={`score-stat-${r.profile_id}-${st.key}`}
                                     onChange={(e) => setStat(r.profile_id, team.id, st.key, e.target.value)}
                                     className="h-11 md:h-9 bg-surface-sunken border border-border rounded-lg text-center font-mono-score text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -321,52 +391,92 @@ function Entry() {
         })}
       </div>
 
-      <Button onClick={save} disabled={locked} data-testid="score-save" className="w-full h-auto py-4 gap-2 text-sm font-bold tracking-wide rounded-xl sticky bottom-20 md:bottom-6 [&_svg]:size-[18px]">
-        <FloppyDisk size={18} weight="bold" /> Submit Score
+      {validation.hard.length > 0 && (
+        <div data-testid="score-hard-errors" role="alert" className="rounded-xl border border-destructive/50 bg-destructive/10 p-4 space-y-1">
+          <p className="font-semibold text-destructive">Score cannot be saved</p>
+          {validation.hard.map((item, index) => <p key={`${item.code}-${index}`} className="text-sm text-foreground">{item.message}</p>)}
+        </div>
+      )}
+
+      <Button onClick={save} disabled={!editable || saving} data-testid="score-save" className="w-full h-auto py-4 gap-2 text-sm font-bold tracking-wide rounded-xl sticky bottom-20 md:bottom-6 [&_svg]:size-[18px]">
+        <FloppyDisk size={18} weight="bold" /> {saving ? "Saving…" : correctionDraft ? "Save corrected final" : "Submit Score"}
       </Button>
       </FilterResultRegion>
 
-      <Dialog open={unlockOpen} onOpenChange={(open) => {
-        if (unlocking) return;
-        setUnlockOpen(open);
-        if (!open) setUnlockError("");
+      <Dialog open={correctionOpen} onOpenChange={(open) => {
+        setCorrectionOpen(open);
+        if (!open) setCorrectionError("");
       }}>
         <DialogContent
-          data-testid="score-unlock-dialog"
+          data-testid="score-correction-dialog"
           className="bg-card border-border"
           onCloseAutoFocus={(event) => {
             event.preventDefault();
-            if (unlockTriggerRef.current?.isConnected) unlockTriggerRef.current.focus();
+            if (correctionTriggerRef.current?.isConnected) correctionTriggerRef.current.focus();
             else document.getElementById("score-game-select")?.focus();
           }}
         >
           <DialogHeader>
-            <DialogTitle className="font-display uppercase tracking-tight text-foreground">Unlock Game</DialogTitle>
-            <DialogDescription>Unlocking allows score edits and records the required reason in the game's edit history.</DialogDescription>
+            <DialogTitle className="font-display uppercase tracking-tight text-foreground">Correct Final Result</DialogTitle>
+            <DialogDescription>The published result stays locked while you draft. Saving records the reason and before/after values in audit history.</DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
-            <Label htmlFor="score-unlock-reason" className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">Reason (required)</Label>
+            <Label htmlFor="score-correction-reason" className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">Correction reason (required)</Label>
             <Textarea
-              id="score-unlock-reason"
-              data-testid="score-unlock-reason"
-              value={unlockReason}
+              id="score-correction-reason"
+              data-testid="score-correction-reason"
+              value={correctionReason}
               onChange={(event) => {
-                setUnlockReason(event.target.value);
-                if (unlockError) setUnlockError("");
+                setCorrectionReason(event.target.value);
+                if (correctionError) setCorrectionError("");
               }}
               required
-              aria-invalid={Boolean(unlockError)}
-              aria-describedby={unlockError ? "score-unlock-reason-error" : undefined}
-              disabled={unlocking}
+              aria-invalid={Boolean(correctionError)}
+              aria-describedby={correctionError ? "score-correction-reason-error" : undefined}
               className="bg-surface-sunken border-border"
             />
-            {unlockError && <p id="score-unlock-reason-error" role="alert" className="text-sm text-destructive">{unlockError}</p>}
+            {correctionError && <p id="score-correction-reason-error" role="alert" className="text-sm text-destructive">{correctionError}</p>}
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" disabled={unlocking} onClick={() => { setUnlockOpen(false); setUnlockError(""); }}>Cancel</Button>
-            <Button type="button" data-testid="score-unlock-confirm" disabled={unlocking} onClick={unlock}>
-              {unlocking ? "Unlocking…" : "Unlock game"}
-            </Button>
+            <Button type="button" variant="outline" onClick={() => { setCorrectionOpen(false); setCorrectionError(""); }}>Cancel</Button>
+            <Button type="button" data-testid="score-correction-confirm" onClick={beginCorrection}>Begin correction</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={overrideOpen} onOpenChange={(open) => {
+        if (saving) return;
+        setOverrideOpen(open);
+        if (!open) setOverrideError("");
+      }}>
+        <DialogContent data-testid="score-override-dialog" className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display uppercase tracking-tight text-foreground">Review Score Warnings</DialogTitle>
+            <DialogDescription>The score can be saved, but these independent tallies do not reconcile. Record why the official result should override them.</DialogDescription>
+          </DialogHeader>
+          <div data-testid="score-soft-warnings" className="rounded-lg border border-gold/40 bg-gold/10 p-3 space-y-1">
+            {validation.soft.map((item, index) => <p key={`${item.code}-${index}`} className="text-sm text-foreground">{item.message}</p>)}
+          </div>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="score-override-reason" className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">Override reason (required)</Label>
+            <Textarea
+              id="score-override-reason"
+              data-testid="score-override-reason"
+              value={overrideReason}
+              onChange={(event) => {
+                setOverrideReason(event.target.value);
+                if (overrideError) setOverrideError("");
+              }}
+              required
+              aria-invalid={Boolean(overrideError)}
+              aria-describedby={overrideError ? "score-override-reason-error" : undefined}
+              className="bg-surface-sunken border-border"
+            />
+            {overrideError && <p id="score-override-reason-error" role="alert" className="text-sm text-destructive">{overrideError}</p>}
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => { setOverrideOpen(false); setOverrideError(""); }}>Back</Button>
+            <Button type="button" data-testid="score-override-confirm" disabled={saving} onClick={confirmOverride}>Save with reason</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

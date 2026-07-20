@@ -7,7 +7,6 @@ import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
 import { Avatar } from "../components/common/Avatar";
-import { can } from "../lib/roles";
 import { EmptyState } from "../components/common/Section";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { AthleteHoverCard } from "../components/player/AthleteHoverCard";
@@ -36,7 +35,7 @@ export default function GameDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state } = useApp();
-  const { role, roleMeta } = useRole();
+  const { role } = useRole();
   const game = state.games.find((g) => g.id === id);
 
   if (!game) return <EmptyState icon={CalendarX} title="Game not found" message="This game may have been removed or the link is invalid." />;
@@ -48,8 +47,7 @@ export default function GameDetail() {
   const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   const shortDate = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
 
-  // Temp admin can only score their assigned game.
-  const canScore = can.enterScores(role) && (role === "admin" || roleMeta.assignedGameId === game.id);
+  const canScore = role === "admin";
   const periods = game.periods?.home || [];
 
   return (
@@ -111,7 +109,7 @@ export default function GameDetail() {
               state={{ game_id: game.id }}
               data-testid="game-enter-score"
             >
-              <PencilSimpleLine data-icon="inline-start" weight="bold" /> {completed ? "Edit Score" : "Enter Score"}
+              <PencilSimpleLine data-icon="inline-start" weight="bold" /> {game.locked ? "Correct Final Result" : completed ? "Edit Score" : "Enter Score"}
             </Link>
           </Button>
         )}
