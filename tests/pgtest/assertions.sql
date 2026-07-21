@@ -2050,6 +2050,522 @@ select cvf_test.lives_ok(
       ))$$
 );
 
+-- ---------------------------------------------------------------------------
+-- Sequence 3 Event Ledger Lite: dormant schema and authority boundaries.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'ledger schema 01 [INV-28] existing games backfill to aggregate mode',
+  not exists (select 1 from public.games where scorekeeping_mode <> 'aggregate')
+);
+select cvf_test.ok(
+  'ledger schema 02 [INV-04] authenticated clients have no ledger table writes',
+  not exists (
+    select 1
+      from unnest(array[
+        'public.scorekeeping_sessions',
+        'public.scorekeeping_participants',
+        'public.scorekeeping_events',
+        'public.scorekeeping_event_attributions'
+      ]) relation(name)
+     where has_table_privilege('authenticated', relation.name, 'insert')
+        or has_table_privilege('authenticated', relation.name, 'update')
+        or has_table_privilege('authenticated', relation.name, 'delete')
+        or has_table_privilege('authenticated', relation.name, 'truncate')
+        or has_table_privilege('authenticated', relation.name, 'references')
+        or has_table_privilege('authenticated', relation.name, 'trigger')
+  )
+  and not has_column_privilege(
+    'authenticated', 'public.games', 'scorekeeping_mode', 'update'
+  )
+);
+select cvf_test.ok(
+  'ledger schema 03 [INV-04] ledger trigger helpers are not client executable',
+  not exists (
+    select 1
+      from pg_proc procedure
+      join pg_namespace namespace on namespace.oid = procedure.pronamespace
+     where namespace.nspname = 'public'
+       and procedure.proname like 'cvf_%scorekeeping%'
+       and (
+         has_function_privilege('anon', procedure.oid, 'execute')
+         or has_function_privilege('authenticated', procedure.oid, 'execute')
+         or has_function_privilege('service_role', procedure.oid, 'execute')
+       )
+  )
+);
+
+select cvf_test.as_anon();
+select cvf_test.throws_ok(
+  'ledger schema 04 [INV-27] anonymous sessions read is privilege-blocked',
+  $$select count(*) from public.scorekeeping_sessions$$,
+  '%permission denied%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 05 [INV-27] anonymous events read is privilege-blocked',
+  $$select count(*) from public.scorekeeping_events$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.eq_int(
+  'ledger schema 06 [INV-19][INV-27] non-admin ledger reads are RLS-empty',
+  (select count(*)::int from public.scorekeeping_sessions),
+  0
+);
+
+select cvf_test.as_owner();
+insert into public.games
+  (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+values
+  ('50000000-0000-0000-0000-000000000900',
+   '20000000-0000-0000-0000-000000000001', 'kickball',
+   '30000000-0000-0000-0000-000000000001',
+   '30000000-0000-0000-0000-000000000002',
+   '2026-10-01', '6:00 PM', 'Ledger Test Field');
+
+select cvf_test.throws_ok(
+  'ledger schema 07 [INV-29] owner cannot bypass the controlled mode flag',
+  $$update public.games set scorekeeping_mode = 'ledger'
+    where id = '50000000-0000-0000-0000-000000000900'$$,
+  '%controlled server path%'
+);
+select set_config('cvf.ledger_transition', 'on', false);
+select cvf_test.throws_ok(
+  'ledger schema 08 [INV-29] scored aggregate game cannot convert',
+  $$update public.games set scorekeeping_mode = 'ledger'
+    where id = '50000000-0000-0000-0000-000000000001'$$,
+  '%unscored, pending, unlocked%'
+);
+select cvf_test.lives_ok(
+  'ledger schema 09 [INV-29] clean game converts aggregate to ledger once',
+  $$update public.games set scorekeeping_mode = 'ledger'
+    where id = '50000000-0000-0000-0000-000000000900'$$
+);
+select cvf_test.ok(
+  'ledger schema 10 [INV-28][INV-29] conversion records mode and timestamp',
+  (select scorekeeping_mode = 'ledger' and ledger_enabled_at is not null
+     from public.games where id = '50000000-0000-0000-0000-000000000900')
+);
+select cvf_test.throws_ok(
+  'ledger schema 11 [INV-29] ledger game cannot return to aggregate',
+  $$update public.games set scorekeeping_mode = 'aggregate'
+    where id = '50000000-0000-0000-0000-000000000900'$$,
+  '%aggregate-to-ledger only%'
+);
+select set_config('cvf.ledger_transition', '', false);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'ledger schema 12 [INV-30][INV-39] aggregate submit RPC cannot mutate a ledger game',
+  $$select public.submit_score(
+      '50000000-0000-0000-0000-000000000900', 1, 0,
+      '{"home":[1],"away":[0]}'::jsonb, '{}'::jsonb,
+      'Test-only unattributed run')$$,
+  '%Ledger projections may change only through ledger finalization%'
+);
+select cvf_test.ok(
+  'ledger schema 13 [INV-30] rejected aggregate RPC leaves ledger game unscored',
+  (select status = 'upcoming' and score_status = 'pending'
+          and home_score is null and away_score is null and not locked
+     from public.games where id = '50000000-0000-0000-0000-000000000900')
+);
+
+select cvf_test.as_owner();
+select cvf_test.throws_ok(
+  'ledger schema 14 [INV-04] owner session insert requires controlled flag',
+  $$insert into public.scorekeeping_sessions (
+      id, game_id, session_kind, status, opened_by,
+      lease_token_hash, lease_expires_at, sport, league_id, season, stage,
+      home_team_id, away_team_id, rule_version, regulation_period_count,
+      overtime_start_setting, allow_ties, rules_snapshot
+    ) values (
+      'a0000000-0000-0000-0000-000000000900',
+      '50000000-0000-0000-0000-000000000900', 'ordinary', 'open',
+      '00000000-0000-0000-0000-000000000003', 'hash-ordinary', now() + interval '5 minutes',
+      'kickball', '20000000-0000-0000-0000-000000000001', 'Summer 2026', 'regular',
+      '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002',
+      'CVF-KB-2026.1', 7, null, false, '{"mercy":false}'::jsonb
+    )$$,
+  '%controlled server path%'
+);
+
+select set_config('cvf.ledger_session_mutation', 'on', false);
+select cvf_test.lives_ok(
+  'ledger schema 15 [INV-10][INV-18] controlled ordinary session snapshots game rules',
+  $$insert into public.scorekeeping_sessions (
+      id, game_id, session_kind, status, opened_by,
+      lease_token_hash, lease_expires_at, sport, league_id, season, stage,
+      home_team_id, away_team_id, rule_version, regulation_period_count,
+      overtime_start_setting, allow_ties, rules_snapshot
+    ) values (
+      'a0000000-0000-0000-0000-000000000900',
+      '50000000-0000-0000-0000-000000000900', 'ordinary', 'open',
+      '00000000-0000-0000-0000-000000000003', 'hash-ordinary', now() + interval '5 minutes',
+      'kickball', '20000000-0000-0000-0000-000000000001', 'Summer 2026', 'regular',
+      '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002',
+      'CVF-KB-2026.1', 7, null, false, '{"mercy":false}'::jsonb
+    )$$
+);
+select cvf_test.throws_ok(
+  'ledger schema 16 [INV-18] a game cannot have two active sessions',
+  $$insert into public.scorekeeping_sessions (
+      game_id, session_kind, status, opened_by,
+      lease_token_hash, lease_expires_at, sport, league_id, season, stage,
+      home_team_id, away_team_id, rule_version, regulation_period_count,
+      allow_ties, rules_snapshot
+    ) values (
+      '50000000-0000-0000-0000-000000000900', 'ordinary', 'open',
+      '00000000-0000-0000-0000-000000000003', 'hash-duplicate', now() + interval '5 minutes',
+      'kickball', '20000000-0000-0000-0000-000000000001', 'Summer 2026', 'regular',
+      '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002',
+      'CVF-KB-2026.1', 7, false, '{"mercy":false}'::jsonb
+    )$$,
+  '%duplicate key%'
+);
+
+update public.team_players
+   set roster_status = 'eligible'
+ where id in (
+   '40000000-0000-0000-0000-000000000001',
+   '40000000-0000-0000-0000-000000000002'
+ );
+select cvf_test.lives_ok(
+  'ledger schema 17 [INV-11] ordinary session snapshots both eligible rosters',
+  $$insert into public.scorekeeping_participants (session_id, source_team_player_id)
+    values
+      ('a0000000-0000-0000-0000-000000000900', '40000000-0000-0000-0000-000000000001'),
+      ('a0000000-0000-0000-0000-000000000900', '40000000-0000-0000-0000-000000000002')$$
+);
+select cvf_test.ok(
+  'ledger schema 18 [INV-11] participant identity is server-copied from roster and profile',
+  (select count(*) = 2
+          and min(roster_status) = 'eligible'
+          and bool_and(length(display_name) > 0)
+     from public.scorekeeping_participants
+    where session_id = 'a0000000-0000-0000-0000-000000000900')
+);
+select cvf_test.throws_ok(
+  'ledger schema 19 [INV-10] session rule snapshots cannot be rewritten',
+  $$update public.scorekeeping_sessions
+       set regulation_period_count = 5, lease_version = 2
+     where id = 'a0000000-0000-0000-0000-000000000900'$$,
+  '%snapshots are immutable%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 20 [INV-12] participant snapshots are append-only',
+  $$update public.scorekeeping_participants set jersey_number = 99
+    where session_id = 'a0000000-0000-0000-0000-000000000900'$$,
+  '%append-only%'
+);
+select set_config('cvf.ledger_session_mutation', '', false);
+
+select cvf_test.throws_ok(
+  'ledger schema 21 [INV-04] event insert requires controlled flag',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000900', 'evt-1', 'hash-1', 'record', 'run',
+      'regulation', 1, '30000000-0000-0000-0000-000000000001', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%controlled server path%'
+);
+select set_config('cvf.ledger_event_write', 'on', false);
+select cvf_test.throws_ok(
+  'ledger schema 22 [INV-14] clients of the server path cannot select a sequence',
+  $$insert into public.scorekeeping_events (
+      session_id, sequence_number, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000900', 9, 'evt-manual', 'hash-manual', 'record', 'run',
+      'regulation', 1, '30000000-0000-0000-0000-000000000001', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%assigned by the server%'
+);
+select cvf_test.lives_ok(
+  'ledger schema 23 [INV-14][INV-15] first event receives server sequence one',
+  $$insert into public.scorekeeping_events (
+      id, session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'b0000000-0000-0000-0000-000000000901',
+      'a0000000-0000-0000-0000-000000000900', 'evt-1', 'hash-1', 'record', 'run',
+      'regulation', 1, '30000000-0000-0000-0000-000000000001', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$
+);
+select cvf_test.lives_ok(
+  'ledger schema 24 [INV-14] second event receives the next game sequence',
+  $$insert into public.scorekeeping_events (
+      id, session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'b0000000-0000-0000-0000-000000000902',
+      'a0000000-0000-0000-0000-000000000900', 'evt-2', 'hash-2', 'record', 'run',
+      'regulation', 1, '30000000-0000-0000-0000-000000000002', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$
+);
+select cvf_test.ok(
+  'ledger schema 25 [INV-14] ordinary event sequence is gapless',
+  (select array_agg(sequence_number order by sequence_number) = array[1,2]
+     from public.scorekeeping_events
+    where game_id = '50000000-0000-0000-0000-000000000900')
+);
+select cvf_test.throws_ok(
+  'ledger schema 26 [INV-15] idempotency keys are unique across the game',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000900', 'evt-1', 'changed-hash', 'record', 'run',
+      'regulation', 2, '30000000-0000-0000-0000-000000000001', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%duplicate key%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 27 [INV-02][INV-10] event cannot exceed snapshotted regulation count',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000900', 'evt-period-8', 'hash-period-8', 'record', 'run',
+      'regulation', 8, '30000000-0000-0000-0000-000000000001', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%exceeds the snapshotted count%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 28 [INV-16] ordinary sessions cannot void events',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      points, voids_event_id, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000900', 'evt-void-ordinary', 'hash-void-ordinary',
+      'void', 'void', 0, 'b0000000-0000-0000-0000-000000000901',
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%require a correction session%'
+);
+select cvf_test.lives_ok(
+  'ledger schema 29 [INV-11][INV-13] event attribution uses a snapshotted participant',
+  $$insert into public.scorekeeping_event_attributions (
+      event_id, participant_id, role, stat_key, stat_delta, created_by
+    ) values (
+      'b0000000-0000-0000-0000-000000000901',
+      (select id from public.scorekeeping_participants
+        where session_id = 'a0000000-0000-0000-0000-000000000900'
+          and profile_id = '10000000-0000-0000-0000-000000000001'),
+      'scorer', 'runs', 1, '00000000-0000-0000-0000-000000000003'
+    )$$
+);
+select cvf_test.throws_ok(
+  'ledger schema 30 [INV-11] event attribution rejects a non-snapshot participant',
+  $$insert into public.scorekeeping_event_attributions (
+      event_id, participant_id, role, stat_key, stat_delta, created_by
+    ) values (
+      'b0000000-0000-0000-0000-000000000901', gen_random_uuid(),
+      'scorer', 'runs', 1, '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%outside the event session snapshot%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 31 [INV-36] original events cannot be rewritten',
+  $$update public.scorekeeping_events set points = 2
+    where id = 'b0000000-0000-0000-0000-000000000901'$$,
+  '%append-only%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 32 [INV-36] original events cannot be deleted',
+  $$delete from public.scorekeeping_events
+    where id = 'b0000000-0000-0000-0000-000000000901'$$,
+  '%append-only%'
+);
+select set_config('cvf.ledger_event_write', '', false);
+
+select set_config('cvf.ledger_session_mutation', 'on', false);
+select cvf_test.throws_ok(
+  'ledger schema 33 [INV-12] participants cannot be appended after the first event',
+  $$insert into public.scorekeeping_participants (session_id, source_team_player_id)
+    values ('a0000000-0000-0000-0000-000000000900', '40000000-0000-0000-0000-000000000001')$$,
+  '%cannot grow after the first event%'
+);
+select cvf_test.lives_ok(
+  'ledger schema 34 [INV-20] controlled session finalization advances version and closes',
+  $$update public.scorekeeping_sessions
+       set status = 'finalized', lease_version = 2,
+           closed_by = '00000000-0000-0000-0000-000000000003', closed_at = now()
+     where id = 'a0000000-0000-0000-0000-000000000900'$$
+);
+select set_config('cvf.ledger_session_mutation', '', false);
+select set_config('cvf.ledger_event_write', 'on', false);
+select cvf_test.throws_ok(
+  'ledger schema 35 [INV-20] finalized session rejects new events',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000900', 'evt-closed', 'hash-closed', 'record', 'run',
+      'regulation', 2, '30000000-0000-0000-0000-000000000001', 1,
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%active ledger session%'
+);
+select set_config('cvf.ledger_event_write', '', false);
+
+-- Test-only projection advances the dormant ledger fixture to the exact state
+-- a future Sequence 4 finalizer must produce; no client-facing path is added.
+select set_config('cvf.ledger_projection', 'on', false);
+update public.games
+   set status = 'completed', score_status = 'final', locked = true,
+       home_score = 1, away_score = 1,
+       periods = '{"home":[1,0,0,0,0,0,0],"away":[1,0,0,0,0,0,0]}'::jsonb
+ where id = '50000000-0000-0000-0000-000000000900';
+select set_config('cvf.ledger_projection', '', false);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'ledger schema 36 [INV-30] aggregate correction cannot govern a ledger final',
+  $$select public.correct_final_score(
+      '50000000-0000-0000-0000-000000000900', 2, 1,
+      '{"home":[2],"away":[1]}'::jsonb, '{}'::jsonb,
+      'Wrong authority', 'Test-only unattributed runs')$$,
+  '%Ledger projections may change only through ledger finalization%'
+);
+
+select cvf_test.as_owner();
+select set_config('cvf.ledger_session_mutation', 'on', false);
+select cvf_test.lives_ok(
+  'ledger schema 37 [INV-10][INV-18][INV-24] correction session preserves base snapshot',
+  $$insert into public.scorekeeping_sessions (
+      id, game_id, session_kind, status, base_session_id, correction_reason,
+      opened_by, lease_token_hash, lease_expires_at, sport, league_id, season, stage,
+      home_team_id, away_team_id, rule_version, regulation_period_count,
+      overtime_start_setting, allow_ties, rules_snapshot
+    ) values (
+      'a0000000-0000-0000-0000-000000000901',
+      '50000000-0000-0000-0000-000000000900', 'correction', 'drafting',
+      'a0000000-0000-0000-0000-000000000900', 'Official scorer correction',
+      '00000000-0000-0000-0000-000000000003', 'hash-correction', now() + interval '5 minutes',
+      'kickball', '20000000-0000-0000-0000-000000000001', 'Summer 2026', 'regular',
+      '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002',
+      'CVF-KB-2026.1', 7, null, false, '{"mercy":false}'::jsonb
+    )$$
+);
+update public.team_players
+   set jersey_number = 77, roster_status = 'inactive'
+ where id = '40000000-0000-0000-0000-000000000001';
+select cvf_test.lives_ok(
+  'ledger schema 38 [INV-12] correction participants clone the original snapshot',
+  $$insert into public.scorekeeping_participants (session_id, source_participant_id)
+    select 'a0000000-0000-0000-0000-000000000901', participant.id
+      from public.scorekeeping_participants participant
+     where participant.session_id = 'a0000000-0000-0000-0000-000000000900'$$
+);
+select cvf_test.ok(
+  'ledger schema 39 [INV-12] later roster changes do not rewrite correction eligibility',
+  (select jersey_number = 1 and roster_status = 'eligible'
+     from public.scorekeeping_participants
+    where session_id = 'a0000000-0000-0000-0000-000000000901'
+      and profile_id = '10000000-0000-0000-0000-000000000001')
+);
+select set_config('cvf.ledger_session_mutation', '', false);
+
+select set_config('cvf.ledger_event_write', 'on', false);
+select cvf_test.lives_ok(
+  'ledger schema 40 [INV-16] correction appends a void of an ordinary event',
+  $$insert into public.scorekeeping_events (
+      id, session_id, idempotency_key, command_hash, action, event_type,
+      points, voids_event_id, created_by
+    ) values (
+      'b0000000-0000-0000-0000-000000000903',
+      'a0000000-0000-0000-0000-000000000901', 'evt-void-1', 'hash-void-1',
+      'void', 'void', 0, 'b0000000-0000-0000-0000-000000000901',
+      '00000000-0000-0000-0000-000000000003'
+    )$$
+);
+select cvf_test.lives_ok(
+  'ledger schema 41 [INV-17] replacement follows this session void',
+  $$insert into public.scorekeeping_events (
+      id, session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points,
+      replaces_event_id, created_by
+    ) values (
+      'b0000000-0000-0000-0000-000000000904',
+      'a0000000-0000-0000-0000-000000000901', 'evt-replace-1', 'hash-replace-1',
+      'replace', 'run', 'regulation', 1,
+      '30000000-0000-0000-0000-000000000001', 2,
+      'b0000000-0000-0000-0000-000000000901',
+      '00000000-0000-0000-0000-000000000003'
+    )$$
+);
+select cvf_test.throws_ok(
+  'ledger schema 42 [INV-16] an original event cannot be voided twice',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      points, voids_event_id, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000901', 'evt-void-fork', 'hash-void-fork',
+      'void', 'void', 0, 'b0000000-0000-0000-0000-000000000901',
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%duplicate key%'
+);
+select cvf_test.throws_ok(
+  'ledger schema 43 [INV-17] replacement cannot precede its matching void',
+  $$insert into public.scorekeeping_events (
+      session_id, idempotency_key, command_hash, action, event_type,
+      period_type, period_number, credited_team_id, points,
+      replaces_event_id, created_by
+    ) values (
+      'a0000000-0000-0000-0000-000000000901', 'evt-replace-no-void', 'hash-no-void',
+      'replace', 'run', 'regulation', 1,
+      '30000000-0000-0000-0000-000000000002', 2,
+      'b0000000-0000-0000-0000-000000000902',
+      '00000000-0000-0000-0000-000000000003'
+    )$$,
+  '%must follow this correction session%'
+);
+select cvf_test.ok(
+  'ledger schema 44 [INV-14][INV-16][INV-17] correction rows preserve one gapless game sequence',
+  (select array_agg(sequence_number order by sequence_number) = array[1,2,3,4]
+     from public.scorekeeping_events
+    where game_id = '50000000-0000-0000-0000-000000000900')
+);
+select set_config('cvf.ledger_event_write', '', false);
+
+delete from auth.users where id = '00000000-0000-0000-0000-000000000003';
+select cvf_test.ok(
+  'ledger schema 45 actor deletion nulls attribution without rewriting evidence',
+  exists (
+    select 1 from public.scorekeeping_sessions
+     where id = 'a0000000-0000-0000-0000-000000000900'
+       and opened_by is null and closed_by is null
+  )
+  and exists (
+    select 1 from public.scorekeeping_events
+     where id = 'b0000000-0000-0000-0000-000000000901'
+       and created_by is null and points = 1
+  )
+  and exists (
+    select 1 from public.scorekeeping_event_attributions
+     where event_id = 'b0000000-0000-0000-0000-000000000901'
+       and created_by is null and stat_key = 'runs' and stat_delta = 1
+  )
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.eq_int(
+  'ledger schema 46 [INV-19][INV-27] AAL2 admin can inspect private sessions',
+  (select count(*)::int from public.scorekeeping_sessions
+    where game_id = '50000000-0000-0000-0000-000000000900'),
+  2
+);
+
 select cvf_test.ok(
   'service role 01 protected intake can insert team registrations',
   has_table_privilege('service_role', 'public.team_registrations', 'insert')
