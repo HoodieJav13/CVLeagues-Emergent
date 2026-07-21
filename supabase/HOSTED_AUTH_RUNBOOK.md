@@ -39,9 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-For the current 22-table/15-RPC harness, do not continue if the linked project is unexpected, the repository inventory is not exactly 23 migrations, the hosted ledger does not match all 23 in filename order, or `supabase db push --dry-run` reports a pending migration. Migration 23 remains local-only until its separately approved hosted review/push; therefore this runbook describes the post-Migration-23 acceptance surface but must not be run against hosted yet. If the repository adds another exposed table or privileged RPC, revise the harness and this inventory gate before treating a rerun as current-surface acceptance.
+The current accepted hosted baseline is Migration 23: 22 tables and 15 administrator RPCs. The repository now also contains local-only Migration 24 with four private ledger tables and no client RPC. Until a separately approved Migration 24 push, preflight must show exactly the first 23 migrations hosted and only Migration 24 pending. Before that push, expand this harness to cover all 26 tables, including anonymous privilege denial, authenticated non-admin RLS-empty reads, AAL2 admin reads, zero client writes, and zero `service_role` privileges on the four ledger tables. Do not present a 154-case rerun as current-surface acceptance after Migration 24 is hosted.
 
-Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-17-final.md`](evidence/hosted-auth-matrix-2026-07-17-final.md) records the Migration-22 baseline at 150/150 with fixture cleanup and baseline restoration both passing. After Migration 23 is separately approved and pushed, the revised harness must pass 154/154.
+Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-21-m23.md`](evidence/hosted-auth-matrix-2026-07-21-m23.md) records the Migration-23 baseline at 154/154 with fixture cleanup and exact restoration of the current Season 1 operational baseline both passing. The immutable [`Migration-22 evidence`](evidence/hosted-auth-matrix-2026-07-17-final.md) remains the prior accepted checkpoint.
 
 ## Run
 
