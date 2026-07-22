@@ -24,7 +24,7 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Dedicated hosted backend is linked and accepted at the twenty-four-migration baseline. The least-privilege service-role catalog, both advisors, AAL1/AAL2 authorization behavior, Migration 23 RPC-only aggregate boundary, Migration 24 private ledger boundary, and expanded 225/225 matrix are evidenced for that baseline. Recovery/session-revocation acceptance, preview/production variables, live application flows, and deployment remain open.
 
 ## Current Priority
-Stabilize the recurring parallel `ScoreEntry.test.js` timing failure, reconcile the Schedule Calendar and Schedule Builder artifacts against current `main`, then begin Sequence 4 deterministic ledger projections and correction/finalization. The admin-only flag-football pilot/practice mode, field test, and second-sport/live decision remain later gates. Resume Pass 4 with Team/Profile only after the pilot decision. Attorney-approved New Mexico waiver text remains an independent launch blocker.
+Reconcile the Schedule Calendar and Schedule Builder artifacts against current `main`, then execute Sequence 4A–4C as one continuous local run with separate internal evidence boundaries and one consolidated owner review. The admin-only flag-football pilot/practice mode, field test, and second-sport/live decision remain later gates. Resume Pass 4 with Team/Profile only after the pilot decision. Attorney-approved New Mexico waiver text remains an independent launch blocker.
 
 ## Owner Action Queue
 
@@ -177,7 +177,6 @@ External critical-path dependency (unchanged): NM attorney waiver review. Other 
 
 ## Deferred / Backlog
 - Consolidate the remaining overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. The team overlap disappeared when direct team writes were removed; preserve all remaining public/admin semantics and rerun the complete negative matrix before further consolidation.
-- Stabilize the locked-score `ScoreEntry.test.js` interaction test before relying on parallel Jest as a release gate. This is now a recurring pattern: it exceeded the fixed five-second timeout under parallel load three times on July 21, 2026. The latest investigation passed the target file alone (2/2; primary case 3.245 seconds) and the full serial suite (117/117), confirming that one oversized multi-step interaction test has a marginal timing assumption rather than a product assertion failure. Split the correction behaviors into focused tests or deliberately raise only that test's timeout, then rerun parallel plus open-handle diagnostics.
 - Season 2 player/captain self-service: signup, email verification, password recovery, safe profile claiming, captain permissions, abuse controls, and a new authorization matrix. This remains outside Season 1 and is also gated by the waiver/eligibility design.
 - Public Hall of Fame route and publication control.
 - Hall of Fame cross-field consistency: optional game/profile/team context is not checked against the selected sport, season, or record scope. Low risk while one administrator curates every row; revisit before expanding curator permissions.
