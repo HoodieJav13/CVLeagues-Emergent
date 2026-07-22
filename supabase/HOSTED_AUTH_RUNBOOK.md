@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks. The committed Sequence 4 local target prepares denial and catalog coverage for ten additional ledger RPCs; that 25-RPC shape is not hosted acceptance until the later push and matrix gates pass.
+This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks. Sequence 4 Migrations 25–27 are now structurally published and add ten RPCs; that 25-RPC shape is not behaviorally accepted until this separately approved matrix passes.
 
 The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted baseline used 64 role/operation API checks and seven exact catalog checks. After Sequence 4 is applied, the prepared contract adds a runtime-RPC ACL catalog check plus anonymous/non-admin denial for all ten new endpoints; a populated positive read/write proof remains a separate durable-pilot gate.
 
@@ -39,9 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted hosted baseline is Migration 24: 26 tables and 15 administrator RPCs. The prepared Sequence 4 target is 27 migrations and 25 administrator RPCs, but must not be described as hosted until separately approved and verified. Preflight must show all 24 hosted migrations aligned and only the explicitly reviewed additive migrations pending. Do not present the earlier 154-case Migration-23 run as current-surface acceptance.
+The current accepted behavioral baseline is Migration 24: 26 tables and 15 administrator RPCs. The structurally published Sequence 4 target is 27 migrations and 25 administrator RPCs. Preflight must show all 27 hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
-Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md) records the Migration-24 baseline at 225/225 browser/API and catalog checks with fixture cleanup and exact restoration of the current Season 1 operational baseline both passing. [`evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md) records the push and structural gate. The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior accepted checkpoint.
+Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md) records the Migration-24 baseline at 225/225 browser/API and catalog checks with fixture cleanup and exact restoration both passing. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the newer published-but-not-yet-accepted 27-migration structural gate. The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior checkpoint.
 
 ## Run
 

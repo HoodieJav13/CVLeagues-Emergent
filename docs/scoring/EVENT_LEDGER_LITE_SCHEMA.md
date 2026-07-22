@@ -1,18 +1,18 @@
 # Event Ledger Lite — Sequence 3 Schema and Sequence 4 Runtime Contract
 
-**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C owner-approved and committed locally, hosted acceptance pending
+**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C structurally published, real-session acceptance pending
 
 **Migration:** `20260721201350_event_ledger_lite_schema.sql`
 
-**Hosted status:** accepted through Migration 24 at 225/225 authorization/catalog checks
+**Hosted status:** 27/27 migrations aligned; behavior accepted through Migration 24 at 225/225, Sequence 4 matrix pending
 
 ## Purpose and scope
 
 Sequence 3 established the hosted database boundary required for event-level
-scorekeeping without creating a second working score-entry system. That hosted
-boundary remains dormant: no deployed client can start a session, append an
-event, project a score, finalize a game, or correct a ledger result. Sequence 4
-now implements those capabilities locally behind the same authority boundary.
+scorekeeping without creating a second working score-entry system. Sequence 4
+now publishes the controlled runtime behind that same authority boundary. The
+client is not deployed and no hosted ledger session/event exists; behavioral
+acceptance still requires the real-session matrix and later durable pilot.
 
 The binding rules remain
 [`RULES_INVARIANT_MATRIX.md`](RULES_INVARIANT_MATRIX.md). Sequence 4 must build
@@ -69,7 +69,7 @@ behavior, but the remainder of the evidence row cannot change. Session rule
 and identity snapshots are immutable; future server-controlled state changes
 must advance the lease version.
 
-## Sequence 4 local implementation
+## Sequence 4 runtime implementation
 
 - Migration 25 adds AAL2-admin open/renew/resume/append/cancel RPCs, rotating
   ten-minute leases, immutable eligible-participant snapshots, sport-specific
@@ -93,11 +93,11 @@ must advance the lease version.
   concurrency, deterministic projection, failure rollback/audit, correction
   cancellation, forfeit identity, and playoff-forfeit advancement at **294/294** assertions.
 
-This local result is not a hosted or pilot acceptance. The three migrations
-are committed locally and remain unapplied remotely until a fresh backup,
-preflight, dry run, discrete push approval, post-push readback/advisors, and a
-separately approved real-session authorization run. Sequence 5 still owns the
-flag-football practice/pilot refinements and the remaining pilot matrix.
+The three migrations are now structurally published, but this is not behavioral
+or pilot acceptance. Hosted history, structure, row/settings baseline,
+privileges, and advisors passed immediate readback. A separately approved
+real-session authorization run remains; Sequence 5 still owns flag-football
+overtime, `INV-07`, the durable populated-row proof, and pilot acceptance.
 
 ## Verification checkpoint
 
@@ -128,9 +128,9 @@ Hosted acceptance on July 21, 2026:
 - The separately approved hosted matrix passed **225/225** browser/API and
   catalog checks, removed every fixture row, and restored every observed row
   count and singleton setting exactly.
-- The accepted boundary remains schema-only. Sequence 4 must prove populated-row
-  AAL2 visibility and non-admin RLS emptiness once its controlled write path
-  exists.
+- The Migration-24 acceptance remains schema-only. The published Sequence 4
+  runtime makes populated-row testing possible, but append-only evidence means
+  that proof belongs to an explicitly approved durable Sequence 5 pilot row.
 
 See
 [`../../supabase/evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](../../supabase/evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md)
@@ -159,3 +159,25 @@ Local verification on July 22, 2026:
 See
 [`../../supabase/evidence/sequence-4-local-acceptance-2026-07-22.md`](../../supabase/evidence/sequence-4-local-acceptance-2026-07-22.md)
 for the consolidated local gate.
+
+## Sequence 4 hosted-push checkpoint
+
+Published on July 22, 2026:
+
+- A discrete owner approval authorized only Migrations 25–27 against the linked
+  CVF Leagues project.
+- Migration history is **27/27** and the post-push dry run is up to date.
+- Expected columns, indexes, constraint, correction trigger, all ten fixed-path
+  AAL2-admin RPCs, correction-mode guards, RLS/grants, helper ACLs, and the
+  least-privilege service-role/default-ACL boundary passed readback.
+- The complete operational row/settings baseline remained byte-for-byte equal
+  at the observed count/setting level; all four ledger tables remain empty.
+- Advisors report 33 Security findings (the accepted 23 plus ten intended
+  authenticated runtime-RPC warnings) and 31 Performance findings (28 unused
+  indexes plus the same three overlapping-policy warnings).
+- No real-session matrix fixture, ledger evidence, deployment, or pilot was
+  created.
+
+See
+[`../../supabase/evidence/sequence-4-hosted-push-2026-07-22.md`](../../supabase/evidence/sequence-4-hosted-push-2026-07-22.md)
+for the published gate record.
