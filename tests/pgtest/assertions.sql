@@ -2635,6 +2635,247 @@ select cvf_test.ok(
   )
 );
 
+-- ---------------------------------------------------------------------------
+-- Sequence 4A-4C controlled runtime, projection, and correction authority.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+update public.team_players set roster_status = 'eligible'
+ where id in ('40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002');
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+values
+ ('50000000-0000-0000-0000-000000000950','20000000-0000-0000-0000-000000000001','kickball',
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-08','6:00 PM','Runtime Field'),
+ ('50000000-0000-0000-0000-000000000951','20000000-0000-0000-0000-000000000001','kickball',
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-15','6:00 PM','Forfeit Field');
+create table cvf_test.ledger_runtime_state (key text primary key, value jsonb not null);
+grant select, insert, update on cvf_test.ledger_runtime_state to authenticated;
+
+select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'ledger runtime 01 [INV-19] AAL1 admin cannot start a session',
+  $$select public.start_scorekeeping_session('50000000-0000-0000-0000-000000000950','CVF-KB-2026.1',5,null,false,'{}')$$,
+  '%Admin only%'
+);
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'ledger runtime 02 [INV-19] non-admin cannot start a session',
+  $$select public.start_scorekeeping_session('50000000-0000-0000-0000-000000000950','CVF-KB-2026.1',5,null,false,'{}')$$,
+  '%Admin only%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+insert into cvf_test.ledger_runtime_state values ('session', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000950','CVF-KB-2026.1',5,null,false,'{"mercy":false}'::jsonb));
+select cvf_test.ok(
+  'ledger runtime 03 [INV-10][INV-18][INV-20][INV-29] start converts, snapshots, and leases',
+  (select game.scorekeeping_mode = 'ledger' and game.status = 'live'
+     and (select count(*) = 2 from public.scorekeeping_participants participant
+           where participant.session_id = (state.value ->> 'session_id')::uuid)
+     and length(state.value ->> 'lease_token') > 20 and (state.value ->> 'lease_version')::int = 1
+   from public.games game cross join cvf_test.ledger_runtime_state state
+   where game.id = '50000000-0000-0000-0000-000000000950' and state.key = 'session')
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'event-home-1', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'runtime-home-1',
+  'record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}'::jsonb,
+  jsonb_build_array(jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+    where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000001' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)))
+from cvf_test.ledger_runtime_state s where s.key='session';
+insert into cvf_test.ledger_runtime_state
+select 'event-home-2', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'runtime-home-2',
+  'record','run','regulation',2,'30000000-0000-0000-0000-000000000001',1,null,null,'{}'::jsonb,
+  jsonb_build_array(jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+    where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000001' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)))
+from cvf_test.ledger_runtime_state s where s.key='session';
+insert into cvf_test.ledger_runtime_state
+select 'event-away-1', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'runtime-away-1',
+  'record','run','regulation',1,'30000000-0000-0000-0000-000000000002',1,null,null,'{}'::jsonb,
+  jsonb_build_array(jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+    where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000002' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)))
+from cvf_test.ledger_runtime_state s where s.key='session';
+
+select cvf_test.ok(
+  'ledger runtime 04 [INV-14][INV-15] event commands are gapless and game-idempotent',
+  (select array_agg(sequence_number order by sequence_number)=array[1,2,3]
+    from public.scorekeeping_events where game_id='50000000-0000-0000-0000-000000000950')
+);
+select cvf_test.ok(
+  'ledger runtime 05 [INV-15] same command replay returns the original event',
+  (select (public.append_scorekeeping_event(
+    (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'runtime-home-1',
+    'record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}'::jsonb,
+    jsonb_build_array(jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000001' limit 1),
+      'role','scorer','stat_key','runs','stat_delta',1))) ->> 'replayed')::boolean
+   from cvf_test.ledger_runtime_state s where s.key='session')
+);
+select cvf_test.throws_ok(
+  'ledger runtime 06 [INV-15] changed command cannot reuse an event key',
+  $$select public.append_scorekeeping_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'runtime-home-1','record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{"changed":true}'::jsonb,'[]'::jsonb)
+    from cvf_test.ledger_runtime_state where key='session'$$,
+  '%different command%'
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'renewed', public.renew_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int)
+from cvf_test.ledger_runtime_state where key='session';
+select cvf_test.throws_ok(
+  'ledger runtime 07 [INV-20] lease renewal invalidates the old token/version',
+  $$select public.renew_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int)
+    from cvf_test.ledger_runtime_state where key='session'$$,
+  '%stale or invalid%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'final', public.finalize_scorekeeping_session((session.value->>'session_id')::uuid,
+  renewed.value->>'lease_token',(renewed.value->>'lease_version')::int,'runtime-final-1',null)
+from cvf_test.ledger_runtime_state session cross join cvf_test.ledger_runtime_state renewed
+where session.key='session' and renewed.key='renewed';
+select cvf_test.ok(
+  'ledger projection 01 [INV-01][INV-22][INV-23][INV-27] finalization publishes deterministic score/stats once',
+  (select game.status='completed' and game.score_status='final' and game.locked and game.outcome_type='played'
+      and game.home_score=2 and game.away_score=1 and game.periods='{"home":[1,1,0,0,0],"away":[1,0,0,0,0]}'::jsonb
+      and (select count(*)=2 from public.player_stats stat where stat.game_id=game.id)
+    from public.games game where game.id='50000000-0000-0000-0000-000000000950')
+);
+select cvf_test.ok(
+  'ledger projection 02 [INV-15] ambiguous finalization retry is stable',
+  (select public.finalize_scorekeeping_session((session.value->>'session_id')::uuid,
+    renewed.value->>'lease_token',(renewed.value->>'lease_version')::int,'runtime-final-1',null)=final.value
+   from cvf_test.ledger_runtime_state session cross join cvf_test.ledger_runtime_state renewed
+   cross join cvf_test.ledger_runtime_state final
+   where session.key='session' and renewed.key='renewed' and final.key='final')
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'correction', public.start_scorekeeping_correction('50000000-0000-0000-0000-000000000950','Move miscredited run') ;
+insert into cvf_test.ledger_runtime_state
+select 'replace', public.replace_scorekeeping_event((c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,
+  'runtime-void-1','runtime-replace-1',(e.value->>'event_id')::uuid,'run','regulation',2,
+  '30000000-0000-0000-0000-000000000002',1,'{}',
+  jsonb_build_array(jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+    where session_id=(c.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000002' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)))
+from cvf_test.ledger_runtime_state c cross join cvf_test.ledger_runtime_state e
+where c.key='correction' and e.key='event-home-2';
+insert into cvf_test.ledger_runtime_state
+select 'corrected', public.finalize_scorekeeping_correction((c.value->>'session_id')::uuid,c.value->>'lease_token',
+  (c.value->>'lease_version')::int,'runtime-correction-final-1',null)
+from cvf_test.ledger_runtime_state c where c.key='correction';
+select cvf_test.ok(
+  'ledger correction 01 [INV-16][INV-17][INV-24][INV-37] void/replace refinalizes with one audited authority',
+  (select game.home_score=1 and game.away_score=2 and game.winner_team_id='30000000-0000-0000-0000-000000000002'
+     and (corrected.value->>'ok')::boolean
+     and exists (select 1 from public.game_edit_history history where history.game_id=game.id
+       and history.action='Ledger final result corrected' and history.scorekeeping_session_id=(corrected.value->>'session_id')::uuid)
+   from public.games game cross join cvf_test.ledger_runtime_state corrected
+   where game.id='50000000-0000-0000-0000-000000000950' and corrected.key='corrected')
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'cancel-correction', public.start_scorekeeping_correction('50000000-0000-0000-0000-000000000950','No-op review');
+select public.cancel_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'No change needed')
+from cvf_test.ledger_runtime_state where key='cancel-correction';
+select cvf_test.ok(
+  'ledger correction 02 [INV-25] cancel leaves the published projection byte-for-byte unchanged',
+  (select home_score=1 and away_score=2 and status='completed' and score_status='final' and locked
+   from public.games where id='50000000-0000-0000-0000-000000000950')
+);
+
+insert into cvf_test.ledger_runtime_state
+values ('forfeit', public.declare_ledger_forfeit('50000000-0000-0000-0000-000000000951',
+  '30000000-0000-0000-0000-000000000001','Away team did not appear','runtime-forfeit-1'));
+select cvf_test.ok(
+  'ledger forfeit 01 [INV-09][INV-26] forfeit is final W/L-only with null score and no stats',
+  (select game.status='canceled' and game.score_status='final' and game.locked and game.outcome_type='forfeit'
+      and game.home_score is null and game.away_score is null and game.periods='{"home":[],"away":[]}'::jsonb
+      and game.winner_team_id='30000000-0000-0000-0000-000000000001'
+      and not exists (select 1 from public.player_stats stat where stat.game_id=game.id)
+   from public.games game where game.id='50000000-0000-0000-0000-000000000951')
+);
+select cvf_test.ok(
+  'ledger forfeit 02 [INV-15] same-key ambiguous retry returns the stored outcome',
+  (select (public.declare_ledger_forfeit('50000000-0000-0000-0000-000000000951',
+    '30000000-0000-0000-0000-000000000001','Away team did not appear','runtime-forfeit-1')->>'replayed')::boolean)
+);
+select cvf_test.throws_ok(
+  'ledger forfeit 03 [INV-15] a different key cannot replay the finalized outcome',
+  $$select public.declare_ledger_forfeit('50000000-0000-0000-0000-000000000951',
+    '30000000-0000-0000-0000-000000000001','Away team did not appear','runtime-forfeit-2')$$,
+  '%replay differs%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'playoff-forfeit-game', jsonb_build_object('game_id', public.schedule_playoff_match(
+  (select id from public.playoff_matches where round_number=1 and status='ready' and game_id is null limit 1),
+  '2026-08-02','7:00 PM','Forfeit Field'));
+insert into cvf_test.ledger_runtime_state
+select 'playoff-forfeit', public.declare_ledger_forfeit(
+  (fixture.value->>'game_id')::uuid, game.home_team_id, 'Opponent did not appear', 'playoff-forfeit-1')
+from cvf_test.ledger_runtime_state fixture
+join public.games game on game.id=(fixture.value->>'game_id')::uuid
+where fixture.key='playoff-forfeit-game';
+select cvf_test.ok(
+  'ledger forfeit 04 [INV-09][INV-32] scoreless playoff forfeit advances through the single bracket authority',
+  exists (
+    select 1 from cvf_test.ledger_runtime_state fixture
+    join public.playoff_matches source on source.game_id=(fixture.value->>'game_id')::uuid
+    left join public.playoff_matches destination on destination.id=source.winner_to_match_id
+    where fixture.key='playoff-forfeit-game' and source.status='completed'
+      and source.winner_team_id is not null and source.loser_team_id is not null
+      and (destination.id is null or source.winner_team_id in (destination.home_team_id,destination.away_team_id))
+  )
+);
+select cvf_test.throws_ok(
+  'ledger boundary 01 [INV-04] AAL2 admin still cannot directly update outcome fields',
+  $$update public.games set winner_team_id='30000000-0000-0000-0000-000000000002'
+    where id='50000000-0000-0000-0000-000000000951'$$,
+  '%permission denied%'
+);
+
+select cvf_test.as_owner();
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+values ('50000000-0000-0000-0000-000000000953','20000000-0000-0000-0000-000000000001','kickball',
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-29','6:00 PM','Failure Field');
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+insert into cvf_test.ledger_runtime_state values ('failure-session', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000953','CVF-KB-2026.1',5,null,false,'{}'::jsonb));
+select public.append_scorekeeping_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+  'failure-home','record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}','[]')
+from cvf_test.ledger_runtime_state where key='failure-session';
+select public.append_scorekeeping_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+  'failure-away','record','run','regulation',1,'30000000-0000-0000-0000-000000000002',1,null,null,'{}','[]')
+from cvf_test.ledger_runtime_state where key='failure-session';
+insert into cvf_test.ledger_runtime_state
+select 'failure-result', public.finalize_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',
+  (value->>'lease_version')::int,'failure-final',null)
+from cvf_test.ledger_runtime_state where key='failure-session';
+select cvf_test.ok(
+  'ledger failure 01 [INV-08][INV-35] rejected projection rolls back and writes metadata-only audit',
+  (select (result.value->>'ok')::boolean = false and game.status='live' and game.home_score is null and game.away_score is null
+      and exists (select 1 from public.game_edit_history history where history.game_id=game.id
+        and history.action='Ledger finalization failed' and history.before_state is null and history.after_state is null
+        and history.failure_metadata ? 'sqlstate')
+   from cvf_test.ledger_runtime_state result cross join public.games game
+   where result.key='failure-result' and game.id='50000000-0000-0000-0000-000000000953')
+);
+
+-- Leave one active, isolated fixture for the runner's two-real-connection
+-- idempotency race. The runner verifies exactly one event survives.
+select cvf_test.as_owner();
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+values ('50000000-0000-0000-0000-000000000952','20000000-0000-0000-0000-000000000001','kickball',
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-22','6:00 PM','Race Field');
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+insert into cvf_test.ledger_runtime_state values ('concurrency', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000952','CVF-KB-2026.1',5,null,false,'{}'::jsonb));
+
 select cvf_test.as_owner();
 
 \echo ''

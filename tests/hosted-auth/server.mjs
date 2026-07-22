@@ -137,6 +137,7 @@ function getLedgerCatalogChecks() {
     ["authenticated has SELECT-only ledger privileges", "authenticated_select_only"],
     ["service_role has no ledger table privilege", "service_role_no_privileges"],
     ["ledger trigger helpers are not client or service executable", "helpers_not_client_executable"],
+    ["all ten ledger runtime RPCs are authenticated-only", "runtime_rpcs_authenticated_only"],
   ].map(([name, key]) => ({
     category: "ledger catalog",
     name,

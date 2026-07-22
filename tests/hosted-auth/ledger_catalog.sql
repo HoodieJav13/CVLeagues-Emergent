@@ -25,12 +25,35 @@ with ledger_tables(name) as (
     ('cvf_prepare_scorekeeping_event'),
     ('cvf_prepare_scorekeeping_attribution'),
     ('cvf_guard_scorekeeping_mode'),
-    ('cvf_guard_ledger_game_identity')
+    ('cvf_guard_ledger_game_identity'),
+    ('cvf_ledger_token_hash'),
+    ('cvf_assert_ledger_lease'),
+    ('cvf_validate_ledger_event'),
+    ('cvf_build_ledger_projection'),
+    ('cvf_validate_correction_event_target')
 ), helper_functions as (
   select procedure.oid, procedure.proname
     from pg_catalog.pg_proc procedure
     join pg_catalog.pg_namespace namespace on namespace.oid = procedure.pronamespace
     join ledger_helpers expected on expected.name = procedure.proname
+   where namespace.nspname = 'public'
+), ledger_runtime_rpcs(name) as (
+  values
+    ('start_scorekeeping_session'),
+    ('renew_scorekeeping_session'),
+    ('resume_scorekeeping_session'),
+    ('append_scorekeeping_event'),
+    ('replace_scorekeeping_event'),
+    ('finalize_scorekeeping_session'),
+    ('cancel_scorekeeping_session'),
+    ('declare_ledger_forfeit'),
+    ('start_scorekeeping_correction'),
+    ('finalize_scorekeeping_correction')
+), runtime_functions as (
+  select procedure.oid, procedure.proname
+    from pg_catalog.pg_proc procedure
+    join pg_catalog.pg_namespace namespace on namespace.oid = procedure.pronamespace
+    join ledger_runtime_rpcs expected on expected.name = procedure.proname
    where namespace.nspname = 'public'
 )
 select json_build_object(
@@ -64,12 +87,21 @@ select json_build_object(
      where has_table_privilege('service_role', relation.oid, privilege.privilege_name)
   ),
   'helpers_not_client_executable', (
-    (select count(distinct proname) = 7 from helper_functions)
+    (select count(distinct proname) = 12 from helper_functions)
     and not exists (
       select 1 from helper_functions helper
        where has_function_privilege('anon', helper.oid, 'execute')
           or has_function_privilege('authenticated', helper.oid, 'execute')
           or has_function_privilege('service_role', helper.oid, 'execute')
+    )
+  ),
+  'runtime_rpcs_authenticated_only', (
+    (select count(distinct proname) = 10 from runtime_functions)
+    and not exists (
+      select 1 from runtime_functions runtime
+       where not has_function_privilege('authenticated', runtime.oid, 'execute')
+          or has_function_privilege('anon', runtime.oid, 'execute')
+          or has_function_privilege('service_role', runtime.oid, 'execute')
     )
   )
 ) as ledger_catalog;

@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { fetchAppState, submitScore, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
+import { fetchAppState, replaceScorekeepingEvent, submitScore, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
 
 jest.mock("./supabase", () => ({
   supabase: {
@@ -135,6 +135,40 @@ describe("RPC-only team mutations", () => {
       p_stats: { "player-1": { team_id: "home", stats: { passYards: -3 } } },
       p_reason: "Correcting transcription",
       p_override_reason: "Official scorebook controls",
+    });
+  });
+
+  test("[INV-16][INV-17] void-and-replace uses one atomic ledger RPC", async () => {
+    await replaceScorekeepingEvent({
+      lease: { session_id: "session-1", lease_token: "lease-token", lease_version: 3 },
+      target_event_id: "event-1",
+      command: {
+        void_idempotency_key: "void-key",
+        replacement_idempotency_key: "replace-key",
+        event_type: "run",
+        period_type: "regulation",
+        period_number: 2,
+        credited_team_id: "away",
+        points: 1,
+        payload: { source: "official-book" },
+        attributions: [{ participant_id: "participant-1", role: "scorer", stat_key: "runs", stat_delta: 1 }],
+      },
+    });
+
+    expect(supabase.rpc).toHaveBeenCalledWith("replace_scorekeeping_event", {
+      p_session_id: "session-1",
+      p_lease_token: "lease-token",
+      p_lease_version: 3,
+      p_void_idempotency_key: "void-key",
+      p_replacement_idempotency_key: "replace-key",
+      p_target_event_id: "event-1",
+      p_event_type: "run",
+      p_period_type: "regulation",
+      p_period_number: 2,
+      p_credited_team_id: "away",
+      p_points: 1,
+      p_payload: { source: "official-book" },
+      p_attributions: [{ participant_id: "participant-1", role: "scorer", stat_key: "runs", stat_delta: 1 }],
     });
   });
 

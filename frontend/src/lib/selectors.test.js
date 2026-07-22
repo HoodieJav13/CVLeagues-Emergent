@@ -11,6 +11,7 @@ import {
   buildLeaderboard,
   computeTeamRecord,
   computeStandings,
+  isForfeitOutcome,
   playerCareerStats,
   playerGameLog,
   playerSeasonStats,
@@ -101,6 +102,33 @@ describe("computeStandings unaffected by the scored playoff game", () => {
     };
     const rows = computeStandings(tied, "l1");
     expect(rows.findIndex((row) => row.team.id === "t7")).toBeLessThan(rows.findIndex((row) => row.team.id === "t2"));
+  });
+});
+
+describe("W/L-only forfeits", () => {
+  const forfeit = {
+    id: "forfeit-regular", league_id: "l1", stage: "regular", status: "canceled", score_status: "final", locked: true,
+    outcome_type: "forfeit", home_team_id: "t1", away_team_id: "t2", winner_team_id: "t2", loser_team_id: "t1",
+    home_score: null, away_score: null, periods: { home: [], away: [] },
+  };
+  const withForfeit = { ...state, games: [...state.games, forfeit] };
+
+  test("recognizes only the complete explicit forfeit outcome shape", () => {
+    expect(isForfeitOutcome(forfeit)).toBe(true);
+    expect(isForfeitOutcome({ ...forfeit, locked: false })).toBe(false);
+  });
+
+  test("adds one win and loss without points-for, points-against, or a tie", () => {
+    const beforeWinner = computeTeamRecord(state, "t2");
+    const beforeLoser = computeTeamRecord(state, "t1");
+    expect(computeTeamRecord(withForfeit, "t2")).toMatchObject({
+      wins: beforeWinner.wins + 1, losses: beforeWinner.losses,
+      ties: beforeWinner.ties, pointsFor: beforeWinner.pointsFor, pointsAgainst: beforeWinner.pointsAgainst,
+    });
+    expect(computeTeamRecord(withForfeit, "t1")).toMatchObject({
+      wins: beforeLoser.wins, losses: beforeLoser.losses + 1,
+      ties: beforeLoser.ties, pointsFor: beforeLoser.pointsFor, pointsAgainst: beforeLoser.pointsAgainst,
+    });
   });
 });
 

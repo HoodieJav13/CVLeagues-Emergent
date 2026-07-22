@@ -114,4 +114,21 @@ describe("GameDetail score action", () => {
     expect(frame?.querySelector(".cvf-upcoming-focal")).toBeNull();
     expect([...frame.querySelectorAll(".cvf-game-score")].map((node) => node.textContent)).toEqual(["8", "5"]);
   });
+
+  test("shows a final forfeit without numeric scores or an invalid correction action", async () => {
+    mockState = {
+      ...mockState,
+      games: [{
+        ...mockState.games[0], status: "canceled", score_status: "final", locked: true,
+        outcome_type: "forfeit", winner_team_id: "away", loser_team_id: "home",
+        away_score: null, home_score: null, periods: { away: [], home: [] },
+      }],
+    };
+
+    await act(async () => root.render(<GameDetail />));
+    const frame = container.querySelector('[data-testid="game-event-frame"]');
+    expect(frame?.textContent).toContain("Forfeit");
+    expect([...frame.querySelectorAll(".cvf-game-score")].map((node) => node.textContent)).toEqual(["W", "L"]);
+    expect(container.querySelector('[data-testid="game-enter-score"]')).toBeNull();
+  });
 });

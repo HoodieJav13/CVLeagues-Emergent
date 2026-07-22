@@ -32,3 +32,18 @@ test("browser runner invokes the complete ledger boundary for every role", () =>
     assert.match(source, new RegExp(`runLedgerBoundary\\(\\"${role.key}\\"`));
   }
 });
+
+test("Sequence 4 runtime RPCs are covered by browser denial and catalog checks", () => {
+  const browserSource = readFileSync(new URL("./matrix.js", import.meta.url), "utf8");
+  const catalogSource = readFileSync(new URL("./ledger_catalog.sql", import.meta.url), "utf8");
+  const runtimeRpcs = [
+    "start_scorekeeping_session", "renew_scorekeeping_session", "resume_scorekeeping_session",
+    "append_scorekeeping_event", "replace_scorekeeping_event", "finalize_scorekeeping_session",
+    "cancel_scorekeeping_session", "declare_ledger_forfeit", "start_scorekeeping_correction",
+    "finalize_scorekeeping_correction",
+  ];
+  for (const rpc of runtimeRpcs) {
+    assert.match(browserSource, new RegExp(`\\"${rpc}\\"`));
+    assert.match(catalogSource, new RegExp(`\\('${rpc}'\\)`));
+  }
+});

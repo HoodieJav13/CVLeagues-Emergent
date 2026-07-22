@@ -75,4 +75,16 @@ describe("GameCard team presentation", () => {
     expect(card?.className).not.toContain("transition-all");
     expect(card?.className).not.toContain("hover:-translate-y-1");
   });
+
+  test("renders a final scoreless forfeit as explicit W/L instead of 0-0", async () => {
+    await act(async () => root.render(<GameCard game={{
+      id: "game-forfeit", sport: "kickball", status: "canceled", score_status: "final", locked: true,
+      outcome_type: "forfeit", winner_team_id: "away", loser_team_id: "home",
+      date: "2026-07-10", time: "6:30 PM", location: "Mesa Field",
+      away_team_id: "away", home_team_id: "home", away_score: null, home_score: null,
+    }} />));
+
+    expect([...container.querySelectorAll(".font-mono-score")].map((node) => node.textContent)).toEqual(["W", "L"]);
+    expect(container.textContent).not.toContain("0–0");
+  });
 });

@@ -240,6 +240,42 @@ function rpcArguments(name) {
       p_team_id: config.ids.homeTeam,
       p_patch: { status: "inactive" },
     },
+    start_scorekeeping_session: {
+      p_game_id: config.ids.game, p_rule_version: "CVF-MATRIX", p_regulation_period_count: 5,
+      p_overtime_start_setting: null, p_allow_ties: false, p_rules_snapshot: {},
+    },
+    renew_scorekeeping_session: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+    },
+    resume_scorekeeping_session: { p_session_id: config.ids.game, p_reason: "Denied matrix probe" },
+    append_scorekeeping_event: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_idempotency_key: config.runId, p_action: "record", p_event_type: "run",
+      p_period_type: "regulation", p_period_number: 1, p_credited_team_id: config.ids.homeTeam,
+      p_points: 1, p_voids_event_id: null, p_replaces_event_id: null, p_payload: {}, p_attributions: [],
+    },
+    replace_scorekeeping_event: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_void_idempotency_key: `${config.runId}-void`, p_replacement_idempotency_key: `${config.runId}-replace`,
+      p_target_event_id: config.ids.game, p_event_type: "run", p_period_type: "regulation",
+      p_period_number: 1, p_credited_team_id: config.ids.homeTeam, p_points: 1, p_payload: {}, p_attributions: [],
+    },
+    finalize_scorekeeping_session: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_idempotency_key: config.runId, p_override_reason: null,
+    },
+    cancel_scorekeeping_session: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1, p_reason: "Denied matrix probe",
+    },
+    declare_ledger_forfeit: {
+      p_game_id: config.ids.game, p_winner_team_id: config.ids.homeTeam,
+      p_reason: "Denied matrix probe", p_idempotency_key: config.runId,
+    },
+    start_scorekeeping_correction: { p_game_id: config.ids.game, p_reason: "Denied matrix probe" },
+    finalize_scorekeeping_correction: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_idempotency_key: config.runId, p_override_reason: null,
+    },
   }[name];
 }
 
@@ -259,6 +295,16 @@ const ADMIN_RPC_NAMES = [
   "create_team_identity_and_enroll",
   "update_team_identity",
   "update_team_enrollment",
+  "start_scorekeeping_session",
+  "renew_scorekeeping_session",
+  "resume_scorekeeping_session",
+  "append_scorekeeping_event",
+  "replace_scorekeeping_event",
+  "finalize_scorekeeping_session",
+  "cancel_scorekeeping_session",
+  "declare_ledger_forfeit",
+  "start_scorekeeping_correction",
+  "finalize_scorekeeping_correction",
 ];
 
 async function runMatrix() {

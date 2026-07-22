@@ -38,3 +38,5 @@ done
 
 psql -h "$PGSOCKET_DIR" -p "$PGPORT" -U postgres -d "$DB_NAME" -v ON_ERROR_STOP=1 \
   -f "$ROOT_DIR/tests/pgtest/assertions.sql"
+
+bash "$ROOT_DIR/tests/pgtest/ledger_concurrency.sh" "$PGSOCKET_DIR" "$PGPORT" "$DB_NAME"
