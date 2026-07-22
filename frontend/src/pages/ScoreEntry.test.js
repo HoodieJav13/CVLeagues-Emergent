@@ -86,6 +86,20 @@ function useLockedGameApp() {
   return { state, submitScore: mockSubmitScore };
 }
 
+const click = async (element) => {
+  await act(async () => {
+    element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+};
+
+const setTextareaValue = async (element, value) => {
+  await act(async () => {
+    const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
+    setValue.call(element, value);
+    element.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+};
+
 describe("ScoreEntry locked-game UX", () => {
   let container;
   let root;
@@ -113,7 +127,7 @@ describe("ScoreEntry locked-game UX", () => {
     container.remove();
   });
 
-  test("[INV-24][INV-32] drafts, cancels, and completes a reasoned correction without unlocking", async () => {
+  test("[INV-24] keeps finalized score controls locked and accessibly labelled", async () => {
     await act(async () => root.render(<ScoreEntry />));
 
     expect(container.querySelector('[data-testid="score-game-select"]')?.getAttribute("aria-labelledby")).toBe("score-game-select-label");
@@ -126,37 +140,30 @@ describe("ScoreEntry locked-game UX", () => {
     expect(container.querySelector('[data-testid="score-add-inning"]').disabled).toBe(true);
     expect(container.querySelector('[data-testid="score-save"]').disabled).toBe(true);
 
-    await act(async () => {
-      container.querySelector('[data-testid="score-player-toggle-player-1"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
+    await click(container.querySelector('[data-testid="score-player-toggle-player-1"]'));
     expect(container.querySelector('[data-testid="score-stat-player-1-kicks"]').disabled).toBe(true);
+  });
 
-    await act(async () => {
-      container.querySelector('[data-testid="score-correction-start"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
+  test("[INV-24] requires a correction reason and cancel restores the locked values", async () => {
+    await act(async () => root.render(<ScoreEntry />));
+    await click(container.querySelector('[data-testid="score-player-toggle-player-1"]'));
+
+    await click(container.querySelector('[data-testid="score-correction-start"]'));
 
     const reason = document.querySelector('[data-testid="score-correction-reason"]');
     expect(document.activeElement).toBe(reason);
-    await act(async () => {
-      document.querySelector('[data-testid="score-correction-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
     expect(reason?.getAttribute("aria-invalid")).toBe("true");
     expect(reason?.getAttribute("aria-describedby")).toBe("score-correction-reason-error");
     expect(document.querySelector('#score-correction-reason-error')?.getAttribute("role")).toBe("alert");
     expect(document.querySelector('#score-correction-reason-error')?.textContent).toBe("A correction reason is required.");
 
-    await act(async () => {
-      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
-      setValue.call(reason, "Correcting the final score");
-      reason.dispatchEvent(new Event("input", { bubbles: true }));
-    });
+    await setTextareaValue(reason, "Correcting the final score");
     expect(reason?.getAttribute("aria-invalid")).toBe("false");
     expect(reason?.getAttribute("aria-describedby")).toBeNull();
     expect(document.querySelector('#score-correction-reason-error')).toBeNull();
 
-    await act(async () => {
-      document.querySelector('[data-testid="score-correction-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
 
     expect(container.querySelector('[data-testid="score-locked-notice"]')?.textContent).toContain("published result locked");
     expect(container.querySelector('[data-testid="score-away-period-0"]').disabled).toBe(false);
@@ -164,32 +171,24 @@ describe("ScoreEntry locked-game UX", () => {
     expect(container.querySelector('[data-testid="score-stat-player-1-kicks"]').disabled).toBe(false);
     expect(container.querySelector('[data-testid="score-save"]').disabled).toBe(false);
 
-    await act(async () => {
-      container.querySelector('[data-testid="score-correction-cancel"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
+    await click(container.querySelector('[data-testid="score-correction-cancel"]'));
     expect(container.querySelector('[data-testid="score-away-period-0"]').disabled).toBe(true);
     expect(container.querySelector('[data-testid="score-away-period-0"]').value).toBe("1");
     expect(mockSubmitScore).not.toHaveBeenCalled();
+  });
 
-    await act(async () => {
-      container.querySelector('[data-testid="score-correction-start"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    const secondReason = document.querySelector('[data-testid="score-correction-reason"]');
-    await act(async () => {
-      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
-      setValue.call(secondReason, "Correcting the final score");
-      secondReason.dispatchEvent(new Event("input", { bubbles: true }));
-      document.querySelector('[data-testid="score-correction-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
-    await act(async () => {
-      container.querySelector('[data-testid="score-save"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    });
+  test("[INV-24][INV-32] submits a reasoned correction through the soft-warning override", async () => {
+    await act(async () => root.render(<ScoreEntry />));
+
+    await click(container.querySelector('[data-testid="score-correction-start"]'));
+    const reason = document.querySelector('[data-testid="score-correction-reason"]');
+    await setTextareaValue(reason, "Correcting the final score");
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
+    await click(container.querySelector('[data-testid="score-save"]'));
     expect(document.querySelector('[data-testid="score-soft-warnings"]')?.textContent).toContain("[INV-05]");
     const override = document.querySelector('[data-testid="score-override-reason"]');
+    await setTextareaValue(override, "Official book has team-only totals");
     await act(async () => {
-      const setValue = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, "value").set;
-      setValue.call(override, "Official book has team-only totals");
-      override.dispatchEvent(new Event("input", { bubbles: true }));
       document.querySelector('[data-testid="score-override-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
       await Promise.resolve();
     });
