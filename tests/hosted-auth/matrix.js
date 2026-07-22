@@ -1,4 +1,4 @@
-/* global supabase */
+/* global supabase, CVF_LEDGER_MATRIX_CONTRACT */
 
 const output = document.getElementById("output");
 const runButton = document.getElementById("run");
@@ -18,6 +18,13 @@ let admin;
 let nonadmin;
 let anon;
 let startedAt;
+
+const {
+  tables: LEDGER_TABLES,
+  operations: LEDGER_OPERATIONS,
+  roles: LEDGER_ROLES,
+  checkName: ledgerCheckName,
+} = CVF_LEDGER_MATRIX_CONTRACT;
 
 function log(message) {
   output.textContent += `${message}\n`;
@@ -57,6 +64,13 @@ function requireDenied(result, message = "Request unexpectedly succeeded") {
   return "Denied as required.";
 }
 
+function requirePrivilegeDenied(result) {
+  if (!result.error || !/permission denied/i.test(result.error.message || "")) {
+    throw new Error("Ledger mutation did not fail at the table-privilege boundary.");
+  }
+  return "Denied at the table-privilege boundary.";
+}
+
 function requireAdminGuard(result) {
   if (!result.error || !/admin only/i.test(result.error.message || "")) {
     throw new Error("RPC did not fail at the admin authorization guard.");
@@ -76,10 +90,43 @@ function requireHidden(result, message = "Private rows were exposed") {
   return "RLS returned zero private rows.";
 }
 
+function requireRlsEmpty(result, message = "Private ledger rows were exposed") {
+  const data = requireSuccess(result, "Authenticated ledger SELECT failed");
+  requireCondition(Array.isArray(data) && data.length === 0, message);
+  return "SELECT grant reached RLS and returned zero private rows.";
+}
+
 function client() {
   return supabase.createClient(config.supabaseUrl, config.anonKey, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
+}
+
+async function runLedgerBoundary(roleKey, targetClient) {
+  const role = LEDGER_ROLES.find((candidate) => candidate.key === roleKey);
+  requireCondition(Boolean(role), `Unknown ledger matrix role ${roleKey}.`);
+
+  for (const table of LEDGER_TABLES) {
+    await check(role.category, ledgerCheckName(role, "read", table), async () => {
+      const result = await targetClient.from(table).select("*").limit(1);
+      if (role.readMode === "denied") return requirePrivilegeDenied(result);
+      if (role.readMode === "hidden") return requireRlsEmpty(result);
+      const data = requireSuccess(result, `AAL2 query failed for ${table}`);
+      requireCondition(Array.isArray(data), `${table} did not return a row array.`);
+      return "Authorized query completed.";
+    });
+
+    for (const operation of LEDGER_OPERATIONS.filter((candidate) => candidate !== "read")) {
+      await check(role.category, ledgerCheckName(role, operation, table), async () => {
+        const targetId = crypto.randomUUID();
+        let result;
+        if (operation === "insert") result = await targetClient.from(table).insert({ id: targetId });
+        if (operation === "update") result = await targetClient.from(table).update({ id: crypto.randomUUID() }).eq("id", targetId).select("id");
+        if (operation === "delete") result = await targetClient.from(table).delete().eq("id", targetId).select("id");
+        return requirePrivilegeDenied(result);
+      });
+    }
+  }
 }
 
 function captchaToken(containerId) {
@@ -267,6 +314,7 @@ async function runMatrix() {
         return requireAdminGuard(await admin.rpc(rpc, rpcArguments(rpc)));
       });
     }
+    await runLedgerBoundary("aal1Admin", admin);
 
     const adminTotp = await requestAdminTotp();
     await completeAdminMfa(admin, adminTotp);
@@ -287,6 +335,9 @@ async function runMatrix() {
       const data = requireSuccess(await admin.rpc("is_admin"));
       requireCondition(data === true, "Administrator is_admin() did not return true.");
     });
+    await runLedgerBoundary("anonymous", anon);
+    await runLedgerBoundary("nonadmin", nonadmin);
+    await runLedgerBoundary("aal2Admin", admin);
 
     const registration = {
       id: crypto.randomUUID(),

@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { validateBrowserResult } from "./result_validation.mjs";
+import { summarizeChecks } from "./check_summary.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((pairs, value, index, values) => {
@@ -31,6 +32,7 @@ const fixtureWaiverVersion = `CVF-MATRIX-${runId}`;
 
 let server;
 let baseline;
+let ledgerCatalogChecks = [];
 let fixtureSeeded = false;
 let cleanupStarted = false;
 let completed = false;
@@ -105,6 +107,10 @@ select json_build_object(
   'playoff_brackets', (select count(*) from public.playoff_brackets),
   'playoff_seeds', (select count(*) from public.playoff_seeds),
   'playoff_matches', (select count(*) from public.playoff_matches),
+  'scorekeeping_sessions', (select count(*) from public.scorekeeping_sessions),
+  'scorekeeping_participants', (select count(*) from public.scorekeeping_participants),
+  'scorekeeping_events', (select count(*) from public.scorekeeping_events),
+  'scorekeeping_event_attributions', (select count(*) from public.scorekeeping_event_attributions),
   'hof_published', (select hof_published from public.league_settings where id = 1),
   'current_season', (select current_season from public.league_settings where id = 1),
   'current_waiver_version', public.current_waiver_version()
@@ -115,6 +121,28 @@ function getCounts(label) {
   const rows = runLinkedSql(label, countSql);
   if (!rows[0]?.baseline) throw new Error(`Could not read ${label} row counts.`);
   return rows[0].baseline;
+}
+
+function getLedgerCatalogChecks() {
+  const sql = readFileSync(join(root, "tests/hosted-auth/ledger_catalog.sql"), "utf8");
+  const rows = runLinkedSql("ledger-catalog", sql);
+  const observed = rows[0]?.ledger_catalog;
+  if (!observed) throw new Error("Could not read the Migration 24 ledger privilege catalog.");
+
+  return [
+    ["all four ledger tables exist", "tables_present"],
+    ["all four ledger tables have RLS enabled", "rls_enabled"],
+    ["all four ledger tables have the AAL2 admin-read policy", "admin_read_policies"],
+    ["anonymous has no ledger table privilege", "anon_no_privileges"],
+    ["authenticated has SELECT-only ledger privileges", "authenticated_select_only"],
+    ["service_role has no ledger table privilege", "service_role_no_privileges"],
+    ["ledger trigger helpers are not client or service executable", "helpers_not_client_executable"],
+  ].map(([name, key]) => ({
+    category: "ledger catalog",
+    name,
+    status: observed[key] === true ? "PASS" : "FAIL",
+    detail: observed[key] === true ? "Expected catalog boundary observed." : `Catalog boundary failed: ${key}.`,
+  }));
 }
 
 function seedFixture() {
@@ -209,9 +237,11 @@ function markdownEscape(value) {
 }
 
 function makeReport(browserResult, cleanupResult) {
-  const checks = Array.isArray(browserResult.checks) ? browserResult.checks : [];
-  const passed = checks.filter((check) => check.status === "PASS").length;
-  const failed = checks.filter((check) => check.status !== "PASS").length;
+  const browserChecks = Array.isArray(browserResult.checks) ? browserResult.checks : [];
+  const summary = summarizeChecks(browserChecks, ledgerCatalogChecks);
+  const checks = summary.checks;
+  const passed = summary.combinedPassed;
+  const failed = summary.combinedFailed;
   const cleanupPassed = cleanupResult.residueClear && cleanupResult.countsRestored;
   const overall = failed === 0 && cleanupPassed ? "PASS" : "FAIL";
   const categoryRows = Object.entries(checks.reduce((acc, check) => {
@@ -232,7 +262,9 @@ function makeReport(browserResult, cleanupResult) {
 - **Project:** \`${projectRef}\`
 - **Run namespace:** \`${runId}\`
 - **Executed:** ${markdownEscape(browserResult.startedAt)} to ${markdownEscape(browserResult.finishedAt)}
-- **Browser/API checks:** ${passed} passed, ${failed} failed
+- **Browser/API checks:** ${summary.browserPassed} passed, ${summary.browserFailed} failed
+- **Server catalog checks:** ${summary.catalogPassed} passed, ${summary.catalogFailed} failed
+- **Combined checks:** ${passed} passed, ${failed} failed
 - **Fixture residue check:** ${cleanupResult.residueClear ? "PASS" : "FAIL"}
 - **Baseline restoration:** ${cleanupResult.countsRestored ? "PASS" : "FAIL"}
 - **Credentials:** Auth passwords were entered only in the local browser harness. Passwords, access/refresh tokens, database credentials, and service-role keys were neither logged nor written to this report.
@@ -290,10 +322,11 @@ async function handleResults(request, response) {
     mkdirSync(dirname(reportPath), { recursive: true });
     writeFileSync(reportPath, makeReport(browserResult, cleanupResult), { mode: 0o600, flag: "wx" });
     completed = true;
-    const failed = browserResult.checks.filter((check) => check.status !== "PASS").length;
-    const passed = browserResult.checks.length - failed;
+    const summary = summarizeChecks(browserResult.checks, ledgerCatalogChecks);
+    const failed = summary.combinedFailed;
+    const passed = summary.combinedPassed;
     const allPassed = failed === 0 && cleanupResult.residueClear && cleanupResult.countsRestored;
-    console.log(`RESULT ${allPassed ? "PASS" : "FAIL"}: ${passed}/${browserResult.checks.length} browser/API checks passed.`);
+    console.log(`RESULT ${allPassed ? "PASS" : "FAIL"}: ${passed}/${summary.checks.length} browser/API and catalog checks passed.`);
     console.log(`CLEANUP ${cleanupResult.residueClear ? "PASS" : "FAIL"}: fixture namespace contains zero rows.`);
     console.log(`BASELINE ${cleanupResult.countsRestored ? "PASS" : "FAIL"}: all row counts and settings restored.`);
     console.log(`REPORT ${reportPath}`);
@@ -319,6 +352,11 @@ function serveMatrixHtml(response) {
 }
 
 async function main() {
+  ledgerCatalogChecks = getLedgerCatalogChecks();
+  const catalogFailures = ledgerCatalogChecks.filter((check) => check.status !== "PASS");
+  if (catalogFailures.length > 0) {
+    throw new Error(`Migration 24 ledger catalog preflight failed: ${catalogFailures.map((check) => check.name).join(", ")}`);
+  }
   baseline = getCounts("baseline");
   seedFixture();
   const publicConfig = {
@@ -338,6 +376,7 @@ async function main() {
       if (request.method === "GET" && url.pathname === "/health") return safeJsonResponse(response, 200, { ready: true });
       if (request.method === "GET" && url.pathname === "/config.json") return safeJsonResponse(response, 200, publicConfig);
       if (request.method === "GET" && url.pathname === "/supabase.js") return serveFile(response, join(root, "frontend/node_modules/@supabase/supabase-js/dist/umd/supabase.js"), "text/javascript; charset=utf-8");
+      if (request.method === "GET" && url.pathname === "/ledger-matrix-contract.js") return serveFile(response, join(root, "tests/hosted-auth/ledger_matrix_contract.js"), "text/javascript; charset=utf-8");
       if (request.method === "GET" && url.pathname === "/matrix.js") return serveFile(response, join(root, "tests/hosted-auth/matrix.js"), "text/javascript; charset=utf-8");
       if (request.method === "GET" && url.pathname === "/") return serveMatrixHtml(response);
       if (request.method === "POST" && url.pathname === "/results") return await handleResults(request, response);
