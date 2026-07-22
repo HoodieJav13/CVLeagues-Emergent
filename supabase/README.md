@@ -2,15 +2,16 @@
 
 This file is authoritative for CVF Leagues schema, migration ledger, backend invariants, and hosted verification state. Current product status, roadmap, and owner actions live in [`../CLAUDE.md`](../CLAUDE.md). This dedicated Supabase project must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-21
+## Verified status — 2026-07-22
 
-- Twenty-four migration files are present in filename order. A real local Supabase reset applies all twenty-four, and the independent pgtest run passes 277/277. Migration 24 (`event_ledger_lite_schema`) is committed in `1b31693` and hosted-accepted.
+- Twenty-seven migration files are present in filename order. A clean isolated Supabase reset applies all twenty-seven, and the independent pgtest run passes 294/294 plus a real two-connection idempotency race. Migrations 25–27 implement Sequence 4A–4C, are committed locally, and remain unapplied remotely pending the separate hosted gates.
 - The linked hosted project has all twenty-four migrations applied. Migration 24's private Event Ledger Lite boundary is accepted, and the current Season 1 operational row/settings baseline was preserved exactly. The service-role privilege catalog passes at the accepted customer-controlled boundary.
 - Hosted verification confirms 74/74 foreign-key constraints with covering indexes, all 26 hosted tables with RLS enabled, the four empty ledger relations, and the expected operational row-count baseline. The earlier 60/60 local figure counted a narrower catalog shape and is superseded by this direct hosted constraint sweep.
 - Hosted Security and Performance Advisors were rerun after Migration 24: 23 Security and 38 Performance findings have the itemized dispositions below. No ledger security finding or unindexed-foreign-key warning was reported.
 - `supabase/config.toml` is present; unused local Storage and Analytics services are intentionally disabled.
 - The real Auth administrator is linked through `admin_users`, and administration requires verified AAL2/TOTP. The final hosted matrix verified fail-closed anonymous, authenticated non-admin, password-only linked-admin, and AAL2 administrator behavior across the current surface.
 - The Migration-24 hosted authorization matrix passed 225/225 browser/API and catalog checks across all 26 tables and all 15 administrator RPCs. Fixture cleanup and exact restoration of the current Season 1 operational baseline both passed. See [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md), [`evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md), and [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md). The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior accepted checkpoint.
+- Sequence 4 local verification adds ten authenticated-only AAL2 ledger RPCs, deterministic final projection, W/L-only forfeits, bracket-safe corrections, and the admin live-ledger surface. The future hosted matrix contract now covers denial and catalog ACLs for all ten endpoints; no hosted write, push, or pilot was performed. See [`evidence/sequence-4-local-acceptance-2026-07-22.md`](evidence/sequence-4-local-acceptance-2026-07-22.md).
 - Launch hardening requires AAL2/TOTP for administration and routes public intake through a Turnstile-verified server boundary. Recovery/session revocation, preview/production values, live hosted application acceptance, and deployment remain open.
 - No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
 
@@ -58,6 +59,9 @@ The project is linked and all twenty-four migrations are applied with migration 
 | `20260715201257_fully_restrict_service_role_privileges.sql` | Removes the remaining service-role table administration, sequence, and public-function privileges and hardens migration-owner defaults |
 | `20260720031319_aggregate_scoring_hardening.sql` | Adds two-tier aggregate validation, makes score/stat/history mutation RPC-only, and replaces bare unlock with reasoned atomic final correction |
 | `20260721201350_event_ledger_lite_schema.sql` | Adds dormant aggregate/ledger mode separation, private immutable session/rule/participant snapshots, ordered append-only events/attributions, correction-chain constraints, and no client mutation RPC |
+| `20260722052347_ledger_runtime_sessions.sql` | Adds controlled AAL2 session leases, participant capture, validated/idempotent event append, resume, renewal, and cancellation |
+| `20260722052350_ledger_projection_finalization.sql` | Adds deterministic ledger projection, atomic finalization/failure audit, explicit W/L-only forfeits, and outcome-aware bracket advancement |
+| `20260722052352_ledger_correction_authority.sql` | Adds the single ledger correction authority, atomic void-and-replace, immutable snapshot chaining, and bracket-safe refinalization |
 
 ## Completed database hardening
 
@@ -69,7 +73,7 @@ The project is linked and all twenty-four migrations are applied with migration 
 - Bracket headers, seed snapshots, and match topology are read-only through the Data API; all mutations use the verified playoff RPC workflow.
 - Team identities and enrollments are read-only through the Data API; creation, enrollment, brand propagation, and supported lifecycle edits use admin-guarded RPCs.
 - Aggregate score/stat/history mutation is RPC-only locally and hosted. `submit_score` and `correct_final_score` enforce HARD invariants, require a recorded reason for SOFT overrides, and preserve append-only audit; the final correction never unlocks the public result.
-- Event Ledger Lite is schema-only and hosted-accepted: aggregate remains the default, conversion is controlled and one-way, aggregate RPCs cannot mutate ledger games, the four ledger tables are private/admin-read-only, and no client-facing ledger mutation or public live-score path exists yet.
+- Event Ledger Lite's schema-only Migration-24 boundary is hosted-accepted. Sequence 4's runtime, projection, forfeit, correction, and admin UI are locally verified only; aggregate remains the default and none of those later migrations has been pushed or piloted.
 - Career-baseline imports must not overlap seasons represented by granular game statistics. The legacy `current_season` setting is compatibility-only once sport defaults diverge; both are documented non-blocking contracts.
 - Anonymous and authenticated Data API privileges are explicitly allowlisted; future tables and functions are private by default.
 - `service_role` access is explicitly limited to `INSERT` on `team_registrations` and `free_agents`; it has no other current public-table privilege, no public-sequence privilege, and no public-function `EXECUTE`. Future objects created by the repository migration owner (`postgres`) inherit no `service_role` access. Supabase platform-owned `supabase_admin` default ACLs cannot be altered by customer migrations; this is an accepted platform boundary, not an unresolved application grant, and every current object is re-revoked explicitly.
@@ -104,7 +108,7 @@ The current Performance Advisor reports 38 findings:
 
 Hosted authorization acceptance is complete and durably evidenced at 225/225 through Migration 24 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md), [`evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md), and [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md).
 
-Migration 24's accepted boundary is deliberately dormant. Sequence 4 must introduce its controlled ledger-write RPCs additively, close the populated-row AAL2/non-admin visibility boundary, and pass its own discrete hosted push and fixture-writing approvals before any pilot use.
+Migration 24's accepted hosted boundary remains dormant. Sequence 4 is committed locally, but its three additive migrations still require a fresh backup and dry run, a discrete hosted push approval, post-push readback/advisors, and a separately approved real-session matrix before any pilot use. Because ledger evidence is intentionally append-only, a hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up.
 
 1. Complete recovery and session-revocation checks for the already-linked AAL2 administrator; decide separately whether a break-glass administrator is warranted.
 2. Enter hosted and Turnstile public/secret values in preview/production without exposing service-role or secret keys to React, then verify fail-closed behavior.
@@ -169,7 +173,7 @@ After an approved push, immediately re-run migration listing, compare hosted his
 
 - **Admin identity:** `admin_users` is distinct from player profiles; Auth User is not Player.
 - **RLS:** all 26 local and hosted tables enable RLS. API privileges are separately allowlisted and covered by catalog assertions plus the accepted hosted authorization matrix at its stated baseline.
-- **Ledger authority:** hosted Migration 24 makes aggregate the default, permits only controlled one-way conversion before score/session evidence, blocks aggregate RPCs from ledger projections, and keeps all ledger mutation unavailable until Sequence 4 adds reviewed AAL2 RPCs.
+- **Ledger authority:** hosted Migration 24 makes aggregate the default, permits only controlled one-way conversion before score/session evidence, and blocks aggregate RPCs from ledger projections. Locally verified Migrations 25–27 add the AAL2 ledger authority without changing the hosted boundary until separately approved.
 - **Game locks:** Migration 23 retires aggregate unlock locally and hosted. A final correction requires AAL2 plus a non-empty reason and atomically preserves the completed/final/locked state; unsafe winner-changing playoff corrections remain blocked after downstream scheduling.
 - **Edit history:** game history rows are RPC-written, append-only, and immutable. Aggregate before/after snapshots are audit evidence only and never projection input.
 - **Competition stages:** tournament containers accept only tournament games; league containers accept regular/playoff games.

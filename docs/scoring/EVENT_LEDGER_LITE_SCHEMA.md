@@ -1,6 +1,6 @@
-# Event Ledger Lite — Sequence 3 Schema Contract
+# Event Ledger Lite — Sequence 3 Schema and Sequence 4 Runtime Contract
 
-**Status:** hosted-accepted; schema committed in `1b31693`
+**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C owner-approved and committed locally, hosted acceptance pending
 
 **Migration:** `20260721201350_event_ledger_lite_schema.sql`
 
@@ -8,10 +8,11 @@
 
 ## Purpose and scope
 
-Sequence 3 establishes the database boundary required for future event-level
-scorekeeping without creating a second working score-entry system. It is a
-dormant schema stage: no client can start a session, append an event, project a
-score, finalize a game, or correct a ledger result yet.
+Sequence 3 established the hosted database boundary required for event-level
+scorekeeping without creating a second working score-entry system. That hosted
+boundary remains dormant: no deployed client can start a session, append an
+event, project a score, finalize a game, or correct a ledger result. Sequence 4
+now implements those capabilities locally behind the same authority boundary.
 
 The binding rules remain
 [`RULES_INVARIANT_MATRIX.md`](RULES_INVARIANT_MATRIX.md). Sequence 4 must build
@@ -42,7 +43,7 @@ on this schema rather than weakening it.
 
 ## Authority boundary
 
-Migration 23 remains the only active score system:
+Migration 23 remains the only active hosted score system:
 
 - Aggregate games continue through `submit_score`, `lock_game`, and
   `correct_final_score` without behavior changes.
@@ -68,20 +69,35 @@ behavior, but the remainder of the evidence row cannot change. Session rule
 and identity snapshots are immutable; future server-controlled state changes
 must advance the lease version.
 
-## Deferred to Sequence 4
+## Sequence 4 local implementation
 
-- AAL2 owner-admin session/open/renew/cancel/finalize RPCs.
-- Same-payload idempotent retry behavior, including canonical request
-  normalization and original-result replay.
-- Sport-specific event dictionaries and complete HARD/SOFT validation.
-- Deterministic effective-ledger fold into periods, scores, player statistics,
-  outcome, standings, bracket consequences, and append-only edit history.
-- Failure audit behavior and correction cancellation/re-finalization.
-- Public-final-only publication and proof that correction drafts never leak.
-- Concurrency tests across two real database connections.
+- Migration 25 adds AAL2-admin open/renew/resume/append/cancel RPCs, rotating
+  ten-minute leases, immutable eligible-participant snapshots, sport-specific
+  event dictionaries, server sequence assignment, and exact command replay.
+- Migration 26 adds deterministic effective-ledger projection, atomic
+  finalization, player-stat replacement, public-final-only publication,
+  metadata-only failure audit, explicit scoreless forfeits, and the existing
+  single playoff-advancement authority for played and forfeit outcomes.
+- Migration 27 adds the single ledger correction authority. Corrections extend
+  the latest finalized snapshot, append only void/replacement evidence, keep
+  the public result unchanged while drafting, apply bracket-safe changes only
+  at finalization, and make user-visible void-and-replace one atomic command.
+- The admin score-entry surface can opt an eligible unscored game into the live
+  ledger, restore a rotated lease, record events, finalize, cancel, correct, or
+  declare a forfeit. Explicit mock mode refuses these writes rather than
+  creating localStorage evidence.
+- Public standings and result surfaces recognize only the complete explicit
+  forfeit shape, add one W/L with zero points-for/against, and render W/L rather
+  than inventing a numeric score. A locked forfeit cannot reopen scorekeeping.
+- The local harness proves retry behavior, two-connection same-command
+  concurrency, deterministic projection, failure rollback/audit, correction
+  cancellation, forfeit identity, and playoff-forfeit advancement at **294/294** assertions.
 
-No ledger pilot may begin until those items and the remaining UI/rules gaps in
-the invariant matrix are closed.
+This local result is not a hosted or pilot acceptance. The three migrations
+are committed locally and remain unapplied remotely until a fresh backup,
+preflight, dry run, discrete push approval, post-push readback/advisors, and a
+separately approved real-session authorization run. Sequence 5 still owns the
+flag-football practice/pilot refinements and the remaining pilot matrix.
 
 ## Verification checkpoint
 
@@ -121,3 +137,25 @@ See
 and
 [`../../supabase/evidence/hosted-auth-matrix-2026-07-21-m24.md`](../../supabase/evidence/hosted-auth-matrix-2026-07-21-m24.md)
 for the hosted gate record.
+
+## Sequence 4 local verification checkpoint
+
+Local verification on July 22, 2026:
+
+- Test baseline and integration target both confirmed as `main@0225f97` before
+  implementation; no divergence reconciliation was required.
+- Clean isolated Supabase reset applied all **27** repository migrations; the
+  catalog exposed exactly ten authenticated-only ledger runtime RPCs.
+- Independent PostgreSQL harness: **294/294**, plus a real two-connection
+  append race producing one durable event and one idempotent replay.
+- Frontend: **33/33 suites, 128/128 tests**; optimized production build passed.
+- Hosted-auth harness contract tests: **10/10**. Its future matrix now includes
+  anonymous/non-admin denial and exact privilege catalog coverage for all ten
+  ledger runtime RPCs.
+- Responsive live-ledger setup was inspected at 375, 768, and 1440 pixels with
+  no horizontal overflow or unexpected browser console warning during the
+  clean render.
+
+See
+[`../../supabase/evidence/sequence-4-local-acceptance-2026-07-22.md`](../../supabase/evidence/sequence-4-local-acceptance-2026-07-22.md)
+for the consolidated local gate.

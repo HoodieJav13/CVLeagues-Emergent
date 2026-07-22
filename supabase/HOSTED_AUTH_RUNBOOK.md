@@ -1,8 +1,8 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
+This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks. The committed Sequence 4 local target prepares denial and catalog coverage for ten additional ledger RPCs; that 25-RPC shape is not hosted acceptance until the later push and matrix gates pass.
 
-The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. Hosted ledger authorization is therefore proved by 64 role/operation API checks, seven exact catalog checks, and the local positive-row pgtest evidence rather than by creating hosted evidence that cannot be cleanly removed.
+The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted baseline used 64 role/operation API checks and seven exact catalog checks. After Sequence 4 is applied, the prepared contract adds a runtime-RPC ACL catalog check plus anonymous/non-admin denial for all ten new endpoints; a populated positive read/write proof remains a separate durable-pilot gate.
 
 ## Safety model
 
@@ -39,7 +39,7 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted hosted baseline is Migration 24: 26 tables and 15 administrator RPCs. Preflight must show all 24 migrations aligned and no pending migration unless the owner is reviewing a later additive change. Do not present the earlier 154-case Migration-23 run as current-surface acceptance.
+The current accepted hosted baseline is Migration 24: 26 tables and 15 administrator RPCs. The prepared Sequence 4 target is 27 migrations and 25 administrator RPCs, but must not be described as hosted until separately approved and verified. Preflight must show all 24 hosted migrations aligned and only the explicitly reviewed additive migrations pending. Do not present the earlier 154-case Migration-23 run as current-surface acceptance.
 
 Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md) records the Migration-24 baseline at 225/225 browser/API and catalog checks with fixture cleanup and exact restoration of the current Season 1 operational baseline both passing. [`evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md) records the push and structural gate. The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior accepted checkpoint.
 
@@ -94,9 +94,9 @@ For each of `scorekeeping_sessions`, `scorekeeping_participants`, `scorekeeping_
 - The linked password-only administrator remains AAL1 and receives no private rows; insert, update, and delete fail at the table-privilege boundary.
 - The AAL2 administrator can query each relation; insert, update, and delete still fail because ledger mutation is not a client capability.
 
-Before any hosted fixture is created, seven privileged catalog checks require all four relations to exist with RLS, exactly four authenticated admin-read policies, authenticated SELECT-only privileges, zero anonymous privileges, zero `service_role` privileges, and no client/service execution of the seven ledger trigger helpers. A catalog failure stops the runner before fixture seeding.
+At the accepted Migration-24 baseline, seven privileged catalog checks require all four relations to exist with RLS, exactly four authenticated admin-read policies, authenticated SELECT-only privileges, zero anonymous privileges, zero `service_role` privileges, and no client/service execution of the seven schema trigger helpers. The Sequence 4 contract expands the helper class sweep to twelve and adds an eighth check requiring all ten runtime RPCs to be executable by `authenticated` but not by `anon` or `service_role`. A catalog failure stops the runner before fixture seeding.
 
-The hosted tables are expected to be empty immediately after Migration 24, so successful AAL2 queries assert the response shape against a possibly empty result and do not claim positive-row visibility by themselves. The current 277-assertion local harness supplies the positive-row proof (`ledger schema 46`) while hosted API and catalog checks prove the deployed access boundary without leaving undeletable ledger evidence behind. Sequence 4's first controlled ledger-write matrix must close this coverage boundary against the same populated row: the AAL2 administrator can read it while the authenticated non-admin remains RLS-empty.
+The hosted tables are expected to be empty immediately after Migration 24, so successful AAL2 queries assert the response shape against a possibly empty result and do not claim positive-row visibility by themselves. The current 294-assertion local harness supplies positive-row proof while hosted API and catalog checks prove the deployed access boundary without leaving undeletable ledger evidence behind. The first real Sequence 5 pilot session must close the hosted boundary against the same durable row: AAL2 can read it, authenticated non-admin remains RLS-empty, and the authorized write produces the expected projection. Automatic cleanup is not claimed because the evidence is intentionally append-only.
 
 ### Admin RPC denial
 
@@ -117,6 +117,19 @@ Anonymous execution is denied for all 15 client-facing admin RPCs. A real authen
 - `create_team_identity_and_enroll`
 - `update_team_identity`
 - `update_team_enrollment`
+
+After the Sequence 4 migrations are applied, the same denial loop also covers:
+
+- `start_scorekeeping_session`
+- `renew_scorekeeping_session`
+- `resume_scorekeeping_session`
+- `append_scorekeeping_event`
+- `replace_scorekeeping_event`
+- `finalize_scorekeeping_session`
+- `cancel_scorekeeping_session`
+- `declare_ledger_forfeit`
+- `start_scorekeeping_correction`
+- `finalize_scorekeeping_correction`
 
 ### Direct-write and append-only guards
 
