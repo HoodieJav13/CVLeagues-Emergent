@@ -1,10 +1,10 @@
 # Event Ledger Lite — Sequence 3 Schema Contract
 
-**Status:** locally complete; committed in `1b31693`
+**Status:** hosted-accepted; schema committed in `1b31693`
 
 **Migration:** `20260721201350_event_ledger_lite_schema.sql`
 
-**Hosted status:** not applied; Migration 23 remains the accepted hosted baseline
+**Hosted status:** accepted through Migration 24 at 225/225 authorization/catalog checks
 
 ## Purpose and scope
 
@@ -99,3 +99,25 @@ Local verification on July 21, 2026:
 See
 [`../../supabase/evidence/event-ledger-lite-local-verification-2026-07-21.md`](../../supabase/evidence/event-ledger-lite-local-verification-2026-07-21.md)
 for the full gate record.
+
+Hosted acceptance on July 21, 2026:
+
+- A fresh private logical backup, linked migration-list preflight, and dry run
+  confirmed that only Migration 24 would be applied.
+- The separately approved push completed; post-push migration history and dry
+  run confirmed all 24 migrations aligned.
+- Hosted structural readback confirmed 26/26 public tables with RLS, four empty
+  ledger tables, both game-mode columns, all nine expected triggers, all seven
+  helpers, and all three critical anti-fork/active-session indexes.
+- The separately approved hosted matrix passed **225/225** browser/API and
+  catalog checks, removed every fixture row, and restored every observed row
+  count and singleton setting exactly.
+- The accepted boundary remains schema-only. Sequence 4 must prove populated-row
+  AAL2 visibility and non-admin RLS emptiness once its controlled write path
+  exists.
+
+See
+[`../../supabase/evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](../../supabase/evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md)
+and
+[`../../supabase/evidence/hosted-auth-matrix-2026-07-21-m24.md`](../../supabase/evidence/hosted-auth-matrix-2026-07-21-m24.md)
+for the hosted gate record.

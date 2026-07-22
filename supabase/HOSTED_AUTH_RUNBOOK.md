@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-23 baseline covers 22 tables and 15 privileged RPCs. The prepared Migration-24 harness expands that boundary to all 26 tables, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
+This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
 The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. Hosted ledger authorization is therefore proved by 64 role/operation API checks, seven exact catalog checks, and the local positive-row pgtest evidence rather than by creating hosted evidence that cannot be cleanly removed.
 
@@ -39,9 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted hosted baseline is Migration 23: 22 tables and 15 administrator RPCs. The repository now also contains local-only Migration 24 with four private ledger tables and no client RPC. Until a separately approved Migration 24 push, preflight must show exactly the first 23 migrations hosted and only Migration 24 pending. Before that push, expand this harness to cover all 26 tables, including anonymous privilege denial, authenticated non-admin RLS-empty reads, AAL2 admin reads, zero client writes, and zero `service_role` privileges on the four ledger tables. Do not present a 154-case rerun as current-surface acceptance after Migration 24 is hosted.
+The current accepted hosted baseline is Migration 24: 26 tables and 15 administrator RPCs. Preflight must show all 24 migrations aligned and no pending migration unless the owner is reviewing a later additive change. Do not present the earlier 154-case Migration-23 run as current-surface acceptance.
 
-Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-21-m23.md`](evidence/hosted-auth-matrix-2026-07-21-m23.md) records the Migration-23 baseline at 154/154 with fixture cleanup and exact restoration of the current Season 1 operational baseline both passing. The immutable [`Migration-22 evidence`](evidence/hosted-auth-matrix-2026-07-17-final.md) remains the prior accepted checkpoint.
+Latest accepted evidence: [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md) records the Migration-24 baseline at 225/225 browser/API and catalog checks with fixture cleanup and exact restoration of the current Season 1 operational baseline both passing. [`evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md`](evidence/event-ledger-lite-hosted-acceptance-2026-07-21.md) records the push and structural gate. The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior accepted checkpoint.
 
 ## Run
 

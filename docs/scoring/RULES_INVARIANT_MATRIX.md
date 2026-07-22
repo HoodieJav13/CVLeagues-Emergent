@@ -242,8 +242,9 @@ rewriting competition history.
 - Player or captain accounts, signup, password reset, email verification, or
   any authorization-role expansion.
 - Existing aggregate-mode game history or correction mechanics.
-- Hosted data until the expanded 26-table authorization matrix, fresh backup,
-  preflight, dry run, and discrete hosted-push approval are complete.
+- Hosted data outside a separately approved Sequence 4 push and matrix. The
+  Migration-24 schema and expanded 26-table authorization gate are complete;
+  they do not authorize a runtime or pilot fixture write.
 
 ## Current implementation gaps discovered during the rules review
 
@@ -262,6 +263,6 @@ found no evidence of corrupted live data.
 | **BLOCKING before ledger pilot** | The existing UI has no flag-football overtime entry model. | `INV-01`, `INV-08`, `INV-10` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 2** | Migration 23 revokes direct score/stat/history mutation, retires aggregate unlock, and the Score Entry route no longer admits `temp_admin`. | `INV-04`, `INV-19`, `INV-38` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 2** | Aggregate final correction preserves downstream advancement for same-winner changes, atomically reprojects unscheduled destinations for winner changes, and blocks winner changes after a dependent game is scheduled or completed. | `INV-30`–`INV-32`, bracket-safety matrix |
-| **RESOLVED LOCALLY IN SEQUENCE 3** | Migration 24 gives every game an explicit aggregate/ledger mode, permits only a controlled one-way conversion before scoring/session evidence exists, and blocks aggregate scoring/correction RPCs from mutating ledger-mode projections. It remains unhosted pending a separate owner gate. | `INV-28`–`INV-30`, `INV-35`, `INV-39` |
-| **RESOLVED LOCALLY IN SEQUENCE 3** | Migration 24 adds immutable rule/game and eligible-participant snapshots, correction-session cloning from the ordinary snapshot, one active session per game, server-assigned gapless per-game sequence numbers, game-scoped idempotency uniqueness, and append-only event/attribution evidence with void/replacement anti-fork constraints. No runtime RPC or projection exists yet. | `INV-10`–`INV-18`, `INV-20` |
+| **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 gives every game an explicit aggregate/ledger mode, permits only a controlled one-way conversion before scoring/session evidence exists, and blocks aggregate scoring/correction RPCs from mutating ledger-mode projections. The hosted 26-table matrix passed 225/225 with exact cleanup and baseline restoration. | `INV-28`–`INV-30`, `INV-35`, `INV-39` |
+| **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 adds immutable rule/game and eligible-participant snapshots, correction-session cloning from the ordinary snapshot, one active session per game, server-assigned gapless per-game sequence numbers, game-scoped idempotency uniqueness, and append-only event/attribution evidence with void/replacement anti-fork constraints. No runtime RPC or projection exists yet. | `INV-10`–`INV-18`, `INV-20` |
 | **BLOCKING before ledger pilot** | Sequence 4 still must add AAL2 session/event/finalization RPCs, deterministic projection and replay, failure audit, public-final-only publication, forfeit handling, and bracket-safe ledger correction. | `INV-01`–`INV-09`, `INV-19`, `INV-21`–`INV-27`, `INV-32`–`INV-39` |
