@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, PencilSimpleLine } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
-import { getTeam, getProfile } from "../lib/selectors";
+import { getTeam, getProfile, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
@@ -42,7 +42,8 @@ export default function GameDetail() {
 
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
-  const completed = game.status === "completed";
+  const completed = isFinalOutcome(game);
+  const forfeit = isForfeitOutcome(game);
   const gameStats = state.playerStats.filter((s) => s.game_id === game.id);
   const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
   const shortDate = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -82,10 +83,10 @@ export default function GameDetail() {
         </div>
 
         <div className={`grid items-center gap-2 ${completed ? "grid-cols-3" : "grid-cols-2 md:grid-cols-3"}`}>
-          <TeamHead team={away} score={game.away_score} completed={completed} win={completed && game.away_score > game.home_score} />
+          <TeamHead team={away} score={forfeit ? (game.winner_team_id === away?.id ? "W" : "L") : game.away_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === away?.id : game.away_score > game.home_score)} />
           {completed ? (
             <div className="text-center">
-              <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">Final</span>
+              <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">{forfeit ? "Forfeit" : "Final"}</span>
             </div>
           ) : (
             <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 text-center md:order-none md:col-span-1 md:mt-0" dateTime={game.date}>
@@ -93,7 +94,7 @@ export default function GameDetail() {
               <span className="cvf-upcoming-focal__time">{game.time}</span>
             </time>
           )}
-          <TeamHead team={home} score={game.home_score} completed={completed} win={completed && game.home_score > game.away_score} home />
+          <TeamHead team={home} score={forfeit ? (game.winner_team_id === home?.id ? "W" : "L") : game.home_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === home?.id : game.home_score > game.away_score)} home />
         </div>
 
         <div className="mt-6 pt-5 border-t border-border flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
@@ -102,7 +103,7 @@ export default function GameDetail() {
           <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {game.location}</span>
         </div>
 
-        {canScore && (
+        {canScore && !forfeit && (
           <Button asChild className="mt-5 h-11 md:h-11">
             <Link
               to="/score-entry"

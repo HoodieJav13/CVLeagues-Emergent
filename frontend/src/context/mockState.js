@@ -3,7 +3,7 @@ import { freeAgentName } from "../lib/utils";
 
 export { initialState };
 
-export const STORAGE_VERSION = 8;
+export const STORAGE_VERSION = 9;
 export const STORAGE_KEY = `cvf_app_state_v${STORAGE_VERSION}`;
 export const LEGACY_STORAGE_KEYS = Array.from(
   { length: STORAGE_VERSION - 1 },
@@ -15,6 +15,8 @@ const REQUIRED_ARRAYS = [
   "playerStats", "freeAgents", "registrations", "waivers", "charges",
   "paymentEntries", "hofEntries", "teamIdentities", "playoffBrackets",
   "playoffSeeds", "playoffMatches",
+  "scorekeepingSessions", "scorekeepingParticipants", "scorekeepingEvents",
+  "scorekeepingEventAttributions",
 ];
 
 const REG_STATUS_MAP = { pending: "new", rejected: "archived" };
@@ -33,6 +35,10 @@ export const migrateMockState = (state) => ({
   playoffBrackets: state.playoffBrackets || initialState.playoffBrackets,
   playoffSeeds: state.playoffSeeds || initialState.playoffSeeds,
   playoffMatches: state.playoffMatches || initialState.playoffMatches,
+  scorekeepingSessions: state.scorekeepingSessions || initialState.scorekeepingSessions,
+  scorekeepingParticipants: state.scorekeepingParticipants || initialState.scorekeepingParticipants,
+  scorekeepingEvents: state.scorekeepingEvents || initialState.scorekeepingEvents,
+  scorekeepingEventAttributions: state.scorekeepingEventAttributions || initialState.scorekeepingEventAttributions,
   charges: state.charges || initialState.charges,
   paymentEntries: state.paymentEntries || initialState.paymentEntries,
   hofEntries: state.hofEntries || initialState.hofEntries,

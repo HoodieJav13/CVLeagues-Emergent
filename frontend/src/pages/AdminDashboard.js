@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
-import { getTeam, getProfile, getLeague, computeTeamRecord, teamRoster, currentSeasonForSport } from "../lib/selectors";
+import { getTeam, getProfile, getLeague, computeTeamRecord, isFinalOutcome, isForfeitOutcome, teamRoster, currentSeasonForSport } from "../lib/selectors";
 import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
@@ -1021,7 +1021,8 @@ function ScoresTab({ app }) {
 
   const renderRow = (g, prefix) => {
     const a = getTeam(state, g.away_team_id), h = getTeam(state, g.home_team_id);
-    const done = g.status === "completed";
+    const done = isFinalOutcome(g);
+    const forfeit = isForfeitOutcome(g);
     const hist = g.edit_history || [];
     return (
       <Accordion key={g.id} type="single" collapsible value={openHistory[g.id] ? "history" : ""} onValueChange={(value) => setOpenHistory((o) => ({ ...o, [g.id]: value === "history" }))}>
@@ -1032,12 +1033,12 @@ function ScoresTab({ app }) {
               {g.locked && <LockSimple size={14} weight="bold" className="text-gold shrink-0" />}
               {a.name} @ {h.name}
             </p>
-            <p className="text-xs text-muted-foreground">{fmtDate(g.date)} · {done ? `${g.away_score}-${g.home_score}` : "Not played"}</p>
+            <p className="text-xs text-muted-foreground">{fmtDate(g.date)} · {forfeit ? `Forfeit · ${getTeam(state, g.winner_team_id)?.name || "winner recorded"}` : done ? `${g.away_score}-${g.home_score}` : "Not played"}</p>
           </div>
           <SportBadge sport={g.sport} />
           <StatusBadge status={g.score_status || "pending"} />
           <Link to="/score-entry" state={{ game_id: g.id }} data-testid={`${prefix}-enter-${g.id}`} className="min-h-11 md:min-h-9 flex items-center gap-1.5 text-xs font-bold uppercase text-primary border border-primary/40 rounded-lg px-3 py-2 hover:bg-primary/10 active:bg-primary/20 active:scale-[0.97] transition-all">
-            <PencilSimpleLine size={14} weight="bold" /> {g.locked ? "Correct" : done ? "Edit" : "Enter"}
+            {forfeit ? <Flag size={14} weight="bold" /> : <PencilSimpleLine size={14} weight="bold" />} {forfeit ? "View" : g.locked ? "Correct" : done ? "Edit" : "Enter"}
           </Link>
           {g.locked ? (
             <span className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 inline-flex items-center justify-center text-gold" title="Final result remains locked during correction">

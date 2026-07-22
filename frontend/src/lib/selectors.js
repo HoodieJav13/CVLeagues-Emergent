@@ -15,6 +15,16 @@ export const getTeam = (state, id) => state.teams.find((t) => t.id === id);
 export const getProfile = (state, id) => state.profiles.find((p) => p.id === id);
 export const getLeague = (state, id) => state.leagues.find((l) => l.id === id);
 export const getGame = (state, id) => state.games.find((g) => g.id === id);
+export const isForfeitOutcome = (game) => Boolean(
+  game
+  && game.outcome_type === "forfeit"
+  && game.status === "canceled"
+  && game.score_status === "final"
+  && game.locked
+  && game.winner_team_id
+  && game.loser_team_id
+);
+export const isFinalOutcome = (game) => game?.status === "completed" || isForfeitOutcome(game);
 
 export const teamName = (state, id) => getTeam(state, id)?.name ?? "TBD";
 export const playerName = (state, id) => getProfile(state, id)?.name ?? "Unknown";
@@ -50,9 +60,14 @@ export function seasonsForSport(state, sport, { kind = "league" } = {}) {
 export function computeTeamRecord(state, team_id) {
   let wins = 0, losses = 0, ties = 0, pf = 0, pa = 0;
   state.games.forEach((g) => {
-    if (g.status !== "completed") return;
+    if (!isFinalOutcome(g)) return;
     if (g.stage === "playoff" || g.stage === "tournament") return;
     if (g.home_team_id !== team_id && g.away_team_id !== team_id) return;
+    if (isForfeitOutcome(g)) {
+      if (g.winner_team_id === team_id) wins++;
+      else if (g.loser_team_id === team_id) losses++;
+      return;
+    }
     const isHome = g.home_team_id === team_id;
     const own = isHome ? g.home_score : g.away_score;
     const opp = isHome ? g.away_score : g.home_score;
@@ -74,9 +89,14 @@ export function computeStandings(state, league_id) {
   const headToHeadWins = new Map(rows.map((row) => [row.team.id, 0]));
 
   state.games.forEach((game) => {
-    if (game.league_id !== league_id || game.status !== "completed" || game.stage === "playoff" || game.stage === "tournament") return;
-    if (winsByTeam.get(game.home_team_id) !== winsByTeam.get(game.away_team_id) || game.home_score === game.away_score) return;
-    const winner = game.home_score > game.away_score ? game.home_team_id : game.away_team_id;
+    if (game.league_id !== league_id || !isFinalOutcome(game) || game.stage === "playoff" || game.stage === "tournament") return;
+    if (winsByTeam.get(game.home_team_id) !== winsByTeam.get(game.away_team_id)) return;
+    const winner = isForfeitOutcome(game)
+      ? game.winner_team_id
+      : game.home_score === game.away_score
+        ? null
+        : game.home_score > game.away_score ? game.home_team_id : game.away_team_id;
+    if (!winner) return;
     if (headToHeadWins.has(winner)) headToHeadWins.set(winner, headToHeadWins.get(winner) + 1);
   });
 

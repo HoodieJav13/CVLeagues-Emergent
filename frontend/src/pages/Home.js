@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CalendarX, Clock, MapPin, Trophy } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { getTeam } from "../lib/selectors";
+import { getTeam, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { GameCard } from "../components/game/GameCard";
 import { SportBadge } from "../components/common/Badges";
@@ -99,9 +99,10 @@ const ScoreboardLine = ({ team, score, isWinner, isLoser, completed }) => {
 const ScoreboardFeature = ({ game, kind, state }) => {
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
-  const completed = game.status === "completed";
-  const homeWin = completed && game.home_score > game.away_score;
-  const awayWin = completed && game.away_score > game.home_score;
+  const completed = isFinalOutcome(game);
+  const forfeit = isForfeitOutcome(game);
+  const homeWin = completed && (forfeit ? game.winner_team_id === game.home_team_id : game.home_score > game.away_score);
+  const awayWin = completed && (forfeit ? game.winner_team_id === game.away_team_id : game.away_score > game.home_score);
   return (
     <Link
       to={`/game/${game.id}`}
@@ -116,8 +117,8 @@ const ScoreboardFeature = ({ game, kind, state }) => {
         <SportBadge sport={game.sport} />
       </div>
       <div className="space-y-2">
-        <ScoreboardLine team={away} score={game.away_score} isWinner={awayWin} isLoser={homeWin} completed={completed} />
-        <ScoreboardLine team={home} score={game.home_score} isWinner={homeWin} isLoser={awayWin} completed={completed} />
+        <ScoreboardLine team={away} score={forfeit ? (awayWin ? "W" : "L") : game.away_score} isWinner={awayWin} isLoser={homeWin} completed={completed} />
+        <ScoreboardLine team={home} score={forfeit ? (homeWin ? "W" : "L") : game.home_score} isWinner={homeWin} isLoser={awayWin} completed={completed} />
       </div>
       <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="font-medium text-foreground/80">{formatGameDate(game)}</span>
@@ -154,7 +155,7 @@ export default function Home() {
     .sort((a, b) => new Date(a.date) - new Date(b.date))
     .slice(0, 4);
   const recent = filtered
-    .filter((g) => g.status === "completed")
+    .filter(isFinalOutcome)
     .sort((a, b) => new Date(b.date) - new Date(a.date))
     .slice(0, 4);
 
@@ -163,7 +164,7 @@ export default function Home() {
   const latestFinal = useMemo(
     () =>
       state.games
-        .filter((g) => g.status === "completed")
+        .filter(isFinalOutcome)
         .sort((a, b) => new Date(b.date) - new Date(a.date))[0] || null,
     [state.games]
   );

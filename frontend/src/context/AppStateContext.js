@@ -695,6 +695,13 @@ export function AppStateProvider({ children }) {
     }));
   }, []);
 
+  // Event Ledger Lite is deliberately never emulated through localStorage.
+  // That keeps development fixtures from looking like authoritative scoring
+  // evidence; rendered mock-mode controls fail explicitly instead.
+  const ledgerBackendOnly = useCallback(async () => {
+    throw new Error("Live scorekeeping requires the configured Supabase backend.");
+  }, []);
+
   // Restore the original seed data (clears any demo edits).
   const resetState = useCallback(() => {
     setState(mockState.resetMockState());
@@ -747,6 +754,15 @@ export function AppStateProvider({ children }) {
     appendAdminNote: act(backend.appendAdminNote),
     lockGame: act(backend.lockGame),
     setGameStatus: act(backend.setGameStatus),
+    startScorekeepingSession: act(backend.startScorekeepingSession),
+    resumeScorekeepingSession: act(backend.resumeScorekeepingSession),
+    renewScorekeepingSession: act(backend.renewScorekeepingSession),
+    appendScorekeepingEvent: act(backend.appendScorekeepingEvent),
+    replaceScorekeepingEvent: act(backend.replaceScorekeepingEvent),
+    finalizeScorekeepingSession: act(backend.finalizeScorekeepingSession),
+    startScorekeepingCorrection: act(backend.startScorekeepingCorrection),
+    cancelScorekeepingSession: act(backend.cancelScorekeepingSession),
+    declareLedgerForfeit: act(backend.declareLedgerForfeit),
     resetState: () => toast.info("Demo reset is mock-mode only."),
   };
 
@@ -780,6 +796,15 @@ export function AppStateProvider({ children }) {
         appendAdminNote,
         lockGame,
         setGameStatus,
+        startScorekeepingSession: ledgerBackendOnly,
+        resumeScorekeepingSession: ledgerBackendOnly,
+        renewScorekeepingSession: ledgerBackendOnly,
+        appendScorekeepingEvent: ledgerBackendOnly,
+        replaceScorekeepingEvent: ledgerBackendOnly,
+        finalizeScorekeepingSession: ledgerBackendOnly,
+        startScorekeepingCorrection: ledgerBackendOnly,
+        cancelScorekeepingSession: ledgerBackendOnly,
+        declareLedgerForfeit: ledgerBackendOnly,
         resetState,
       };
 

@@ -4,7 +4,7 @@ import { CalendarX, FloppyDisk, LockSimple, PencilSimpleLine, Plus, UsersThree }
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
-import { getTeam, teamRoster } from "../lib/selectors";
+import { getTeam, isForfeitOutcome, teamRoster } from "../lib/selectors";
 import { STAT_GROUPS, HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { SportBadge } from "../components/common/Badges";
@@ -19,6 +19,7 @@ import { Textarea } from "../components/ui/textarea";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../components/ui/accordion";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { SIGNED_STAT_KEYS, validateAggregateScore } from "../lib/scoreValidation";
+import { LedgerScorekeeper } from "../components/admin/LedgerScorekeeper";
 
 export default function ScoreEntry() {
   return (
@@ -86,6 +87,7 @@ function Entry() {
   const [validation, setValidation] = useState({ hard: [], soft: [] });
   const [saving, setSaving] = useState(false);
   const [gameSelectionRevision, setGameSelectionRevision] = useState(0);
+  const [ledgerSelected, setLedgerSelected] = useState(false);
   const correctionTriggerRef = useRef(null);
 
   // (Re)initialize form whenever the selected game changes.
@@ -109,6 +111,10 @@ function Entry() {
 
   if (!game) {
     return <EmptyState icon={CalendarX} title="No game available" message="Schedule a game before entering a score." />;
+  }
+
+  if (ledgerSelected || game.scorekeeping_mode === "ledger") {
+    return <LedgerScorekeeper game={game} onExit={() => setLedgerSelected(false)} />;
   }
 
   const home = getTeam(state, game.home_team_id);
@@ -226,6 +232,13 @@ function Entry() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <SectionHeading as="h1" title="Score Entry" subtitle="Select a game and record the final" />
 
+      {!locked && game.status === "upcoming" && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div><p className="font-semibold">Score live, event by event</p><p className="text-sm text-muted-foreground">Use the append-only ledger for a resumable game-day workflow and automatic final projection.</p></div>
+          <Button type="button" variant="outline" onClick={() => setLedgerSelected(true)}>Use live scorekeeper</Button>
+        </div>
+      )}
+
       {locked && (
         <div data-testid="score-locked-notice" role="status" className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4">
           <div className="flex items-start gap-3">
@@ -265,7 +278,7 @@ function Entry() {
               const h = getTeam(state, g.home_team_id), a = getTeam(state, g.away_team_id);
               return (
                 <SelectItem key={g.id} value={g.id}>
-                  {a.name} @ {h.name} · {new Date(g.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} {g.status === "completed" ? "(Final)" : ""}
+                  {a.name} @ {h.name} · {new Date(g.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} {isForfeitOutcome(g) ? "(Forfeit)" : g.status === "completed" ? "(Final)" : ""}
                 </SelectItem>
               );
             })}

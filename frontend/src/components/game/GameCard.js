@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { MapPin, Clock } from "@phosphor-icons/react";
 import { useApp } from "../../context/AppStateContext";
-import { getTeam, computeTeamRecord } from "../../lib/selectors";
+import { getTeam, isFinalOutcome, isForfeitOutcome } from "../../lib/selectors";
 import { SportBadge, StatusBadge } from "../common/Badges";
 import { StageBanner, isSpecialStage } from "./StageBanner";
 
@@ -49,9 +49,10 @@ export const GameCard = ({ game, className = "" }) => {
   const { state } = useApp();
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
-  const completed = game.status === "completed";
-  const homeWin = completed && game.home_score > game.away_score;
-  const awayWin = completed && game.away_score > game.home_score;
+  const completed = isFinalOutcome(game);
+  const forfeit = isForfeitOutcome(game);
+  const homeWin = completed && (forfeit ? game.winner_team_id === game.home_team_id : game.home_score > game.away_score);
+  const awayWin = completed && (forfeit ? game.winner_team_id === game.away_team_id : game.away_score > game.home_score);
   // Upcoming games get a teal left-edge accent; recent results stay neutral.
   // Both read off the existing game.status — no new state.
   // Playoff/tournament games (any status) instead carry the gold treatment:
@@ -81,8 +82,8 @@ export const GameCard = ({ game, className = "" }) => {
         <StatusBadge status={game.status} />
       </div>
       <div className="space-y-2 sm:space-y-1">
-        <TeamLine team={away} score={game.away_score} isWinner={awayWin} isLoser={homeWin} completed={completed} />
-        <TeamLine team={home} score={game.home_score} isWinner={homeWin} isLoser={awayWin} completed={completed} />
+        <TeamLine team={away} score={forfeit ? (awayWin ? "W" : "L") : game.away_score} isWinner={awayWin} isLoser={homeWin} completed={completed} />
+        <TeamLine team={home} score={forfeit ? (homeWin ? "W" : "L") : game.home_score} isWinner={homeWin} isLoser={awayWin} completed={completed} />
       </div>
       <div className="mt-3 sm:mt-2 pt-3 sm:pt-2 border-t border-border flex flex-wrap items-center gap-x-4 sm:gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1 font-medium text-foreground/80">{dateStr}</span>

@@ -23,6 +23,10 @@ const TABLES = {
   teamPlayers: "team_players",
   games: "games",
   playerStats: "player_stats",
+  scorekeepingSessions: "scorekeeping_sessions",
+  scorekeepingParticipants: "scorekeeping_participants",
+  scorekeepingEvents: "scorekeeping_events",
+  scorekeepingEventAttributions: "scorekeeping_event_attributions",
   freeAgents: "free_agents",
   registrations: "team_registrations",
   waivers: "waivers",
@@ -49,7 +53,7 @@ export async function fetchAppState(isAdmin) {
         .order("created_at", { referencedTable: "game_edit_history" })
     : supabase.from("games").select("*").order("date");
 
-  const [games, leagues, seasons, teamIdentities, teams, teamPlayers, playerStats, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
+  const [games, leagues, seasons, teamIdentities, teams, teamPlayers, playerStats, scorekeepingSessions, scorekeepingParticipants, scorekeepingEvents, scorekeepingEventAttributions, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
@@ -58,6 +62,10 @@ export async function fetchAppState(isAdmin) {
       supabase.from("teams").select("*").order("name"),
       supabase.from("team_players").select("*"),
       supabase.from("player_stats").select("*"),
+      isAdmin ? supabase.from("scorekeeping_sessions").select("*").order("created_at") : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("scorekeeping_participants").select("*") : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("scorekeeping_events").select("*").order("sequence_number") : Promise.resolve({ data: [] }),
+      isAdmin ? supabase.from("scorekeeping_event_attributions").select("*") : Promise.resolve({ data: [] }),
       supabase.from("playoff_brackets").select("*"),
       supabase.from("playoff_seeds").select("*").order("seed"),
       supabase.from("playoff_matches").select("*").order("round_number").order("match_number"),
@@ -77,6 +85,8 @@ export async function fetchAppState(isAdmin) {
   for (const [r, what] of [
     [games, "games"], [leagues, "leagues"], [seasons, "seasons"], [teamIdentities, "team_identities"], [teams, "teams"], [teamPlayers, "team_players"],
     [playerStats, "player_stats"], [playoffBrackets, "playoff_brackets"], [playoffSeeds, "playoff_seeds"],
+    [scorekeepingSessions, "scorekeeping_sessions"], [scorekeepingParticipants, "scorekeeping_participants"],
+    [scorekeepingEvents, "scorekeeping_events"], [scorekeepingEventAttributions, "scorekeeping_event_attributions"],
     [playoffMatches, "playoff_matches"], [baselines, "career_baselines"], [settingsRow, "league_settings"],
     [profiles, "profiles"],
     [freeAgents, "free_agents"], [registrations, "team_registrations"], [waivers, "waivers"],
@@ -102,6 +112,10 @@ export async function fetchAppState(isAdmin) {
       edit_history: game.edit_history || [],
     })),
     playerStats: playerStats.data || [],
+    scorekeepingSessions: scorekeepingSessions.data || [],
+    scorekeepingParticipants: scorekeepingParticipants.data || [],
+    scorekeepingEvents: scorekeepingEvents.data || [],
+    scorekeepingEventAttributions: scorekeepingEventAttributions.data || [],
     playoffBrackets: playoffBrackets.data || [],
     playoffSeeds: playoffSeeds.data || [],
     playoffMatches: playoffMatches.data || [],
@@ -165,6 +179,126 @@ export async function lockGame(game_id) {
 export async function setGameStatus(game_id, status) {
   const { error } = await supabase.rpc("set_game_status", { p_game_id: game_id, p_status: status });
   fail(error, "set game status");
+}
+
+export async function startScorekeepingSession(args) {
+  const { data, error } = await supabase.rpc("start_scorekeeping_session", {
+    p_game_id: args.game_id,
+    p_rule_version: args.rule_version,
+    p_regulation_period_count: Number(args.regulation_period_count),
+    p_overtime_start_setting: args.overtime_start_setting?.trim() || null,
+    p_allow_ties: false,
+    p_rules_snapshot: args.rules_snapshot || {},
+  });
+  fail(error, "start live scorekeeping");
+  return data;
+}
+
+export async function resumeScorekeepingSession(session_id, reason = "") {
+  const { data, error } = await supabase.rpc("resume_scorekeeping_session", {
+    p_session_id: session_id,
+    p_reason: reason.trim() || null,
+  });
+  fail(error, "resume live scorekeeping");
+  return data;
+}
+
+export async function renewScorekeepingSession(lease) {
+  const { data, error } = await supabase.rpc("renew_scorekeeping_session", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+  });
+  fail(error, "renew scorekeeping lease");
+  return data;
+}
+
+export async function appendScorekeepingEvent({ lease, command }) {
+  const { data, error } = await supabase.rpc("append_scorekeeping_event", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+    p_idempotency_key: command.idempotency_key,
+    p_action: command.action,
+    p_event_type: command.event_type,
+    p_period_type: command.period_type ?? null,
+    p_period_number: command.period_number ?? null,
+    p_credited_team_id: command.credited_team_id ?? null,
+    p_points: Number(command.points || 0),
+    p_voids_event_id: command.voids_event_id ?? null,
+    p_replaces_event_id: command.replaces_event_id ?? null,
+    p_payload: command.payload || {},
+    p_attributions: command.attributions || [],
+  });
+  fail(error, "record scorekeeping event");
+  return data;
+}
+
+export async function replaceScorekeepingEvent({ lease, target_event_id, command }) {
+  const { data, error } = await supabase.rpc("replace_scorekeeping_event", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+    p_void_idempotency_key: command.void_idempotency_key,
+    p_replacement_idempotency_key: command.replacement_idempotency_key,
+    p_target_event_id: target_event_id,
+    p_event_type: command.event_type,
+    p_period_type: command.period_type,
+    p_period_number: command.period_number,
+    p_credited_team_id: command.credited_team_id,
+    p_points: Number(command.points || 0),
+    p_payload: command.payload || {},
+    p_attributions: command.attributions || [],
+  });
+  fail(error, "replace scorekeeping event");
+  return data;
+}
+
+export async function finalizeScorekeepingSession({ lease, idempotency_key, override_reason = "" }) {
+  const correction = lease.session_kind === "correction";
+  const { data, error } = await supabase.rpc(
+    correction ? "finalize_scorekeeping_correction" : "finalize_scorekeeping_session",
+    {
+      p_session_id: lease.session_id,
+      p_lease_token: lease.lease_token,
+      p_lease_version: lease.lease_version,
+      p_idempotency_key: idempotency_key,
+      p_override_reason: override_reason.trim() || null,
+    }
+  );
+  fail(error, correction ? "finalize score correction" : "finalize live score");
+  if (data?.ok === false) throw new Error(data.message || "Score finalization failed safely.");
+  return data;
+}
+
+export async function startScorekeepingCorrection(game_id, reason) {
+  const { data, error } = await supabase.rpc("start_scorekeeping_correction", {
+    p_game_id: game_id,
+    p_reason: reason.trim(),
+  });
+  fail(error, "start score correction");
+  return data;
+}
+
+export async function cancelScorekeepingSession({ lease, reason }) {
+  const { error } = await supabase.rpc("cancel_scorekeeping_session", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+    p_reason: reason.trim(),
+  });
+  fail(error, "cancel scorekeeping session");
+}
+
+export async function declareLedgerForfeit({ game_id, winner_team_id, reason, idempotency_key }) {
+  const { data, error } = await supabase.rpc("declare_ledger_forfeit", {
+    p_game_id: game_id,
+    p_winner_team_id: winner_team_id,
+    p_reason: reason.trim(),
+    p_idempotency_key: idempotency_key,
+  });
+  fail(error, "declare forfeit");
+  return data;
 }
 
 async function submitPublicIntake(type, payload, turnstile_token) {

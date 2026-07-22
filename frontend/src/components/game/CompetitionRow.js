@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { MapPin } from "@phosphor-icons/react";
 import { useApp } from "../../context/AppStateContext";
-import { getTeam } from "../../lib/selectors";
+import { getTeam, isFinalOutcome, isForfeitOutcome } from "../../lib/selectors";
 import { SportBadge, StatusBadge } from "../common/Badges";
 import { StructuralIdentityBadge } from "../direction/StructuralIdentity";
 import { StageBanner, isSpecialStage } from "./StageBanner";
@@ -31,9 +31,10 @@ export const CompetitionRow = ({ game }) => {
   const { state } = useApp();
   const home = getTeam(state, game.home_team_id);
   const away = getTeam(state, game.away_team_id);
-  const completed = game.status === "completed";
-  const homeWin = completed && game.home_score > game.away_score;
-  const awayWin = completed && game.away_score > game.home_score;
+  const completed = isFinalOutcome(game);
+  const forfeit = isForfeitOutcome(game);
+  const homeWin = completed && (forfeit ? game.winner_team_id === game.home_team_id : game.home_score > game.away_score);
+  const awayWin = completed && (forfeit ? game.winner_team_id === game.away_team_id : game.away_score > game.home_score);
   const special = isSpecialStage(game);
   const date = new Date(`${game.date}T00:00:00`).toLocaleDateString("en-US", {
     weekday: "short",
@@ -57,7 +58,7 @@ export const CompetitionRow = ({ game }) => {
       <div className="cvf-competition-row__center">
         <span className="cvf-competition-row__date">{date}</span>
         <span className="cvf-competition-row__focal">
-          {completed ? `${game.away_score}–${game.home_score}` : game.time}
+          {forfeit ? "Forfeit" : completed ? `${game.away_score}–${game.home_score}` : game.time}
         </span>
       </div>
 

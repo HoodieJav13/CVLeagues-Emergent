@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { UsersThree } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { getLeague, getProfile, computeTeamRecord, teamRoster, teamGames, teamStatLeaders } from "../lib/selectors";
+import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, teamRoster, teamGames, teamStatLeaders } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
 import { SportBadge } from "../components/common/Badges";
 import { PlayerCard } from "../components/player/PlayerCard";
@@ -21,7 +21,7 @@ export default function TeamPage() {
   const roster = teamRoster(state, team.id);
   const games = teamGames(state, team.id);
   const upcoming = games.filter((g) => g.status === "upcoming").slice(0, 3);
-  const recent = games.filter((g) => g.status === "completed").reverse().slice(0, 3);
+  const recent = games.filter(isFinalOutcome).reverse().slice(0, 3);
   const captain = getProfile(state, team.captain_id);
   const leaders = teamStatLeaders(state, team.id, HIGHLIGHT_STATS[team.sport]);
 
