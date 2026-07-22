@@ -24,14 +24,14 @@ Frontend was generated via Emergent (React + CRA), polished with a design-system
 - Dedicated hosted backend is linked and accepted at the twenty-three-migration baseline. The least-privilege service-role catalog, both advisors, AAL1/AAL2 authorization behavior, Migration 23 RPC-only scoring boundary, and revised 154/154 matrix are evidenced for that baseline. Recovery/session-revocation acceptance, preview/production variables, live application flows, and deployment remain open.
 
 ## Current Priority
-Expand the hosted authorization matrix from 22 to 26 tables for Migration 24, then complete a fresh logical backup, migration preflight, dry run, and a discrete owner approval immediately before any hosted push. After hosted acceptance, continue one gated stage at a time: deterministic projections and correction/finalization → admin-only flag-football pilot/practice mode → field test and second-sport/live decision. Resume Pass 4 with Team/Profile only after the pilot decision. Attorney-approved New Mexico waiver text remains an independent launch blocker.
+Review and commit the locally prepared 26-table authorization harness for Migration 24, then complete a fresh logical backup, migration preflight, dry run, and a discrete owner approval immediately before the hosted push. After the four ledger tables exist remotely, obtain a separate discrete approval to run the fixture-writing 26-table hosted matrix. Only hosted acceptance advances the roadmap to deterministic projections and correction/finalization → admin-only flag-football pilot/practice mode → field test and second-sport/live decision. Resume Pass 4 with Team/Profile only after the pilot decision. Attorney-approved New Mexico waiver text remains an independent launch blocker.
 
 ## Owner Action Queue
 
 - **Launch remains blocked on attorney-approved waiver text regardless of all other gates closing.** After approval, insert the final text as a new immutable `waiver_versions` row; never substitute draft or fallback legal text.
 - Complete the real administrator's recovery and session-revocation acceptance; decide whether a break-glass administrator is warranted. TOTP enrollment and AAL2 elevation are already complete.
 - Enter preview/production Supabase and Turnstile environment values personally, without exposing a service-role or secret key to React.
-- Review the expanded 26-table hosted authorization matrix, fresh logical backup, migration preflight, and dry run before giving a discrete approval for the Migration 24 hosted push. Then field-test the admin-only flag-football pilot before approving a second sport or live use.
+- Review the locally prepared 26-table hosted-authorization harness, fresh logical backup, migration preflight, and dry run before giving a discrete approval for the Migration 24 hosted push. After the push, separately approve the fixture-writing matrix run that establishes hosted acceptance. Then field-test the admin-only flag-football pilot before approving a second sport or live use.
 - Run live hosted application flows and the remaining visual-consistency acceptance across desktop and mobile before approving preview.
 - Approve production deployment only after every technical, visual, operational, and legal gate above is closed.
 

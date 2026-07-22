@@ -4,7 +4,7 @@ This file is authoritative for CVF Leagues schema, migration ledger, backend inv
 
 ## Verified status — 2026-07-21
 
-- Twenty-four migration files are present in filename order. A real local Supabase reset applies all twenty-four, and the independent pgtest run passes 277/277. Migration 24 (`event_ledger_lite_schema`) is locally complete and committed in `1b31693`; it remains unhosted pending its separate matrix and push gate.
+- Twenty-four migration files are present in filename order. A real local Supabase reset applies all twenty-four, and the independent pgtest run passes 277/277. Migration 24 (`event_ledger_lite_schema`) is locally complete and committed in `1b31693`; its 26-table authorization harness is prepared locally, and the migration remains unhosted pending backup, preflight, dry run, and its discrete push gate.
 - The linked hosted project has the first twenty-three migrations applied. Migration 23 (`aggregate_scoring_hardening`) is hosted-accepted, and the current Season 1 operational row/settings baseline was preserved exactly. The service-role privilege catalog passes at the accepted customer-controlled boundary.
 - Hosted verification confirms the two remediated function attributes, 38/38 foreign-key index coverage, all 22 hosted tables with RLS enabled, and the expected operational row-count baseline. Local Migration 24 raises the schema to 60 indexed foreign keys and 26 RLS-enabled tables.
 - Hosted Security and Performance Advisors were rerun after Migration 23: 23 Security and 13 Performance findings have the itemized dispositions below. The removed `player_stats` write policy eliminated one prior overlapping-policy warning.
@@ -104,7 +104,7 @@ The current Performance Advisor reports 13 findings:
 
 Hosted authorization acceptance is complete and durably evidenced at 154/154 through Migration 23 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-21-m23.md`](evidence/hosted-auth-matrix-2026-07-21-m23.md).
 
-Migration 24 remains local-only. Before any hosted push, expand the matrix from 22 to 26 tables for the four private ledger relations, capture a fresh logical export, confirm only Migration 24 is pending, and stop for explicit owner approval.
+Migration 24 remains local-only. Its harness is prepared to expand the accepted 22-table boundary to all 26 tables. Before the hosted push, review and commit that harness, capture a fresh logical export, confirm only Migration 24 is pending, complete the dry run, and stop for discrete owner approval. The full 26-table run can occur only after the four ledger relations exist remotely and requires its own discrete approval because it writes and removes hosted fixtures.
 
 1. Complete recovery and session-revocation checks for the already-linked AAL2 administrator; decide separately whether a break-glass administrator is warranted.
 2. Enter hosted and Turnstile public/secret values in preview/production without exposing service-role or secret keys to React, then verify fail-closed behavior.

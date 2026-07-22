@@ -1,8 +1,8 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. It verifies the CVF Leagues hosted Data API, RLS, Auth-role, 15 privileged RPCs, append-only records, RPC-only mutation boundaries, payments, game locks, and Hall of Fame publication behavior across 22 exposed tables with real anonymous, authenticated non-admin, and administrator sessions.
+This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-23 baseline covers 22 tables and 15 privileged RPCs. The prepared Migration-24 harness expands that boundary to all 26 tables, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
-The harness creates a uniquely namespaced disposable fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline.
+The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. Hosted ledger authorization is therefore proved by 64 role/operation API checks, seven exact catalog checks, and the local positive-row pgtest evidence rather than by creating hosted evidence that cannot be cleanly removed.
 
 ## Safety model
 
@@ -57,7 +57,7 @@ Open the printed loopback URL in the in-app browser or another isolated browser.
 The terminal must end with all three lines reporting `PASS`:
 
 ```text
-RESULT PASS: <passed>/<total> browser/API checks passed.
+RESULT PASS: <passed>/<total> browser/API and catalog checks passed.
 CLEANUP PASS: fixture namespace contains zero rows.
 BASELINE PASS: all row counts and settings restored.
 ```
@@ -84,6 +84,19 @@ The command exits nonzero if any browser/API assertion, residue query, or baseli
 - Anonymous reads succeed for the fixture season, league, persistent team identity, enrollment, roster, game, settings, waiver version, playoff bracket tables, and allowlisted public profile.
 - Selecting PII such as email from `public_profiles` fails.
 - Anonymous and non-admin sessions cannot retrieve `admin_users`, profiles, waivers, intake rows, edit history, charges, or payment entries. The harness treats either a Data API denial or an RLS-empty result as a pass.
+
+### Private ledger boundary — Migration 24
+
+For each of `scorekeeping_sessions`, `scorekeeping_participants`, `scorekeeping_events`, and `scorekeeping_event_attributions`, the browser matrix executes all four operations for all four relevant session states:
+
+- Anonymous reads fail at the table-privilege boundary; insert, update, and delete also fail there.
+- The authenticated non-admin can reach the SELECT-only Data API surface but receives no private rows; insert, update, and delete fail at the table-privilege boundary.
+- The linked password-only administrator remains AAL1 and receives no private rows; insert, update, and delete fail at the table-privilege boundary.
+- The AAL2 administrator can query each relation; insert, update, and delete still fail because ledger mutation is not a client capability.
+
+Before any hosted fixture is created, seven privileged catalog checks require all four relations to exist with RLS, exactly four authenticated admin-read policies, authenticated SELECT-only privileges, zero anonymous privileges, zero `service_role` privileges, and no client/service execution of the seven ledger trigger helpers. A catalog failure stops the runner before fixture seeding.
+
+The hosted tables are expected to be empty immediately after Migration 24, so successful AAL2 queries assert the response shape against a possibly empty result and do not claim positive-row visibility by themselves. The current 277-assertion local harness supplies the positive-row proof (`ledger schema 46`) while hosted API and catalog checks prove the deployed access boundary without leaving undeletable ledger evidence behind. Sequence 4's first controlled ledger-write matrix must close this coverage boundary against the same populated row: the AAL2 administrator can read it while the authenticated non-admin remains RLS-empty.
 
 ### Admin RPC denial
 
@@ -142,7 +155,7 @@ Anonymous execution is denied for all 15 client-facing admin RPCs. A real authen
 ### Cleanup
 
 - The namespace residue query returns zero seasons, leagues, team identities, profiles, waivers, and history rows.
-- Counts for all 22 public tables match the pre-run values.
+- Counts for all 26 public tables match the pre-run values.
 - `league_settings.hof_published`, `current_season`, and `current_waiver_version()` match their pre-run values.
 
 ## Failure handling
