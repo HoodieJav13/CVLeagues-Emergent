@@ -26,6 +26,7 @@
 - Keep functional, schema, documentation, and visual changes in separate focused commits.
 - Do not commit, push, open a pull request, deploy, or write to a hosted service without the required owner checkpoint.
 - A broad instruction such as “execute sequences X–Y” authorizes the approved local sequence work only; it never pre-authorizes a hosted mutation contained within those sequences. Stop immediately before every hosted mutation and obtain a discrete owner approval naming that action and target.
+- Going forward, a hosted migration push requires the explicit approval token `approved: hosted push of migrations X–Y`, with the exact migration range substituted. A bare `approve` or broader sequence instruction is not sufficient authorization for a future hosted migration push.
 - Do not silently take over owner-only actions such as account creation, billing, secrets, MFA, legal approval, domains, or final launch acceptance.
 
 ## Required verification
