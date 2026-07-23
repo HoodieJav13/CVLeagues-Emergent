@@ -1,18 +1,19 @@
 # Event Ledger Lite — Sequence 3 Schema and Sequence 4 Runtime Contract
 
-**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C structurally published, real-session acceptance pending
+**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C hosted-authorization accepted, durable pilot pending
 
 **Migration:** `20260721201350_event_ledger_lite_schema.sql`
 
-**Hosted status:** 27/27 migrations aligned; behavior accepted through Migration 24 at 225/225, Sequence 4 matrix pending
+**Hosted status:** 27/27 migrations aligned; current 26-table / 25-RPC authorization surface accepted at 256/256
 
 ## Purpose and scope
 
 Sequence 3 established the hosted database boundary required for event-level
 scorekeeping without creating a second working score-entry system. Sequence 4
 now publishes the controlled runtime behind that same authority boundary. The
-client is not deployed and no hosted ledger session/event exists; behavioral
-acceptance still requires the real-session matrix and later durable pilot.
+client is not deployed and no hosted ledger session/event exists. The
+real-session authorization matrix is accepted; positive populated-ledger
+behavior still requires the later durable pilot.
 
 The binding rules remain
 [`RULES_INVARIANT_MATRIX.md`](RULES_INVARIANT_MATRIX.md). Sequence 4 must build
@@ -93,11 +94,11 @@ must advance the lease version.
   concurrency, deterministic projection, failure rollback/audit, correction
   cancellation, forfeit identity, and playoff-forfeit advancement at **294/294** assertions.
 
-The three migrations are now structurally published, but this is not behavioral
-or pilot acceptance. Hosted history, structure, row/settings baseline,
-privileges, and advisors passed immediate readback. A separately approved
-real-session authorization run remains; Sequence 5 still owns flag-football
-overtime, `INV-07`, the durable populated-row proof, and pilot acceptance.
+The three migrations are structurally published and their current hosted
+authorization surface is accepted. Hosted history, structure, row/settings
+baseline, privileges, advisors, and the 256/256 real-session/catalog matrix all
+pass. Sequence 5 still owns flag-football overtime, `INV-07`, the durable
+populated-row proof, and pilot acceptance.
 
 ## Verification checkpoint
 
@@ -181,3 +182,26 @@ Published on July 22, 2026:
 See
 [`../../supabase/evidence/sequence-4-hosted-push-2026-07-22.md`](../../supabase/evidence/sequence-4-hosted-push-2026-07-22.md)
 for the published gate record.
+
+## Sequence 4 hosted-authorization checkpoint
+
+Accepted on July 22, 2026:
+
+- The separately approved live matrix exercised anonymous, authenticated
+  non-admin, password-only linked-admin, and AAL2 administrator access-control
+  boundaries across all 26 tables and all 25 client-facing admin RPCs.
+- **248/248** browser/API checks and **8/8** exact catalog checks passed, for
+  **256/256** combined.
+- All ten ledger runtime RPCs were confirmed authenticated-only; anonymous,
+  non-admin, and AAL1-admin execution failed closed as required.
+- The disposable aggregate fixture was removed completely. All 26 public-table
+  counts plus `current_season`, `hof_published`, and the current waiver setting
+  matched the pre-run baseline exactly; an independent post-run query confirmed
+  the same values.
+- All four ledger tables remain empty. Positive visibility and authorized write
+  behavior against a populated append-only ledger row is deliberately deferred
+  to the owner-approved durable Sequence 5 pilot.
+
+See
+[`../../supabase/evidence/hosted-auth-matrix-2026-07-22-m27.md`](../../supabase/evidence/hosted-auth-matrix-2026-07-22-m27.md)
+for the accepted authorization record.

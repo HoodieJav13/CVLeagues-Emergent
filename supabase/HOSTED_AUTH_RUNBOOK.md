@@ -1,8 +1,8 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks. Sequence 4 Migrations 25–27 are now structurally published and add ten RPCs; that 25-RPC shape is not behaviorally accepted until this separately approved matrix passes.
+This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-27 baseline covers all 26 tables and 25 privileged RPCs, including the four private ledger relations and ten Sequence 4 runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
-The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted baseline used 64 role/operation API checks and seven exact catalog checks. After Sequence 4 is applied, the prepared contract adds a runtime-RPC ACL catalog check plus anonymous/non-admin denial for all ten new endpoints; a populated positive read/write proof remains a separate durable-pilot gate.
+The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted Migration-27 baseline passed 248 browser/API checks and eight exact catalog checks, including runtime-RPC ACL coverage plus anonymous/non-admin/AAL1 denial for all ten new endpoints. A populated positive read/write proof remains a separate durable-pilot gate.
 
 ## Safety model
 
@@ -39,9 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted behavioral baseline is Migration 24: 26 tables and 15 administrator RPCs. The structurally published Sequence 4 target is 27 migrations and 25 administrator RPCs. Preflight must show all 27 hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
+The current accepted authorization baseline is Migration 27: 26 tables and 25 administrator RPCs. Preflight must show all 27 hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
-Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md) records the Migration-24 baseline at 225/225 browser/API and catalog checks with fixture cleanup and exact restoration both passing. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the newer published-but-not-yet-accepted 27-migration structural gate. The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior checkpoint.
+Latest accepted authorization evidence: [`evidence/hosted-auth-matrix-2026-07-22-m27.md`](evidence/hosted-auth-matrix-2026-07-22-m27.md) records the Migration-27 baseline at 256/256 browser/API and catalog checks with fixture cleanup and exact restoration both passing. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records its structural publication gate. The immutable [`Migration-24 evidence`](evidence/hosted-auth-matrix-2026-07-21-m24.md) and [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remain prior checkpoints.
 
 ## Run
 
@@ -100,7 +100,7 @@ The hosted tables are expected to be empty immediately after Migration 24, so su
 
 ### Admin RPC denial
 
-Anonymous execution is denied for all 15 client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each:
+Anonymous execution is denied for all 25 client-facing admin RPCs. A real authenticated non-admin must reach and fail at `assert_admin()` for each. The first 15 are:
 
 - `submit_score`
 - `lock_game`
@@ -118,7 +118,7 @@ Anonymous execution is denied for all 15 client-facing admin RPCs. A real authen
 - `update_team_identity`
 - `update_team_enrollment`
 
-After the Sequence 4 migrations are applied, the same denial loop also covers:
+The same denial loop also covers the ten Sequence 4 RPCs:
 
 - `start_scorekeeping_session`
 - `renew_scorekeeping_session`
@@ -151,7 +151,9 @@ After the Sequence 4 migrations are applied, the same denial loop also covers:
 
 ### Administrator positive path
 
-- All 15 admin RPCs succeed with valid disposable records.
+- All 15 pre-Sequence-4 admin RPCs succeed with valid disposable records. The
+  ten ledger-runtime RPCs require a durable ledger game/session and receive
+  their positive hosted execution proof in the Sequence 5 pilot.
 - Score, lifecycle, intake conversion, roster assignment, and waiver verification effects persist.
 - Initial score submission, locking, and a reasoned final-score correction create append-only history. The correction preserves the completed/final/locked state and records the exact reason, before/after snapshots, any SOFT override reason, and validation warnings.
 - A four-team bracket is generated, one match is scheduled, another existing game is linked, and a final locked result advances.
@@ -186,7 +188,7 @@ Run this matrix after any change to:
 
 - RLS policies or Data API grants
 - `admin_users`, `is_admin()`, or Auth-role resolution
-- Any of the 15 admin RPCs
+- Any of the 25 admin RPCs
 - Game lock/stage enforcement or edit history
 - Profiles or the `public_profiles` allowlist
 - Intake or waiver policies and triggers
