@@ -6,11 +6,76 @@
 
 **Correction authority decision:** **DECIDED — July 19, 2026**
 
+**Sequence 5A overtime / `INV-07` amendment:** **DECIDED — July 22, 2026**
+
 This document defines the rules that later scoring RPCs, ledger events,
 projections, authorization tests, and pilot acceptance checks must implement.
 Every implementation rule and test must cite at least one invariant ID from
 this matrix. If code and this document disagree, implementation stops until
 the owner resolves the discrepancy.
+
+## Sequence 5A amendment — DECIDED July 22, 2026
+
+These four decisions supersede the named older clauses for **Season 1**. The
+underlying configurable mechanisms remain available for future versioned
+competition rules; the retired Season 1 behavior is preserved here rather than
+silently deleted.
+
+### Amendment 1 — Kickball ties and extra innings
+
+- Every Season 1 kickball game must finish with a winner, regardless of stage
+  or competition container.
+- Overtime adds one complete extra inning at a time. The administrator signals
+  that the inning is complete; only then does the system evaluate the score.
+  A tie returns the game to continued live overtime without finalizing or
+  locking it. There is no sudden-death conclusion during an inning.
+- **Retired for Season 1:** the older clause allowing a non-playoff tie when a
+  snapshotted competition rule permits it. The configurable-ties field remains
+  in the rules/schema for a future season, but Season 1 never exercises it.
+
+### Amendment 2 — Flag-football overtime format
+
+- Each overtime round gives one possession to each team. After both
+  possessions are complete, the administrator closes the round and the system
+  compares the score. A tie opens another round under the same format.
+- **Retired for Season 1:** the older NCAA-derived progression requiring
+  two-point attempts after round one and conversion-only play beginning in
+  round three. Those concepts may return only through a future versioned rules
+  decision; they are not inferred or enforced in Season 1.
+
+### Amendment 3 — Admin-signaled overtime completion
+
+- Overtime uses the existing ledger session, sequence, projection,
+  idempotency, correction, and void/replacement machinery with
+  `period_type = 'overtime'`; it is not a separate subsystem.
+- The completion signal is an explicit, zero-point, teamless `period_close`
+  ledger event for the named overtime period. It is append-only, idempotent,
+  server-sequenced, and subject to the same correction-chain rules as every
+  other ledger event.
+- Projection never infers period completion from possessions, outs, clock
+  state, or score. A future timed-overtime ruleset changes when the
+  administrator emits the same close event, not the schema or projection
+  completion contract.
+- **Retired for Season 1:** a defensive score ending flag-football overtime
+  midway through a round. It remains an ordinary scoring event; the round ends
+  only after both possessions and the administrator's close signal.
+
+### Amendment 4 — `INV-07` paired-stat override
+
+- For flag football only, `completions/catches`,
+  `passYards/recYards`, `passTDs/recTDs`, and
+  `ints/opponent defInts` are paired within one event by default. Supplying
+  only one side is rejected.
+- A single unpaired event may be accepted only with its own nonblank override
+  reason. The event-bound reason, acting administrator, and server timestamp
+  are append-only evidence. No session-wide or global pairing bypass exists.
+- At finalization, residual mismatches from override-accepted events appear in
+  the projection warnings and follow the existing SOFT-warning finalization
+  flow: the administrator must supply a finalization override reason, and the
+  warnings plus that reason are recorded in the final audit output.
+- **Retired for Season 1:** unconditional entry rejection with no reasoned
+  exception. Pairing is still the default and unexplained mismatches remain
+  forbidden. Kickball and unnamed flag-football statistics are unchanged.
 
 ## A. Sport rules
 
@@ -19,7 +84,7 @@ the owner resolves the discrepancy.
 | Rule | Binding decision |
 |---|---|
 | Numeric representation | Scores, period values, event point values, and count statistics are integers. Passing, rushing, and receiving yards are signed integers because a valid play can lose yards. |
-| Period projection | A game's team total equals the sum of all regulation and overtime period projections. Every scoring event belongs to exactly one period. |
+| Period projection | A game's team total equals the sum of all regulation and overtime period projections. Every scoring event belongs to exactly one period. Overtime uses `period_type = 'overtime'` in the same ledger and projection machinery; an explicit `period_close` event, not inferred sport state, marks an overtime period complete. |
 | Player attribution | Player-attributed events may reference only the immutable participant snapshot captured when the scoring session begins. Team-only events must explicitly omit the player rather than use a placeholder profile. |
 | Forfeit | A forfeit is represented as a canceled game with an explicit winning team and losing team. It contributes one win and one loss, but no numeric score, points-for/against, periods, or player statistics. |
 | Mercy rule | Neither sport has a mercy rule at this time. An administrator may not silently infer one. A future mercy rule requires a versioned rule change. |
@@ -32,7 +97,7 @@ the owner resolves the discrepancy.
 | Topic | Binding decision | Reconciliation |
 |---|---|---|
 | Regulation | The regulation inning count is variable and must be selected from the applicable league/game rules before scoring begins. It is not hardcoded to five. The selected count is snapshotted onto the scoring session and cannot change after the first event. | Every regulation scoring event references an inning from `1..regulation_innings`. |
-| Extra innings and ties | Extra innings are appended one complete inning at a time. Playoff games must continue until there is a winner. A non-playoff competition may retain a tie only when its snapshotted competition rules explicitly allow ties; otherwise extra innings continue until a winner exists. | A final playoff projection may not be tied. |
+| Extra innings and ties | Every Season 1 game continues until there is a winner. Extra innings are appended one complete inning at a time with no sudden death. The administrator closes each inning explicitly; a closed inning that remains tied leaves the game live and permits the next extra inning. The schema retains configurable tie support for future versioned seasons, but Season 1 does not exercise it. | Every Season 1 final projection has a winner. A game may remain tied while an extra inning is open or after a tied close result returns `continue_overtime`. |
 | Run | A runner legally scores: +1 to the team score and `runs + 1` for that runner. | The sum of player `runs` for a team equals that team's projected score. |
 | RBI | An RBI is attached to a scoring run only when the kick/play earns conventional RBI credit. Runs caused by an error or another non-RBI play may have no RBI. | Team RBIs may be lower than team runs; an RBI never creates score independently. |
 | Home run | A home-run kick increments the kicker's `homeRuns`; the kicker receives a run, and the kicker receives one RBI for each RBI-eligible run produced by the play, including the kicker's own run. | All resulting runs are projected as individual run events and therefore reconcile to score. |
@@ -69,13 +134,15 @@ All kickball stats are nonnegative integer counts.
 | Conversion | +1, +2, or +3 team points according to the recorded attempt. Only the player who scores the conversion receives `onePoint`, `twoPoint`, or `threePoint`; no separate passing-conversion statistic is kept. | Conversion event value and the scorer's conversion key must agree. |
 | Safety | +2 team points and attribution to the player who caused the safety. Sequence 2 adds the `safeties` player count; the later ledger must preserve the same team and player attribution. | Safety points reconcile from player `safeties` in aggregate mode and effective safety events in ledger mode. |
 | Interception | A thrown interception credits `ints + 1` to the passer and `defInts + 1` to the intercepting defender. If returned for a touchdown, that same play also produces a +6 pick-six scoring event and `tds + 1` for the defender. | Team `ints` equals opponent team `defInts`; the interception itself is not points. |
-| Overtime | No final tie is allowed. CVF uses college-style alternating possessions: each team receives one possession in an overtime round from the configured overtime start spot; after the first round, a touchdown requires a two-point attempt; beginning with the third round, teams alternate conversion attempts rather than full possessions. Rounds continue until both teams have had the required opportunity and the score is unequal. | Each round is a distinct `OTn` period. A game cannot finalize midway through an equal-opportunity round unless a defensive score ends the contest under the possession rule. |
+| Overtime | No Season 1 final tie is allowed. Each `OTn` round gives one possession to each team under the same format in every round. A defensive score does not end the round. After both possessions, the administrator records the explicit `period_close`; only then is the score compared. A tie returns `continue_overtime`, leaves the game live/unlocked for more events, and permits another round. | Each round is a distinct overtime period. Finalization requires the latest overtime period to be admin-closed and the projected score to be unequal. Mid-round and tied closed-round states cannot finalize. |
 | Mercy | None. | No automatic early-final rule exists. |
 | Forfeit | Shared forfeit convention above. | Win/loss only; no score or player stats. |
 
-The overtime start spot is a versioned competition setting because CVF field
-dimensions may differ from NCAA fields. Changing it never changes the
-alternating-possession or no-tie rules above.
+The overtime start spot remains a versioned competition setting because CVF
+field dimensions may differ by competition. The schema may retain future
+NCAA-style options, but Season 1 does not enforce post-round-one two-point
+attempts, conversion-only later rounds, inferred equal-opportunity completion,
+or defensive-score sudden death.
 
 #### Flag-football stat dictionary
 
@@ -125,8 +192,8 @@ touchdown deliberately creates both passer and receiver credit.
 | `INV-04` | No client can directly insert, update, or delete authoritative score, stat, event, session, or edit-history values. All sanctioned mutations pass through an allowlisted AAL2 RPC. |
 | `INV-05` | Kickball team score equals team `runs`; RBIs do not create score and team RBIs cannot exceed team runs. |
 | `INV-06` | Flag-football scoring reconciles to the formula in Section A, with passing credit excluded from duplicate point calculation. |
-| `INV-07` | Team flag-football totals reconcile as `completions = catches`, `passYards = recYards`, `passTDs = recTDs`, and one team's `ints = opponent defInts`. |
-| `INV-08` | In Season 1, every final kickball and flag-football game has a winner. A tied kickball game continues into extra innings; a tied flag-football game continues under its overtime rules. Playoff finals also cannot tie. |
+| `INV-07` | Flag-football events pair `completions/catches`, `passYards/recYards`, `passTDs/recTDs`, and `ints/opponent defInts` within the same event by default. An unpaired event requires a nonblank event-specific override reason stored append-only with actor and server time; no global bypass exists. Without override evidence the team totals reconcile exactly. Any residual final mismatch is a SOFT warning that requires and records the existing finalization override reason. |
+| `INV-08` | In Season 1, every final kickball and flag-football game has a winner. A game may be tied during regulation or while overtime continues, but an overtime period is complete only after an effective admin-authored `period_close` event. Evaluating a tied closed period returns `continue_overtime` without finalizing or locking; only an unequal score after the latest closed overtime period may finalize. |
 | `INV-09` | A forfeit has lifecycle status `canceled`, explicit winner and loser teams, and a final locked outcome; it contributes W/L only and has null score, empty periods, and no player-stat projection. |
 | `INV-10` | The applicable rule version, regulation-period count, overtime start setting, sport, league, season, stage, and team participants are snapshotted before the first ledger event and cannot change afterward. |
 | `INV-11` | A scoring session snapshots the eligible participants for both teams when it opens. Every player-attributed event references exactly one snapshotted participant on the event's credited team. |
@@ -226,9 +293,9 @@ rewriting competition history.
 | Area | Required evidence |
 |---|---|
 | Full games | Complete admin-only flag-football games from scheduled through four quarters and final/locked projection, including touchdown, conversion, interception, signed yardage, and player-attributed safety fixtures across the test set. |
-| Overtime | At least one tied regulation game completed through college-style overtime with equal opportunity and a non-tied final result. |
+| Overtime | At least one tied regulation game completes through repeated one-possession-each rounds with explicit admin-authored period closes, a tied `continue_overtime` result that remains live, and a later unequal final result. Negative coverage proves no defensive-score or other mid-round sudden death. |
 | Retry safety | Repeated create-event and finalize commands with the same idempotency keys produce one result and no duplicate event/history/projection effect. |
-| Validation | Negative cases cover illegal point values, invalid periods, unsnapshotted players, broken passing/receiving reconciliation, negative count stats, and a tied final result. |
+| Validation | Negative cases cover illegal point values, invalid periods, unsnapshotted players, unexplained unpaired flag-stat events, blank pairing-override reasons, negative count stats, and a tied finalization attempt. Positive coverage proves per-event override evidence is immutable and final residual mismatches surface as warnings requiring a recorded finalization override reason. |
 | Correction | At least one post-final void/replacement correction, one cancellation, one failed finalization, and proof that the prior public projection remains unchanged during drafting and after failure/cancellation. |
 | Playoffs | Same-winner correction, unscheduled-destination winner change with atomic retract/reapply, and scheduled/played-destination winner-change denial. Include the third-place path. |
 | Practice mode | A full no-consequence scoring rehearsal with events, retry, finalization preview, and correction. Practice data is explicitly nonproduction, nonpublic, and excluded from standings, career totals, brackets, and official game projections. |
@@ -260,10 +327,10 @@ found no evidence of corrupted live data.
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 2** | `submit_score` and `correct_final_score` enforce aggregate HARD rules server-side and require a recorded override reason for SOFT reconciliation warnings. Migration 23 passed the revised 154/154 hosted authorization matrix. | `INV-01`–`INV-08` |
 | **RESOLVED LOCALLY IN SEQUENCE 4; HOSTED/PILOT GATES OPEN** | `declare_ledger_forfeit` records a final locked canceled outcome with explicit winner/loser, null score, empty periods, no player stats, strict replay identity, and playoff advancement through the existing authority. | `INV-09` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 2** | `safeties` is now an allowlisted player stat and is included in flag score reconciliation. | `INV-13` |
-| **BLOCKING before ledger pilot** | The existing UI has no flag-football overtime entry model. | `INV-01`, `INV-08`, `INV-10` |
-| **BLOCKING before ledger pilot** | The Sequence 4 foundation accepts the full flag-football stat allowlist, but the pilot UI and finalizer do not yet collect and enforce the paired passing/receiving and interception reconciliations required by `INV-07`. Sequence 5 must close this with negative tests before official use. | `INV-07` |
+| **BLOCKING before ledger pilot** | The existing UI and finalizer do not yet support shared `overtime` periods, append-only admin `period_close` signals, tied `continue_overtime` results, or repeated Season 1 OT rounds without sudden death. | `INV-01`, `INV-08`, `INV-10`, `INV-14`–`INV-17` |
+| **BLOCKING before ledger pilot** | The Sequence 4 foundation accepts the full flag-football stat allowlist, but event entry does not yet enforce the four named same-event pairs or record per-event reasoned exceptions; finalization does not yet surface residual override-backed mismatches through its warning/audit flow. Sequence 5A must close both layers with negative and append-only evidence tests before official use. | `INV-07`, `INV-15`, `INV-32`, `INV-37` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 2** | Migration 23 revokes direct score/stat/history mutation, retires aggregate unlock, and the Score Entry route no longer admits `temp_admin`. | `INV-04`, `INV-19`, `INV-38` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 2** | Aggregate final correction preserves downstream advancement for same-winner changes, atomically reprojects unscheduled destinations for winner changes, and blocks winner changes after a dependent game is scheduled or completed. | `INV-30`–`INV-32`, bracket-safety matrix |
-| **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 gives every game an explicit aggregate/ledger mode, permits only a controlled one-way conversion before scoring/session evidence exists, and blocks aggregate scoring/correction RPCs from mutating ledger-mode projections. The hosted 26-table matrix passed 225/225 with exact cleanup and baseline restoration. | `INV-28`–`INV-30`, `INV-35`, `INV-39` |
+| **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 gives every game an explicit aggregate/ledger mode, permits only a controlled one-way conversion before scoring/session evidence exists, and blocks aggregate scoring/correction RPCs from mutating ledger-mode projections. Its Migration-24-only hosted 26-table checkpoint passed 225/225 (218 browser/API + 7 catalog) with exact cleanup and baseline restoration; the later current-surface Migration 27 rerun is recorded separately below at 256/256. | `INV-28`–`INV-30`, `INV-35`, `INV-39` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 adds immutable rule/game and eligible-participant snapshots, correction-session cloning from the ordinary snapshot, one active session per game, server-assigned gapless per-game sequence numbers, game-scoped idempotency uniqueness, and append-only event/attribution evidence with void/replacement anti-fork constraints. | `INV-10`–`INV-18`, `INV-20` |
 | **RESOLVED AND HOSTED-AUTHORIZATION ACCEPTED IN SEQUENCE 4; PILOT GATE OPEN** | Migrations 25–27 add AAL2 session/event/finalization RPCs, rotating leases, exact replay, a deterministic projection, metadata-only failure audit, public-final-only publication, W/L-only forfeits, and the single bracket-safe ledger correction authority. The 294-assertion harness, real two-connection append race, hosted structural/catalog/advisor readbacks, and 256/256 current-surface authorization matrix pass with exact restoration. Positive populated-ledger visibility/write behavior remains the durable Sequence 5 pilot gate. | `INV-01`–`INV-06`, `INV-08`–`INV-30`, `INV-32`–`INV-39` |
