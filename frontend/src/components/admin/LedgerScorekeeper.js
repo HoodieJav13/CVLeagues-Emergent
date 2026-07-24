@@ -3,6 +3,11 @@ import { ArrowLeft, ArrowsClockwise, CheckCircle, Flag, Plus, Prohibit } from "@
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useApp } from "../../context/AppStateContext";
+import {
+  LEDGER_EVENT_OPTIONS,
+  buildLedgerEventCommand,
+  createLedgerOperationKeys,
+} from "../../lib/ledgerScoring";
 import { getTeam, isForfeitOutcome } from "../../lib/selectors";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader } from "../ui/card";
@@ -10,26 +15,6 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Textarea } from "../ui/textarea";
-
-const operationKey = () => globalThis.crypto?.randomUUID?.() || `ledger-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-const EVENT_OPTIONS = {
-  kickball: [
-    ["run", "Run", 1, "runs"], ["out", "Out", 0, "outs"], ["kick", "Kick", 0, "kicks"],
-    ["single", "Single", 0, "singles"], ["double", "Double", 0, "doubles"],
-    ["triple", "Triple", 0, "triples"], ["home_run", "Home run", 0, "homeRuns"],
-    ["walk", "Walk", 0, "walks"], ["strikeout", "Strikeout", 0, "strikeouts"],
-    ["assist", "Assist", 0, "assists"], ["error", "Error", 0, "errors"],
-  ],
-  flag_football: [
-    ["touchdown", "Touchdown", 6, "tds"], ["one_point", "1-point try", 1, "onePoint"],
-    ["two_point", "2-point try", 2, "twoPoint"], ["three_point", "3-point try", 3, "threePoint"],
-    ["safety", "Safety", 2, "safeties"], ["completion", "Completion", 0, "completions"],
-    ["carry", "Carry", 0, "carries"], ["reception", "Reception", 0, "catches"],
-    ["flag_pull", "Flag pull", 0, "flagPulls"], ["sack", "Sack", 0, "sacks"],
-    ["interception", "Interception", 0, "defInts"],
-  ],
-};
 
 export function LedgerScorekeeper({ game, onExit }) {
   const app = useApp();
@@ -40,15 +25,20 @@ export function LedgerScorekeeper({ game, onExit }) {
   const leaseRef = useRef(null);
   const heartbeatBusy = useRef(false);
   const mounted = useRef(true);
-  const finalizationKey = useRef(operationKey());
+  const operationKeys = useRef(createLedgerOperationKeys());
   const [busy, setBusy] = useState(false);
   const [ruleVersion, setRuleVersion] = useState("CVF-2026.1");
   const [periodCount, setPeriodCount] = useState(game.sport === "flag_football" ? 4 : 5);
   const [overtimeSetting, setOvertimeSetting] = useState("");
   const [teamId, setTeamId] = useState(game.home_team_id);
-  const [eventType, setEventType] = useState(EVENT_OPTIONS[game.sport][0][0]);
+  const [eventType, setEventType] = useState(LEDGER_EVENT_OPTIONS[game.sport][0].id);
+  const [periodType, setPeriodType] = useState("regulation");
   const [periodNumber, setPeriodNumber] = useState(1);
   const [participantId, setParticipantId] = useState("");
+  const [counterpartParticipantId, setCounterpartParticipantId] = useState("");
+  const [yardDelta, setYardDelta] = useState(0);
+  const [pairingOverrideReason, setPairingOverrideReason] = useState("");
+  const [finalizationOverrideReason, setFinalizationOverrideReason] = useState("");
   const [correctionReason, setCorrectionReason] = useState("");
   const [cancelReason, setCancelReason] = useState("");
   const [targetEventId, setTargetEventId] = useState("");
@@ -72,13 +62,19 @@ export function LedgerScorekeeper({ game, onExit }) {
   );
   const voided = useMemo(() => new Set(events.filter((item) => item.action === "void").map((item) => item.voids_event_id)), [events]);
   const effectiveEvents = events.filter((item) => ["record", "replace"].includes(item.action) && !voided.has(item.id));
-  const draft = effectiveEvents.reduce((score, item) => ({
-    ...score,
-    [item.credited_team_id === game.home_team_id ? "home" : "away"]:
-      score[item.credited_team_id === game.home_team_id ? "home" : "away"] + Number(item.points || 0),
-  }), { home: 0, away: 0 });
-  const option = EVENT_OPTIONS[game.sport].find(([value]) => value === eventType) || EVENT_OPTIONS[game.sport][0];
+  const draft = effectiveEvents.reduce((score, item) => {
+    if (!item.credited_team_id) return score;
+    const side = item.credited_team_id === game.home_team_id ? "home" : "away";
+    return { ...score, [side]: score[side] + Number(item.points || 0) };
+  }, { home: 0, away: 0 });
+  const option = LEDGER_EVENT_OPTIONS[game.sport].find((item) => item.id === eventType)
+    || LEDGER_EVENT_OPTIONS[game.sport][0];
   const teamParticipants = participants.filter((item) => item.team_id === teamId);
+  const otherTeamId = teamId === game.home_team_id ? game.away_team_id : game.home_team_id;
+  const counterpartParticipants = participants.filter((item) =>
+    item.team_id === (option.mode === "interception" ? otherTeamId : teamId)
+  );
+  const pairedEvent = ["completion", "passingTouchdown", "interception"].includes(option.mode);
 
   useEffect(() => {
     if (!lease) return undefined;
@@ -117,37 +113,85 @@ export function LedgerScorekeeper({ game, onExit }) {
     toast.success("Scorekeeping lease restored");
   }).catch((error) => toast.error(error.message));
 
-  const attribution = (statKey) => participantId ? [{ participant_id: participantId, role: "primary", stat_key: statKey, stat_delta: 1 }] : [];
+  const buildCommand = () => buildLedgerEventCommand({
+    option,
+    periodType,
+    periodNumber,
+    creditedTeamId: teamId,
+    primaryParticipantId: participantId,
+    counterpartParticipantId,
+    yardDelta,
+    pairingOverrideReason,
+  });
+
   const record = () => run(async () => {
-    if (!participantId) throw new Error("Select the player credited with this event.");
-    await app.appendScorekeepingEvent({ lease, command: {
-      idempotency_key: operationKey(), action: "record", event_type: option[0], period_type: "regulation",
-      period_number: Number(periodNumber), credited_team_id: teamId, points: option[2], attributions: attribution(option[3]),
-    } });
-    toast.success(`${option[1]} recorded`);
+    const command = buildCommand();
+    const idempotencyKey = operationKeys.current.claim("record", command);
+    await app.appendScorekeepingEvent({
+      lease,
+      command: { ...command, idempotency_key: idempotencyKey },
+    });
+    operationKeys.current.clear("record");
+    setPairingOverrideReason("");
+    toast.success(option.mode === "periodClose" ? "Overtime period closed" : `${option.label} recorded`);
   }).catch((error) => toast.error(error.message));
 
   const correct = (replace) => run(async () => {
     if (!targetEventId) throw new Error("Select an effective event to correct.");
     if (replace) {
-      if (!participantId) throw new Error("Select the player credited with the replacement.");
-      await app.replaceScorekeepingEvent({ lease, target_event_id: targetEventId, command: {
-        void_idempotency_key: operationKey(), replacement_idempotency_key: operationKey(),
-        event_type: option[0], period_type: "regulation",
-        period_number: Number(periodNumber), credited_team_id: teamId, points: option[2],
-        attributions: attribution(option[3]),
-      } });
+      const command = buildCommand();
+      const signature = { target_event_id: targetEventId, command };
+      const voidKey = operationKeys.current.claim("correction-void", signature);
+      const replacementKey = operationKeys.current.claim("correction-replacement", signature);
+      await app.replaceScorekeepingEvent({
+        lease,
+        target_event_id: targetEventId,
+        command: {
+          ...command,
+          void_idempotency_key: voidKey,
+          replacement_idempotency_key: replacementKey,
+        },
+      });
+      operationKeys.current.clear("correction-void");
+      operationKeys.current.clear("correction-replacement");
     } else {
-      await app.appendScorekeepingEvent({ lease, command: {
-        idempotency_key: operationKey(), action: "void", event_type: "void", points: 0, voids_event_id: targetEventId,
-      } });
+      const command = {
+        action: "void",
+        event_type: "void",
+        points: 0,
+        voids_event_id: targetEventId,
+      };
+      const idempotencyKey = operationKeys.current.claim("correction-void-only", command);
+      await app.appendScorekeepingEvent({
+        lease,
+        command: { ...command, idempotency_key: idempotencyKey },
+      });
+      operationKeys.current.clear("correction-void-only");
     }
     setTargetEventId("");
     toast.success(replace ? "Event replaced" : "Event voided");
   }).catch((error) => toast.error(error.message));
 
   const finalize = () => run(async () => {
-    await app.finalizeScorekeepingSession({ lease, idempotency_key: finalizationKey.current });
+    const finalizationPayload = {
+      session_id: lease.session_id,
+      effective_event_ids: effectiveEvents.map((item) => item.id),
+      override_reason: finalizationOverrideReason.trim() || null,
+    };
+    const finalizationKey = operationKeys.current.claim("finalize", finalizationPayload);
+    const result = await app.finalizeScorekeepingSession({
+      lease,
+      idempotency_key: finalizationKey,
+      override_reason: finalizationOverrideReason,
+    });
+    if (["continue_overtime", "overtime_period_open"].includes(result?.status)) {
+      operationKeys.current.clear("finalize");
+      setPeriodType("overtime");
+      setPeriodNumber(Number(result.next_overtime_period || result.overtime_period || 1));
+      toast.info(result.message || "Overtime continues.");
+      return;
+    }
+    operationKeys.current.clear("finalize");
     toast.success(lease.session_kind === "correction" ? "Correction finalized" : "Final score published");
     navigate(`/game/${game.id}`);
   }).catch((error) => toast.error(error.message));
@@ -168,7 +212,14 @@ export function LedgerScorekeeper({ game, onExit }) {
 
   const forfeit = () => run(async () => {
     if (!forfeitReason.trim()) throw new Error("A forfeit reason is required.");
-    await app.declareLedgerForfeit({ game_id: game.id, winner_team_id: forfeitWinner, reason: forfeitReason, idempotency_key: operationKey() });
+    const command = {
+      game_id: game.id,
+      winner_team_id: forfeitWinner,
+      reason: forfeitReason.trim(),
+    };
+    const idempotencyKey = operationKeys.current.claim("forfeit", command);
+    await app.declareLedgerForfeit({ ...command, idempotency_key: idempotencyKey });
+    operationKeys.current.clear("forfeit");
     toast.success("Forfeit recorded without a numerical score");
     navigate(`/game/${game.id}`);
   }).catch((error) => toast.error(error.message));
@@ -212,10 +263,142 @@ export function LedgerScorekeeper({ game, onExit }) {
 
   return <div className="space-y-5 max-w-4xl mx-auto" data-testid="ledger-scorekeeper">
     <div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-micro uppercase tracking-widest text-primary font-bold">{lease.session_kind === "correction" ? "Correction draft" : "Live scorekeeping"}</p><h1 className="text-2xl sm:text-3xl font-display font-bold">{away.name} <span className="text-muted-foreground">{draft.away}</span> — <span className="text-muted-foreground">{draft.home}</span> {home.name}</h1></div><p className="text-xs text-muted-foreground">Lease v{lease.lease_version}</p></div>
-    <Card><CardContent className="pt-6 space-y-4"><div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3"><div><Label>Team</Label><Select value={teamId} onValueChange={(value) => { setTeamId(value); setParticipantId(""); }}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value={game.home_team_id}>{home.name}</SelectItem><SelectItem value={game.away_team_id}>{away.name}</SelectItem></SelectContent></Select></div><div><Label>Event</Label><Select value={eventType} onValueChange={setEventType}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{EVENT_OPTIONS[game.sport].map(([value,label]) => <SelectItem key={value} value={value}>{label}</SelectItem>)}</SelectContent></Select></div><div><Label htmlFor="ledger-period">Period</Label><Input id="ledger-period" type="number" min="1" value={periodNumber} onChange={(event) => setPeriodNumber(Number(event.target.value))} /></div><div><Label>Player</Label><Select value={participantId} onValueChange={setParticipantId}><SelectTrigger><SelectValue placeholder="Select player" /></SelectTrigger><SelectContent>{teamParticipants.map((player) => <SelectItem key={player.id} value={player.id}>{player.display_name}</SelectItem>)}</SelectContent></Select></div></div>
-      {lease.session_kind === "ordinary" ? <Button type="button" disabled={busy} onClick={record} className="gap-2"><Plus /> Record event</Button> : <div className="space-y-3"><Label>Effective event to correct</Label><Select value={targetEventId} onValueChange={setTargetEventId}><SelectTrigger><SelectValue placeholder="Select event" /></SelectTrigger><SelectContent>{effectiveEvents.map((item) => <SelectItem key={item.id} value={item.id}>#{item.sequence_number} · {item.event_type} · {item.points} pt</SelectItem>)}</SelectContent></Select><div className="flex flex-wrap gap-2"><Button type="button" variant="outline" disabled={busy} onClick={() => correct(false)} className="gap-2"><Prohibit /> Void only</Button><Button type="button" disabled={busy} onClick={() => correct(true)} className="gap-2"><ArrowsClockwise /> Void and replace</Button></div></div>}
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-semibold">Record the next play</h2>
+            <p className="text-sm text-muted-foreground">Overtime closes only when you record the explicit period-close event.</p>
+          </div>
+          {periodType === "overtime" ? <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">OT {periodNumber}</span> : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <Label>Period type</Label>
+            <Select value={periodType} onValueChange={(value) => {
+              setPeriodType(value);
+              if (value === "regulation" && option.mode === "periodClose") {
+                setEventType(LEDGER_EVENT_OPTIONS[game.sport][0].id);
+              }
+            }}>
+              <SelectTrigger aria-label="Period type"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="regulation">Regulation</SelectItem>
+                <SelectItem value="overtime">Overtime</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label htmlFor="ledger-period">{periodType === "overtime" ? "OT period" : game.sport === "kickball" ? "Inning" : "Quarter"}</Label>
+            <Input id="ledger-period" type="number" min="1" value={periodNumber} onChange={(event) => setPeriodNumber(Number(event.target.value))} />
+          </div>
+          <div>
+            <Label>Event</Label>
+            <Select value={eventType} onValueChange={(value) => {
+              setEventType(value);
+              setParticipantId("");
+              setCounterpartParticipantId("");
+              setPairingOverrideReason("");
+              const next = LEDGER_EVENT_OPTIONS[game.sport].find((item) => item.id === value);
+              if (next?.mode === "periodClose") setPeriodType("overtime");
+            }}>
+              <SelectTrigger aria-label="Ledger event"><SelectValue /></SelectTrigger>
+              <SelectContent>{LEDGER_EVENT_OPTIONS[game.sport].map((item) =>
+                <SelectItem key={item.id} value={item.id}>{item.label}</SelectItem>
+              )}</SelectContent>
+            </Select>
+          </div>
+          {option.mode !== "periodClose" ? <div>
+            <Label>Credited team</Label>
+            <Select value={teamId} onValueChange={(value) => {
+              setTeamId(value);
+              setParticipantId("");
+              setCounterpartParticipantId("");
+            }}>
+              <SelectTrigger aria-label="Credited team"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value={game.home_team_id}>{home.name}</SelectItem>
+                <SelectItem value={game.away_team_id}>{away.name}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div> : <div className="rounded-lg border border-primary/25 bg-primary/5 p-3 text-sm">
+            <p className="font-semibold">Admin completion signal</p>
+            <p className="text-muted-foreground">No team or player is credited.</p>
+          </div>}
+        </div>
+
+        {option.mode !== "periodClose" ? <div className={`grid gap-3 ${pairedEvent ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
+          <div>
+            <Label>{option.mode === "interception" ? "Interceptor" : ["completion", "passingTouchdown"].includes(option.mode) ? "Passer" : "Player"}</Label>
+            <Select value={participantId} onValueChange={setParticipantId}>
+              <SelectTrigger aria-label="Primary player"><SelectValue placeholder="Select player" /></SelectTrigger>
+              <SelectContent>{teamParticipants.map((player) =>
+                <SelectItem key={player.id} value={player.id}>{player.display_name}</SelectItem>
+              )}</SelectContent>
+            </Select>
+          </div>
+          {pairedEvent ? <div>
+            <Label>{option.mode === "interception" ? "Opposing passer" : "Receiver"}</Label>
+            <Select value={counterpartParticipantId} onValueChange={setCounterpartParticipantId}>
+              <SelectTrigger aria-label="Paired player"><SelectValue placeholder="Select paired player" /></SelectTrigger>
+              <SelectContent>{counterpartParticipants.map((player) =>
+                <SelectItem key={player.id} value={player.id}>{player.display_name}</SelectItem>
+              )}</SelectContent>
+            </Select>
+          </div> : null}
+        </div> : null}
+
+        {option.mode === "completion" ? <div className="max-w-xs">
+          <Label htmlFor="ledger-yards">Completed-pass yards</Label>
+          <Input id="ledger-yards" type="number" value={yardDelta} onChange={(event) => setYardDelta(Number(event.target.value))} />
+          <p className="mt-1 text-xs text-muted-foreground">Negative yardage is allowed and is mirrored to passer and receiver.</p>
+        </div> : null}
+
+        {pairedEvent ? <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
+          <Label htmlFor="ledger-pairing-override">Paired-stat exception reason</Label>
+          <Textarea
+            id="ledger-pairing-override"
+            value={pairingOverrideReason}
+            onChange={(event) => setPairingOverrideReason(event.target.value)}
+            placeholder="Required only when the paired player cannot be recorded"
+          />
+          <p className="text-xs text-muted-foreground">Each exception is attached immutably to this event and will surface again at finalization.</p>
+        </div> : null}
+
+        {lease.session_kind === "ordinary" ? <Button type="button" disabled={busy} onClick={record} className="gap-2">
+          <Plus /> {option.mode === "periodClose" ? `Close OT ${periodNumber}` : "Record event"}
+        </Button> : <div className="space-y-3">
+          <Label>Effective event to correct</Label>
+          <Select value={targetEventId} onValueChange={setTargetEventId}>
+            <SelectTrigger aria-label="Effective event to correct"><SelectValue placeholder="Select event" /></SelectTrigger>
+            <SelectContent>{effectiveEvents.map((item) =>
+              <SelectItem key={item.id} value={item.id}>#{item.sequence_number} · {item.event_type} · {item.points} pt</SelectItem>
+            )}</SelectContent>
+          </Select>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" variant="outline" disabled={busy} onClick={() => correct(false)} className="gap-2"><Prohibit /> Void only</Button>
+            <Button type="button" disabled={busy} onClick={() => correct(true)} className="gap-2"><ArrowsClockwise /> Void and replace</Button>
+          </div>
+        </div>}
+      </CardContent>
+    </Card>
+    <Card><CardHeader><h2 className="font-semibold">Immutable event log</h2></CardHeader><CardContent><ol className="space-y-2">{events.map((item) => <li key={item.id} className="flex flex-wrap justify-between gap-3 text-sm border-b border-border/60 pb-2"><span>#{item.sequence_number} · {item.action} {item.event_type} · {item.period_type === "overtime" ? `OT ${item.period_number}` : `P${item.period_number || "—"}`}{item.pairing_override_reason ? " · paired-stat override" : ""}</span><span className={voided.has(item.id) ? "line-through text-muted-foreground" : "font-mono"}>{item.points} pt</span></li>)}</ol></CardContent></Card>
+    <Card><CardHeader><h2 className="font-semibold">Finish or leave the session</h2></CardHeader><CardContent className="space-y-4">
+      <div>
+        <Label htmlFor="ledger-finalization-override">Final validation override reason</Label>
+        <Textarea id="ledger-finalization-override" value={finalizationOverrideReason} onChange={(event) => setFinalizationOverrideReason(event.target.value)} placeholder="Required when the projection reports a soft warning" />
+      </div>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+          <div className="min-w-0 flex-1 sm:min-w-72"><Label htmlFor="ledger-cancel-reason">Cancellation reason</Label><Input id="ledger-cancel-reason" value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Required to cancel" /></div>
+          <Button type="button" variant="outline" disabled={busy} onClick={cancel}>Cancel session</Button>
+        </div>
+        <Button type="button" disabled={busy || effectiveEvents.length === 0} onClick={finalize} className="gap-2">
+          <CheckCircle /> {lease.session_kind === "correction" ? "Publish correction" : "Evaluate final score"}
+        </Button>
+      </div>
     </CardContent></Card>
-    <Card><CardHeader><h2 className="font-semibold">Immutable event log</h2></CardHeader><CardContent><ol className="space-y-2">{events.map((item) => <li key={item.id} className="flex justify-between gap-4 text-sm border-b border-border/60 pb-2"><span>#{item.sequence_number} · {item.action} {item.event_type}</span><span className={voided.has(item.id) ? "line-through text-muted-foreground" : "font-mono"}>{item.points} pt</span></li>)}</ol></CardContent></Card>
-    <div className="flex flex-col sm:flex-row gap-3 sm:justify-between"><div className="flex gap-2"><Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Reason required to cancel" /><Button type="button" variant="outline" disabled={busy} onClick={cancel}>Cancel session</Button></div><Button type="button" disabled={busy || effectiveEvents.length === 0} onClick={finalize} className="gap-2"><CheckCircle /> {lease.session_kind === "correction" ? "Publish correction" : "Finalize score"}</Button></div>
   </div>;
 }

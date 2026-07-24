@@ -229,6 +229,7 @@ export async function appendScorekeepingEvent({ lease, command }) {
     p_replaces_event_id: command.replaces_event_id ?? null,
     p_payload: command.payload || {},
     p_attributions: command.attributions || [],
+    p_pairing_override_reason: command.pairing_override_reason?.trim() || null,
   });
   fail(error, "record scorekeeping event");
   return data;
@@ -249,6 +250,7 @@ export async function replaceScorekeepingEvent({ lease, target_event_id, command
     p_points: Number(command.points || 0),
     p_payload: command.payload || {},
     p_attributions: command.attributions || [],
+    p_pairing_override_reason: command.pairing_override_reason?.trim() || null,
   });
   fail(error, "replace scorekeeping event");
   return data;
