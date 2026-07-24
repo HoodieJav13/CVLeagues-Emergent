@@ -169,6 +169,7 @@ describe("RPC-only team mutations", () => {
       p_points: 1,
       p_payload: { source: "official-book" },
       p_attributions: [{ participant_id: "participant-1", role: "scorer", stat_key: "runs", stat_delta: 1 }],
+      p_pairing_override_reason: null,
     });
   });
 

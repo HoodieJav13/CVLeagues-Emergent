@@ -2857,13 +2857,530 @@ select 'failure-result', public.finalize_scorekeeping_session((value->>'session_
   (value->>'lease_version')::int,'failure-final',null)
 from cvf_test.ledger_runtime_state where key='failure-session';
 select cvf_test.ok(
-  'ledger failure 01 [INV-08][INV-35] rejected projection rolls back and writes metadata-only audit',
-  (select (result.value->>'ok')::boolean = false and game.status='live' and game.home_score is null and game.away_score is null
-      and exists (select 1 from public.game_edit_history history where history.game_id=game.id
-        and history.action='Ledger finalization failed' and history.before_state is null and history.after_state is null
-        and history.failure_metadata ? 'sqlstate')
+  'ledger overtime 01 [INV-08][INV-35] tied regulation continues without mutation or failure audit',
+  (select (result.value->>'ok')::boolean and result.value->>'status'='continue_overtime'
+      and (result.value->>'next_overtime_period')::int=1
+      and game.status='live' and game.home_score is null and game.away_score is null
+      and not exists (select 1 from public.game_edit_history history where history.game_id=game.id
+        and history.action='Ledger finalization failed')
    from cvf_test.ledger_runtime_state result cross join public.games game
    where result.key='failure-result' and game.id='50000000-0000-0000-0000-000000000953')
+);
+
+-- ---------------------------------------------------------------------------
+-- Sequence 5A overtime and paired-stat completion.
+-- ---------------------------------------------------------------------------
+select cvf_test.ok(
+  'sequence5a 00 [INV-19] new paired-stat surface preserves the function privilege boundary',
+  has_function_privilege(
+    'authenticated',
+    'public.append_scorekeeping_event(uuid,text,integer,text,text,text,text,integer,uuid,integer,uuid,uuid,jsonb,jsonb,text)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.append_scorekeeping_event(uuid,text,integer,text,text,text,text,integer,uuid,integer,uuid,uuid,jsonb,jsonb,text)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'service_role',
+    'public.append_scorekeeping_event(uuid,text,integer,text,text,text,text,integer,uuid,integer,uuid,uuid,jsonb,jsonb,text)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'authenticated',
+    'public.cvf_flag_pairing_mismatches(public.scorekeeping_sessions,uuid,jsonb)',
+    'execute'
+  )
+  and (
+    select function.provolatile = 'v'
+      from pg_catalog.pg_proc function
+      join pg_catalog.pg_namespace namespace on namespace.oid = function.pronamespace
+     where namespace.nspname = 'public'
+       and function.proname = 'cvf_assert_ledger_lease'
+  )
+);
+select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'sequence5a 00a [INV-19] AAL1 admin cannot call the new append signature',
+  $$select public.append_scorekeeping_event(
+    '00000000-0000-0000-0000-000000000000','invalid',1,'denied',
+    'record','run','regulation',1,null,0,null,null,'{}','[]',null)$$,
+  '%Admin only%'
+);
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'sequence5a 00b [INV-19] non-admin cannot call the new append signature',
+  $$select public.append_scorekeeping_event(
+    '00000000-0000-0000-0000-000000000000','invalid',1,'denied',
+    'record','run','regulation',1,null,0,null,null,'{}','[]',null)$$,
+  '%Admin only%'
+);
+select cvf_test.as_owner();
+insert into public.team_players (team_id, profile_id, season, roster_status)
+values
+  ('30000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000003', 'Summer 2026', 'eligible'),
+  ((select id from public.teams
+     where league_id='20000000-0000-0000-0000-000000000002'
+       and id<>'30000000-0000-0000-0000-000000000005'
+     order by created_at limit 1),
+   '10000000-0000-0000-0000-000000000002', 'Summer 2026', 'eligible');
+
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+values
+  ('50000000-0000-0000-0000-000000000954','20000000-0000-0000-0000-000000000001','kickball',
+   '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-11-01','6:00 PM','Kick OT Field'),
+  ('50000000-0000-0000-0000-000000000955','20000000-0000-0000-0000-000000000002','flag_football',
+   '30000000-0000-0000-0000-000000000005',
+   (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
+     and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
+   '2026-11-02','6:00 PM','Flag Pair Field'),
+  ('50000000-0000-0000-0000-000000000956','20000000-0000-0000-0000-000000000002','flag_football',
+   '30000000-0000-0000-0000-000000000005',
+   (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
+     and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
+   '2026-11-03','6:00 PM','Flag OT Field'),
+  ('50000000-0000-0000-0000-000000000957','20000000-0000-0000-0000-000000000002','flag_football',
+   '30000000-0000-0000-0000-000000000005',
+   (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
+     and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
+   '2026-11-04','6:00 PM','Flag Invalid OT Field');
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+insert into cvf_test.ledger_runtime_state
+values ('kick-ot-session', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000954','CVF-KB-2026.2',5,'one complete inning',false,'{}'));
+
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-reg-home', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot-reg-home',
+  'record','run','regulation',5,'30000000-0000-0000-0000-000000000001',1,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000001' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-reg-away', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot-reg-away',
+  'record','run','regulation',5,'30000000-0000-0000-0000-000000000002',1,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000002' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-reg-result', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot-reg-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+select cvf_test.ok(
+  'sequence5a 01 [INV-08] tied regulation requests OT1 and leaves the game live',
+  (select result.value->>'status'='continue_overtime'
+      and (result.value->>'next_overtime_period')::int=1
+      and game.status='live' and not game.locked and game.home_score is null
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000954'
+   where result.key='kick-ot-reg-result')
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot1-home', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot1-home',
+  'record','run','overtime',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000001' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot1-away', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot1-away',
+  'record','run','overtime',1,'30000000-0000-0000-0000-000000000002',1,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000002' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot1-close', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot1-close',
+  'record','period_close','overtime',1,null,0,null,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+select cvf_test.ok(
+  'sequence5a 02 [INV-08][INV-15] period close is append-only evidence with stable replay',
+  (select (public.append_scorekeeping_event(
+    (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot1-close',
+    'record','period_close','overtime',1,null,0,null,null,'{}','[]',null)->>'replayed')::boolean
+    and exists (select 1 from public.scorekeeping_events event
+      where event.id=(close.value->>'event_id')::uuid and event.event_type='period_close'
+        and event.credited_team_id is null and event.points=0 and event.created_by is not null)
+   from cvf_test.ledger_runtime_state s cross join cvf_test.ledger_runtime_state close
+   where s.key='kick-ot-session' and close.key='kick-ot1-close')
+);
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot1-result', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot1-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+select cvf_test.ok(
+  'sequence5a 03 [INV-08] a complete tied extra inning requests another complete inning',
+  (select result.value->>'status'='continue_overtime'
+      and (result.value->>'next_overtime_period')::int=2
+      and game.status='live' and not game.locked and game.home_score is null
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000954'
+   where result.key='kick-ot1-result')
+);
+select cvf_test.throws_ok(
+  'sequence5a 04 [INV-08] a closed overtime period rejects later scoring in that period',
+  $$select public.append_scorekeeping_event(
+    (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'kick-ot1-late',
+    'record','run','overtime',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}','[]',null)
+    from cvf_test.ledger_runtime_state where key='kick-ot-session'$$,
+  '%not the current open period 2%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot2-home', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot2-home',
+  'record','run','overtime',2,'30000000-0000-0000-0000-000000000001',1,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000001' limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot2-open-result', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot2-open-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+select cvf_test.ok(
+  'sequence5a 05 [INV-08] an unequal mid-inning score cannot finalize before admin close',
+  (select result.value->>'status'='overtime_period_open' and game.status='live' and not game.locked
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000954'
+   where result.key='kick-ot2-open-result')
+);
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot2-close', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot2-close',
+  'record','period_close','overtime',2,null,0,null,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-final', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'kick-ot-final',null)
+from cvf_test.ledger_runtime_state s where s.key='kick-ot-session';
+select cvf_test.ok(
+  'sequence5a 06 [INV-01][INV-08][INV-22] closed unequal OT finalizes atomically with both extra innings',
+  (select result.value->>'status'='finalized' and game.status='completed' and game.locked
+      and game.home_score=3 and game.away_score=2
+      and game.periods='{"home":[0,0,0,0,1,1,1],"away":[0,0,0,0,1,1,0]}'::jsonb
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000954'
+   where result.key='kick-ot-final')
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-correction', public.start_scorekeeping_correction(
+  '50000000-0000-0000-0000-000000000954','Reconfirm the official OT close');
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-close-replacement', public.replace_scorekeeping_event(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,
+  'kick-ot-close-void','kick-ot-close-replace',(target.value->>'event_id')::uuid,
+  'period_close','overtime',2,null,0,'{}','[]',null)
+from cvf_test.ledger_runtime_state c cross join cvf_test.ledger_runtime_state target
+where c.key='kick-ot-correction' and target.key='kick-ot2-close';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-corrected', public.finalize_scorekeeping_correction(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,
+  'kick-ot-correction-final',null)
+from cvf_test.ledger_runtime_state c where c.key='kick-ot-correction';
+select cvf_test.ok(
+  'sequence5a 07 [INV-16][INV-17][INV-24] period close uses the existing void-replace correction chain',
+  (select (corrected.value->>'ok')::boolean and game.home_score=3 and game.away_score=2
+      and exists (select 1 from public.scorekeeping_events event
+        where event.id=(replacement.value#>>'{replacement,event_id}')::uuid
+          and event.event_type='period_close' and event.action='replace')
+   from cvf_test.ledger_runtime_state corrected
+   cross join cvf_test.ledger_runtime_state replacement
+   join public.games game on game.id='50000000-0000-0000-0000-000000000954'
+   where corrected.key='kick-ot-corrected' and replacement.key='kick-ot-close-replacement')
+);
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-open-correction', public.start_scorekeeping_correction(
+  '50000000-0000-0000-0000-000000000954','Test removal of the official OT close');
+select public.append_scorekeeping_event(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,
+  'kick-ot-open-correction-void','void','void',null,null,null,0,
+  (replacement.value#>>'{replacement,event_id}')::uuid,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state c
+cross join cvf_test.ledger_runtime_state replacement
+where c.key='kick-ot-open-correction' and replacement.key='kick-ot-close-replacement';
+insert into cvf_test.ledger_runtime_state
+select 'kick-ot-open-correction-result', public.finalize_scorekeeping_correction(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,
+  'kick-ot-open-correction-final',null)
+from cvf_test.ledger_runtime_state c where c.key='kick-ot-open-correction';
+select cvf_test.ok(
+  'sequence5a 07a [INV-01][INV-08][INV-24] correction cannot publish an unequal but open OT period',
+  (select not (result.value->>'ok')::boolean
+      and result.value->>'message' like
+        '%[INV-08][INV-24]%cannot publish while the latest overtime period is open%'
+      and game.home_score=3 and game.away_score=2
+      and game.status='completed' and game.locked
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000954'
+   where result.key='kick-ot-open-correction-result')
+);
+
+insert into cvf_test.ledger_runtime_state
+values ('flag-pair-session', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000955','CVF-FF-2026.2',4,'one possession each',false,'{}'));
+select cvf_test.throws_ok(
+  'sequence5a 08 [INV-07] an unexplained one-sided paired stat is rejected at entry',
+  $$select public.append_scorekeeping_event(
+    (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'flag-unpaired-denied',
+    'record','completion','regulation',1,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select id from public.scorekeeping_participants where session_id=(value->>'session_id')::uuid
+        and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+      'role','passer','stat_key','completions','stat_delta',1)),null)
+    from cvf_test.ledger_runtime_state where key='flag-pair-session'$$,
+  '%[INV-07]%within the same event%'
+);
+select cvf_test.throws_ok(
+  'sequence5a 09 [INV-07] blank text is not a pairing override',
+  $$select public.append_scorekeeping_event(
+    (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'flag-unpaired-blank',
+    'record','completion','regulation',1,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select id from public.scorekeeping_participants where session_id=(value->>'session_id')::uuid
+        and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+      'role','passer','stat_key','completions','stat_delta',1)),'   ')
+    from cvf_test.ledger_runtime_state where key='flag-pair-session'$$,
+  '%[INV-07]%within the same event%'
+);
+select cvf_test.throws_ok(
+  'sequence5a 09a [INV-07] zero-delta one-sided attribution still requires counterpart presence',
+  $$select public.append_scorekeeping_event(
+    (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'flag-zero-unpaired-denied',
+    'record','completion','regulation',1,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select id from public.scorekeeping_participants where session_id=(value->>'session_id')::uuid
+        and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+      'role','passer','stat_key','passYards','stat_delta',0)),null)
+    from cvf_test.ledger_runtime_state where key='flag-pair-session'$$,
+  '%[INV-07]%within the same event%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'flag-unpaired-override', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-unpaired-override',
+  'record','completion','regulation',1,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+    'role','passer','stat_key','completions','stat_delta',1)),
+  'Receiver identity missing from official sheet')
+from cvf_test.ledger_runtime_state s where s.key='flag-pair-session';
+select cvf_test.ok(
+  'sequence5a 10 [INV-07][INV-19][INV-36] event-specific override stores immutable actor-time evidence',
+  exists (
+    select 1 from cvf_test.ledger_runtime_state state
+    join public.scorekeeping_events event on event.id=(state.value->>'event_id')::uuid
+    where state.key='flag-unpaired-override'
+      and event.pairing_override_reason='Receiver identity missing from official sheet'
+      and event.created_by='00000000-0000-0000-0000-000000000001'
+      and event.created_at is not null
+  )
+);
+select cvf_test.as_owner();
+select cvf_test.throws_ok(
+  'sequence5a 11 [INV-07][INV-36] pairing override evidence cannot be rewritten by the owner',
+  $$update public.scorekeeping_events set pairing_override_reason='Changed'
+    where id=(select (value->>'event_id')::uuid from cvf_test.ledger_runtime_state where key='flag-unpaired-override')$$,
+  '%append-only%'
+);
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+
+insert into cvf_test.ledger_runtime_state
+select 'flag-paired-completion', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-paired-completion',
+  'record','completion','regulation',2,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+  jsonb_build_array(
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name limit 1),'role','passer','stat_key','completions','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name desc limit 1),'role','receiver','stat_key','catches','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name limit 1),'role','passer','stat_key','passYards','stat_delta',-4),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name desc limit 1),'role','receiver','stat_key','recYards','stat_delta',-4)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-pair-session';
+insert into cvf_test.ledger_runtime_state
+select 'flag-paired-td', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-paired-td',
+  'record','touchdown','regulation',3,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+  jsonb_build_array(
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name limit 1),'role','passer','stat_key','passTDs','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name desc limit 1),'role','receiver','stat_key','recTDs','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005'
+      order by display_name desc limit 1),'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-pair-session';
+insert into cvf_test.ledger_runtime_state
+select 'flag-paired-int', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-paired-int',
+  'record','interception','regulation',4,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+  jsonb_build_array(
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+      'role','interceptor','stat_key','defInts','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id<>'30000000-0000-0000-0000-000000000005' limit 1),
+      'role','passer','stat_key','ints','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-pair-session';
+select cvf_test.ok(
+  'sequence5a 12 [INV-07] all four paired-stat classes enter without override when exact',
+  (select count(*)=3 and bool_and(not (value->>'pairing_overridden')::boolean)
+   from cvf_test.ledger_runtime_state
+   where key in ('flag-paired-completion','flag-paired-td','flag-paired-int'))
+);
+insert into cvf_test.ledger_runtime_state
+select 'flag-pair-no-final-override', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-pair-final-no-override',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-pair-session';
+select cvf_test.ok(
+  'sequence5a 13 [INV-07][INV-35] residual event override warns and blocks unexplained finalization',
+  (select not (value->>'ok')::boolean and value->>'message' like '%SOFT validation requires an override reason%'
+   from cvf_test.ledger_runtime_state where key='flag-pair-no-final-override')
+);
+insert into cvf_test.ledger_runtime_state
+select 'flag-pair-final', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,
+  'flag-pair-final','Official book accepts the identified missing receiver')
+from cvf_test.ledger_runtime_state s where s.key='flag-pair-session';
+select cvf_test.ok(
+  'sequence5a 14 [INV-07][INV-37] final audit preserves event warning and final override reason',
+  (select result.value->>'status'='finalized' and session.override_reason='Official book accepts the identified missing receiver'
+      and session.validation_warnings @> '[{"code":"ledger_pairing_override"}]'::jsonb
+      and exists (select 1 from public.game_edit_history history
+        where history.scorekeeping_session_id=session.id
+          and history.override_reason='Official book accepts the identified missing receiver'
+          and history.validation_warnings @> '[{"code":"ledger_pairing_override"}]'::jsonb)
+   from cvf_test.ledger_runtime_state result
+   join public.scorekeeping_sessions session on session.id=(result.value->>'session_id')::uuid
+   where result.key='flag-pair-final')
+);
+
+insert into cvf_test.ledger_runtime_state
+values ('flag-ot-session', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000956','CVF-FF-2026.2',4,'one possession each',false,'{}'));
+insert into cvf_test.ledger_runtime_state
+select 'flag-ot-reg-result', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot-reg-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+select cvf_test.ok(
+  'sequence5a 15 [INV-08] tied flag regulation opens round one without locking',
+  (select value->>'status'='continue_overtime' and (value->>'next_overtime_period')::int=1
+   from cvf_test.ledger_runtime_state where key='flag-ot-reg-result')
+);
+insert into cvf_test.ledger_runtime_state
+select 'flag-ot1-home', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot1-home',
+  'record','touchdown','overtime',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'flag-ot1-open', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot1-open-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+select cvf_test.ok(
+  'sequence5a 16 [INV-08] a defensive-score-shaped lead cannot end flag OT mid-round',
+  (select result.value->>'status'='overtime_period_open' and game.status='live' and not game.locked
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000956'
+   where result.key='flag-ot1-open')
+);
+insert into cvf_test.ledger_runtime_state
+select 'flag-ot1-away', public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot1-away',
+  'record','touchdown','overtime',1,
+  (select away_team_id from public.scorekeeping_sessions where id=(s.value->>'session_id')::uuid),6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id=(select away_team_id from public.scorekeeping_sessions where id=(s.value->>'session_id')::uuid) limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+select public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot1-close',
+  'record','period_close','overtime',1,null,0,null,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'flag-ot1-result', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot1-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+select cvf_test.ok(
+  'sequence5a 17 [INV-08] equal completed flag possessions open another identical round',
+  (select value->>'status'='continue_overtime' and (value->>'next_overtime_period')::int=2
+   from cvf_test.ledger_runtime_state where key='flag-ot1-result')
+);
+select public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot2-home',
+  'record','touchdown','overtime',2,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+select public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot2-close',
+  'record','period_close','overtime',2,null,0,null,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+insert into cvf_test.ledger_runtime_state
+select 'flag-ot-final', public.finalize_scorekeeping_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-ot-final',null)
+from cvf_test.ledger_runtime_state s where s.key='flag-ot-session';
+select cvf_test.ok(
+  'sequence5a 18 [INV-08][INV-22] flag OT finalizes only after the admin closes the unequal round',
+  (select result.value->>'status'='finalized' and game.home_score=12 and game.away_score=6
+      and game.periods='{"home":[0,0,0,0,6,6],"away":[0,0,0,0,6,0]}'::jsonb
+      and game.status='completed' and game.locked
+   from cvf_test.ledger_runtime_state result
+   join public.games game on game.id='50000000-0000-0000-0000-000000000956'
+   where result.key='flag-ot-final')
+);
+
+insert into cvf_test.ledger_runtime_state
+values ('flag-invalid-ot-session', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000957','CVF-FF-2026.2',4,'one possession each',false,'{}'));
+select public.append_scorekeeping_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'flag-invalid-reg-score',
+  'record','touchdown','regulation',4,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='flag-invalid-ot-session';
+select cvf_test.throws_ok(
+  'sequence5a 19 [INV-08] overtime cannot begin when regulation is not tied',
+  $$select public.append_scorekeeping_event(
+    (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'flag-invalid-ot-event',
+    'record','touchdown','overtime',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select id from public.scorekeeping_participants where session_id=(value->>'session_id')::uuid
+        and team_id='30000000-0000-0000-0000-000000000005' limit 1),
+      'role','scorer','stat_key','tds','stat_delta',1)),null)
+    from cvf_test.ledger_runtime_state where key='flag-invalid-ot-session'$$,
+  '%[INV-08]%only after tied regulation%'
 );
 
 -- Leave one active, isolated fixture for the runner's two-real-connection

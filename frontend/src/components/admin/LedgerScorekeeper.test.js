@@ -95,4 +95,46 @@ describe("LedgerScorekeeper", () => {
     expect(container.textContent).not.toContain("Start live scorekeeping");
     expect(container.textContent).not.toContain("Declare forfeit");
   });
+
+  test("[INV-08] a tied evaluation transitions to the next OT period without navigating", async () => {
+    mockApp.state = {
+      ...baseState,
+      scorekeepingSessions: [{ id: "session-active", game_id: game.id, status: "open" }],
+      scorekeepingEvents: [{
+        id: "event-1", game_id: game.id, session_id: "session-active",
+        action: "record", event_type: "run", period_type: "regulation",
+        period_number: 1, credited_team_id: "home", points: 1,
+      }],
+    };
+    mockApp.resumeScorekeepingSession.mockResolvedValue({
+      session_id: "session-active",
+      session_kind: "ordinary",
+      lease_token: "fresh",
+      lease_version: 4,
+    });
+    mockApp.finalizeScorekeepingSession.mockResolvedValue({
+      ok: true,
+      status: "continue_overtime",
+      next_overtime_period: 2,
+      message: "The completed period remains tied; continue overtime.",
+    });
+
+    await act(async () => root.render(
+      <LedgerScorekeeper
+        game={{ ...game, scorekeeping_mode: "ledger", status: "live" }}
+        onExit={jest.fn()}
+      />
+    ));
+    await click([...container.querySelectorAll("button")]
+      .find((button) => button.textContent.includes("Resume session")));
+    await click([...container.querySelectorAll("button")]
+      .find((button) => button.textContent.includes("Evaluate final score")));
+
+    expect(mockApp.finalizeScorekeepingSession).toHaveBeenCalledWith(expect.objectContaining({
+      lease: expect.objectContaining({ session_id: "session-active", lease_version: 4 }),
+      idempotency_key: expect.any(String),
+    }));
+    expect(container.textContent).toContain("OT 2");
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
 });
