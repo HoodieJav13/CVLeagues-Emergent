@@ -1,10 +1,12 @@
 # Event Ledger Lite — Sequence 3 Schema and Sequence 4 Runtime Contract
 
-**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C hosted-authorization accepted, durable pilot pending
+**Status:** Sequence 3 hosted-accepted; Sequence 4A–4C hosted-authorization accepted; Sequence 5A locally verified and awaiting owner review/commit
 
-**Migration:** `20260721201350_event_ledger_lite_schema.sql`
+**Migrations:** `20260721201350_event_ledger_lite_schema.sql` through local-only candidate `20260723154411_sequence_5a_overtime_pairing_rules.sql`
 
-**Hosted status:** 27/27 migrations aligned; current 26-table / 25-RPC authorization surface accepted at 256/256
+**Local status:** 28 migrations replay cleanly; 318/318 assertions plus the real two-connection race pass
+
+**Hosted status:** 27/27 published migrations aligned; current 26-table / 25-RPC authorization surface accepted at 256/256; Migration 28 has not been pushed
 
 ## Purpose and scope
 
@@ -94,11 +96,36 @@ must advance the lease version.
   concurrency, deterministic projection, failure rollback/audit, correction
   cancellation, forfeit identity, and playoff-forfeit advancement at **294/294** assertions.
 
-The three migrations are structurally published and their current hosted
+The three Sequence 4 migrations are structurally published and their current hosted
 authorization surface is accepted. Hosted history, structure, row/settings
 baseline, privileges, advisors, and the 256/256 real-session/catalog matrix all
-pass. Sequence 5 still owns flag-football overtime, `INV-07`, the durable
+pass. The local Sequence 5A candidate now implements flag-football/kickball
+overtime completion and reasoned `INV-07` pairing. Sequence 5 still owns the
+remaining signed-rushing-yardage UI path, practice-mode boundary, durable
 populated-row proof, and pilot acceptance.
+
+## Sequence 5A local implementation
+
+- Migration 28 keeps overtime inside the existing ledger and projection.
+  A zero-point, teamless `period_close` event is the sole completion signal;
+  score, possessions, outs, or time never imply that a period ended.
+- Ordinary event entry permits only the current open overtime period and
+  rejects later scoring after its close. A tied closed period returns
+  `continue_overtime`; an open period returns `overtime_period_open`; neither
+  path locks or publishes the game.
+- Only an unequal projection after the latest effective close can finalize.
+  Void/replacement corrections use the existing anti-fork chain, and a
+  correction that removes the close fails atomically without changing the
+  published result.
+- Flag-football event entry enforces counterpart presence and equality for
+  `completions/catches`, `passYards/recYards`, `passTDs/recTDs`, and
+  `ints/opponent defInts`. Zero-value one-sided attempts are rejected too.
+- Each reasoned exception is event-specific append-only evidence with actor
+  and server time. It reappears as a projection warning and requires the
+  existing finalization override reason before publication.
+- The admin scorekeeper exposes regulation/overtime selection, explicit close,
+  paired participants, signed completed-pass yardage, per-event exception
+  reasons, final override evidence, and ambiguous-retry-safe operation keys.
 
 ## Verification checkpoint
 
@@ -159,6 +186,29 @@ Local verification on July 22, 2026:
 
 See
 [`../../supabase/evidence/sequence-4-local-acceptance-2026-07-22.md`](../../supabase/evidence/sequence-4-local-acceptance-2026-07-22.md)
+for the consolidated local gate.
+
+## Sequence 5A local verification checkpoint
+
+Locally complete on July 23, 2026; owner review and commit approval pending:
+
+- Gate 0 confirmed test baseline and integration target were identical at
+  `main@316a592`; no reconciliation was required.
+- A clean local Supabase reset replayed all **28** repository migrations.
+- Independent PostgreSQL harness: **318/318**, plus the real two-connection
+  append race producing one durable event and one idempotent replay.
+- Frontend: **34/34 suites, 133/133 tests**; optimized production build passed.
+- Local database lint reports no Migration-28 warning. Migration 28 corrects
+  the inherited time-sensitive lease validator to `VOLATILE`; only the five
+  existing bracket-generator warnings remain.
+- A disposable local-only AAL2 session rendered the overtime paired-event
+  surface at 375, 768, and 1440 pixels with no horizontal overflow, console
+  error, or page error. It was removed by a final clean local reset.
+- No hosted push, hosted fixture, deployment, official ledger row, or pilot
+  action occurred.
+
+See
+[`../../supabase/evidence/sequence-5a-local-acceptance-2026-07-23.md`](../../supabase/evidence/sequence-5a-local-acceptance-2026-07-23.md)
 for the consolidated local gate.
 
 ## Sequence 4 hosted-push checkpoint

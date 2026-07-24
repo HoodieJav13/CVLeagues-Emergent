@@ -2,9 +2,9 @@
 
 This file is authoritative for CVF Leagues schema, migration ledger, backend invariants, and hosted verification state. Current product status, roadmap, and owner actions live in [`../CLAUDE.md`](../CLAUDE.md). This dedicated Supabase project must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-22
+## Verified status — 2026-07-23
 
-- Twenty-seven migration files are present in filename order. A clean isolated Supabase reset applies all twenty-seven, and the independent pgtest run passes 294/294 plus a real two-connection idempotency race. All twenty-seven migrations are applied to hosted; Sequence 4's authorization surface is accepted and its durable pilot remains pending.
+- Twenty-eight migration files are present in filename order. A clean isolated Supabase reset applies all twenty-eight, and the independent pgtest run passes 318/318 plus a real two-connection idempotency race. Migration 28 is a local-only Sequence 5A candidate awaiting owner review and commit; hosted remains at the first twenty-seven migrations.
 - The linked hosted project has all twenty-seven migrations applied. Migration 24's private Event Ledger Lite boundary remains behaviorally accepted, and Migrations 25–27 passed migration, structure, row/settings baseline, privilege catalog, and advisor readback. The Season 1 operational baseline was preserved exactly.
 - Hosted verification confirms 74/74 foreign-key constraints with covering indexes, all 26 hosted tables with RLS enabled, the four empty ledger relations, and the expected operational row-count baseline. The earlier 60/60 local figure counted a narrower catalog shape and is superseded by this direct hosted constraint sweep.
 - Hosted Security and Performance Advisors were rerun after Sequence 4: 33 Security and 31 Performance findings have the itemized dispositions below. The ten additional Security warnings map exactly to the intended authenticated runtime RPCs; no ledger ACL or unindexed-foreign-key finding was reported.
@@ -12,6 +12,7 @@ This file is authoritative for CVF Leagues schema, migration ledger, backend inv
 - The real Auth administrator is linked through `admin_users`, and administration requires verified AAL2/TOTP. The final hosted matrix verified fail-closed anonymous, authenticated non-admin, password-only linked-admin, and AAL2 administrator behavior across the current surface.
 - The current Migration-27 hosted authorization matrix passed 256/256 checks across all 26 tables and the access-control surface of all 25 administrator RPCs: 248 browser/API plus eight exact catalog checks. Fixture cleanup and exact restoration of the current Season 1 operational baseline both passed and were independently re-read afterward. See [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-22-m27.md`](evidence/hosted-auth-matrix-2026-07-22-m27.md). The immutable Migration-24 and Migration-23 evidence remains as prior checkpoints.
 - Sequence 4 adds ten authenticated-only AAL2 ledger RPCs, deterministic final projection, W/L-only forfeits, bracket-safe corrections, and the admin live-ledger surface. Its three migrations are structurally published and authorization-accepted; no hosted ledger evidence, deployment, or pilot was created. See [`evidence/sequence-4-local-acceptance-2026-07-22.md`](evidence/sequence-4-local-acceptance-2026-07-22.md), [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md), and the current matrix evidence.
+- Sequence 5A is locally complete and awaiting owner review: Migration 28 adds explicit admin-closed overtime periods, tied continuation without publication, and event-specific `INV-07` pairing enforcement/override evidence. Local verification passes 318/318 plus the race, 133/133 frontend tests, production build, schema replay/lint, and responsive browser checks. No hosted action occurred. See [`evidence/sequence-5a-local-acceptance-2026-07-23.md`](evidence/sequence-5a-local-acceptance-2026-07-23.md).
 - Launch hardening requires AAL2/TOTP for administration and routes public intake through a Turnstile-verified server boundary. Recovery/session revocation, preview/production values, live hosted application acceptance, and deployment remain open.
 - No production seed data or credentials are stored here; only the non-secret project reference and URL are recorded.
 
@@ -62,6 +63,7 @@ The project is linked and all twenty-seven migrations are applied with migration
 | `20260722052347_ledger_runtime_sessions.sql` | Adds controlled AAL2 session leases, participant capture, validated/idempotent event append, resume, renewal, and cancellation |
 | `20260722052350_ledger_projection_finalization.sql` | Adds deterministic ledger projection, atomic finalization/failure audit, explicit W/L-only forfeits, and outcome-aware bracket advancement |
 | `20260722052352_ledger_correction_authority.sql` | Adds the single ledger correction authority, atomic void-and-replace, immutable snapshot chaining, and bracket-safe refinalization |
+| `20260723154411_sequence_5a_overtime_pairing_rules.sql` | Local-only candidate adding explicit overtime-period close/continuation, paired-stat entry enforcement with append-only reasoned exceptions, and overtime-aware projection/finalization |
 
 ## Completed database hardening
 
@@ -74,6 +76,7 @@ The project is linked and all twenty-seven migrations are applied with migration
 - Team identities and enrollments are read-only through the Data API; creation, enrollment, brand propagation, and supported lifecycle edits use admin-guarded RPCs.
 - Aggregate score/stat/history mutation is RPC-only locally and hosted. `submit_score` and `correct_final_score` enforce HARD invariants, require a recorded reason for SOFT overrides, and preserve append-only audit; the final correction never unlocks the public result.
 - Event Ledger Lite's Migration-24 boundary and Sequence 4's expanded 25-RPC authorization surface are hosted-accepted. Sequence 4's runtime, projection, forfeit, correction, and admin UI are locally verified, and Migrations 25–27 are structurally published. Aggregate remains the default; the durable populated-ledger pilot remains unexecuted.
+- Sequence 5A's Migration 28 candidate is locally verified but not committed or hosted. It reuses the same ledger authority for overtime, requires explicit append-only period closes, prevents mid-period/tied publication, and makes paired-stat exceptions per-event, reasoned, immutable, and visible again at finalization.
 - Career-baseline imports must not overlap seasons represented by granular game statistics. The legacy `current_season` setting is compatibility-only once sport defaults diverge; both are documented non-blocking contracts.
 - Anonymous and authenticated Data API privileges are explicitly allowlisted; future tables and functions are private by default.
 - `service_role` access is explicitly limited to `INSERT` on `team_registrations` and `free_agents`; it has no other current public-table privilege, no public-sequence privilege, and no public-function `EXECUTE`. Future objects created by the repository migration owner (`postgres`) inherit no `service_role` access. Supabase platform-owned `supabase_admin` default ACLs cannot be altered by customer migrations; this is an accepted platform boundary, not an unresolved application grant, and every current object is re-revoked explicitly.
@@ -108,7 +111,7 @@ The current Performance Advisor reports 31 findings:
 
 Hosted authorization acceptance is complete and durably evidenced at 256/256 through Migration 27 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-22-m27.md`](evidence/hosted-auth-matrix-2026-07-22-m27.md).
 
-Sequence 4 is structurally published and authorization-accepted. A later durable pilot remains required before official use. Because ledger evidence is intentionally append-only, the hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up.
+Sequence 4 is structurally published and authorization-accepted. Sequence 5A is local-only and still requires owner review, commit approval, a separately named hosted-push approval, and hosted acceptance. The remaining signed-rushing-yardage UI path and practice-mode boundary must also close before the durable official pilot. Because ledger evidence is intentionally append-only, the hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up.
 
 1. Complete recovery and session-revocation checks for the already-linked AAL2 administrator; decide separately whether a break-glass administrator is warranted.
 2. Enter hosted and Turnstile public/secret values in preview/production without exposing service-role or secret keys to React, then verify fail-closed behavior.
@@ -150,7 +153,7 @@ The harness requires local PostgreSQL binaries and permission to allocate Postgr
 
 ## Future hosted migration procedure
 
-The hosted ledger currently contains all twenty-seven repository migrations. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+The hosted ledger currently contains repository Migrations 1–27; local Migration 28 is unpublished. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
 Before a future hosted migration:
 
