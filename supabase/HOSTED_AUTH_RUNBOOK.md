@@ -1,8 +1,8 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Migration-24 baseline covers all 26 tables and 15 privileged RPCs, including the four private ledger relations, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks. Sequence 4 Migrations 25–27 are now structurally published and add ten RPCs; that 25-RPC shape is not behaviorally accepted until this separately approved matrix passes.
+This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Sequence 4 baseline covers all 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
-The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted baseline used 64 role/operation API checks and seven exact catalog checks. After Sequence 4 is applied, the prepared contract adds a runtime-RPC ACL catalog check plus anonymous/non-admin denial for all ten new endpoints; a populated positive read/write proof remains a separate durable-pilot gate.
+The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted Sequence 4 run includes 248 browser/API checks and eight exact catalog checks, including the runtime-RPC ACL catalog check plus anonymous/non-admin denial for all ten new endpoints. A populated positive read/write proof remains a separate durable-pilot gate.
 
 ## Safety model
 
@@ -39,9 +39,9 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted behavioral baseline is Migration 24: 26 tables and 15 administrator RPCs. The structurally published Sequence 4 target is 27 migrations and 25 administrator RPCs. Preflight must show all 27 hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
+The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables, and 25 administrator RPCs. Preflight must show all 27 hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
-Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-21-m24.md`](evidence/hosted-auth-matrix-2026-07-21-m24.md) records the Migration-24 baseline at 225/225 browser/API and catalog checks with fixture cleanup and exact restoration both passing. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the newer published-but-not-yet-accepted 27-migration structural gate. The immutable [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remains the prior checkpoint.
+Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-24.md`](evidence/hosted-auth-matrix-2026-07-24.md) records the Sequence 4 baseline at 256/256 browser/API and catalog checks with fixture cleanup and exact restoration both passing. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding 27-migration structural gate. The immutable [`Migration-24 evidence`](evidence/hosted-auth-matrix-2026-07-21-m24.md) and [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remain prior checkpoints.
 
 ## Run
 
