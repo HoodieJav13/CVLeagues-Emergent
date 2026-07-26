@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { UsersThree } from "@phosphor-icons/react";
+import { UsersThree, CalendarPlus } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, teamRoster, teamGames, teamStatLeaders, identityEnrollments, identityCareerRecord } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
@@ -9,6 +9,8 @@ import { GameCard } from "../components/game/GameCard";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { Avatar } from "../components/common/Avatar";
 import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { buildCalendar, downloadCalendar } from "../lib/calendar";
 
 export default function TeamPage() {
   const { id } = useParams();
@@ -52,6 +54,20 @@ export default function TeamPage() {
             Captain: <Link to={`/profile/${captain.id}`} className="text-primary font-semibold">{captain.name}</Link>
           </p>
         )}
+        {/* The whole season in one file — the thing that actually gets this
+            schedule onto a player's phone. */}
+        <Button
+          variant="outline"
+          data-testid="team-add-schedule"
+          disabled={games.length === 0}
+          onClick={() => downloadCalendar(
+            buildCalendar(state, games, { name: `${team.name} — ${league?.season || "Schedule"}`, origin: window.location.origin }),
+            `${team.name}-${league?.season || "schedule"}`
+          )}
+          className="mt-4 h-11"
+        >
+          <CalendarPlus data-icon="inline-start" weight="bold" /> Add Season to Calendar
+        </Button>
         </CardContent>
       </Card>
 

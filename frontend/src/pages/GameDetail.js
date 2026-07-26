@@ -1,9 +1,10 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, PencilSimpleLine } from "@phosphor-icons/react";
+import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, CalendarPlus, PencilSimpleLine } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
 import { formatGameLongDate, formatGameShortDate, formatGameTime, venueLabel, gameDateKey } from "../lib/gameTime";
+import { buildCalendar, downloadCalendar } from "../lib/calendar";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
@@ -103,6 +104,22 @@ export default function GameDetail() {
           <span className="flex items-center gap-1.5"><Clock size={15} weight="bold" /> {formatGameTime(game)}</span>
           <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {venueLabel(state, game)}</span>
         </div>
+
+        {/* Add to calendar — available to everyone, and the reason migration 28
+            made the start time a real timestamp. */}
+        {!completed && (
+          <Button
+            variant="outline"
+            data-testid="game-add-to-calendar"
+            onClick={() => downloadCalendar(
+              buildCalendar(state, [game], { name: `${away?.name || "TBD"} @ ${home?.name || "TBD"}`, origin: window.location.origin }),
+              `${away?.name || "away"}-at-${home?.name || "home"}`
+            )}
+            className="mt-5 h-11 md:h-11"
+          >
+            <CalendarPlus data-icon="inline-start" weight="bold" /> Add to Calendar
+          </Button>
+        )}
 
         {canScore && !forfeit && (
           <Button asChild className="mt-5 h-11 md:h-11">
