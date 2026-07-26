@@ -24,6 +24,18 @@ const DEFAULT_DURATION_MINUTES = 60;
 
 export const gameDurationMinutes = (sport) => DURATION_MINUTES[sport] || DEFAULT_DURATION_MINUTES;
 
+// Default reminder lead time. Two hours is enough to leave work, eat, and get
+// across town to a field — a fifteen-minute warning is useless for a game you
+// have to travel to.
+export const DEFAULT_REMINDER_MINUTES = 120;
+
+// RFC 5545 §3.3.6 duration, negative because the trigger fires BEFORE the start.
+export function reminderTrigger(minutes) {
+  if (minutes % 1440 === 0) return `-P${minutes / 1440}D`;
+  if (minutes % 60 === 0) return `-PT${minutes / 60}H`;
+  return `-PT${minutes}M`;
+}
+
 // RFC 5545 §3.3.11: backslash, semicolon and comma are escaped, and newlines
 // become a literal \n. Order matters — backslashes must be escaped first or the
 // escapes we add would themselves be escaped.
@@ -125,7 +137,11 @@ const descriptionFor = (state, game, { origin }) => {
  * One VEVENT for one game. Returns null when the game has no usable start,
  * so a malformed row is skipped rather than emitting a broken calendar.
  */
-export function buildGameEvent(state, game, { origin = "", now = new Date() } = {}) {
+export function buildGameEvent(state, game, {
+  origin = "",
+  now = new Date(),
+  reminderMinutes = DEFAULT_REMINDER_MINUTES,
+} = {}) {
   const start = gameStart(game);
   if (!start || Number.isNaN(start.getTime())) return null;
 
@@ -148,6 +164,21 @@ export function buildGameEvent(state, game, { origin = "", now = new Date() } = 
   ];
   if (origin) fields.splice(fields.length - 2, 0, ["URL", `${origin}/game/${game.id}`]);
 
+  // A reminder is the difference between the game being ON a calendar and the
+  // calendar actually telling someone about it. Deliberately omitted for a
+  // canceled game: nudging a player toward a game that is not happening is
+  // worse than no nudge at all.
+  if (reminderMinutes != null && reminderMinutes > 0 && !canceled) {
+    fields.splice(fields.length - 1, 0,
+      ["BEGIN", "VALARM"],
+      // DISPLAY is the action Apple, Google and Outlook all honour.
+      ["ACTION", "DISPLAY"],
+      ["DESCRIPTION", escapeText(summaryFor(state, game))],
+      ["TRIGGER", reminderTrigger(reminderMinutes)],
+      ["END", "VALARM"],
+    );
+  }
+
   return fields.map(([name, value]) => foldLine(`${name}:${value}`));
 }
 
@@ -158,9 +189,14 @@ export function buildGameEvent(state, game, { origin = "", now = new Date() } = 
  * are joined with CRLF because RFC 5545 requires it — LF-only files are
  * rejected outright by some clients.
  */
-export function buildCalendar(state, games, { name = "CVF Sports", origin = "", now = new Date() } = {}) {
+export function buildCalendar(state, games, {
+  name = "CVF Sports",
+  origin = "",
+  now = new Date(),
+  reminderMinutes = DEFAULT_REMINDER_MINUTES,
+} = {}) {
   const events = (games || [])
-    .map((game) => buildGameEvent(state, game, { origin, now }))
+    .map((game) => buildGameEvent(state, game, { origin, now, reminderMinutes }))
     .filter(Boolean)
     .flat();
 

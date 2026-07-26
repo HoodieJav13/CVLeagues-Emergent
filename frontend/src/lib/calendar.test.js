@@ -16,6 +16,8 @@ import {
   calendarFilename,
   utf8Length,
   downloadCalendar,
+  reminderTrigger,
+  DEFAULT_REMINDER_MINUTES,
 } from "./calendar";
 
 const state = {
@@ -224,5 +226,49 @@ describe("download helper", () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:mock");
 
     window.HTMLAnchorElement.prototype.click = originalClick;
+  });
+});
+
+describe("reminders", () => {
+  test("formats the trigger as a negative duration in the largest clean unit", () => {
+    expect(reminderTrigger(120)).toBe("-PT2H");
+    expect(reminderTrigger(90)).toBe("-PT90M");
+    expect(reminderTrigger(1440)).toBe("-P1D");
+    expect(reminderTrigger(30)).toBe("-PT30M");
+  });
+
+  test("every event carries a display alarm by default", () => {
+    const event = buildGameEvent(state, game, { now: NOW }).join("\r\n");
+    expect(event).toContain("BEGIN:VALARM");
+    expect(event).toContain("ACTION:DISPLAY");
+    expect(event).toContain(`TRIGGER:${reminderTrigger(DEFAULT_REMINDER_MINUTES)}`);
+    expect(event).toContain("END:VALARM");
+  });
+
+  test("the alarm sits inside the event, not beside it", () => {
+    const parts = buildGameEvent(state, game, { now: NOW });
+    const alarmStart = parts.indexOf("BEGIN:VALARM");
+    const alarmEnd = parts.indexOf("END:VALARM");
+    const eventEnd = parts.indexOf("END:VEVENT");
+    expect(alarmStart).toBeGreaterThan(parts.indexOf("BEGIN:VEVENT"));
+    expect(alarmEnd).toBeLessThan(eventEnd);
+  });
+
+  test("a canceled game gets no reminder, since nudging toward it is worse than silence", () => {
+    const event = buildGameEvent(state, { ...game, status: "canceled" }, { now: NOW }).join("\r\n");
+    expect(event).toContain("STATUS:CANCELLED");
+    expect(event).not.toContain("BEGIN:VALARM");
+  });
+
+  test("reminders can be switched off entirely", () => {
+    const off = buildGameEvent(state, game, { now: NOW, reminderMinutes: null }).join("\r\n");
+    expect(off).not.toContain("BEGIN:VALARM");
+    const zero = buildGameEvent(state, game, { now: NOW, reminderMinutes: 0 }).join("\r\n");
+    expect(zero).not.toContain("BEGIN:VALARM");
+  });
+
+  test("the calendar passes the reminder setting through to every event", () => {
+    const text = buildCalendar(state, [game], { now: NOW, reminderMinutes: 1440 });
+    expect(text).toContain("TRIGGER:-P1D");
   });
 });
