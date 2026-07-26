@@ -3,8 +3,8 @@
  *
  * The contract under test is the "not yet knowable" one: a rate stat whose
  * denominator is missing must return null and render as an em dash, never as a
- * zero. Participation data does not exist until Migration 28, so every
- * per-game figure is expected to be dark against the current seed.
+ * zero. The seed now carries participation, so per-game figures resolve against
+ * it; a state with the collection removed entirely is what must stay dark.
  * ========================================================================== */
 import {
   computeDerivedStat,
@@ -95,8 +95,13 @@ describe("leaderboard qualifiers", () => {
 });
 
 describe("games played", () => {
-  test("returns null while no participation data exists", () => {
-    expect(playerGamesPlayed(state, "p1", "kickball")).toBeNull();
+  test("returns null when the state carries no participation collection at all", () => {
+    const { gameParticipation, ...withoutParticipation } = state;
+    expect(playerGamesPlayed(withoutParticipation, "p1", "kickball")).toBeNull();
+  });
+
+  test("the seed supplies participation, so games played is a real number", () => {
+    expect(playerGamesPlayed(state, "p1", "kickball")).toBeGreaterThan(0);
   });
 
   test("counts only distinct played games inside the requested domain", () => {
@@ -112,16 +117,10 @@ describe("games played", () => {
     expect(playerGamesPlayed(withParticipation, "p1", "kickball", { season: "Summer 2026" })).toBe(2);
   });
 
-  test("per-game derived stats light up once participation exists", () => {
-    const withParticipation = {
-      ...state,
-      gameParticipation: [
-        { id: "gp1", game_id: "g1", profile_id: "p1", team_id: "t1", status: "played" },
-        { id: "gp2", game_id: "g3", profile_id: "p1", team_id: "t1", status: "played" },
-      ],
-    };
-    expect(playerDerivedStat(state, "p1", "kickball", "runsPerGame")).toBeNull();
-    expect(playerDerivedStat(withParticipation, "p1", "kickball", "runsPerGame")).not.toBeNull();
+  test("per-game derived stats are dark without participation and light up with it", () => {
+    const { gameParticipation, ...withoutParticipation } = state;
+    expect(playerDerivedStat(withoutParticipation, "p1", "kickball", "runsPerGame")).toBeNull();
+    expect(playerDerivedStat(state, "p1", "kickball", "runsPerGame")).not.toBeNull();
   });
 });
 
@@ -150,8 +149,8 @@ describe("team record form and streak", () => {
     const twoWins = {
       ...state,
       games: [
-        { id: "x1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", date: "2026-06-01", stage: "regular", status: "completed", score_status: "approved", home_score: 5, away_score: 1 },
-        { id: "x2", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", date: "2026-06-08", stage: "regular", status: "completed", score_status: "approved", home_score: 6, away_score: 2 },
+        { id: "x1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-06-01T18:00:00-06:00", stage: "regular", status: "completed", score_status: "approved", home_score: 5, away_score: 1 },
+        { id: "x2", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", starts_at: "2026-06-08T18:00:00-06:00", stage: "regular", status: "completed", score_status: "approved", home_score: 6, away_score: 2 },
       ],
     };
     expect(computeTeamRecord(twoWins, "t1").streak).toEqual({ result: "W", count: 2, label: "W2" });
@@ -161,8 +160,8 @@ describe("team record form and streak", () => {
     const endsInTie = {
       ...state,
       games: [
-        { id: "x1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", date: "2026-06-01", stage: "regular", status: "completed", score_status: "approved", home_score: 5, away_score: 1 },
-        { id: "x2", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", date: "2026-06-08", stage: "regular", status: "completed", score_status: "approved", home_score: 3, away_score: 3 },
+        { id: "x1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-06-01T18:00:00-06:00", stage: "regular", status: "completed", score_status: "approved", home_score: 5, away_score: 1 },
+        { id: "x2", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", starts_at: "2026-06-08T18:00:00-06:00", stage: "regular", status: "completed", score_status: "approved", home_score: 3, away_score: 3 },
       ],
     };
     expect(computeTeamRecord(endsInTie, "t1").streak).toBeNull();

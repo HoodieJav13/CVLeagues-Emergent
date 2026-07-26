@@ -44,6 +44,7 @@ jest.mock("../components/ui/select", () => ({
 }));
 
 const baseState = {
+  venues: [{ id: "tv1", name: "Mesa Field", field_label: null, status: "active" }],
   leagues: [{
     id: "league-1",
     name: "Monday Kickball",
@@ -96,8 +97,8 @@ function useReadyMatchApp() {
         stage: "playoff",
         home_team_id: "team-1",
         away_team_id: "team-2",
-        date: "2026-08-10",
-        time: "6:30 PM",
+        starts_at: "2026-08-10T18:30:00-06:00",
+        venue_id: "tv1",
         status: "upcoming",
       }],
       playoffBrackets: [{ id: "bracket-ready", league_id: "league-1", status: "scheduled" }],
@@ -194,9 +195,8 @@ describe("Playoffs bracket reveal", () => {
     expect(document.activeElement).toBe(existingMatch);
 
     for (const [id, label] of [
-      ["playoff-match-date", "Date (required)"],
-      ["playoff-match-time", "Time (required)"],
-      ["playoff-match-location", "Location (required)"],
+      ["playoff-match-start", "Start (required)"],
+      ["playoff-match-venue", "Venue (required)"],
     ]) {
       const input = document.getElementById(id);
       expect(input?.required).toBe(true);
@@ -206,7 +206,7 @@ describe("Playoffs bracket reveal", () => {
     await act(async () => {
       document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });
-    expect(document.getElementById("playoff-match-date")).toBeNull();
+    expect(document.getElementById("playoff-match-start")).toBeNull();
     expect(document.activeElement).toBe(dialogTrigger);
   });
 });

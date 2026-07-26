@@ -3044,6 +3044,32 @@ select cvf_test.ok(
             where game_id = '50000000-0000-0000-0000-000000000003') = s.history_rows
   )
 );
+-- The games column allowlist is a NAMED COLUMN LIST, which means it goes stale
+-- silently: dropping a listed column narrows the grant with no error, and
+-- adding a column leaves it unwritable with no error. Migration 28 hit exactly
+-- that. Pinning the exact expected set converts a silent drift into a loud
+-- failure the next time anyone changes the games table.
+select cvf_test.as_owner();
+select cvf_test.eq_text(
+  'migration28 19 the games update allowlist is exactly the schedule columns',
+  (select string_agg(column_name, ',' order by column_name)
+     from information_schema.column_privileges
+    where grantee = 'authenticated'
+      and table_schema = 'public' and table_name = 'games'
+      and privilege_type = 'UPDATE'),
+  'away_team_id,home_team_id,league_id,sport,stage,starts_at,temp_admin_id,venue_id'
+);
+select cvf_test.eq_text(
+  'migration28 20 the games insert allowlist is exactly the schedule columns plus id',
+  (select string_agg(column_name, ',' order by column_name)
+     from information_schema.column_privileges
+    where grantee = 'authenticated'
+      and table_schema = 'public' and table_name = 'games'
+      and privilege_type = 'INSERT'),
+  'away_team_id,home_team_id,id,league_id,sport,stage,starts_at,temp_admin_id,venue_id'
+);
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+
 select cvf_test.ok(
   'migration28 18 replacing a participation set does not accumulate rows',
   (select public.set_game_participation(

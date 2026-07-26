@@ -3,6 +3,7 @@ import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, PencilSimpleLine } 
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
+import { formatGameLongDate, formatGameShortDate, formatGameTime, venueLabel, gameDateKey } from "../lib/gameTime";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
@@ -45,8 +46,8 @@ export default function GameDetail() {
   const completed = isFinalOutcome(game);
   const forfeit = isForfeitOutcome(game);
   const gameStats = state.playerStats.filter((s) => s.game_id === game.id);
-  const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-  const shortDate = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const dateStr = formatGameLongDate(game);
+  const shortDate = formatGameShortDate(game);
 
   const canScore = role === "admin";
   const periods = game.periods?.home || [];
@@ -89,9 +90,9 @@ export default function GameDetail() {
               <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">{forfeit ? "Forfeit" : "Final"}</span>
             </div>
           ) : (
-            <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 text-center md:order-none md:col-span-1 md:mt-0" dateTime={game.date}>
+            <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 text-center md:order-none md:col-span-1 md:mt-0" dateTime={gameDateKey(game)}>
               <span className="cvf-upcoming-focal__date">{shortDate}</span>
-              <span className="cvf-upcoming-focal__time">{game.time}</span>
+              <span className="cvf-upcoming-focal__time">{formatGameTime(game)}</span>
             </time>
           )}
           <TeamHead team={home} score={forfeit ? (game.winner_team_id === home?.id ? "W" : "L") : game.home_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === home?.id : game.home_score > game.away_score)} home />
@@ -99,8 +100,8 @@ export default function GameDetail() {
 
         <div className="mt-6 pt-5 border-t border-border flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
           <span className="flex items-center gap-1.5"><CalendarBlank size={15} weight="bold" /> {dateStr}</span>
-          <span className="flex items-center gap-1.5"><Clock size={15} weight="bold" /> {game.time}</span>
-          <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {game.location}</span>
+          <span className="flex items-center gap-1.5"><Clock size={15} weight="bold" /> {formatGameTime(game)}</span>
+          <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {venueLabel(state, game)}</span>
         </div>
 
         {canScore && !forfeit && (

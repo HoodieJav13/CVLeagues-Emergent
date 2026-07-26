@@ -3,7 +3,11 @@ import { freeAgentName } from "../lib/utils";
 
 export { initialState };
 
-export const STORAGE_VERSION = 9;
+// Bumped to 10 for migration 28: games carry starts_at + venue_id instead of
+// date/time/location, and venues/gameParticipation are new collections. A
+// persisted v9 state cannot be repaired into the new game shape without
+// inventing kickoff times, so it is discarded rather than migrated.
+export const STORAGE_VERSION = 10;
 export const STORAGE_KEY = `cvf_app_state_v${STORAGE_VERSION}`;
 export const LEGACY_STORAGE_KEYS = Array.from(
   { length: STORAGE_VERSION - 1 },
@@ -11,7 +15,8 @@ export const LEGACY_STORAGE_KEYS = Array.from(
 );
 
 const REQUIRED_ARRAYS = [
-  "seasons", "profiles", "leagues", "teams", "teamPlayers", "games",
+  "seasons", "profiles", "leagues", "teams", "teamPlayers", "venues", "games",
+  "gameParticipation",
   "playerStats", "freeAgents", "registrations", "waivers", "charges",
   "paymentEntries", "hofEntries", "teamIdentities", "playoffBrackets",
   "playoffSeeds", "playoffMatches",
@@ -32,6 +37,8 @@ export const migrateMockState = (state) => ({
       flag_football: state.settings?.current_season || initialState.settings.current_season,
     },
   },
+  venues: state.venues || initialState.venues,
+  gameParticipation: state.gameParticipation || initialState.gameParticipation,
   playoffBrackets: state.playoffBrackets || initialState.playoffBrackets,
   playoffSeeds: state.playoffSeeds || initialState.playoffSeeds,
   playoffMatches: state.playoffMatches || initialState.playoffMatches,

@@ -11,6 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
+import { formatGameDateTime, venueLabel, byStartAscending, toDateTimeLocalValue, fromDateTimeLocalValue } from "../lib/gameTime";
 import { getTeam, getProfile, getLeague, computeTeamRecord, isFinalOutcome, isForfeitOutcome, teamRoster, currentSeasonForSport } from "../lib/selectors";
 import { SPORTS, sportName } from "../lib/statsConfig";
 import { freeAgentName } from "../lib/utils";
@@ -916,13 +917,16 @@ function RegistrationsTab({ app }) {
 /* -------------------------- SCHEDULE / GAMES ------------------------------ */
 function GamesTab({ app }) {
   const { state, assignTempAdmin, updateEntity, lockGame, setGameStatus } = app;
-  const [modal, setModal] = useState(null); // {id, date, time, location}
+  const [modal, setModal] = useState(null); // {id, starts_at, venue_id}
   const [rescheduleFor, setRescheduleFor] = useState(null); // game_id
 
   const save = async () => {
-    if (!modal.date || !modal.time?.trim()) return toast.error("Date and time required");
+    if (!modal.starts_at || !modal.venue_id) return toast.error("Start time and venue required");
     try {
-      await updateEntity("games", modal.id, { date: modal.date, time: modal.time, location: modal.location });
+      await updateEntity("games", modal.id, {
+        starts_at: fromDateTimeLocalValue(modal.starts_at),
+        venue_id: modal.venue_id,
+      });
       toast.success("Game updated");
       setModal(null);
     } catch {
@@ -941,11 +945,11 @@ function GamesTab({ app }) {
           const league = getLeague(state, g.league_id);
           return (
             <TableRow key={g.id} data-testid={`admin-game-${g.id}`} className="border-border">
-              <TableCell className="text-xs text-foreground whitespace-nowrap">{fmtDate(g.date)} · {g.time}</TableCell>
+              <TableCell className="text-xs text-foreground whitespace-nowrap">{formatGameDateTime(g)}</TableCell>
               <TableCell><SportBadge sport={g.sport} /></TableCell>
               <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{league ? `${league.name} · ${league.season}` : "—"}</TableCell>
               <TableCell className="whitespace-nowrap"><Link to={`/game/${g.id}`} className="text-foreground font-medium hover:text-primary">{a.name} @ {h.name}</Link></TableCell>
-              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{g.location}</TableCell>
+              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{venueLabel(state, g)}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-1.5">
                   <StatusBadge status={g.status} />
@@ -955,7 +959,7 @@ function GamesTab({ app }) {
               <TableCell><StatusBadge status={g.score_status || "pending"} /></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-0.5 whitespace-nowrap">
-                  <IconBtn onClick={() => setModal({ id: g.id, date: g.date, time: g.time, location: g.location })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
+                  <IconBtn onClick={() => setModal({ id: g.id, starts_at: toDateTimeLocalValue(g.starts_at), venue_id: g.venue_id })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
                   <Link to="/score-entry" state={{ game_id: g.id }} title={g.locked ? "Correct final result" : "Enter score"} data-testid={`admin-game-enter-score-${g.id}`} className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 p-2 rounded-lg text-primary hover:bg-white/10 active:bg-white/15 active:scale-[0.92] transition-all inline-flex items-center justify-center">
                     <PencilSimpleLine size={16} weight="bold" />
                   </Link>
@@ -995,9 +999,20 @@ function GamesTab({ app }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title="Edit Game" onSave={save}>
         {modal && (
           <>
-            <ModalField label="Date"><Input type="date" data-testid="admin-game-date" value={modal.date} onChange={(e) => setModal({ ...modal, date: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
-            <ModalField label="Time"><Input data-testid="admin-game-time" value={modal.time} onChange={(e) => setModal({ ...modal, time: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
-            <ModalField label="Location"><Input data-testid="admin-game-location" value={modal.location} onChange={(e) => setModal({ ...modal, location: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            <ModalField label="Start (league time)"><Input type="datetime-local" data-testid="admin-game-start" value={modal.starts_at} onChange={(e) => setModal({ ...modal, starts_at: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            <ModalField label="Venue">
+              <select
+                data-testid="admin-game-venue"
+                value={modal.venue_id || ""}
+                onChange={(e) => setModal({ ...modal, venue_id: e.target.value })}
+                className="w-full h-10 rounded-lg bg-surface-sunken border border-border px-3 text-sm text-foreground"
+              >
+                <option value="">Select a venue…</option>
+                {(state.venues || []).filter((v) => v.status !== "retired").map((v) => (
+                  <option key={v.id} value={v.id}>{[v.name, v.field_label].filter(Boolean).join(" · ")}</option>
+                ))}
+              </select>
+            </ModalField>
           </>
         )}
       </Modal>
@@ -1017,7 +1032,7 @@ function ScoresTab({ app }) {
 
   const needs = state.games
     .filter((g) => g.score_status === "pending" || g.score_status === "submitted")
-    .sort((x, y) => x.date.localeCompare(y.date));
+    .sort(byStartAscending);
 
   const renderRow = (g, prefix) => {
     const a = getTeam(state, g.away_team_id), h = getTeam(state, g.home_team_id);
@@ -1033,7 +1048,7 @@ function ScoresTab({ app }) {
               {g.locked && <LockSimple size={14} weight="bold" className="text-gold shrink-0" />}
               {a.name} @ {h.name}
             </p>
-            <p className="text-xs text-muted-foreground">{fmtDate(g.date)} · {forfeit ? `Forfeit · ${getTeam(state, g.winner_team_id)?.name || "winner recorded"}` : done ? `${g.away_score}-${g.home_score}` : "Not played"}</p>
+            <p className="text-xs text-muted-foreground">{formatGameDateTime(g)} · {forfeit ? `Forfeit · ${getTeam(state, g.winner_team_id)?.name || "winner recorded"}` : done ? `${g.away_score}-${g.home_score}` : "Not played"}</p>
           </div>
           <SportBadge sport={g.sport} />
           <StatusBadge status={g.score_status || "pending"} />

@@ -5,6 +5,10 @@ import { CompetitionRow } from "./CompetitionRow";
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const state = {
+  venues: [
+    { id: "tv1", name: "Mesa Field 1", field_label: null, status: "active" },
+    { id: "tv2", name: "North Field", field_label: null, status: "active" },
+  ],
   teams: [
     { id: "away", name: "Mesa Heat", logo_color: "#f5b82e" },
     { id: "home", name: "Rio Runners", logo_color: "#5bb8cc" },
@@ -40,9 +44,8 @@ describe("CompetitionRow", () => {
       sport: "kickball",
       stage: "playoff",
       status: "completed",
-      date: "2026-07-20",
-      time: "6:00 PM",
-      location: "Mesa Field 1",
+      starts_at: "2026-07-20T18:00:00-06:00",
+      venue_id: "tv1",
       away_team_id: "away",
       home_team_id: "home",
       away_score: 8,
@@ -71,9 +74,8 @@ describe("CompetitionRow", () => {
       sport: "flag_football",
       stage: "regular",
       status: "upcoming",
-      date: "2026-07-21",
-      time: "7:15 PM",
-      location: "North Field",
+      starts_at: "2026-07-21T19:15:00-06:00",
+      venue_id: "tv2",
       away_team_id: "away",
       home_team_id: "home",
     }} />));

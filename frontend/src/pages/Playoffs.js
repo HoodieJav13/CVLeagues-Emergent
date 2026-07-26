@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { computeStandings, getTeam } from "../lib/selectors";
+import { formatGameDateTime, fromDateTimeLocalValue, LEAGUE_TIME_ZONE } from "../lib/gameTime";
 import { SPORTS } from "../lib/statsConfig";
 import { SectionHeading, EmptyState } from "../components/common/Section";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
@@ -158,7 +159,7 @@ const MatchCard = ({ state, match, isAdmin, app, league }) => {
       </div>
       <TeamSlot state={state} teamId={match.home_team_id} seed={match.home_seed} winner={match.winner_team_id === match.home_team_id} />
       <TeamSlot state={state} teamId={match.away_team_id} seed={match.away_seed} winner={match.winner_team_id === match.away_team_id} />
-      {game && <Link to={`/game/${game.id}`} className="block px-3 py-2 border-t border-border text-xs text-primary hover:bg-white/5"><CalendarBlank size={13} className="inline mr-1" />{game.date} · {game.time} · {game.status}</Link>}
+      {game && <Link to={`/game/${game.id}`} className="block px-3 py-2 border-t border-border text-xs text-primary hover:bg-white/5"><CalendarBlank size={13} className="inline mr-1" />{formatGameDateTime(game)} · {game.status}</Link>}
       {isAdmin && match.status === "ready" && !match.game_id && <button type="button" ref={scheduleTriggerRef} data-testid={`schedule-match-${match.id}`} onClick={() => setOpen(true)} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-primary hover:bg-primary/10">Schedule or Link Game</button>}
       {isAdmin && canAdvance && <button type="button" data-testid={`advance-match-${match.id}`} onClick={advance} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-gold hover:bg-gold/10">Advance Final Result</button>}
       <ScheduleDialog open={open} setOpen={setOpen} match={match} app={app} compatible={compatible} triggerRef={scheduleTriggerRef} />
@@ -172,11 +173,11 @@ const TeamSlot = ({ state, teamId, seed, winner }) => {
 };
 
 const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) => {
-  const [form, setForm] = useState({ date: "", time: "", location: "", game_id: "" });
+  const [form, setForm] = useState({ starts_at: "", venue_id: "", game_id: "" });
   const save = async () => {
     try {
       if (form.game_id) await app.linkPlayoffGame({ match_id: match.id, game_id: form.game_id });
-      else await app.schedulePlayoffMatch({ match_id: match.id, date: form.date, time: form.time, location: form.location });
+      else await app.schedulePlayoffMatch({ match_id: match.id, starts_at: fromDateTimeLocalValue(form.starts_at), venue_id: form.venue_id });
       toast.success(form.game_id ? "Existing game linked" : "Playoff game scheduled");
       setOpen(false);
     } catch { /* surfaced centrally */ }
@@ -192,33 +193,42 @@ const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) =
       >
         <DialogHeader>
           <DialogTitle className="font-display uppercase">Schedule {match.label}</DialogTitle>
-          <DialogDescription>Link a matching playoff game already on the schedule, or enter the required date, time, and location.</DialogDescription>
+          <DialogDescription>Link a matching playoff game already on the schedule, or enter the required start time and venue.</DialogDescription>
         </DialogHeader>
         {compatible.length > 0 && (
           <Filter label="Existing Match" value={form.game_id || "new"} onChange={(value) => setForm({ ...form, game_id: value === "new" ? "" : value })} testid="playoffs-existing-match">
             <SelectItem value="new">Create new game</SelectItem>
-            {compatible.map((game) => <SelectItem key={game.id} value={game.id}>{game.date} · {game.time}</SelectItem>)}
+            {compatible.map((game) => <SelectItem key={game.id} value={game.id}>{formatGameDateTime(game)}</SelectItem>)}
           </Filter>
         )}
         {!form.game_id && (
           <div className="grid gap-3">
             <div className="grid gap-1.5">
-              <Label htmlFor="playoff-match-date">Date (required)</Label>
-              <Input id="playoff-match-date" name="date" type="date" required value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
+              <Label htmlFor="playoff-match-start">Start (required)</Label>
+              <Input id="playoff-match-start" name="starts_at" type="datetime-local" required value={form.starts_at} onChange={(event) => setForm({ ...form, starts_at: event.target.value })} />
+              <p className="text-micro text-muted-foreground">Entered and shown in league time ({LEAGUE_TIME_ZONE.split("/")[1].replace("_", " ")}).</p>
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="playoff-match-time">Time (required)</Label>
-              <Input id="playoff-match-time" name="time" placeholder="6:30 PM" required value={form.time} onChange={(event) => setForm({ ...form, time: event.target.value })} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label htmlFor="playoff-match-location">Location (required)</Label>
-              <Input id="playoff-match-location" name="location" placeholder="Field / location" required value={form.location} onChange={(event) => setForm({ ...form, location: event.target.value })} />
+              <Label htmlFor="playoff-match-venue">Venue (required)</Label>
+              <select
+                id="playoff-match-venue"
+                name="venue_id"
+                required
+                value={form.venue_id}
+                onChange={(event) => setForm({ ...form, venue_id: event.target.value })}
+                className="h-10 rounded-lg bg-surface-sunken border border-border px-3 text-sm text-foreground"
+              >
+                <option value="">Select a venue…</option>
+                {(app.state?.venues || []).filter((venue) => venue.status !== "retired").map((venue) => (
+                  <option key={venue.id} value={venue.id}>{[venue.name, venue.field_label].filter(Boolean).join(" · ")}</option>
+                ))}
+              </select>
             </div>
           </div>
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-          <Button onClick={save} disabled={!form.game_id && (!form.date || !form.time.trim() || !form.location.trim())}>Save</Button>
+          <Button onClick={save} disabled={!form.game_id && (!form.starts_at || !form.venue_id)}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -9,6 +9,7 @@
  * ========================================================================== */
 
 import { allStatKeys, computeDerivedStat } from "./statsConfig";
+import { gameStartValue, byStartAscending } from "./gameTime";
 
 /* ---------------------------- lookups ------------------------------------ */
 export const getTeam = (state, id) => state.teams.find((t) => t.id === id);
@@ -67,20 +68,20 @@ export function computeTeamRecord(state, team_id) {
     if (g.stage === "playoff" || g.stage === "tournament") return;
     if (g.home_team_id !== team_id && g.away_team_id !== team_id) return;
     if (isForfeitOutcome(g)) {
-      if (g.winner_team_id === team_id) { wins++; outcomes.push({ date: g.date, result: "W" }); }
-      else if (g.loser_team_id === team_id) { losses++; outcomes.push({ date: g.date, result: "L" }); }
+      if (g.winner_team_id === team_id) { wins++; outcomes.push({ startsAt: g.starts_at, result: "W" }); }
+      else if (g.loser_team_id === team_id) { losses++; outcomes.push({ startsAt: g.starts_at, result: "L" }); }
       return;
     }
     const isHome = g.home_team_id === team_id;
     const own = isHome ? g.home_score : g.away_score;
     const opp = isHome ? g.away_score : g.home_score;
     pf += own; pa += opp;
-    if (own > opp) { wins++; outcomes.push({ date: g.date, result: "W" }); }
-    else if (own < opp) { losses++; outcomes.push({ date: g.date, result: "L" }); }
-    else { ties++; outcomes.push({ date: g.date, result: "T" }); }
+    if (own > opp) { wins++; outcomes.push({ startsAt: g.starts_at, result: "W" }); }
+    else if (own < opp) { losses++; outcomes.push({ startsAt: g.starts_at, result: "L" }); }
+    else { ties++; outcomes.push({ startsAt: g.starts_at, result: "T" }); }
   });
 
-  outcomes.sort((a, b) => new Date(a.date) - new Date(b.date));
+  outcomes.sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
   const form = outcomes.slice(-5).map((o) => o.result);
 
   // Current streak: consecutive identical results counted back from the most
@@ -252,7 +253,7 @@ export function playerGameLog(state, profile_id, sport, { domain = "league", sea
         && s.game.stage !== "tournament"
         && (!season || s.league.season === season);
     })
-    .sort((a, b) => new Date(b.game.date) - new Date(a.game.date));
+    .sort((a, b) => gameStartValue(b.game) - gameStartValue(a.game));
 }
 
 /* --------------------------- games played -------------------------------- */
@@ -354,7 +355,7 @@ export function teamRoster(state, team_id) {
 export function teamGames(state, team_id) {
   return state.games
     .filter((g) => g.home_team_id === team_id || g.away_team_id === team_id)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+    .sort(byStartAscending);
 }
 
 /* ---------------------------- leaderboards ------------------------------- */

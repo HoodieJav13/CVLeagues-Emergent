@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CalendarX, Clock, MapPin, Trophy } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { getTeam, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
+import { formatGameDate, formatGameTime, venueLabel, byStartAscending, byStartDescending } from "../lib/gameTime";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { GameCard } from "../components/game/GameCard";
 import { SportBadge } from "../components/common/Badges";
@@ -15,12 +16,7 @@ import { StructuralCorner, StructuralIdentityBadge } from "../components/directi
 // used at full opacity. Replaces the stadium/stock photos.
 import heroBg from "../assets/backgrounds/sandia-wide-hero-bg.svg";
 
-const formatGameDate = (game) =>
-  new Date(game.date + "T00:00:00").toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+
 
 const gameGridClass = (count) => {
   if (count === 1) return "grid grid-cols-1 gap-3 max-w-2xl w-full";
@@ -123,10 +119,10 @@ const ScoreboardFeature = ({ game, kind, state }) => {
       <div className="mt-3 pt-3 border-t border-border flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
         <span className="font-medium text-foreground/80">{formatGameDate(game)}</span>
         <span className="flex items-center gap-1">
-          <Clock size={13} weight="bold" /> {game.time}
+          <Clock size={13} weight="bold" /> {formatGameTime(game)}
         </span>
         <span className="flex items-center gap-1 truncate">
-          <MapPin size={13} weight="bold" /> {game.location}
+          <MapPin size={13} weight="bold" /> {venueLabel(state, game)}
         </span>
       </div>
     </Link>
@@ -152,11 +148,11 @@ export default function Home() {
 
   const upcoming = filtered
     .filter((g) => g.status === "upcoming")
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort(byStartAscending)
     .slice(0, 4);
   const recent = filtered
     .filter(isFinalOutcome)
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .sort(byStartDescending)
     .slice(0, 4);
 
   // Featured scoreboard (unfiltered — it sits above the sport/league selectors):
@@ -165,14 +161,14 @@ export default function Home() {
     () =>
       state.games
         .filter(isFinalOutcome)
-        .sort((a, b) => new Date(b.date) - new Date(a.date))[0] || null,
+        .sort(byStartDescending)[0] || null,
     [state.games]
   );
   const nextUp = useMemo(
     () =>
       state.games
         .filter((g) => g.status === "upcoming")
-        .sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null,
+        .sort(byStartAscending)[0] || null,
     [state.games]
   );
   const featuredCount = Number(Boolean(latestFinal)) + Number(Boolean(nextUp));

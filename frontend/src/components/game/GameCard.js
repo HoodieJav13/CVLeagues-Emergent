@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { MapPin, Clock } from "@phosphor-icons/react";
 import { useApp } from "../../context/AppStateContext";
 import { getTeam, isFinalOutcome, isForfeitOutcome } from "../../lib/selectors";
+import { formatGameDate, formatGameTime, venueLabel } from "../../lib/gameTime";
 import { SportBadge, StatusBadge } from "../common/Badges";
 import { StageBanner, isSpecialStage } from "./StageBanner";
 
@@ -59,11 +60,7 @@ export const GameCard = ({ game, className = "" }) => {
   // full-width StageBanner up top + gold left edge, upcoming AND historical.
   const isUpcoming = game.status === "upcoming";
   const special = isSpecialStage(game);
-  const dateStr = new Date(game.date + "T00:00:00").toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  });
+  const dateStr = formatGameDate(game);
 
   return (
     <Link
@@ -88,10 +85,10 @@ export const GameCard = ({ game, className = "" }) => {
       <div className="mt-3 sm:mt-2 pt-3 sm:pt-2 border-t border-border flex flex-wrap items-center gap-x-4 sm:gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span className="flex items-center gap-1 font-medium text-foreground/80">{dateStr}</span>
         <span className="flex items-center gap-1">
-          <Clock size={13} weight="bold" /> {game.time}
+          <Clock size={13} weight="bold" /> {formatGameTime(game)}
         </span>
         <span className="flex items-center gap-1 truncate">
-          <MapPin size={13} weight="bold" /> {game.location}
+          <MapPin size={13} weight="bold" /> {venueLabel(state, game)}
         </span>
       </div>
     </Link>

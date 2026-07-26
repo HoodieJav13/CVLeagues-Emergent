@@ -56,6 +56,10 @@ describe("Schedule visual contracts", () => {
     });
     window.cancelAnimationFrame = jest.fn((frame) => mockAnimationFrames.delete(frame));
     mockState = {
+      venues: [
+        { id: "tv1", name: "Mesa Field", field_label: null, status: "active" },
+        { id: "tv2", name: "North Field", field_label: null, status: "active" },
+      ],
       settings: { current_season: "Summer 2026" },
       seasons: [{ name: "Summer 2026", status: "active" }],
       leagues: [{ id: "league-1", name: "Monday Kickball", sport: "kickball", season: "Summer 2026", kind: "league" }],
@@ -68,7 +72,8 @@ describe("Schedule visual contracts", () => {
         league_id: "league-1",
         sport: "kickball",
         status: "upcoming",
-        date: "2026-07-20",
+        starts_at: "2026-07-20T18:30:00-06:00",
+        venue_id: "tv1",
         home_team_id: "home",
         away_team_id: "away",
       }],
