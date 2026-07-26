@@ -24,7 +24,7 @@ const ids = Object.fromEntries(
   [
     "league", "identityLeague", "homeTeam", "awayTeam", "extraTeam1", "extraTeam2", "profile", "roster",
     "game", "linkedPlayoffGame", "unknownPlayoffMatch", "seedHistory", "charge", "payment", "adminCharge", "adminPayment",
-    "registration", "freeAgent", "waiver", "hof", "deniedGame", "unknownTeamIdentity",
+    "registration", "freeAgent", "waiver", "hof", "deniedGame", "unknownTeamIdentity", "venue",
   ].map((name) => [name, randomUUID()]),
 );
 const season = `Matrix ${runId}`;
@@ -91,7 +91,9 @@ select json_build_object(
   'team_identities', (select count(*) from public.team_identities),
   'teams', (select count(*) from public.teams),
   'team_players', (select count(*) from public.team_players),
+  'venues', (select count(*) from public.venues),
   'games', (select count(*) from public.games),
+  'game_participation', (select count(*) from public.game_participation),
   'game_edit_history', (select count(*) from public.game_edit_history),
   'player_stats', (select count(*) from public.player_stats),
   'career_baselines', (select count(*) from public.career_baselines),
@@ -167,8 +169,10 @@ values
   (${sqlLiteral(ids.extraTeam2)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} extra two`)}, 'kickball', '#10B981', 'active');
 insert into public.team_players (id, team_id, profile_id, season, jersey_number, roster_status)
 values (${sqlLiteral(ids.roster)}::uuid, ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.profile)}::uuid, ${sqlLiteral(season)}, 13, 'pending_waiver');
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location, stage)
-values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickball', ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.awayTeam)}::uuid, '2099-07-13', '6:30 PM', ${sqlLiteral(runId)}, 'regular');
+insert into public.venues (id, name, address)
+values (${sqlLiteral(ids.venue)}::uuid, ${sqlLiteral(`${runId} venue`)}, ${sqlLiteral(`${runId} address`)});
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickball', ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.awayTeam)}::uuid, '2099-07-13T18:30:00-06:00'::timestamptz, ${sqlLiteral(ids.venue)}::uuid, 'regular');
 insert into public.game_edit_history (id, game_id, action)
 values (${sqlLiteral(ids.seedHistory)}::uuid, ${sqlLiteral(ids.game)}::uuid, 'Fixture seeded');
 insert into public.charges (id, season, profile_id, amount_due_cents, notes)
@@ -194,11 +198,13 @@ delete from public.hof_entries where id = ${sqlLiteral(ids.hof)}::uuid or title 
 delete from public.playoff_brackets where league_id = ${sqlLiteral(ids.league)}::uuid;
 delete from public.game_edit_history where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
 delete from public.player_stats where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
+delete from public.game_participation where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
 delete from public.waivers where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.team_players where season = ${sqlLiteral(season)};
 delete from public.team_registrations where captain_email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.free_agents where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.games where league_id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
+delete from public.venues where id = ${sqlLiteral(ids.venue)}::uuid;
 delete from public.teams where league_id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
 delete from public.team_identities where name like ${sqlLiteral(`${runId}%`)};
 delete from public.profiles where email like ${sqlLiteral(`${runId}.%@example.invalid`)};

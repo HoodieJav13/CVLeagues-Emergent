@@ -215,7 +215,7 @@ function rpcArguments(name) {
       p_league_id: config.ids.league,
       p_seed_team_ids: [config.ids.homeTeam, config.ids.awayTeam, config.ids.extraTeam1, config.ids.extraTeam2],
     },
-    schedule_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch, p_date: "2099-07-14", p_time: "7:00 PM", p_location: config.runId },
+    schedule_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch, p_starts_at: "2099-07-14T19:00:00-06:00", p_venue_id: config.ids.venue },
     link_playoff_game: { p_match_id: config.ids.unknownPlayoffMatch, p_game_id: config.ids.game },
     advance_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch },
     enroll_team_identity: {
@@ -271,6 +271,10 @@ function rpcArguments(name) {
       p_game_id: config.ids.game, p_winner_team_id: config.ids.homeTeam,
       p_reason: "Denied matrix probe", p_idempotency_key: config.runId,
     },
+    set_game_participation: {
+      p_game_id: config.ids.game,
+      p_entries: [{ profile_id: config.ids.profile, team_id: config.ids.homeTeam, status: "played" }],
+    },
     start_scorekeeping_correction: { p_game_id: config.ids.game, p_reason: "Denied matrix probe" },
     finalize_scorekeeping_correction: {
       p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
@@ -305,6 +309,7 @@ const ADMIN_RPC_NAMES = [
   "declare_ledger_forfeit",
   "start_scorekeeping_correction",
   "finalize_scorekeeping_correction",
+  "set_game_participation",
 ];
 
 async function runMatrix() {
@@ -442,6 +447,11 @@ async function runMatrix() {
         requireCondition(Array.isArray(data) && data.length === 1, `${table} fixture row was not public.`);
       });
     }
+    for (const table of ["venues", "game_participation"]) {
+      await check("public reads", `anonymous can query ${table}`, async () => {
+        requireSuccess(await anon.from(table).select("*").limit(1));
+      });
+    }
     for (const table of ["playoff_brackets", "playoff_seeds", "playoff_matches"]) {
       await check("public reads", `anonymous can query ${table}`, async () => {
         requireSuccess(await anon.from(table).select("*").limit(1));
@@ -462,6 +472,26 @@ async function runMatrix() {
       await check("private reads", `anonymous cannot read ${table}`, async () => requireHidden(await anon.from(table).select("*").limit(1)));
       await check("private reads", `non-admin cannot read ${table}`, async () => requireHidden(await nonadmin.from(table).select("*").limit(1)));
     }
+
+    // Migration 28 surface. Publicly readable, admin-write, never client-deletable
+    // for venues because historical games reference them.
+    const deniedVenue = { name: `${config.runId} denied venue` };
+    const deniedParticipation = {
+      game_id: config.ids.game, profile_id: config.ids.profile,
+      team_id: config.ids.homeTeam, status: "played",
+    };
+    for (const [roleKey, roleClient] of [["anonymous", anon], ["non-admin", nonadmin]]) {
+      await check("migration 28 authorization", `${roleKey} cannot insert venues`, async () =>
+        requireDenied(await roleClient.from("venues").insert(deniedVenue)));
+      await check("migration 28 authorization", `${roleKey} cannot update venues`, async () =>
+        requireNoWrite(await roleClient.from("venues").update({ name: config.runId }).eq("id", config.ids.venue).select()));
+      await check("migration 28 authorization", `${roleKey} cannot insert participation`, async () =>
+        requireDenied(await roleClient.from("game_participation").insert(deniedParticipation)));
+      await check("migration 28 authorization", `${roleKey} cannot set participation by RPC`, async () =>
+        requireAdminGuard(await roleClient.rpc("set_game_participation", rpcArguments("set_game_participation"))));
+    }
+    await check("migration 28 authorization", "no client role can delete a venue", async () =>
+      requireNoWrite(await admin.from("venues").delete().eq("id", config.ids.venue).select()));
 
     const deniedCharge = { season: config.season, profile_id: config.ids.profile, amount_due_cents: 100, kind: "other", notes: config.runId };
     const deniedPayment = { charge_id: config.ids.charge, amount_cents: 100, method: "matrix", note: config.runId };
