@@ -8,6 +8,7 @@ import {
   CaretRight, Flag, LinkSimple, X,
   CurrencyDollar,
   Medal,
+  MapPin,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
@@ -34,6 +35,7 @@ import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { EmptyState } from "../components/common/Section";
 import { BACKEND_ENABLED } from "../lib/supabase";
 import { signOutAdmin } from "../lib/backend";
+import VenuesTab from "../components/admin/VenuesTab";
 import PaymentsTab from "../components/admin/PaymentsTab";
 import HallOfFameTab from "../components/admin/HallOfFameTab";
 
@@ -61,6 +63,7 @@ function Dashboard() {
     { id: "waivers", label: "Waivers", icon: Signature },
     { id: "teams", label: "Teams", icon: UsersThree },
     { id: "leagues", label: "Leagues", icon: Trophy },
+    { id: "venues", label: "Venues", icon: MapPin },
     { id: "games", label: "Schedule/Games", icon: CalendarBlank },
     { id: "scores", label: "Scores/Stats", icon: ChartBar },
     { id: "payments", label: "Payments", icon: CurrencyDollar },
@@ -115,6 +118,7 @@ function Dashboard() {
         <TabsContent value="waivers" className="mt-3"><WaiversTab app={app} /></TabsContent>
         <TabsContent value="teams" className="mt-3"><TeamsTab app={app} /></TabsContent>
         <TabsContent value="leagues" className="mt-3"><LeaguesTab app={app} /></TabsContent>
+        <TabsContent value="venues" className="mt-3"><VenuesTab app={app} /></TabsContent>
         <TabsContent value="games" className="mt-3"><GamesTab app={app} /></TabsContent>
         <TabsContent value="scores" className="mt-3"><ScoresTab app={app} /></TabsContent>
         <TabsContent value="payments" className="mt-3"><PaymentsTab app={app} /></TabsContent>
@@ -913,6 +917,7 @@ function RegistrationsTab({ app }) {
     </div>
   );
 }
+
 
 /* -------------------------- SCHEDULE / GAMES ------------------------------ */
 function GamesTab({ app }) {
