@@ -21,7 +21,9 @@ const TABLES = {
   teamIdentities: "team_identities",
   teams: "teams",
   teamPlayers: "team_players",
+  venues: "venues",
   games: "games",
+  gameParticipation: "game_participation",
   playerStats: "player_stats",
   scorekeepingSessions: "scorekeeping_sessions",
   scorekeepingParticipants: "scorekeeping_participants",
@@ -49,11 +51,11 @@ export async function fetchAppState(isAdmin) {
     ? supabase
         .from("games")
         .select("*, edit_history:game_edit_history(action, reason, override_reason, validation_warnings, before_state, after_state, created_at)")
-        .order("date")
+        .order("starts_at")
         .order("created_at", { referencedTable: "game_edit_history" })
-    : supabase.from("games").select("*").order("date");
+    : supabase.from("games").select("*").order("starts_at");
 
-  const [games, leagues, seasons, teamIdentities, teams, teamPlayers, playerStats, scorekeepingSessions, scorekeepingParticipants, scorekeepingEvents, scorekeepingEventAttributions, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
+  const [games, leagues, seasons, teamIdentities, teams, teamPlayers, venues, gameParticipation, playerStats, scorekeepingSessions, scorekeepingParticipants, scorekeepingEvents, scorekeepingEventAttributions, playoffBrackets, playoffSeeds, playoffMatches, baselines, settingsRow, profiles, freeAgents, registrations, waivers, charges, paymentEntries, hofEntries] =
     await Promise.all([
       gamesQ,
       supabase.from("leagues").select("*").order("name"),
@@ -61,6 +63,9 @@ export async function fetchAppState(isAdmin) {
       supabase.from("team_identities").select("*").order("name"),
       supabase.from("teams").select("*").order("name"),
       supabase.from("team_players").select("*"),
+      // Venues and participation are public reads, same as the scoreboard.
+      supabase.from("venues").select("*").order("name").order("field_label", { nullsFirst: true }),
+      supabase.from("game_participation").select("*"),
       supabase.from("player_stats").select("*"),
       isAdmin ? supabase.from("scorekeeping_sessions").select("*").order("created_at") : Promise.resolve({ data: [] }),
       isAdmin ? supabase.from("scorekeeping_participants").select("*") : Promise.resolve({ data: [] }),
@@ -84,6 +89,7 @@ export async function fetchAppState(isAdmin) {
 
   for (const [r, what] of [
     [games, "games"], [leagues, "leagues"], [seasons, "seasons"], [teamIdentities, "team_identities"], [teams, "teams"], [teamPlayers, "team_players"],
+    [venues, "venues"], [gameParticipation, "game_participation"],
     [playerStats, "player_stats"], [playoffBrackets, "playoff_brackets"], [playoffSeeds, "playoff_seeds"],
     [scorekeepingSessions, "scorekeeping_sessions"], [scorekeepingParticipants, "scorekeeping_participants"],
     [scorekeepingEvents, "scorekeeping_events"], [scorekeepingEventAttributions, "scorekeeping_event_attributions"],
@@ -107,6 +113,8 @@ export async function fetchAppState(isAdmin) {
     teamIdentities: teamIdentities.data || [],
     teams: teams.data || [],
     teamPlayers: teamPlayers.data || [],
+    venues: venues.data || [],
+    gameParticipation: gameParticipation.data || [],
     games: (games.data || []).map((game) => ({
       ...game,
       edit_history: game.edit_history || [],
@@ -512,14 +520,24 @@ export async function generatePlayoffBracket({ league_id, seed_team_ids }) {
   fail(error, "generate playoff bracket");
 }
 
-export async function schedulePlayoffMatch({ match_id, date, time, location }) {
+export async function schedulePlayoffMatch({ match_id, starts_at, venue_id }) {
   const { error } = await supabase.rpc("schedule_playoff_match", {
     p_match_id: match_id,
-    p_date: date,
-    p_time: time,
-    p_location: location,
+    p_starts_at: starts_at,
+    p_venue_id: venue_id,
   });
   fail(error, "schedule playoff match");
+}
+
+// Attendance is deliberately not part of the score lifecycle: this RPC writes
+// no score, stat, or history row and is not blocked by the game lock.
+export async function setGameParticipation({ game_id, entries }) {
+  const { data, error } = await supabase.rpc("set_game_participation", {
+    p_game_id: game_id,
+    p_entries: entries || [],
+  });
+  fail(error, "record participation");
+  return data;
 }
 
 export async function linkPlayoffGame({ match_id, game_id }) {

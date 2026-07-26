@@ -10,6 +10,7 @@ import {
 } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel, sportName, LEADERBOARD_CATEGORIES, DERIVED_STATS, computeDerivedStat, formatDerivedStat } from "../lib/statsConfig";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
+import { formatGameShortDate } from "../lib/gameTime";
 import { Avatar } from "../components/common/Avatar";
 import { SportBadge } from "../components/common/Badges";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
@@ -291,7 +292,7 @@ const PublicSport = ({ state, profile, sport }) => {
           const opp = getTeam(state, row.game.home_team_id === row.team_id ? row.game.away_team_id : row.game.home_team_id);
           return (
             <Link key={row.id} to={`/game/${row.game.id}`} className="flex items-center justify-between gap-2 min-h-11 text-sm p-2 rounded-lg hover:bg-white/5 active:bg-white/10">
-              <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-muted-foreground">vs {opp?.name}</span></span>
+              <span className="text-muted-foreground">{formatGameShortDate(row.game)} <span className="text-muted-foreground">vs {opp?.name}</span></span>
               <span className="font-mono-score text-xs text-primary">{keys.slice(0, 3).map((k) => `${row.stats[k] || 0} ${statLabel(sport, k).split(" ")[0]}`).join(" · ")}</span>
             </Link>
           );

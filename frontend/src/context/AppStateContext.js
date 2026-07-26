@@ -594,7 +594,7 @@ export function AppStateProvider({ children }) {
     });
   }, []);
 
-  const schedulePlayoffMatch = useCallback(({ match_id, date, time, location }) => {
+  const schedulePlayoffMatch = useCallback(({ match_id, starts_at, venue_id }) => {
     setState((prev) => {
       const match = prev.playoffMatches.find((item) => item.id === match_id);
       const bracket = prev.playoffBrackets.find((item) => item.id === match?.bracket_id);
@@ -604,7 +604,7 @@ export function AppStateProvider({ children }) {
       const game = {
         id: game_id, league_id: league.id, sport: league.sport,
         home_team_id: match.home_team_id, away_team_id: match.away_team_id,
-        date, time, location, status: "upcoming", score_status: "pending", stage: "playoff",
+        starts_at, venue_id, status: "upcoming", score_status: "pending", stage: "playoff",
         home_score: null, away_score: null, periods: { home: [], away: [] }, locked: false, edit_history: [],
       };
       return {
@@ -651,6 +651,27 @@ export function AppStateProvider({ children }) {
         playoffBrackets: prev.playoffBrackets.map((item) => item.id === source.bracket_id && bracketDone ? { ...item, status: "complete" } : item),
       };
     });
+  }, []);
+
+  // Mirrors the set_game_participation RPC: replaces a game's whole
+  // participation set. Deliberately ignores games.locked — attendance is not
+  // part of the score lifecycle and stays correctable after a game is final.
+  const setGameParticipation = useCallback(({ game_id, entries }) => {
+    setState((prev) => ({
+      ...prev,
+      gameParticipation: [
+        ...(prev.gameParticipation || []).filter((row) => row.game_id !== game_id),
+        ...(entries || []).map((entry) => ({
+          id: newId("gp"),
+          game_id,
+          profile_id: entry.profile_id,
+          team_id: entry.team_id,
+          status: entry.status || "played",
+          source: entry.source || "admin",
+          recorded_by: null,
+        })),
+      ],
+    }));
   }, []);
 
   const assignTempAdmin = useCallback((game_id, profile_id) => {
@@ -750,6 +771,7 @@ export function AppStateProvider({ children }) {
     schedulePlayoffMatch: act(backend.schedulePlayoffMatch),
     linkPlayoffGame: act(backend.linkPlayoffGame),
     advancePlayoffMatch: act(backend.advancePlayoffMatch),
+    setGameParticipation: act(backend.setGameParticipation),
     assignTempAdmin: act(backend.assignTempAdmin),
     appendAdminNote: act(backend.appendAdminNote),
     lockGame: act(backend.lockGame),
@@ -792,6 +814,7 @@ export function AppStateProvider({ children }) {
         schedulePlayoffMatch,
         linkPlayoffGame,
         advancePlayoffMatch,
+        setGameParticipation,
         assignTempAdmin,
         appendAdminNote,
         lockGame,

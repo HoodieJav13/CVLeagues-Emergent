@@ -6,6 +6,7 @@ import { SectionHeading, EmptyState } from "../components/common/Section";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS } from "../lib/statsConfig";
 import { currentSeasonForSport } from "../lib/selectors";
+import { byStartAscending, gameWeekKey, formatWeekLabel } from "../lib/gameTime";
 
 const FilterResultRegion = ({ animate, className, testId, children }) => {
   const [entered, setEntered] = useState(!animate);
@@ -78,7 +79,7 @@ export default function Schedule() {
       .filter((g) => league_id === "all" || g.league_id === league_id)
       .filter((g) => team_id === "all" || g.home_team_id === team_id || g.away_team_id === team_id)
       .filter((g) => status === "all" || g.status === status)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+      .sort(byStartAscending);
   }, [state, sport, season, league_id, team_id, status]);
 
   // Group the already-filtered games by their week (Sunday start). Because groups
@@ -87,10 +88,10 @@ export default function Schedule() {
   const weekGroups = useMemo(() => {
     const map = new Map();
     for (const g of games) {
-      const d = new Date(g.date + "T00:00:00");
-      d.setDate(d.getDate() - d.getDay()); // back to the week's Sunday
-      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
-      const label = `Week of ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+      // Weeks are grouped on the LEAGUE's calendar date, not the viewer's, so a
+      // late kickoff never lands in the wrong week for someone in another zone.
+      const key = gameWeekKey(g);
+      const label = formatWeekLabel(key);
       if (!map.has(key)) map.set(key, { key, label, games: [] });
       map.get(key).games.push(g);
     }

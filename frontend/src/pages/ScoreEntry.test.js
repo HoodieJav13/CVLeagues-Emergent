@@ -43,6 +43,10 @@ jest.mock("react-router-dom", () => ({
 }), { virtual: true });
 
 const lockedState = {
+  venues: [
+    { id: "tv1", name: "Test Field", field_label: null, status: "active" },
+    { id: "tv2", name: "Second Field", field_label: null, status: "active" },
+  ],
   games: [
     {
       id: "game-1",
@@ -50,9 +54,8 @@ const lockedState = {
       status: "completed",
       score_status: "final",
       locked: true,
-      date: "2026-08-01",
-      time: "6:00 PM",
-      location: "Test Field",
+      starts_at: "2026-08-01T18:00:00-06:00",
+      venue_id: "tv1",
       home_team_id: "home",
       away_team_id: "away",
       periods: { home: [2, 2, 1, 1, 1], away: [1, 1, 1, 1, 0] },
@@ -63,9 +66,8 @@ const lockedState = {
       status: "completed",
       score_status: "final",
       locked: true,
-      date: "2026-08-02",
-      time: "7:00 PM",
-      location: "Second Field",
+      starts_at: "2026-08-02T19:00:00-06:00",
+      venue_id: "tv2",
       home_team_id: "home",
       away_team_id: "away",
       periods: { home: [0, 0, 0, 0, 0], away: [0, 0, 0, 0, 0] },

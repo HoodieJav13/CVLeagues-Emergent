@@ -36,13 +36,16 @@ describe("GameDetail score action", () => {
     mockRole = "admin";
     mockRoleMeta = {};
     mockState = {
+      venues: [
+        { id: "tv1", name: "Mesa Field", field_label: null, status: "active" },
+        { id: "tv2", name: "North Field", field_label: null, status: "active" },
+      ],
       games: [{
         id: "game-1",
         sport: "kickball",
         status: "upcoming",
-        date: "2026-07-20",
-        time: "6:30 PM",
-        location: "Mesa Field",
+        starts_at: "2026-07-20T18:30:00-06:00",
+        venue_id: "tv1",
         away_team_id: "away",
         home_team_id: "home",
       }],

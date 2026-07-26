@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { CalendarX, FloppyDisk, LockSimple, PencilSimpleLine, Plus, UsersThree } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
+import { formatGameShortDate, formatGameTime, venueLabel } from "../lib/gameTime";
 import { useRole } from "../context/RoleContext";
 import { getTeam, isForfeitOutcome, teamRoster } from "../lib/selectors";
 import { STAT_GROUPS, HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
@@ -62,7 +63,7 @@ const FilterResultRegion = ({ animate, className, testId, children }) => {
 };
 
 function Entry() {
-  const { state, submitScore } = useApp();
+  const { state, submitScore, setGameParticipation } = useApp();
   const { role } = useRole();
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,6 +77,9 @@ function Entry() {
 
   const [periods, setPeriods] = useState({ home: [], away: [] });
   const [statsByPlayer, setStatsByPlayer] = useState({});
+  // Who appeared. Tracked separately from statistics because a player can show
+  // up and record nothing; a stat row is not evidence of playing.
+  const [played, setPlayed] = useState({});
   const [expanded, setExpanded] = useState(null);
   const [correctionOpen, setCorrectionOpen] = useState(false);
   const [correctionReason, setCorrectionReason] = useState("");
@@ -102,6 +106,21 @@ function Entry() {
       existing[s.profile_id] = { team_id: s.team_id, stats: { ...s.stats } };
     });
     setStatsByPlayer(existing);
+    // Attendance prefills from any recorded participation, otherwise defaults
+    // every rostered player to present — marking the handful who missed is far
+    // less work than ticking everyone who came.
+    const recorded = (state.gameParticipation || []).filter((row) => row.game_id === game.id);
+    const attendance = {};
+    [game.home_team_id, game.away_team_id].forEach((team_id) => {
+      teamRoster(state, team_id).forEach((row) => {
+        const existingRow = recorded.find((item) => item.profile_id === row.profile_id);
+        attendance[row.profile_id] = {
+          team_id,
+          status: existingRow ? existingRow.status : "played",
+        };
+      });
+    });
+    setPlayed(attendance);
     setExpanded(null);
     setCorrectionDraft(false);
     setCorrectionReason("");
@@ -152,6 +171,11 @@ function Entry() {
     teams: state.teams,
   });
 
+  const participationEntries = () =>
+    Object.entries(played)
+      .filter(([, entry]) => entry?.status === "played")
+      .map(([profile_id, entry]) => ({ profile_id, team_id: entry.team_id, status: "played" }));
+
   const performSave = async (softOverride = "") => {
     setSaving(true);
     try {
@@ -164,6 +188,13 @@ function Entry() {
         correction_reason: correctionDraft ? correctionReason.trim() : "",
         override_reason: softOverride.trim(),
       });
+      // Attendance is recorded separately from the score and is not blocked by
+      // the game lock, so a failure here must not roll back a saved score.
+      try {
+        await setGameParticipation({ game_id: game.id, entries: participationEntries() });
+      } catch {
+        toast.warning("Score saved, but attendance could not be recorded.");
+      }
       toast.success(correctionDraft ? "Final result corrected and re-locked" : `${away.name} ${awayTotal} – ${homeTotal} ${home.name} saved!`, {
         description: correctionDraft ? "The reason and before/after values were added to audit history." : "Standings, records, stats & leaderboards updated.",
       });
@@ -278,7 +309,7 @@ function Entry() {
               const h = getTeam(state, g.home_team_id), a = getTeam(state, g.away_team_id);
               return (
                 <SelectItem key={g.id} value={g.id}>
-                  {a.name} @ {h.name} · {new Date(g.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} {isForfeitOutcome(g) ? "(Forfeit)" : g.status === "completed" ? "(Final)" : ""}
+                  {a.name} @ {h.name} · {formatGameShortDate(g)} {isForfeitOutcome(g) ? "(Forfeit)" : g.status === "completed" ? "(Final)" : ""}
                 </SelectItem>
               );
             })}
@@ -294,7 +325,7 @@ function Entry() {
       >
       <div className="flex items-center gap-2">
         <SportBadge sport={game.sport} />
-        <span className="text-xs text-muted-foreground">{game.location} · {game.time}</span>
+        <span className="text-xs text-muted-foreground">{venueLabel(state, game)} · {formatGameTime(game)}</span>
       </div>
 
       {/* Period scores */}
@@ -372,6 +403,22 @@ function Entry() {
                         </p>
                         <p className="text-micro text-muted-foreground tabular-nums">{summary}</p>
                       </div>
+                      <label
+                        className="flex items-center gap-1.5 text-micro uppercase tracking-widest text-muted-foreground shrink-0 pr-1"
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          data-testid={`score-player-played-${r.profile_id}`}
+                          checked={played[r.profile_id]?.status === "played"}
+                          onChange={(event) => setPlayed((prev) => ({
+                            ...prev,
+                            [r.profile_id]: { team_id: team.id, status: event.target.checked ? "played" : "absent" },
+                          }))}
+                          className="w-4 h-4 accent-teal"
+                        />
+                        Played
+                      </label>
                     </AccordionTrigger>
                     <AccordionContent className="px-4 pb-4 space-y-3" data-testid={`score-player-form-${r.profile_id}`}>
                         {STAT_GROUPS[team.sport].map((grp) => (
