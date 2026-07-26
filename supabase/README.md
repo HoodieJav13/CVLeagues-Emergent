@@ -2,9 +2,13 @@
 
 This file is authoritative for CVF Leagues schema, migration ledger, backend invariants, and hosted verification state. Current product status, roadmap, and owner actions live in [`../CLAUDE.md`](../CLAUDE.md). This dedicated Supabase project must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-24
+## Verified status — 2026-07-26
 
-- Twenty-seven migration files are present in filename order. A clean isolated Supabase reset applies all twenty-seven, and the independent pgtest run passes 294/294 plus a real two-connection idempotency race. All twenty-seven migrations are applied to hosted, and Sequence 4's real-session authorization matrix is accepted; the durable populated-ledger pilot remains separate and frozen.
+- **Twenty-eight migration files are present in filename order; twenty-seven are applied to hosted. Migration 28 is local-only and unpushed.** A clean isolated reset applies all twenty-eight, and the independent pgtest run passes 312/312 plus a real two-connection idempotency race.
+- Migration 28 (`20260726120000_venues_game_start_times_participation.sql`) adds `venues` and `game_participation`, replaces `games.date`/`games.time`/`games.location` with an authoritative `starts_at` timestamptz plus `venue_id`, and adds one RPC (`set_game_participation`). It **drops three columns**, so it is not silently reversible once hosted.
+- Because it adds two tables and one RPC, the accepted Sequence 4 matrix (26 tables / 25 RPCs / 256 checks) no longer covers the full surface. **Expand and re-run the authorization matrix to 28 tables / 26 RPCs before pushing.** The 256/256 acceptance remains valid for the twenty-seven-migration hosted baseline it was run against.
+- The frontend has not yet been migrated to the new game shape. `backend.js` still selects the dropped columns and calls the retired `schedule_playoff_match(uuid, date, text, text)` signature, so hosted mode would break until that work lands. Mock mode is unaffected because it runs off `seed.js`.
+- Sequence 4's real-session authorization matrix is accepted at its stated baseline; the durable populated-ledger pilot remains separate and frozen.
 - The linked hosted project has all twenty-seven migrations applied. Migration 24's private Event Ledger Lite boundary remains behaviorally accepted, and Migrations 25–27 passed migration, structure, row/settings baseline, privilege catalog, and advisor readback. The Season 1 operational baseline was preserved exactly.
 - Hosted verification confirms 74/74 foreign-key constraints with covering indexes, all 26 hosted tables with RLS enabled, the four empty ledger relations, and the expected operational row-count baseline. The earlier 60/60 local figure counted a narrower catalog shape and is superseded by this direct hosted constraint sweep.
 - Hosted Security and Performance Advisors were rerun after Sequence 4: 33 Security and 31 Performance findings have the itemized dispositions below. The ten additional Security warnings map exactly to the intended authenticated runtime RPCs; no ledger ACL or unindexed-foreign-key finding was reported.
@@ -62,6 +66,7 @@ The project is linked and all twenty-seven migrations are applied with migration
 | `20260722052347_ledger_runtime_sessions.sql` | Adds controlled AAL2 session leases, participant capture, validated/idempotent event append, resume, renewal, and cancellation |
 | `20260722052350_ledger_projection_finalization.sql` | Adds deterministic ledger projection, atomic finalization/failure audit, explicit W/L-only forfeits, and outcome-aware bracket advancement |
 | `20260722052352_ledger_correction_authority.sql` | Adds the single ledger correction authority, atomic void-and-replace, immutable snapshot chaining, and bracket-safe refinalization |
+| `20260726120000_venues_game_start_times_participation.sql` | **Local only, not hosted.** Adds `venues`; replaces game date/display-time/free-text location with an authoritative `starts_at` timestamptz and `venue_id`; adds `game_participation` and `set_game_participation` outside the score lock; reissues Migration 23's games column allowlist over the replacement columns; replaces `schedule_playoff_match` with the new signature |
 
 ## Completed database hardening
 
@@ -106,7 +111,7 @@ The current Performance Advisor reports 31 findings:
 
 ## Remaining backend launch gates
 
-Hosted authorization acceptance is complete and durably evidenced at 256/256 through Sequence 4 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-24.md`](evidence/hosted-auth-matrix-2026-07-24.md).
+Hosted authorization acceptance is complete and durably evidenced at 256/256 through Sequence 4 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-24.md`](evidence/hosted-auth-matrix-2026-07-24.md). That acceptance covers the twenty-seven-migration hosted baseline. Migration 28 adds two tables and one RPC on top of it and is not yet covered; the matrix must be expanded to 28 tables / 26 RPCs and re-run before that migration is pushed.
 
 Sequence 4 is behaviorally accepted through Migration 27. A later durable pilot remains required before official use. Because ledger evidence is intentionally append-only, the hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up. That pilot is currently frozen.
 
@@ -150,7 +155,9 @@ The harness requires local PostgreSQL binaries and permission to allocate Postgr
 
 ## Future hosted migration procedure
 
-The hosted ledger currently contains all twenty-seven repository migrations. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+The hosted ledger currently contains twenty-seven of the twenty-eight repository migrations; Migration 28 is the outstanding one. Every future migration push, migration-history repair, or other hosted write requires owner approval.
+
+Migration 28 additionally requires, before its push is proposed: the authorization matrix expanded to 28 tables and 26 RPCs and re-run, and the frontend migrated to the new game shape so hosted mode is not left broken between the push and the client update. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
 Before a future hosted migration:
 
@@ -172,7 +179,10 @@ After an approved push, immediately re-run migration listing, compare hosted his
 ## Database-owned invariants
 
 - **Admin identity:** `admin_users` is distinct from player profiles; Auth User is not Player.
-- **RLS:** all 26 local and hosted tables enable RLS. API privileges are separately allowlisted and covered by catalog assertions plus the accepted hosted authorization matrix at its stated baseline.
+- **RLS:** all 28 local (26 hosted) tables enable RLS. API privileges are separately allowlisted and covered by catalog assertions plus the accepted hosted authorization matrix at its stated baseline.
+- **Game time and place:** `games.starts_at` is the single authoritative timestamptz, and `games.venue_id` references a real venue. The former `date` column, `time` display string, and free-text `location` are dropped — two records of one fact drift as soon as one is edited alone.
+- **Participation is outside the score lifecycle:** `game_participation` is never written by the scoring RPCs, is not governed by the game lock, and never interacts with the aggregate or ledger correction authority. `set_game_participation` writes no score, stat, or history row, so it cannot become a second correction authority. A regression assertion proves participation is recordable on a final locked game while leaving the published result and edit-history count unchanged.
+- **Games column allowlist:** Migration 23 restricts authenticated clients to schedule columns on `games`. Migration 28 reissues that allowlist over `starts_at`/`venue_id` after dropping the columns it originally named; score, stat, and history columns remain unreachable except through the scoring RPCs.
 - **Ledger authority:** hosted Migration 24 makes aggregate the default, permits only controlled one-way conversion before score/session evidence, and blocks aggregate RPCs from ledger projections. Hosted Migrations 25–27 add the AAL2 ledger authority; structural acceptance passed, while real-session and durable-pilot behavior remain separately gated.
 - **Game locks:** Migration 23 retires aggregate unlock locally and hosted. A final correction requires AAL2 plus a non-empty reason and atomically preserves the completed/final/locked state; unsafe winner-changing playoff corrections remain blocked after downstream scheduling.
 - **Edit history:** game history rows are RPC-written, append-only, and immutable. Aggregate before/after snapshots are audit evidence only and never projection input.

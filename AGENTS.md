@@ -35,6 +35,13 @@ Run commands from the repository root unless noted otherwise.
 - Frontend tests: `cd frontend && CI=true npm test -- --watchAll=false`
 - Production build: `cd frontend && npm run build`
 - Complete database harness: `./tests/pgtest/run_pgtest.sh`
+
+Environment notes for a fresh checkout:
+
+- `npm install` needs `--legacy-peer-deps`. `react-day-picker@8.10.1` peers `date-fns@^2||^3` while the project pins `4.1.0`. This is pre-existing debt scheduled for the deferred-debt sweep; do not "fix" it by changing either version mid-stage.
+- The harness needs PostgreSQL **server** binaries, not just `psql`, and `initdb` refuses to run as root. Where the server lives off `PATH` and the shell is root, run it as the postgres user with a writable `TMPDIR`, for example:
+  `su postgres -s /bin/bash -c 'export PATH=/usr/lib/postgresql/16/bin:$PATH TMPDIR=/tmp/cvf-pg; ./tests/pgtest/run_pgtest.sh'`
+- `npm run build` intentionally fails without `REACT_APP_SUPABASE_URL`, `REACT_APP_SUPABASE_ANON_KEY`, and `REACT_APP_TURNSTILE_SITE_KEY`. That is the fail-closed rule working. Never supply placeholder values to get past it; to check that the bundle merely compiles, run `npx craco build`, which skips the prebuild validator.
 - Local Supabase migration application, once initialized: `supabase db reset`
 - Before any hosted push: verify CLI help and version, run `supabase migration list`, then `supabase db push --dry-run`
 
