@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { UsersThree } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, teamRoster, teamGames, teamStatLeaders } from "../lib/selectors";
+import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, teamRoster, teamGames, teamStatLeaders, identityEnrollments, identityCareerRecord } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
 import { SportBadge } from "../components/common/Badges";
 import { PlayerCard } from "../components/player/PlayerCard";
@@ -107,9 +107,53 @@ export default function TeamPage() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">{recent.map((g) => <GameCard key={g.id} game={g} />)}</div>
         </section>
       )}
+
+      <FranchiseHistory state={state} team={team} />
     </div>
   );
 }
+
+// Every season this brand has been enrolled in, newest first. The identity is
+// the franchise; each `teams` row is one enrollment of it, so this is where a
+// team's saved history actually becomes reachable.
+const FranchiseHistory = ({ state, team }) => {
+  const enrollments = identityEnrollments(state, team.identity_id);
+  const career = identityCareerRecord(state, team.identity_id);
+  // A single enrollment is just the current season restated — no history yet.
+  if (enrollments.length < 2) return null;
+
+  return (
+    <section data-testid="team-franchise-history">
+      <SectionHeading
+        title="Franchise History"
+        subtitle={`${career.seasons} seasons · ${career.wins}-${career.losses}${career.ties ? `-${career.ties}` : ""} all time`}
+      />
+      <div className="cvf-standings-register bg-card border border-border overflow-hidden rounded-xl">
+        {enrollments.map(({ team: enrollment, league, record }) => {
+          const isCurrent = enrollment.id === team.id;
+          return (
+            <Link
+              key={enrollment.id}
+              to={`/team/${enrollment.id}`}
+              data-testid={`franchise-season-${enrollment.id}`}
+              className={`grid grid-cols-[minmax(0,1fr)_auto] gap-3 px-3 py-2.5 items-center border-b border-border last:border-0 transition-colors hover:bg-white/5 active:bg-white/10 ${isCurrent ? "bg-[var(--leader-bg)]" : ""}`}
+            >
+              <span className="min-w-0">
+                <span className="block text-sm text-foreground truncate">{league?.season || "Unknown season"}</span>
+                <span className="block text-micro uppercase tracking-widest text-muted-foreground truncate">
+                  {league?.name || "—"}{league?.kind === "tournament" ? " · Tournament" : ""}
+                </span>
+              </span>
+              <span className="font-mono-score tabular-nums text-sm text-foreground whitespace-nowrap">
+                {record.wins}-{record.losses}{record.ties ? `-${record.ties}` : ""}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+};
 
 const Stat = ({ label, value, accent }) => (
   <Card density="compact" className="bg-surface/60 text-center">

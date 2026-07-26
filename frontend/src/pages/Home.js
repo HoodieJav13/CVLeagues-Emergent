@@ -10,6 +10,7 @@ import { SportBadge } from "../components/common/Badges";
 import { Button } from "../components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS } from "../lib/statsConfig";
+import { usePersistedPreference } from "../hooks/usePersistedPreference";
 import { StructuralCorner, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 
 // Sandia ridge backgrounds (brand pass) — self-contained dark dusk scenes,
@@ -131,7 +132,13 @@ const ScoreboardFeature = ({ game, kind, state }) => {
 
 export default function Home() {
   const { state } = useApp();
-  const [sport, setSport] = useState("all");
+  // Remembered across visits: someone who follows one sport should not
+  // re-pick it every time they open the app.
+  const [sport, setSport] = usePersistedPreference(
+    "sport",
+    "all",
+    (value) => value === "all" || SPORTS.some((item) => item.id === value)
+  );
   const [league_id, setLeagueId] = useState("all");
   const [filterRevision, setFilterRevision] = useState(0);
 

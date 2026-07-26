@@ -314,6 +314,33 @@ export function playerDerivedStat(state, profile_id, sport, statKey, scope = "se
   return computeDerivedStat(sport, statKey, totals, { gamesPlayed });
 }
 
+/* ------------------------- franchise history ----------------------------- */
+// A team_identity is the persistent brand; each `teams` row is one explicit
+// league/season/sport enrollment of it. Franchise history is therefore every
+// enrollment sharing an identity — the thing that makes "past results all
+// saved" reachable from the team you are looking at.
+export function identityEnrollments(state, identity_id) {
+  if (!identity_id) return [];
+  return state.teams
+    .filter((team) => team.identity_id === identity_id)
+    .map((team) => ({
+      team,
+      league: getLeague(state, team.league_id),
+      record: computeTeamRecord(state, team.id),
+    }))
+    .sort((a, b) => String(b.league?.season || "").localeCompare(String(a.league?.season || "")));
+}
+
+// Career totals across every enrollment of one identity.
+export function identityCareerRecord(state, identity_id) {
+  return identityEnrollments(state, identity_id).reduce((total, row) => ({
+    wins: total.wins + row.record.wins,
+    losses: total.losses + row.record.losses,
+    ties: total.ties + row.record.ties,
+    seasons: total.seasons + 1,
+  }), { wins: 0, losses: 0, ties: 0, seasons: 0 });
+}
+
 /* --------------------------- rank context -------------------------------- */
 // Where one player sits on a leaderboard they already appear on. Returns null
 // when the player has no qualifying value, so callers render nothing at all

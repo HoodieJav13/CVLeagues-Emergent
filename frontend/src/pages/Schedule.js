@@ -5,6 +5,7 @@ import { CompetitionRow } from "../components/game/CompetitionRow";
 import { SectionHeading, EmptyState } from "../components/common/Section";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { SPORTS } from "../lib/statsConfig";
+import { usePersistedPreference } from "../hooks/usePersistedPreference";
 import { currentSeasonForSport } from "../lib/selectors";
 import { byStartAscending, gameWeekKey, formatWeekLabel } from "../lib/gameTime";
 
@@ -39,10 +40,15 @@ const FilterResultRegion = ({ animate, className, testId, children }) => {
 
 export default function Schedule() {
   const { state } = useApp();
-  const [sport, setSport] = useState("all");
+  // Sport is shared with Home under one key — it is the same preference.
+  const [sport, setSport] = usePersistedPreference(
+    "sport",
+    "all",
+    (value) => value === "all" || SPORTS.some((item) => item.id === value)
+  );
   const [season, setSeason] = useState("current");
   const [league_id, setLeagueId] = useState("all");
-  const [team_id, setTeamId] = useState("all");
+  const [team_id, setTeamId] = usePersistedPreference("scheduleTeam", "all");
   const [status, setStatus] = useState("all");
   const [filterRevision, setFilterRevision] = useState(0);
 
@@ -66,6 +72,12 @@ export default function Schedule() {
     },
     [state.teams, leagues, sport, league_id]
   );
+
+  // A remembered team that no longer appears under the current filters would
+  // otherwise leave someone staring at an empty schedule with no obvious cause.
+  useEffect(() => {
+    if (team_id !== "all" && !teams.some((team) => team.id === team_id)) setTeamId("all");
+  }, [teams, team_id, setTeamId]);
 
   const games = useMemo(() => {
     return state.games
