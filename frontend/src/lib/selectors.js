@@ -8,7 +8,7 @@
  * PHASE 2: these become SQL views / RPC functions or server-side queries.
  * ========================================================================== */
 
-import { allStatKeys } from "./statsConfig";
+import { allStatKeys, computeDerivedStat } from "./statsConfig";
 
 /* ---------------------------- lookups ------------------------------------ */
 export const getTeam = (state, id) => state.teams.find((t) => t.id === id);
@@ -59,24 +59,49 @@ export function seasonsForSport(state, sport, { kind = "league" } = {}) {
 // regular season.
 export function computeTeamRecord(state, team_id) {
   let wins = 0, losses = 0, ties = 0, pf = 0, pa = 0;
+  // Outcomes are also collected in date order so streak and recent form come
+  // from the same single pass the totals do — no second source of truth.
+  const outcomes = [];
   state.games.forEach((g) => {
     if (!isFinalOutcome(g)) return;
     if (g.stage === "playoff" || g.stage === "tournament") return;
     if (g.home_team_id !== team_id && g.away_team_id !== team_id) return;
     if (isForfeitOutcome(g)) {
-      if (g.winner_team_id === team_id) wins++;
-      else if (g.loser_team_id === team_id) losses++;
+      if (g.winner_team_id === team_id) { wins++; outcomes.push({ date: g.date, result: "W" }); }
+      else if (g.loser_team_id === team_id) { losses++; outcomes.push({ date: g.date, result: "L" }); }
       return;
     }
     const isHome = g.home_team_id === team_id;
     const own = isHome ? g.home_score : g.away_score;
     const opp = isHome ? g.away_score : g.home_score;
     pf += own; pa += opp;
-    if (own > opp) wins++;
-    else if (own < opp) losses++;
-    else ties++;
+    if (own > opp) { wins++; outcomes.push({ date: g.date, result: "W" }); }
+    else if (own < opp) { losses++; outcomes.push({ date: g.date, result: "L" }); }
+    else { ties++; outcomes.push({ date: g.date, result: "T" }); }
   });
-  return { wins, losses, ties, pointsFor: pf, pointsAgainst: pa, diff: pf - pa, played: wins + losses + ties };
+
+  outcomes.sort((a, b) => new Date(a.date) - new Date(b.date));
+  const form = outcomes.slice(-5).map((o) => o.result);
+
+  // Current streak: consecutive identical results counted back from the most
+  // recent game. Ties break a streak rather than extending one.
+  let streak = null;
+  if (outcomes.length) {
+    const latest = outcomes[outcomes.length - 1].result;
+    if (latest !== "T") {
+      let count = 0;
+      for (let i = outcomes.length - 1; i >= 0 && outcomes[i].result === latest; i -= 1) count += 1;
+      streak = { result: latest, count, label: `${latest}${count}` };
+    }
+  }
+
+  return {
+    wins, losses, ties,
+    pointsFor: pf, pointsAgainst: pa, diff: pf - pa,
+    played: wins + losses + ties,
+    form,
+    streak,
+  };
 }
 
 /* ----------------------------- standings --------------------------------- */
@@ -100,15 +125,43 @@ export function computeStandings(state, league_id) {
     if (headToHeadWins.has(winner)) headToHeadWins.set(winner, headToHeadWins.get(winner) + 1);
   });
 
-  return rows
-    .sort((a, b) => {
-      if (b.record.wins !== a.record.wins) return b.record.wins - a.record.wins;
-      const h2h = headToHeadWins.get(b.team.id) - headToHeadWins.get(a.team.id);
-      if (h2h !== 0) return h2h;
-      if (b.record.diff !== a.record.diff) return b.record.diff - a.record.diff;
-      return b.record.pointsFor - a.record.pointsFor;
-    })
-    .map((row, i) => ({ ...row, rank: i + 1 }));
+  const sorted = rows.sort((a, b) => {
+    if (b.record.wins !== a.record.wins) return b.record.wins - a.record.wins;
+    const h2h = headToHeadWins.get(b.team.id) - headToHeadWins.get(a.team.id);
+    if (h2h !== 0) return h2h;
+    if (b.record.diff !== a.record.diff) return b.record.diff - a.record.diff;
+    return b.record.pointsFor - a.record.pointsFor;
+  });
+
+  // Two teams are genuinely tied only when the ENTIRE tiebreak chain fails to
+  // separate them. `rank` stays a sequential seed position because playoff
+  // seeding consumes it; `rankLabel`/`tied` carry the contract's shared-rank
+  // display convention (T3/T3, next skips to 5).
+  const tiebreakKey = (row) => [
+    row.record.wins,
+    headToHeadWins.get(row.team.id),
+    row.record.diff,
+    row.record.pointsFor,
+  ].join("|");
+
+  let sharedRank = 0;
+  let previousKey = null;
+  const withDisplayRank = sorted.map((row, i) => {
+    const key = tiebreakKey(row);
+    if (i === 0 || key !== previousKey) sharedRank = i + 1;
+    previousKey = key;
+    return { ...row, rank: i + 1, displayRank: sharedRank };
+  });
+
+  const displayRankCounts = withDisplayRank.reduce((counts, row) => {
+    counts.set(row.displayRank, (counts.get(row.displayRank) || 0) + 1);
+    return counts;
+  }, new Map());
+
+  return withDisplayRank.map((row) => {
+    const tied = displayRankCounts.get(row.displayRank) > 1;
+    return { ...row, tied, rankLabel: tied ? `T${row.displayRank}` : `${row.displayRank}` };
+  });
 }
 
 /* --------------------------- stat aggregation ---------------------------- */
@@ -200,6 +253,63 @@ export function playerGameLog(state, profile_id, sport, { domain = "league", sea
         && (!season || s.league.season === season);
     })
     .sort((a, b) => new Date(b.game.date) - new Date(a.game.date));
+}
+
+/* --------------------------- games played -------------------------------- */
+// Participation is recorded separately from statistics: a player who appeared
+// and recorded nothing still played that game, so a stat row is NOT evidence of
+// games played. Until participation data exists this returns null, and every
+// per-game figure downstream renders an em dash rather than a wrong average.
+const PLAYED_STATUSES = ["played"];
+
+export function playerGamesPlayed(state, profile_id, sport, { domain = "league", season = null, tournament_id = null } = {}) {
+  const rows = state.gameParticipation;
+  if (!Array.isArray(rows)) return null;
+
+  const games = new Set();
+  rows.forEach((row) => {
+    if (row.profile_id !== profile_id) return;
+    if (!PLAYED_STATUSES.includes(row.status)) return;
+    const { game, league } = statContext(state, row);
+    if (!game || !league || !isFinalOutcome(game)) return;
+    if (getTeam(state, row.team_id)?.sport !== sport) return;
+    if (domain === "tournament") {
+      if (league.kind !== "tournament" || game.stage !== "tournament") return;
+      if (tournament_id && league.id !== tournament_id) return;
+    } else {
+      if (league.kind === "tournament" || game.stage === "tournament") return;
+      if (season && league.season !== season) return;
+    }
+    games.add(row.game_id);
+  });
+  return games.size;
+}
+
+// One derived figure for one player, with the correct totals and games-played
+// denominator for the requested scope.
+export function playerDerivedStat(state, profile_id, sport, statKey, scope = "season", context = null) {
+  const totals = scope === "career"
+    ? playerCareerStats(state, profile_id, sport)
+    : scope === "tournament"
+      ? playerTournamentStats(state, profile_id, sport, context)
+      : playerSeasonStats(state, profile_id, sport, context || currentSeasonForSport(state, sport));
+  const gamesPlayed = playerGamesPlayed(state, profile_id, sport, {
+    domain: scope === "tournament" ? "tournament" : "league",
+    season: scope === "season" ? (context || currentSeasonForSport(state, sport)) : null,
+    tournament_id: scope === "tournament" ? context : null,
+  });
+  return computeDerivedStat(sport, statKey, totals, { gamesPlayed });
+}
+
+/* --------------------------- rank context -------------------------------- */
+// Where one player sits on a leaderboard they already appear on. Returns null
+// when the player has no qualifying value, so callers render nothing at all
+// rather than an invented "unranked" position.
+export function playerRankContext(state, profile_id, sport, statKey, scope = "season", context = null) {
+  const rows = buildLeaderboard(state, sport, statKey, scope, context);
+  const row = rows.find((entry) => entry.profile?.id === profile_id);
+  if (!row) return null;
+  return { rank: row.rank, rankLabel: row.rankLabel, tied: row.tied, value: row.value, fieldSize: rows.length };
 }
 
 // Roster rows that still count. Backend soft-deletes assignments via
