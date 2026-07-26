@@ -321,4 +321,4 @@ export const sportName = (sport) =>
 
 // Sports are runtime configuration, not demo fixtures, so production can use
 // this list without pulling the development seed into its JavaScript bundle.
-export { SPORTS } from "../data/sports";
+export { SPORTS } from "../data/sports.js";

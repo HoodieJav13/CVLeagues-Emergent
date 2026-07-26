@@ -32,7 +32,7 @@ Each stage depends on the ones before it; schema lands before the data is displa
 
 1. **Selector and display foundations** *(done)* — derived-stat engine, participation-aware selectors, rank context, standings form/streak/shared tie ranks, full public profile.
 2. **Migration 28: venues, `starts_at`, participation** *(done)* — full cutover, no second copy of game time. Admin venue management shipped here rather than in Stage 4, because Migration 28 made `venue_id` required and leaving no way to create one would have blocked the hosted push.
-3. **Calendar and reminders** — per-team `.ics` subscription and per-game add-to-calendar. Blocked only on Stage 2's timestamp.
+3. **Calendar and reminders** *(done)* — per-game add-to-calendar, per-team season download, and a subscribable `/api/calendar` feed that re-fetches itself so a reschedule reaches every subscriber. The feed shares the app's iCalendar generator rather than duplicating it, and reads with the anon key over publicly readable rows only.
 4. **Migration 29: media and identity** — profile and team imagery, designed as a general media table so highlights slot in later rather than two URL columns. Restyles the venue tab as part of its admin-content pass rather than building it.
 5. **Captain accounts plus optional tokenized player links** — see the locked decision below.
 6. **RSVP and availability** — built on Stage 5.
@@ -45,7 +45,8 @@ Each stage depends on the ones before it; schema lands before the data is displa
 - **Launch remains blocked on attorney-approved waiver text regardless of all other gates closing.** After approval, insert the final text as a new immutable `waiver_versions` row; never substitute draft or fallback legal text.
 - **Approve the Migration 28 hosted push when the program reaches a natural checkpoint.** It is committed and locally verified but deliberately unpushed. It drops three `games` columns, so it is not silently reversible on hosted; expand and re-run the authorization matrix over the two new tables and one new RPC first.
 - Complete the real administrator's recovery and session-revocation acceptance; decide whether a break-glass administrator is warranted. TOTP enrollment and AAL2 elevation are already complete.
-- Enter preview/production Supabase and Turnstile environment values personally, without exposing a service-role or secret key to React.
+- Enter preview/production Supabase and Turnstile environment values personally, without exposing a service-role or secret key to React. The calendar feed additionally needs `SUPABASE_ANON_KEY` and optionally `PUBLIC_SITE_ORIGIN` server-side; it must never be given the secret key.
+- **Verify the calendar subscription against a real client at deployment.** The feed is unit-tested but cannot be proven end to end without a public URL: confirm a phone accepts `webcal://<host>/api/calendar?team=<id>` and picks up a reschedule on its own.
 - If Leagues is reactivated, separately approve the durable populated-ledger pilot fixture. Field-test the admin-only flag-football pilot before approving a second sport or live use.
 - Run live hosted application flows and the remaining visual-consistency acceptance across desktop and mobile before approving preview.
 - Approve production deployment only after every technical, visual, operational, and legal gate above is closed.

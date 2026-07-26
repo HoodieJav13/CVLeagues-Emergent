@@ -1,5 +1,5 @@
 import { useParams, Link } from "react-router-dom";
-import { UsersThree, CalendarPlus } from "@phosphor-icons/react";
+import { UsersThree, CalendarPlus, LinkSimple } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, teamRoster, teamGames, teamStatLeaders, identityEnrollments, identityCareerRecord } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
@@ -11,6 +11,8 @@ import { Avatar } from "../components/common/Avatar";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { buildCalendar, downloadCalendar } from "../lib/calendar";
+import { BACKEND_ENABLED } from "../lib/supabase";
+import { toast } from "sonner";
 
 export default function TeamPage() {
   const { id } = useParams();
@@ -56,18 +58,33 @@ export default function TeamPage() {
         )}
         {/* The whole season in one file — the thing that actually gets this
             schedule onto a player's phone. */}
-        <Button
-          variant="outline"
-          data-testid="team-add-schedule"
-          disabled={games.length === 0}
-          onClick={() => downloadCalendar(
-            buildCalendar(state, games, { name: `${team.name} — ${league?.season || "Schedule"}`, origin: window.location.origin }),
-            `${team.name}-${league?.season || "schedule"}`
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          <Button
+            variant="outline"
+            data-testid="team-add-schedule"
+            disabled={games.length === 0}
+            onClick={() => downloadCalendar(
+              buildCalendar(state, games, { name: `${team.name} — ${league?.season || "Schedule"}`, origin: window.location.origin }),
+              `${team.name}-${league?.season || "schedule"}`
+            )}
+            className="h-11"
+          >
+            <CalendarPlus data-icon="inline-start" weight="bold" /> Add Season to Calendar
+          </Button>
+          {/* A subscription stays current on its own, but it needs the hosted
+              feed to exist — in mock mode there is no URL to subscribe to, so
+              offering one would hand out a link that cannot work. */}
+          {BACKEND_ENABLED && (
+            <Button
+              variant="ghost"
+              data-testid="team-subscribe-schedule"
+              onClick={() => subscribeLink(team.id)}
+              className="h-11 text-muted-foreground hover:text-primary"
+            >
+              <LinkSimple data-icon="inline-start" weight="bold" /> Copy Subscribe Link
+            </Button>
           )}
-          className="mt-4 h-11"
-        >
-          <CalendarPlus data-icon="inline-start" weight="bold" /> Add Season to Calendar
-        </Button>
+        </div>
         </CardContent>
       </Card>
 
@@ -127,6 +144,21 @@ export default function TeamPage() {
       <FranchiseHistory state={state} team={team} />
     </div>
   );
+}
+
+// A subscribed calendar re-fetches this URL on its own, so a reschedule reaches
+// every subscriber without them doing anything. webcal:// makes most desktop
+// and mobile clients open their calendar app directly instead of downloading.
+async function subscribeLink(team_id) {
+  const url = `${window.location.origin.replace(/^https?:/, "webcal:")}/api/calendar?team=${team_id}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("Subscribe link copied", {
+      description: "Add it in your calendar app under \u201cSubscribe to calendar\u201d. It updates itself when the schedule changes.",
+    });
+  } catch {
+    toast.error("Could not copy the link");
+  }
 }
 
 // Every season this brand has been enrolled in, newest first. The identity is
