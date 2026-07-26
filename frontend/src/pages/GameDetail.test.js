@@ -135,3 +135,55 @@ describe("GameDetail score action", () => {
     expect(container.querySelector('[data-testid="game-enter-score"]')).toBeNull();
   });
 });
+
+describe("GameDetail calendar export", () => {
+  let container;
+  let root;
+
+  const upcomingGame = {
+    id: "game-1",
+    sport: "kickball",
+    status: "upcoming",
+    starts_at: "2026-07-20T18:30:00-06:00",
+    venue_id: "tv1",
+    away_team_id: "away",
+    home_team_id: "home",
+  };
+
+  beforeEach(() => {
+    mockRole = "player";
+    mockRoleMeta = {};
+    mockState = {
+      venues: [{ id: "tv1", name: "Mesa Field", field_label: null, address: "1 Mesa Rd", status: "active" }],
+      games: [upcomingGame],
+      teams: [
+        { id: "away", name: "Away", logo_color: "#5BB8CC" },
+        { id: "home", name: "Home", logo_color: "#FB923C" },
+      ],
+      profiles: [],
+      playerStats: [],
+    };
+    container = document.createElement("div");
+    document.body.appendChild(container);
+    root = createRoot(container);
+  });
+
+  afterEach(async () => {
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  test("offers add-to-calendar on an upcoming game", async () => {
+    await act(async () => root.render(<GameDetail />));
+    expect(container.querySelector('[data-testid="game-add-to-calendar"]')).not.toBeNull();
+  });
+
+  test("hides add-to-calendar once the game is final, since there is nothing to attend", async () => {
+    mockState = {
+      ...mockState,
+      games: [{ ...upcomingGame, status: "completed", home_score: 7, away_score: 4, periods: { home: [], away: [] } }],
+    };
+    await act(async () => root.render(<GameDetail />));
+    expect(container.querySelector('[data-testid="game-add-to-calendar"]')).toBeNull();
+  });
+});
