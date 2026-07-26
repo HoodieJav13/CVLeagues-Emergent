@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. The accepted Sequence 4 baseline covers all 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
+This runbook is authoritative for the repeatable hosted authorization procedure. **The current target surface is Migration 28: 28 tables and 26 privileged RPCs.** The last ACCEPTED baseline is Sequence 4 at 27 migrations, covering 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
 The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. The accepted Sequence 4 run includes 248 browser/API checks and eight exact catalog checks, including the runtime-RPC ACL catalog check plus anonymous/non-admin denial for all ten new endpoints. A populated positive read/write proof remains a separate durable-pilot gate.
 
@@ -39,7 +39,16 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables, and 25 administrator RPCs. Preflight must show all 27 hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
+The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables, and 25 administrator RPCs.
+
+**Migration 28 changes the target surface and has not yet been accepted.** It adds `venues` and `game_participation` (28 tables), adds `set_game_participation` (26 RPCs), and REPLACES `schedule_playoff_match`'s signature — `(uuid, date, text, text)` becomes `(uuid, timestamptz, uuid)`. It also drops `games.date`, `games.time`, and `games.location`, so it is not silently reversible once applied.
+
+Because it drops columns, run this matrix in two passes:
+
+1. **Before the push**, with 27 hosted migrations: preflight only, to confirm history alignment and a clean dry run. Do not expect the new checks to pass — the tables do not exist yet.
+2. **Immediately after the push**, with 28 hosted migrations: the full matrix, including the Migration 28 section below. This is the run that becomes the new accepted evidence.
+
+Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
 Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-24.md`](evidence/hosted-auth-matrix-2026-07-24.md) records the Sequence 4 baseline at 256/256 browser/API and catalog checks with fixture cleanup and exact restoration both passing. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding 27-migration structural gate. The immutable [`Migration-24 evidence`](evidence/hosted-auth-matrix-2026-07-21-m24.md) and [`Migration-23 evidence`](evidence/hosted-auth-matrix-2026-07-21-m23.md) remain prior checkpoints.
 
@@ -131,6 +140,22 @@ After the Sequence 4 migrations are applied, the same denial loop also covers:
 - `start_scorekeeping_correction`
 - `finalize_scorekeeping_correction`
 
+Migration 28 adds one more to the same denial loop:
+
+- `set_game_participation`
+
+### Migration 28 surface — venues and participation
+
+Both tables are publicly readable by design: where a game is played and who played in it are box-score facts, the same class of information as a score.
+
+- Anonymous and non-admin sessions can query `venues` and `game_participation`.
+- Anonymous and non-admin insert and update are denied on both.
+- Anonymous and non-admin `set_game_participation` fails at `assert_admin()`.
+- **No client role can delete a venue**, administrator included. Historical games reference venues, so the lifecycle action is a `status` change to `retired`, never a delete. The migration grants no DELETE to any client role.
+- The `games` column allowlist still holds over the replacement columns: `authenticated` may write `starts_at` and `venue_id` but not `home_score`, `away_score`, or `periods`. The local harness pins the exact allowlist for both INSERT and UPDATE; confirm the hosted grant matches.
+
+Participation is deliberately OUTSIDE the score lifecycle. It is not governed by the game lock and never interacts with the aggregate or ledger correction authority, so a locked game must still accept a participation write while its published result stays unchanged.
+
 ### Direct-write and append-only guards
 
 - Anonymous game insertion fails.
@@ -168,7 +193,8 @@ After the Sequence 4 migrations are applied, the same denial loop also covers:
 ### Cleanup
 
 - The namespace residue query returns zero seasons, leagues, team identities, profiles, waivers, and history rows.
-- Counts for all 26 public tables match the pre-run values.
+- Counts for all 28 public tables match the pre-run values, including `venues` and `game_participation`.
+- The fixture venue is removed only after the fixture games that reference it.
 - `league_settings.hof_published`, `current_season`, and `current_waiver_version()` match their pre-run values.
 
 ## Failure handling
@@ -186,7 +212,8 @@ Run this matrix after any change to:
 
 - RLS policies or Data API grants
 - `admin_users`, `is_admin()`, or Auth-role resolution
-- Any of the 15 admin RPCs
+- Any of the 26 admin RPCs, or any change to an RPC's signature
+- `venues` or `game_participation` policies, grants, or the `set_game_participation` guard
 - Game lock/stage enforcement or edit history
 - Profiles or the `public_profiles` allowlist
 - Intake or waiver policies and triggers
