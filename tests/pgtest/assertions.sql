@@ -221,11 +221,26 @@ values
   ('40000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', 'Summer 2026', 1, 'P', 'pending_waiver'),
   ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'Summer 2026', 2, 'C', 'pending_waiver');
 
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location, status, score_status, home_score, away_score, periods)
+-- Venue fixtures. Games carry a venue foreign key and a real start timestamp
+-- since migration 28; the free-text date/time/location columns are gone.
+insert into public.venues (id, name)
 values
-  ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'kickball', '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', '2026-06-01', '6:00 PM', 'Field 1', 'completed', 'approved', 7, 4, '{"home":[2,1,1,2,1],"away":[1,1,1,1,0]}'::jsonb),
-  ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'kickball', '30000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', '2026-06-08', '6:00 PM', 'Field 1', 'upcoming', 'pending', null, null, '{"home":[],"away":[]}'::jsonb),
-  ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'kickball', '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', '2026-06-15', '6:00 PM', 'Field 1', 'completed', 'final', 8, 5, '{"home":[2,2,2,1,1],"away":[1,1,1,1,1]}'::jsonb);
+  ('60000000-0000-0000-0000-000000000001', 'Field 1'),
+  ('60000000-0000-0000-0000-000000000002', 'Field 2'),
+  ('60000000-0000-0000-0000-000000000003', 'Runtime Field'),
+  ('60000000-0000-0000-0000-000000000004', 'Failure Field'),
+  ('60000000-0000-0000-0000-000000000005', 'Race Field'),
+  ('60000000-0000-0000-0000-000000000006', 'Championship Field'),
+  ('60000000-0000-0000-0000-000000000007', 'Forfeit Field'),
+  ('60000000-0000-0000-0000-000000000008', 'MFA bypass check'),
+  ('60000000-0000-0000-0000-000000000009', 'Flag Test Field'),
+  ('60000000-0000-0000-0000-000000000010', 'Ledger Test Field');
+
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, status, score_status, home_score, away_score, periods)
+values
+  ('50000000-0000-0000-0000-000000000001', '20000000-0000-0000-0000-000000000001', 'kickball', '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', '2026-06-01 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000001', 'completed', 'approved', 7, 4, '{"home":[2,1,1,2,1],"away":[1,1,1,1,0]}'::jsonb),
+  ('50000000-0000-0000-0000-000000000002', '20000000-0000-0000-0000-000000000001', 'kickball', '30000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000001', '2026-06-08 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000001', 'upcoming', 'pending', null, null, '{"home":[],"away":[]}'::jsonb),
+  ('50000000-0000-0000-0000-000000000003', '20000000-0000-0000-0000-000000000001', 'kickball', '30000000-0000-0000-0000-000000000001', '30000000-0000-0000-0000-000000000002', '2026-06-15 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000001', 'completed', 'final', 8, 5, '{"home":[2,2,2,1,1],"away":[1,1,1,1,1]}'::jsonb);
 
 update public.games
    set locked = true
@@ -495,34 +510,34 @@ select public.lock_game('50000000-0000-0000-0000-000000000003');
 select cvf_test.throws_ok(
   'season2 01 league container rejects tournament stage',
   $$insert into public.games
-      (league_id, sport, home_team_id, away_team_id, date, time, location, stage)
+      (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
     values
       ('20000000-0000-0000-0000-000000000001', 'kickball',
        '30000000-0000-0000-0000-000000000001',
        '30000000-0000-0000-0000-000000000002',
-       '2026-07-01', '7:00 PM', 'Field 1', 'tournament')$$,
+       '2026-07-01 19:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000001', 'tournament')$$,
   '%reserved for standalone tournament%'
 );
 select cvf_test.lives_ok(
   'season2 02 tournament container accepts tournament stage',
   $$insert into public.games
-      (id, league_id, sport, home_team_id, away_team_id, date, time, location, stage)
+      (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
     values
       ('50000000-0000-0000-0000-000000000101',
        '20000000-0000-0000-0000-000000000003', 'kickball',
        '30000000-0000-0000-0000-000000000003',
        '30000000-0000-0000-0000-000000000004',
-       '2026-07-02', '7:00 PM', 'Field 2', 'tournament')$$
+       '2026-07-02 19:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000002', 'tournament')$$
 );
 select cvf_test.throws_ok(
   'season2 03 tournament container rejects regular stage',
   $$insert into public.games
-      (league_id, sport, home_team_id, away_team_id, date, time, location, stage)
+      (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
     values
       ('20000000-0000-0000-0000-000000000003', 'kickball',
        '30000000-0000-0000-0000-000000000003',
        '30000000-0000-0000-0000-000000000004',
-       '2026-07-03', '7:00 PM', 'Field 2', 'regular')$$,
+       '2026-07-03 19:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000002', 'regular')$$,
   '%must have stage=tournament%'
 );
 
@@ -1306,7 +1321,7 @@ select cvf_test.throws_ok(
 );
 select cvf_test.throws_ok(
   'launch 03i linked AAL1 administrator cannot schedule a playoff match',
-  $$select public.schedule_playoff_match('d0000000-0000-0000-0000-000000000001', date '2099-07-14', '7:00 PM', 'MFA bypass check')$$,
+  $$select public.schedule_playoff_match('d0000000-0000-0000-0000-000000000001', '2099-07-14 19:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000008')$$,
   '%Admin only%'
 );
 select cvf_test.throws_ok(
@@ -1500,7 +1515,7 @@ select cvf_test.lives_ok(
   'bracket 07 a ready first-round match can be scheduled',
   $$select public.schedule_playoff_match(
       (select id from public.playoff_matches where round_number = 1 and status = 'ready' limit 1),
-      '2026-08-01', '6:00 PM', 'Championship Field'
+      '2026-08-01 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000006'
     )$$
 );
 select cvf_test.throws_ok(
@@ -1605,7 +1620,7 @@ select cvf_test.lives_ok(
        from public.playoff_matches source
        join public.playoff_matches destination on destination.id = source.winner_to_match_id
        where source.game_id is not null limit 1),
-      '2026-08-08', '6:00 PM', 'Championship Field'
+      '2026-08-08 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000006'
     )$$
 );
 select cvf_test.throws_ok(
@@ -1843,7 +1858,8 @@ select cvf_test.ok(
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 select cvf_test.ok(
   'aggregate 01 [INV-04][INV-38] authenticated grants expose schedule columns but no score/stat/history mutation',
-  has_column_privilege('authenticated', 'public.games', 'date', 'update')
+  has_column_privilege('authenticated', 'public.games', 'starts_at', 'update')
+  and has_column_privilege('authenticated', 'public.games', 'venue_id', 'update')
   and not has_column_privilege('authenticated', 'public.games', 'home_score', 'update')
   and not has_column_privilege('authenticated', 'public.games', 'periods', 'update')
   and not has_table_privilege('authenticated', 'public.player_stats', 'insert')
@@ -1992,7 +2008,7 @@ values
      order by created_at limit 1),
    '10000000-0000-0000-0000-000000000001', 'Summer 2026', 'eligible');
 insert into public.games
-  (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+  (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
 values
   ('50000000-0000-0000-0000-000000000501',
    '20000000-0000-0000-0000-000000000002', 'flag_football',
@@ -2001,7 +2017,7 @@ values
     where league_id = '20000000-0000-0000-0000-000000000002'
       and id <> '30000000-0000-0000-0000-000000000005'
     order by created_at limit 1),
-   '2026-09-01', '7:00 PM', 'Flag Test Field');
+   '2026-09-01 19:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000009');
 
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 select cvf_test.throws_ok(
@@ -2116,13 +2132,13 @@ select cvf_test.eq_int(
 
 select cvf_test.as_owner();
 insert into public.games
-  (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+  (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
 values
   ('50000000-0000-0000-0000-000000000900',
    '20000000-0000-0000-0000-000000000001', 'kickball',
    '30000000-0000-0000-0000-000000000001',
    '30000000-0000-0000-0000-000000000002',
-   '2026-10-01', '6:00 PM', 'Ledger Test Field');
+   '2026-10-01 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000010');
 
 select cvf_test.throws_ok(
   'ledger schema 07 [INV-29] owner cannot bypass the controlled mode flag',
@@ -2641,12 +2657,12 @@ select cvf_test.ok(
 select cvf_test.as_owner();
 update public.team_players set roster_status = 'eligible'
  where id in ('40000000-0000-0000-0000-000000000001','40000000-0000-0000-0000-000000000002');
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
 values
  ('50000000-0000-0000-0000-000000000950','20000000-0000-0000-0000-000000000001','kickball',
-  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-08','6:00 PM','Runtime Field'),
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-08 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000003'),
  ('50000000-0000-0000-0000-000000000951','20000000-0000-0000-0000-000000000001','kickball',
-  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-15','6:00 PM','Forfeit Field');
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-15 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000007');
 create table cvf_test.ledger_runtime_state (key text primary key, value jsonb not null);
 grant select, insert, update on cvf_test.ledger_runtime_state to authenticated;
 
@@ -2814,7 +2830,7 @@ select cvf_test.throws_ok(
 insert into cvf_test.ledger_runtime_state
 select 'playoff-forfeit-game', jsonb_build_object('game_id', public.schedule_playoff_match(
   (select id from public.playoff_matches where round_number=1 and status='ready' and game_id is null limit 1),
-  '2026-08-02','7:00 PM','Forfeit Field'));
+  '2026-08-02 19:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000007'));
 insert into cvf_test.ledger_runtime_state
 select 'playoff-forfeit', public.declare_ledger_forfeit(
   (fixture.value->>'game_id')::uuid, game.home_team_id, 'Opponent did not appear', 'playoff-forfeit-1')
@@ -2840,9 +2856,9 @@ select cvf_test.throws_ok(
 );
 
 select cvf_test.as_owner();
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
 values ('50000000-0000-0000-0000-000000000953','20000000-0000-0000-0000-000000000001','kickball',
-  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-29','6:00 PM','Failure Field');
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-29 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000004');
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 insert into cvf_test.ledger_runtime_state values ('failure-session', public.start_scorekeeping_session(
   '50000000-0000-0000-0000-000000000953','CVF-KB-2026.1',5,null,false,'{}'::jsonb));
@@ -3386,12 +3402,175 @@ select cvf_test.throws_ok(
 -- Leave one active, isolated fixture for the runner's two-real-connection
 -- idempotency race. The runner verifies exactly one event survives.
 select cvf_test.as_owner();
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
 values ('50000000-0000-0000-0000-000000000952','20000000-0000-0000-0000-000000000001','kickball',
-  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-22','6:00 PM','Race Field');
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-10-22 18:00:00-06'::timestamptz, '60000000-0000-0000-0000-000000000005');
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 insert into cvf_test.ledger_runtime_state values ('concurrency', public.start_scorekeeping_session(
   '50000000-0000-0000-0000-000000000952','CVF-KB-2026.1',5,null,false,'{}'::jsonb));
+
+-- ---------------------------------------------------------------------------
+-- Migration 28 — venues, authoritative start times, and participation.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+
+-- The cutover is complete: no legacy schedule columns survive.
+select cvf_test.ok(
+  'migration28 01 legacy game date/time/location columns are gone',
+  not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'games'
+      and column_name in ('date', 'time', 'location')
+  )
+);
+select cvf_test.ok(
+  'migration28 02 starts_at is a required timestamptz and venue_id is required',
+  (select data_type = 'timestamp with time zone' and is_nullable = 'NO'
+     from information_schema.columns
+    where table_schema = 'public' and table_name = 'games' and column_name = 'starts_at')
+  and (select is_nullable = 'NO'
+         from information_schema.columns
+        where table_schema = 'public' and table_name = 'games' and column_name = 'venue_id')
+);
+select cvf_test.ok(
+  'migration28 03 backfilled start times preserve the original local kickoff',
+  (select starts_at at time zone 'America/Denver'
+     from public.games where id = '50000000-0000-0000-0000-000000000001')
+  = timestamp '2026-06-01 18:00:00'
+);
+
+-- Venue authorization. Where a game is played is public; changing it is not.
+select cvf_test.as_anon();
+select cvf_test.ok(
+  'migration28 04 anonymous readers can see venues',
+  (select count(*) from public.venues) > 0
+);
+select cvf_test.throws_ok(
+  'migration28 05 anonymous venue insert is denied',
+  $$insert into public.venues (name) values ('Anon Field')$$,
+  '%denied%'
+);
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'migration28 06 authenticated non-admin venue insert is denied',
+  $$insert into public.venues (name) values ('Non Admin Field')$$,
+  '%row-level security%'
+);
+select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'migration28 07 password-only admin venue insert is denied without AAL2',
+  $$insert into public.venues (name) values ('AAL1 Field')$$,
+  '%row-level security%'
+);
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'migration28 08 AAL2 admin can create a venue',
+  $$insert into public.venues (name) values ('Admin Created Field')$$
+);
+select cvf_test.ok(
+  'migration28 09 no client role holds delete on venues',
+  not has_table_privilege('authenticated', 'public.venues', 'delete')
+  and not has_table_privilege('anon', 'public.venues', 'delete')
+);
+
+-- Participation authorization.
+select cvf_test.as_anon();
+select cvf_test.throws_ok(
+  'migration28 10 anonymous participation insert is denied',
+  $$insert into public.game_participation (game_id, profile_id, team_id)
+    values ('50000000-0000-0000-0000-000000000001',
+            '10000000-0000-0000-0000-000000000001',
+            '30000000-0000-0000-0000-000000000001')$$,
+  '%denied%'
+);
+select cvf_test.throws_ok(
+  'migration28 11 anonymous cannot execute set_game_participation',
+  $$select public.set_game_participation('50000000-0000-0000-0000-000000000001', '[]'::jsonb)$$,
+  '%denied%'
+);
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'migration28 12 authenticated non-admin cannot set participation',
+  $$select public.set_game_participation('50000000-0000-0000-0000-000000000001', '[]'::jsonb)$$,
+  '%Admin only%'
+);
+
+-- Participation integrity.
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'migration28 13 participation naming a team outside the game is rejected',
+  $$insert into public.game_participation (game_id, profile_id, team_id)
+    values ('50000000-0000-0000-0000-000000000001',
+            '10000000-0000-0000-0000-000000000001',
+            '30000000-0000-0000-0000-000000000005')$$,
+  '%is not playing in game%'
+);
+select cvf_test.lives_ok(
+  'migration28 14 AAL2 admin can record participation',
+  $$select public.set_game_participation(
+      '50000000-0000-0000-0000-000000000001',
+      '[{"profile_id":"10000000-0000-0000-0000-000000000001",
+         "team_id":"30000000-0000-0000-0000-000000000001",
+         "status":"played"}]'::jsonb)$$
+);
+select cvf_test.throws_ok(
+  'migration28 15 a player cannot be recorded twice for one game',
+  $$insert into public.game_participation (game_id, profile_id, team_id)
+    values ('50000000-0000-0000-0000-000000000001',
+            '10000000-0000-0000-0000-000000000001',
+            '30000000-0000-0000-0000-000000000001')$$,
+  '%duplicate key%'
+);
+
+-- THE BOUNDARY: attendance is not part of the score lifecycle. Game
+-- 50000000-...0003 is final and locked, so this is the assertion that proves
+-- participation is independent of the lock without weakening it.
+--
+-- The published result is snapshotted first and compared afterwards, rather
+-- than asserted against a literal score — earlier correction tests legitimately
+-- change this game's score, and what matters here is that the participation
+-- write changes nothing about it.
+select cvf_test.as_owner();
+create table cvf_test.m28_locked_game_snapshot as
+select home_score, away_score, locked, score_status,
+       (select count(*) from public.game_edit_history
+         where game_id = '50000000-0000-0000-0000-000000000003') as history_rows
+from public.games where id = '50000000-0000-0000-0000-000000000003';
+grant select on cvf_test.m28_locked_game_snapshot to public;
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'migration28 16 participation is recordable on a final locked game',
+  $$select public.set_game_participation(
+      '50000000-0000-0000-0000-000000000003',
+      '[{"profile_id":"10000000-0000-0000-0000-000000000001",
+         "team_id":"30000000-0000-0000-0000-000000000001",
+         "status":"played"}]'::jsonb)$$
+);
+select cvf_test.ok(
+  'migration28 17 recording participation leaves the locked result byte-for-byte unchanged',
+  exists (
+    select 1
+    from public.games g, cvf_test.m28_locked_game_snapshot s
+    where g.id = '50000000-0000-0000-0000-000000000003'
+      and g.home_score is not distinct from s.home_score
+      and g.away_score is not distinct from s.away_score
+      and g.locked = s.locked
+      and g.score_status = s.score_status
+      and (select count(*) from public.game_edit_history
+            where game_id = '50000000-0000-0000-0000-000000000003') = s.history_rows
+  )
+);
+select cvf_test.ok(
+  'migration28 18 replacing a participation set does not accumulate rows',
+  (select public.set_game_participation(
+     '50000000-0000-0000-0000-000000000003',
+     '[{"profile_id":"10000000-0000-0000-0000-000000000001",
+        "team_id":"30000000-0000-0000-0000-000000000001",
+        "status":"absent"}]'::jsonb)) = 1
+  and (select count(*) from public.game_participation
+        where game_id = '50000000-0000-0000-0000-000000000003') = 1
+);
 
 select cvf_test.as_owner();
 
