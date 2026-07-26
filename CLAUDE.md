@@ -32,7 +32,7 @@ Each stage depends on the ones before it; schema lands before the data is displa
 
 1. **Selector and display foundations** *(done)* — derived-stat engine, participation-aware selectors, rank context, standings form/streak/shared tie ranks, full public profile.
 2. **Migration 28: venues, `starts_at`, participation** *(done)* — full cutover, no second copy of game time. Admin venue management shipped here rather than in Stage 4, because Migration 28 made `venue_id` required and leaving no way to create one would have blocked the hosted push.
-3. **Calendar and reminders** *(done)* — per-game add-to-calendar, per-team season download, and a subscribable `/api/calendar` feed that re-fetches itself so a reschedule reaches every subscriber. The feed shares the app's iCalendar generator rather than duplicating it, and reads with the anon key over publicly readable rows only.
+3. **Calendar and reminders** *(done)* — per-game add-to-calendar, per-team and per-league season download, VALARM reminders two hours before kickoff, and a subscribable `/api/calendar` feed that re-fetches itself so a reschedule reaches every subscriber. The feed shares the app's iCalendar generator rather than duplicating it, and reads with the anon key over publicly readable rows only.
 4. **Migration 29: media and identity** — profile and team imagery, designed as a general media table so highlights slot in later rather than two URL columns. Restyles the venue tab as part of its admin-content pass rather than building it.
 5. **Captain accounts plus optional tokenized player links** — see the locked decision below.
 6. **RSVP and availability** — built on Stage 5.

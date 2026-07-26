@@ -8,6 +8,11 @@ import { SPORTS } from "../lib/statsConfig";
 import { usePersistedPreference } from "../hooks/usePersistedPreference";
 import { currentSeasonForSport } from "../lib/selectors";
 import { byStartAscending, gameWeekKey, formatWeekLabel } from "../lib/gameTime";
+import { buildCalendar, downloadCalendar } from "../lib/calendar";
+import { BACKEND_ENABLED } from "../lib/supabase";
+import { Button } from "../components/ui/button";
+import { CalendarPlus, LinkSimple } from "@phosphor-icons/react";
+import { toast } from "sonner";
 
 const FilterResultRegion = ({ animate, className, testId, children }) => {
   const [entered, setEntered] = useState(!animate);
@@ -114,6 +119,34 @@ export default function Schedule() {
     <div className="space-y-5">
       <SectionHeading as="h1" band title="Schedule" subtitle="Current seasons by default · league and tournament schedules stay distinct" />
 
+      {/* Calendar export for whatever the filters currently show. Subscribing to
+          a whole league only makes sense once a single league is selected —
+          "all leagues" is a view, not a thing anyone follows. */}
+      <div className="flex flex-wrap justify-end gap-2.5">
+        <Button
+          variant="outline"
+          data-testid="schedule-download-calendar"
+          disabled={games.length === 0}
+          onClick={() => downloadCalendar(
+            buildCalendar(state, games, { name: calendarLabel(state, league_id), origin: window.location.origin }),
+            calendarLabel(state, league_id)
+          )}
+          className="h-11"
+        >
+          <CalendarPlus data-icon="inline-start" weight="bold" /> Download These Games
+        </Button>
+        {BACKEND_ENABLED && league_id !== "all" && (
+          <Button
+            variant="ghost"
+            data-testid="schedule-subscribe-league"
+            onClick={() => copyLeagueSubscribeLink(league_id)}
+            className="h-11 text-muted-foreground hover:text-primary"
+          >
+            <LinkSimple data-icon="inline-start" weight="bold" /> Copy League Subscribe Link
+          </Button>
+        )}
+      </div>
+
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
         <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setSeason("current"); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-sport">
           <SelectItem value="all">All Sports</SelectItem>
@@ -160,6 +193,25 @@ export default function Schedule() {
       </FilterResultRegion>
     </div>
   );
+}
+
+const calendarLabel = (state, league_id) => {
+  if (league_id === "all") return "CVF Schedule";
+  return state.leagues.find((league) => league.id === league_id)?.name || "CVF Schedule";
+};
+
+// A league subscription updates itself, so a reschedule reaches every follower
+// without them doing anything.
+async function copyLeagueSubscribeLink(league_id) {
+  const url = `${window.location.origin.replace(/^https?:/, "webcal:")}/api/calendar?league=${league_id}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("League subscribe link copied", {
+      description: "Add it in your calendar app under \u201cSubscribe to calendar\u201d. It updates itself when the schedule changes.",
+    });
+  } catch {
+    toast.error("Could not copy the link");
+  }
 }
 
 const Filter = ({ label, value, onChange, testid, children }) => (
