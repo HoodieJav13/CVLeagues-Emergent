@@ -11,9 +11,9 @@
  * have to keep current.
  * ========================================================================== */
 
-import { gameStart, venueLabel, getVenue } from "./gameTime";
-import { getTeam } from "./selectors";
-import { sportName } from "./statsConfig";
+import { gameStart, venueLabel, getVenue } from "./gameTime.js";
+import { getTeam } from "./selectors.js";
+import { sportName } from "./statsConfig.js";
 
 const PRODID = "-//CVF Sports//Leagues//EN";
 

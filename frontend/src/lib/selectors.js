@@ -8,8 +8,8 @@
  * PHASE 2: these become SQL views / RPC functions or server-side queries.
  * ========================================================================== */
 
-import { allStatKeys, computeDerivedStat } from "./statsConfig";
-import { gameStartValue, byStartAscending } from "./gameTime";
+import { allStatKeys, computeDerivedStat } from "./statsConfig.js";
+import { gameStartValue, byStartAscending } from "./gameTime.js";
 
 /* ---------------------------- lookups ------------------------------------ */
 export const getTeam = (state, id) => state.teams.find((t) => t.id === id);

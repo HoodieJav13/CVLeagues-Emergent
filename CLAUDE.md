@@ -36,7 +36,8 @@ The player-experience branch proposed a nine-stage "player-experience program" a
 - The calendar feed will additionally need `SUPABASE_URL` and `SUPABASE_ANON_KEY` server-side, and optionally `PUBLIC_SITE_ORIGIN`. It must never receive the service-role or secret key.
 - **Launch remains blocked on attorney-approved waiver text regardless of all other gates closing.** After approval, insert the final text as a new immutable `waiver_versions` row; never substitute draft or fallback legal text.
 - Complete the real administrator's recovery and session-revocation acceptance; decide whether a break-glass administrator is warranted. TOTP enrollment and AAL2 elevation are already complete.
-- Enter preview/production Supabase and Turnstile environment values personally, without exposing a service-role or secret key to React.
+- Enter preview/production Supabase and Turnstile environment values personally, without exposing a service-role or secret key to React. The calendar feed additionally needs `SUPABASE_ANON_KEY` and optionally `PUBLIC_SITE_ORIGIN` server-side; it must never be given the secret key.
+- **Verify the calendar subscription against a real client at deployment.** The feed is unit-tested but cannot be proven end to end without a public URL: confirm a phone accepts `webcal://<host>/api/calendar?team=<id>` and picks up a reschedule on its own.
 - Separately approve the durable populated-ledger pilot fixture. Field-test the admin-only flag-football pilot before approving a second sport or live use.
 - Run live hosted application flows and the remaining visual-consistency acceptance across desktop and mobile before approving preview.
 - Approve production deployment only after every technical, visual, operational, and legal gate above is closed.
