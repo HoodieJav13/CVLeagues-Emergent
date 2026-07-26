@@ -207,6 +207,21 @@ describe("Playoffs bracket reveal", () => {
       document.activeElement.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     });
     expect(document.getElementById("playoff-match-start")).toBeNull();
+
+    // Focus restoration runs through the dialog's close-autofocus handler, which
+    // is not guaranteed to have settled by the time the Escape act() resolves.
+    // Await it rather than assuming it is synchronous — the contract under test
+    // is that focus DOES return to the trigger, not how many frames it takes.
+    await waitForCondition(() => document.activeElement === dialogTrigger);
     expect(document.activeElement).toBe(dialogTrigger);
   });
 });
+
+// Small polling wait so a genuine focus regression still fails, loudly, on timeout.
+async function waitForCondition(predicate, { attempts = 50, interval = 10 } = {}) {
+  for (let i = 0; i < attempts; i += 1) {
+    if (predicate()) return;
+    // eslint-disable-next-line no-await-in-loop
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, interval)); });
+  }
+}

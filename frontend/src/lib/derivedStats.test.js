@@ -19,6 +19,8 @@ import {
   playerGamesPlayed,
   playerDerivedStat,
   playerRankContext,
+  identityEnrollments,
+  identityCareerRecord,
 } from "./selectors";
 import { initialState } from "../data/seed";
 
@@ -187,5 +189,43 @@ describe("rank context", () => {
 
   test("returns null for a player with no qualifying value", () => {
     expect(playerRankContext(state, "does-not-exist", "kickball", "homeRuns")).toBeNull();
+  });
+});
+
+describe("franchise history", () => {
+  test("lists every enrollment sharing a team identity, newest season first", () => {
+    const multiSeason = {
+      ...state,
+      seasons: [
+        { name: "Summer 2026", status: "active" },
+        { name: "Spring 2026", status: "complete" },
+      ],
+      leagues: [
+        ...state.leagues,
+        { id: "l-prev", name: "Kickball Spring", sport: "kickball", season: "Spring 2026", kind: "league", status: "archived" },
+      ],
+      teams: [
+        ...state.teams,
+        { id: "t1-prev", identity_id: "ti1", name: "Sandia Sluggers", sport: "kickball", league_id: "l-prev", captain_id: "p1", logo_color: "#22d3ee" },
+      ],
+    };
+    const history = identityEnrollments(multiSeason, "ti1");
+    expect(history).toHaveLength(2);
+    expect(history[0].league.season).toBe("Summer 2026");
+    expect(history[1].league.season).toBe("Spring 2026");
+  });
+
+  test("career record sums every enrollment", () => {
+    const career = identityCareerRecord(state, "ti1");
+    const single = computeTeamRecord(state, "t1");
+    expect(career.seasons).toBe(1);
+    expect(career.wins).toBe(single.wins);
+    expect(career.losses).toBe(single.losses);
+  });
+
+  test("an unknown identity yields no history rather than throwing", () => {
+    expect(identityEnrollments(state, "does-not-exist")).toEqual([]);
+    expect(identityEnrollments(state, null)).toEqual([]);
+    expect(identityCareerRecord(state, null)).toEqual({ wins: 0, losses: 0, ties: 0, seasons: 0 });
   });
 });
