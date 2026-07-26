@@ -1,8 +1,22 @@
 # CVF Leagues — Repository Working Agreement
 
+## Protocol v1.2
+
+- Before any repository mutation, run
+  `.agentic/validate-contract-version.sh .` and read
+  `.agentic/protocol.md`, `.agentic/EXECUTOR.md`,
+  `.agentic/PROJECT_POLICY.md`, and any approved
+  `.agentic/PROTOCOL_OVERRIDE.md`.
+- Protocol v1.2 defines the shared roles, modes, authority ledger, stop
+  conditions, completion axes, evidence labels, failure classifications, and
+  handoff envelope. This working agreement and `.agentic/PROJECT_POLICY.md`
+  supply CVF-specific rules without weakening the protocol or higher-level
+  instructions.
+
 ## Scope and source of truth
 
 - Work one approved roadmap stage at a time. Satisfy its gate before proposing the next stage.
+- The active bounded stage and its exclusions are recorded in [`docs/scoring/REACTIVATION_DECISION_2026-07-25.md`](docs/scoring/REACTIVATION_DECISION_2026-07-25.md). Completing that local merge does not authorize the next candidate stage.
 - When guidance conflicts, use this order: the owner's latest instruction, locked roadmap principles, verified code and tests, `CLAUDE.md`, the Notion roadmap, then older reports.
 - Audit the repository and Git status before editing. Preserve unrelated changes and untracked files.
 

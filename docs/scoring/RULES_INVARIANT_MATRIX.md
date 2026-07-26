@@ -8,7 +8,9 @@
 
 **Sequence 5A overtime / `INV-07` amendment:** **DECIDED — July 22, 2026**
 
-**Sequence 5A implementation:** **LOCALLY VERIFIED — July 23, 2026; owner review, commit, hosted publication, and pilot acceptance pending**
+**Sequence 5A implementation:** **COMMITTED LOCALLY — July 23, 2026; hosted publication and pilot acceptance not authorized**
+
+**Reactivation:** **OWNER-CONFIRMED — July 25, 2026; bounded reconciliation only; see [`REACTIVATION_DECISION_2026-07-25.md`](REACTIVATION_DECISION_2026-07-25.md)**
 
 This document defines the rules that later scoring RPCs, ledger events,
 projections, authorization tests, and pilot acceptance checks must implement.
@@ -336,4 +338,4 @@ found no evidence of corrupted live data.
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 gives every game an explicit aggregate/ledger mode, permits only a controlled one-way conversion before scoring/session evidence exists, and blocks aggregate scoring/correction RPCs from mutating ledger-mode projections. Its Migration-24-only hosted 26-table checkpoint passed 225/225 (218 browser/API + 7 catalog) with exact cleanup and baseline restoration; the later current-surface Migration 27 rerun is recorded separately below at 256/256. | `INV-28`–`INV-30`, `INV-35`, `INV-39` |
 | **RESOLVED AND HOSTED-ACCEPTED IN SEQUENCE 3** | Migration 24 adds immutable rule/game and eligible-participant snapshots, correction-session cloning from the ordinary snapshot, one active session per game, server-assigned gapless per-game sequence numbers, game-scoped idempotency uniqueness, and append-only event/attribution evidence with void/replacement anti-fork constraints. | `INV-10`–`INV-18`, `INV-20` |
 | **RESOLVED AND HOSTED-AUTHORIZATION ACCEPTED IN SEQUENCE 4; PILOT GATE OPEN** | Migrations 25–27 add AAL2 session/event/finalization RPCs, rotating leases, exact replay, a deterministic projection, metadata-only failure audit, public-final-only publication, W/L-only forfeits, and the single bracket-safe ledger correction authority. The 294-assertion harness, real two-connection append race, hosted structural/catalog/advisor readbacks, and 256/256 current-surface authorization matrix pass with exact restoration. Positive populated-ledger visibility/write behavior remains the durable Sequence 5 pilot gate. | `INV-01`–`INV-06`, `INV-08`–`INV-30`, `INV-32`–`INV-39` |
-| **LOCALLY VERIFIED IN SEQUENCE 5A; NOT COMMITTED OR HOSTED** | The additive Migration 28 candidate, UI adapter, and scorekeeper pass a clean 28-migration reset, 318/318 database assertions plus the real two-connection race, 133/133 frontend tests, production build, and responsive 375/768/1440 browser checks. Hosted remains aligned only through Migration 27; no hosted ledger row or pilot action was created. | `INV-01`, `INV-03`, `INV-07`, `INV-08`, `INV-14`–`INV-17`, `INV-19`, `INV-24`, `INV-35`–`INV-37` |
+| **COMMITTED LOCALLY IN SEQUENCE 5A; NOT HOSTED** | The additive Migration 28, UI adapter, and scorekeeper pass a clean 28-migration reset, 318/318 database assertions plus the real two-connection race, 133/133 frontend tests, production build, and responsive 375/768/1440 browser checks. Hosted remains aligned only through Migration 27; no hosted ledger row or pilot action was created. | `INV-01`, `INV-03`, `INV-07`, `INV-08`, `INV-14`–`INV-17`, `INV-19`, `INV-24`, `INV-35`–`INV-37` |
