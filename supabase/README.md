@@ -4,10 +4,10 @@ This file is authoritative for CVF Leagues schema, migration ledger, backend inv
 
 ## Verified status — 2026-07-26
 
-- **Twenty-eight migration files are present in filename order; twenty-seven are applied to hosted. Migration 28 is local-only and unpushed.** A clean isolated reset applies all twenty-eight, and the independent pgtest run passes 312/312 plus a real two-connection idempotency race.
+- **Twenty-eight migration files are present in filename order; twenty-seven are applied to hosted. Migration 28 is local-only and unpushed.** A clean isolated reset applies all twenty-eight, and the independent pgtest run passes 314/314 plus a real two-connection idempotency race.
 - Migration 28 (`20260726120000_venues_game_start_times_participation.sql`) adds `venues` and `game_participation`, replaces `games.date`/`games.time`/`games.location` with an authoritative `starts_at` timestamptz plus `venue_id`, and adds one RPC (`set_game_participation`). It **drops three columns**, so it is not silently reversible once hosted.
 - Because it adds two tables and one RPC, the accepted Sequence 4 matrix (26 tables / 25 RPCs / 256 checks) no longer covers the full surface. **Expand and re-run the authorization matrix to 28 tables / 26 RPCs before pushing.** The 256/256 acceptance remains valid for the twenty-seven-migration hosted baseline it was run against.
-- The frontend has not yet been migrated to the new game shape. `backend.js` still selects the dropped columns and calls the retired `schedule_playoff_match(uuid, date, text, text)` signature, so hosted mode would break until that work lands. Mock mode is unaffected because it runs off `seed.js`.
+- The frontend is fully migrated to the new game shape: the adapter reads venues and participation, orders by `starts_at`, uses the new `schedule_playoff_match(uuid, timestamptz, uuid)` signature, and admin venue management exists. Nothing blocks the push on the client side.
 - Sequence 4's real-session authorization matrix is accepted at its stated baseline; the durable populated-ledger pilot remains separate and frozen.
 - The linked hosted project has all twenty-seven migrations applied. Migration 24's private Event Ledger Lite boundary remains behaviorally accepted, and Migrations 25–27 passed migration, structure, row/settings baseline, privilege catalog, and advisor readback. The Season 1 operational baseline was preserved exactly.
 - Hosted verification confirms 74/74 foreign-key constraints with covering indexes, all 26 hosted tables with RLS enabled, the four empty ledger relations, and the expected operational row-count baseline. The earlier 60/60 local figure counted a narrower catalog shape and is superseded by this direct hosted constraint sweep.
@@ -157,7 +157,7 @@ The harness requires local PostgreSQL binaries and permission to allocate Postgr
 
 The hosted ledger currently contains twenty-seven of the twenty-eight repository migrations; Migration 28 is the outstanding one. Every future migration push, migration-history repair, or other hosted write requires owner approval.
 
-Migration 28 additionally requires, before its push is proposed: the authorization matrix expanded to 28 tables and 26 RPCs and re-run, and the frontend migrated to the new game shape so hosted mode is not left broken between the push and the client update. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+Migration 28 additionally requires, before its push is proposed, the authorization matrix expanded to 28 tables and 26 RPCs and re-run. The frontend half is complete, so that matrix run is the only outstanding prerequisite. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
 Before a future hosted migration:
 
