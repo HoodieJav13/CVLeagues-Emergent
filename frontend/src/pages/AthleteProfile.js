@@ -6,7 +6,7 @@ import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import {
   getProfile, playerSports, playerTeams, playerSeasonStats, playerCareerStats, playerGameLog, getTeam, currentSeasonForSport,
-  seasonsForSport, playerGamesPlayed, playerRankContext,
+  seasonsForSport, playerGamesPlayed, playerRankContext, hasCareerBaseline,
 } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel, sportName, LEADERBOARD_CATEGORIES, DERIVED_STATS, computeDerivedStat, formatDerivedStat } from "../lib/statsConfig";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
@@ -164,6 +164,24 @@ async function shareProfile(profile) {
   }
 }
 
+// A career RATE is unknowable once an imported baseline contributed, because
+// the baseline and the granular games are different domains: seed p1 draws 53
+// of 60 career hits from a baseline that records no kicks at all, so the
+// resulting "kick average" of 6.000 is not a high number, it is a meaningless
+// one. No qualifier threshold rescues this — career kicks is exactly 10, so
+// `meetsQualifier` returns true and publishes it anyway.
+//
+// THE ASYMMETRY IS DELIBERATE — do not collapse these two columns into one
+// rule. The season column is entirely granular, so its ratios are sound and
+// keep rendering. Only the career column declines.
+//
+// Counting formats stay in both columns: a sum across a mixed career is still
+// a correct sum. The test is "is this a rate", not an allowlist of two format
+// names, so a rate format added later declines by default instead of silently
+// slipping through.
+const careerRateIsUnknowable = (stat, careerHasBaseline) =>
+  careerHasBaseline && stat.format !== "count";
+
 // Full public statistics: season selector, highlight tiles with league rank,
 // season-vs-career table including derived rate stats, and the game log. This
 // is deliberately public — it is the thing a player sends to someone else.
@@ -177,6 +195,7 @@ const PublicSport = ({ state, profile, sport }) => {
   const gamesPlayed = playerGamesPlayed(state, profile.id, sport, { season });
   const keys = LEADERBOARD_CATEGORIES[sport].map((c) => c.key);
   const derived = DERIVED_STATS[sport] || [];
+  const careerHasBaseline = hasCareerBaseline(state, profile.id, sport);
   const empty = !hasAnyStat(seasonTotals) && !hasAnyStat(career) && log.length === 0;
 
   return (
@@ -213,7 +232,7 @@ const PublicSport = ({ state, profile, sport }) => {
                 <p className="font-mono-score text-2xl font-bold text-primary leading-none">{seasonTotals[key] || 0}</p>
                 <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
                 {rank && (
-                  <p className="text-micro uppercase tracking-widest text-secondary mt-1" data-testid={`profile-rank-${key}`}>
+                  <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1" data-testid={`profile-rank-${key}`}>
                     {rank.rankLabel} of {rank.fieldSize}
                   </p>
                 )}
@@ -255,7 +274,9 @@ const PublicSport = ({ state, profile, sport }) => {
                   {formatDerivedStat(sport, stat.key, computeDerivedStat(sport, stat.key, seasonTotals, { gamesPlayed }))}
                 </td>
                 <td className="py-2 text-right font-mono-score text-muted-foreground">
-                  {formatDerivedStat(sport, stat.key, computeDerivedStat(sport, stat.key, career, { gamesPlayed: playerGamesPlayed(state, profile.id, sport) }))}
+                  {careerRateIsUnknowable(stat, careerHasBaseline)
+                    ? "—"
+                    : formatDerivedStat(sport, stat.key, computeDerivedStat(sport, stat.key, career, { gamesPlayed: playerGamesPlayed(state, profile.id, sport) }))}
                 </td>
               </tr>
             ))}
@@ -270,7 +291,7 @@ const PublicSport = ({ state, profile, sport }) => {
           const opp = getTeam(state, row.game.home_team_id === row.team_id ? row.game.away_team_id : row.game.home_team_id);
           return (
             <Link key={row.id} to={`/game/${row.game.id}`} className="flex items-center justify-between gap-2 min-h-11 text-sm p-2 rounded-lg hover:bg-white/5 active:bg-white/10">
-              <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-secondary">vs {opp?.name}</span></span>
+              <span className="text-muted-foreground">{new Date(row.game.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} <span className="text-muted-foreground">vs {opp?.name}</span></span>
               <span className="font-mono-score text-xs text-primary">{keys.slice(0, 3).map((k) => `${row.stats[k] || 0} ${statLabel(sport, k).split(" ")[0]}`).join(" · ")}</span>
             </Link>
           );

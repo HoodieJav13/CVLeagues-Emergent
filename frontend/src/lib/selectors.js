@@ -214,6 +214,18 @@ export function playerCareerStats(state, profile_id, sport) {
   return addStats(leagueTotals, baseline);
 }
 
+// Whether an imported career baseline contributed to this profile+sport's
+// career totals. Baselines are historical aggregates and the import contract
+// does not require them to carry every column: a row may supply hits with no
+// kicks, or passing yards with no attempts. Summing such a row is fine, but a
+// RATIO built across it draws its numerator and denominator from different
+// domains and is meaningless at every magnitude. Callers use this to decline
+// to publish a rate rather than publish a wrong one.
+export function hasCareerBaseline(state, profile_id, sport) {
+  const baseline = state.careerBaselines?.[profile_id]?.[sport];
+  return Boolean(baseline && Object.keys(baseline).length);
+}
+
 // Tournament totals live in a separate stat domain. tournament_id is the
 // standalone tournament container (a leagues row with kind='tournament').
 export function playerTournamentStats(state, profile_id, sport, tournament_id = null) {

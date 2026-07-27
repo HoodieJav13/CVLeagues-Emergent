@@ -19,6 +19,9 @@ import {
   playerGamesPlayed,
   playerDerivedStat,
   playerRankContext,
+  playerCareerStats,
+  playerSeasonStats,
+  hasCareerBaseline,
 } from "./selectors";
 import { initialState } from "../data/seed";
 
@@ -188,5 +191,41 @@ describe("rank context", () => {
 
   test("returns null for a player with no qualifying value", () => {
     expect(playerRankContext(state, "does-not-exist", "kickball", "homeRuns")).toBeNull();
+  });
+});
+
+/* ----------------------------------------------------------------------------
+ * Mixed-domain career rates. A baseline may supply a numerator with no
+ * denominator, which makes the resulting ratio meaningless rather than merely
+ * large. These pin the exact seed values that produced a published career kick
+ * average of 6.000, so the defect cannot come back quietly.
+ * -------------------------------------------------------------------------- */
+describe("career baselines poison career rates", () => {
+  test("p1's baseline supplies hits but no kicks", () => {
+    expect(hasCareerBaseline(state, "p1", "kickball")).toBe(true);
+    expect(Object.keys(state.careerBaselines.p1.kickball)).not.toContain("kicks");
+
+    const career = playerCareerStats(state, "p1", "kickball");
+    const season = playerSeasonStats(state, "p1", "kickball", "Summer 2026");
+    // Every kick came from a granular game; the baseline added only hits.
+    expect(career.kicks).toBe(season.kicks);
+  });
+
+  test("a qualifier threshold does NOT rescue the ratio", () => {
+    const career = playerCareerStats(state, "p1", "kickball");
+    // Exactly at the kicks >= 10 threshold, so the gate passes...
+    expect(meetsQualifier("kickball", "kickAverage", career)).toBe(true);
+    // ...and would publish an impossible figure. This is why the fix keys on
+    // baseline contribution rather than on a minimum denominator.
+    expect(computeDerivedStat("kickball", "kickAverage", career)).toBeGreaterThan(1);
+  });
+
+  test("the season scope stays sound because it is entirely granular", () => {
+    const season = playerSeasonStats(state, "p1", "kickball", "Summer 2026");
+    expect(computeDerivedStat("kickball", "kickAverage", season)).toBeLessThanOrEqual(1);
+  });
+
+  test("a profile with no baseline is unaffected", () => {
+    expect(hasCareerBaseline(state, "p4", "kickball")).toBe(false);
   });
 });
