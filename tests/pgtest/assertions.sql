@@ -222,7 +222,7 @@ values
   ('40000000-0000-0000-0000-000000000002', '30000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000002', 'Summer 2026', 2, 'C', 'pending_waiver');
 
 -- Venue fixtures. Games carry a venue foreign key and a real start timestamp
--- since migration 28; the free-text date/time/location columns are gone.
+-- since migration 29; the free-text date/time/location columns are gone.
 insert into public.venues (id, name)
 values
   ('60000000-0000-0000-0000-000000000001', 'Field 1'),
@@ -234,7 +234,14 @@ values
   ('60000000-0000-0000-0000-000000000007', 'Forfeit Field'),
   ('60000000-0000-0000-0000-000000000008', 'MFA bypass check'),
   ('60000000-0000-0000-0000-000000000009', 'Flag Test Field'),
-  ('60000000-0000-0000-0000-000000000010', 'Ledger Test Field');
+  ('60000000-0000-0000-0000-000000000010', 'Ledger Test Field'),
+  -- Sequence 5A's overtime fixtures arrived after this branch was written and
+  -- named their own fields as free text. Migration 29 dropped that column, so
+  -- each keeps a distinct venue rather than being collapsed onto a shared one.
+  ('60000000-0000-0000-0000-000000000011', 'Kick OT Field'),
+  ('60000000-0000-0000-0000-000000000012', 'Flag Pair Field'),
+  ('60000000-0000-0000-0000-000000000013', 'Flag OT Field'),
+  ('60000000-0000-0000-0000-000000000014', 'Flag Invalid OT Field');
 
 insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, status, score_status, home_score, away_score, periods)
 values
@@ -2942,25 +2949,31 @@ values
      order by created_at limit 1),
    '10000000-0000-0000-0000-000000000002', 'Summer 2026', 'eligible');
 
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location)
+-- Re-applied onto the Migration 29 game shape. These fixtures were authored on
+-- the pre-cutover branch; a textual merge keeps their old column list and the
+-- harness then fails on columns that no longer exist. The November 6:00 PM
+-- kickoffs are written as MST (-07): DST ends 2026-11-01, so an evening game on
+-- these dates is unambiguously standard time.
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
 values
   ('50000000-0000-0000-0000-000000000954','20000000-0000-0000-0000-000000000001','kickball',
-   '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','2026-11-01','6:00 PM','Kick OT Field'),
+   '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002',
+   '2026-11-01 18:00:00-07'::timestamptz,'60000000-0000-0000-0000-000000000011'),
   ('50000000-0000-0000-0000-000000000955','20000000-0000-0000-0000-000000000002','flag_football',
    '30000000-0000-0000-0000-000000000005',
    (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
      and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
-   '2026-11-02','6:00 PM','Flag Pair Field'),
+   '2026-11-02 18:00:00-07'::timestamptz,'60000000-0000-0000-0000-000000000012'),
   ('50000000-0000-0000-0000-000000000956','20000000-0000-0000-0000-000000000002','flag_football',
    '30000000-0000-0000-0000-000000000005',
    (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
      and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
-   '2026-11-03','6:00 PM','Flag OT Field'),
+   '2026-11-03 18:00:00-07'::timestamptz,'60000000-0000-0000-0000-000000000013'),
   ('50000000-0000-0000-0000-000000000957','20000000-0000-0000-0000-000000000002','flag_football',
    '30000000-0000-0000-0000-000000000005',
    (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
      and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
-   '2026-11-04','6:00 PM','Flag Invalid OT Field');
+   '2026-11-04 18:00:00-07'::timestamptz,'60000000-0000-0000-0000-000000000014');
 
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 insert into cvf_test.ledger_runtime_state
@@ -3410,13 +3423,13 @@ insert into cvf_test.ledger_runtime_state values ('concurrency', public.start_sc
   '50000000-0000-0000-0000-000000000952','CVF-KB-2026.1',5,null,false,'{}'::jsonb));
 
 -- ---------------------------------------------------------------------------
--- Migration 28 — venues, authoritative start times, and participation.
+-- Migration 29 — venues, authoritative start times, and participation.
 -- ---------------------------------------------------------------------------
 select cvf_test.as_owner();
 
 -- The cutover is complete: no legacy schedule columns survive.
 select cvf_test.ok(
-  'migration28 01 legacy game date/time/location columns are gone',
+  'migration29 01 legacy game date/time/location columns are gone',
   not exists (
     select 1 from information_schema.columns
     where table_schema = 'public' and table_name = 'games'
@@ -3424,7 +3437,7 @@ select cvf_test.ok(
   )
 );
 select cvf_test.ok(
-  'migration28 02 starts_at is a required timestamptz and venue_id is required',
+  'migration29 02 starts_at is a required timestamptz and venue_id is required',
   (select data_type = 'timestamp with time zone' and is_nullable = 'NO'
      from information_schema.columns
     where table_schema = 'public' and table_name = 'games' and column_name = 'starts_at')
@@ -3433,7 +3446,7 @@ select cvf_test.ok(
         where table_schema = 'public' and table_name = 'games' and column_name = 'venue_id')
 );
 select cvf_test.ok(
-  'migration28 03 backfilled start times preserve the original local kickoff',
+  'migration29 03 backfilled start times preserve the original local kickoff',
   (select starts_at at time zone 'America/Denver'
      from public.games where id = '50000000-0000-0000-0000-000000000001')
   = timestamp '2026-06-01 18:00:00'
@@ -3442,33 +3455,33 @@ select cvf_test.ok(
 -- Venue authorization. Where a game is played is public; changing it is not.
 select cvf_test.as_anon();
 select cvf_test.ok(
-  'migration28 04 anonymous readers can see venues',
+  'migration29 04 anonymous readers can see venues',
   (select count(*) from public.venues) > 0
 );
 select cvf_test.throws_ok(
-  'migration28 05 anonymous venue insert is denied',
+  'migration29 05 anonymous venue insert is denied',
   $$insert into public.venues (name) values ('Anon Field')$$,
   '%denied%'
 );
 select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
 select cvf_test.throws_ok(
-  'migration28 06 authenticated non-admin venue insert is denied',
+  'migration29 06 authenticated non-admin venue insert is denied',
   $$insert into public.venues (name) values ('Non Admin Field')$$,
   '%row-level security%'
 );
 select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
 select cvf_test.throws_ok(
-  'migration28 07 password-only admin venue insert is denied without AAL2',
+  'migration29 07 password-only admin venue insert is denied without AAL2',
   $$insert into public.venues (name) values ('AAL1 Field')$$,
   '%row-level security%'
 );
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 select cvf_test.lives_ok(
-  'migration28 08 AAL2 admin can create a venue',
+  'migration29 08 AAL2 admin can create a venue',
   $$insert into public.venues (name) values ('Admin Created Field')$$
 );
 select cvf_test.ok(
-  'migration28 09 no client role holds delete on venues',
+  'migration29 09 no client role holds delete on venues',
   not has_table_privilege('authenticated', 'public.venues', 'delete')
   and not has_table_privilege('anon', 'public.venues', 'delete')
 );
@@ -3476,7 +3489,7 @@ select cvf_test.ok(
 -- Participation authorization.
 select cvf_test.as_anon();
 select cvf_test.throws_ok(
-  'migration28 10 anonymous participation insert is denied',
+  'migration29 10 anonymous participation insert is denied',
   $$insert into public.game_participation (game_id, profile_id, team_id)
     values ('50000000-0000-0000-0000-000000000001',
             '10000000-0000-0000-0000-000000000001',
@@ -3484,13 +3497,13 @@ select cvf_test.throws_ok(
   '%denied%'
 );
 select cvf_test.throws_ok(
-  'migration28 11 anonymous cannot execute set_game_participation',
+  'migration29 11 anonymous cannot execute set_game_participation',
   $$select public.set_game_participation('50000000-0000-0000-0000-000000000001', '[]'::jsonb)$$,
   '%denied%'
 );
 select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
 select cvf_test.throws_ok(
-  'migration28 12 authenticated non-admin cannot set participation',
+  'migration29 12 authenticated non-admin cannot set participation',
   $$select public.set_game_participation('50000000-0000-0000-0000-000000000001', '[]'::jsonb)$$,
   '%Admin only%'
 );
@@ -3498,7 +3511,7 @@ select cvf_test.throws_ok(
 -- Participation integrity.
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 select cvf_test.throws_ok(
-  'migration28 13 participation naming a team outside the game is rejected',
+  'migration29 13 participation naming a team outside the game is rejected',
   $$insert into public.game_participation (game_id, profile_id, team_id)
     values ('50000000-0000-0000-0000-000000000001',
             '10000000-0000-0000-0000-000000000001',
@@ -3506,7 +3519,7 @@ select cvf_test.throws_ok(
   '%is not playing in game%'
 );
 select cvf_test.lives_ok(
-  'migration28 14 AAL2 admin can record participation',
+  'migration29 14 AAL2 admin can record participation',
   $$select public.set_game_participation(
       '50000000-0000-0000-0000-000000000001',
       '[{"profile_id":"10000000-0000-0000-0000-000000000001",
@@ -3514,7 +3527,7 @@ select cvf_test.lives_ok(
          "status":"played"}]'::jsonb)$$
 );
 select cvf_test.throws_ok(
-  'migration28 15 a player cannot be recorded twice for one game',
+  'migration29 15 a player cannot be recorded twice for one game',
   $$insert into public.game_participation (game_id, profile_id, team_id)
     values ('50000000-0000-0000-0000-000000000001',
             '10000000-0000-0000-0000-000000000001',
@@ -3540,7 +3553,7 @@ grant select on cvf_test.m28_locked_game_snapshot to public;
 
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 select cvf_test.lives_ok(
-  'migration28 16 participation is recordable on a final locked game',
+  'migration29 16 participation is recordable on a final locked game',
   $$select public.set_game_participation(
       '50000000-0000-0000-0000-000000000003',
       '[{"profile_id":"10000000-0000-0000-0000-000000000001",
@@ -3548,7 +3561,7 @@ select cvf_test.lives_ok(
          "status":"played"}]'::jsonb)$$
 );
 select cvf_test.ok(
-  'migration28 17 recording participation leaves the locked result byte-for-byte unchanged',
+  'migration29 17 recording participation leaves the locked result byte-for-byte unchanged',
   exists (
     select 1
     from public.games g, cvf_test.m28_locked_game_snapshot s
@@ -3563,12 +3576,12 @@ select cvf_test.ok(
 );
 -- The games column allowlist is a NAMED COLUMN LIST, which means it goes stale
 -- silently: dropping a listed column narrows the grant with no error, and
--- adding a column leaves it unwritable with no error. Migration 28 hit exactly
+-- adding a column leaves it unwritable with no error. Migration 29 hit exactly
 -- that. Pinning the exact expected set converts a silent drift into a loud
 -- failure the next time anyone changes the games table.
 select cvf_test.as_owner();
 select cvf_test.eq_text(
-  'migration28 19 the games update allowlist is exactly the schedule columns',
+  'migration29 19 the games update allowlist is exactly the schedule columns',
   (select string_agg(column_name, ',' order by column_name)
      from information_schema.column_privileges
     where grantee = 'authenticated'
@@ -3577,7 +3590,7 @@ select cvf_test.eq_text(
   'away_team_id,home_team_id,league_id,sport,stage,starts_at,temp_admin_id,venue_id'
 );
 select cvf_test.eq_text(
-  'migration28 20 the games insert allowlist is exactly the schedule columns plus id',
+  'migration29 20 the games insert allowlist is exactly the schedule columns plus id',
   (select string_agg(column_name, ',' order by column_name)
      from information_schema.column_privileges
     where grantee = 'authenticated'
@@ -3588,7 +3601,7 @@ select cvf_test.eq_text(
 select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
 
 select cvf_test.ok(
-  'migration28 18 replacing a participation set does not accumulate rows',
+  'migration29 18 replacing a participation set does not accumulate rows',
   (select public.set_game_participation(
      '50000000-0000-0000-0000-000000000003',
      '[{"profile_id":"10000000-0000-0000-0000-000000000001",

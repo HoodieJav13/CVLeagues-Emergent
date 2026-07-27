@@ -1,5 +1,5 @@
 -- ============================================================================
--- CVF Leagues — migration 28
+-- CVF Leagues — migration 29
 -- venues, authoritative game start times, and participation records.
 --
 -- Three related changes to the games surface, batched deliberately: each one

@@ -179,7 +179,7 @@ export const teamPlayers = [
 // round robin is underway (g10 played, g11/g12 to come). Kickball's regular
 // season runs through 07-07 with single-elim playoffs after (g13/g14).
 /* ------------------------------- VENUES ---------------------------------- */
-// Games reference a real venue since migration 28; `location` free text is gone.
+// Games reference a real venue since migration 29; `location` free text is gone.
 export const venues = [
   { id: "v1", name: "Los Altos Park", field_label: "Field 1", address: "10500 Lomas Blvd NE, Albuquerque, NM 87112", latitude: 35.0836, longitude: -106.5303, notes: "", status: "active" },
   { id: "v2", name: "Los Altos Park", field_label: "Field 2", address: "10500 Lomas Blvd NE, Albuquerque, NM 87112", latitude: 35.0836, longitude: -106.5303, notes: "", status: "active" },

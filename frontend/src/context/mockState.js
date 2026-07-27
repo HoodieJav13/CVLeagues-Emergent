@@ -3,7 +3,7 @@ import { freeAgentName } from "../lib/utils";
 
 export { initialState };
 
-// Bumped to 10 for migration 28: games carry starts_at + venue_id instead of
+// Bumped to 10 for migration 29: games carry starts_at + venue_id instead of
 // date/time/location, and venues/gameParticipation are new collections. A
 // persisted v9 state cannot be repaired into the new game shape without
 // inventing kickoff times, so it is discarded rather than migrated.

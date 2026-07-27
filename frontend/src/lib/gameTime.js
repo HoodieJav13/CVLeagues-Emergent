@@ -1,7 +1,7 @@
 /* ============================================================================
  * GAME TIME — one place that knows how a game's start is stored and displayed.
  * ----------------------------------------------------------------------------
- * Since migration 28 a game carries a single `starts_at` timestamptz. The old
+ * Since migration 29 a game carries a single `starts_at` timestamptz. The old
  * `date` column plus `time` display string ('6:30 PM') are gone: a display
  * string cannot be ordered within a day, cannot produce a calendar invite, and
  * carries no zone.
