@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. R2-A and R2-B complete. R2-C and R2-D not authorized.
+**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D).** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -117,9 +117,9 @@ the Public tab, and both were caught by the staged review gate before commit.
 
 | Item | Target stage |
 |---|---|
-| Authorization matrix must cover **four** changed RPC signatures, not the one the runbook names | R2-C |
-| Participation must be proven writable on a **ledger-finalized** game, not only a locked aggregate one (`INV-30`/`INV-35`/`INV-39`) | R2-C |
-| `/api/calendar` is unauthenticated and un-rate-limited; caching is not abuse protection, and `AGENTS.md` requires abuse protection on anonymous surfaces before public launch | decide before R2-D |
+| ~~Authorization matrix must cover four changed RPC signatures~~ | **CLOSED in R2-C.** All four are named in the runbook with what changed and which migration caused it, plus a note to confirm each probe still resolves after the push so a stale fixture is not misread as an authorization defect. |
+| ~~Participation must be proven on a ledger-finalized game~~ | **CLOSED in R2-C.** `migration29 21/22` record participation against game `...950` — ledger-mode, finalized, already corrected — and prove score, periods, outcome, lock, status, `player_stats`, `game_edit_history` **and `scorekeeping_events`** are all byte-for-byte unchanged. The event count is the direct evidence that participation cannot become a second correction authority. |
+| `/api/calendar` is unauthenticated and un-rate-limited; caching is not abuse protection, and `AGENTS.md` requires abuse protection on anonymous surfaces before public launch | **OPEN.** Integrated in R2-D and unreachable while undeployed. Binds before deployment. |
 | Engine-level domain consistency: a derived stat should be unknowable when its inputs span domains, rather than the display layer knowing about baselines. Either teach `playerCareerStats` to report baseline contribution, or require baselines to carry every input their sport's ratios need | R2-B follow-up, unscheduled |
 | `meetsQualifier` is exported, tested, and never called. It is a leaderboard eligibility control and belongs on the leaderboard surfaces | stage that touches `Leaderboards.js` |
 | Standings `LAST 5` form chips logged VISUALLY INSUFFICIENT against Anchor B | Pass 4 Team/Profile batch |
@@ -134,3 +134,17 @@ accept Migration 28 → fresh off-platform logical export → publish Migration 
 → run the expanded 28-table / 26-RPC matrix. Each step needs its own owner
 approval, and a hosted migration push additionally requires the literal token
 `approved: hosted push of migrations X–Y`.
+
+## Stage record
+
+| Stage | Content | Verified at |
+|---|---|---|
+| R2-A | Derived-stat engine, participation-aware selectors, standings form/streak/shared tie ranks, full public profile. Two defects found and fixed before commit. | 159/159 frontend, build |
+| R2-B | Migration 29 (venues, `starts_at`, participation) and the full frontend cutover. Harness re-authored rather than merged. | 338/338 + race, 160/160 frontend, 9/9 API, build |
+| R2-C | Admin venue management, expanded 28-table/26-RPC matrix, franchise history, remembered view filters. Both carried-forward coverage gaps closed. | 340/340 + race, 178/178 frontend, build |
+| R2-D | iCalendar export, VALARM reminders, subscribable `/api/calendar` feed. | 340/340 + race, 208/208 frontend, 21/21 API, build |
+
+Final head verified at 340/340 database assertions plus the two-connection
+idempotency race, 208/208 frontend tests across 38 suites, 21/21 API tests, a
+passing production build, and a fail-closed prebuild validator that still
+blocks without real environment values.
