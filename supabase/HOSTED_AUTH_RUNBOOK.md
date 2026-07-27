@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. **The current target surface is Migration 28: 28 tables and 26 privileged RPCs.** The last ACCEPTED baseline is Sequence 4 at 27 migrations, covering 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
+This runbook is authoritative for the repeatable hosted authorization procedure. **The current target surface is Migrations 28 and 29 combined: 28 tables and 26 privileged RPCs.** The last ACCEPTED baseline is Sequence 4 at 27 migrations, covering 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
 The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. Both accepted Sequence 4 runs include 248 browser/API checks and eight exact catalog checks, including runtime-RPC ACL coverage plus anonymous/non-admin/AAL1 denial for all ten new endpoints. A populated positive read/write proof remains a separate durable-pilot gate.
 
@@ -41,12 +41,30 @@ supabase db push --dry-run
 
 The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables, and 25 administrator RPCs.
 
-**Migration 28 changes the target surface and has not yet been accepted.** It adds `venues` and `game_participation` (28 tables), adds `set_game_participation` (26 RPCs), and REPLACES `schedule_playoff_match`'s signature — `(uuid, date, text, text)` becomes `(uuid, timestamptz, uuid)`. It also drops `games.date`, `games.time`, and `games.location`, so it is not silently reversible once applied.
+**Two unhosted migrations change the target surface, and neither has been accepted.**
 
-Because it drops columns, run this matrix in two passes:
+**Migration 28 (Sequence 5A)** adds no table and no net new RPC, so the counts are unchanged by it. It does change three RPC signatures: `append_scorekeeping_event` and `replace_scorekeeping_event` are dropped and recreated with an additive `p_pairing_override_reason text default null`, and `finalize_scorekeeping_session` is replaced at an identical signature. The added parameter is defaulted, so existing named-argument probes still resolve, and the old overloads are dropped rather than left alongside — there is no ambiguity for PostgREST to resolve.
 
-1. **Before the push**, with 27 hosted migrations: preflight only, to confirm history alignment and a clean dry run. Do not expect the new checks to pass — the tables do not exist yet.
-2. **Immediately after the push**, with 28 hosted migrations: the full matrix, including the Migration 28 section below. This is the run that becomes the new accepted evidence.
+**Migration 29 (venues / `starts_at` / participation)** adds `venues` and `game_participation` (28 tables), adds `set_game_participation` (26 RPCs), and REPLACES `schedule_playoff_match`'s signature — `(uuid, date, text, text)` becomes `(uuid, timestamptz, uuid)`. It also drops `games.date`, `games.time`, and `games.location`, so it is not silently reversible once applied.
+
+**Four RPC signatures have therefore changed since the accepted 256/256 baseline, not one.** This runbook's own re-run trigger fires on any signature change, so all four are in scope:
+
+| RPC | Change | From |
+|---|---|---|
+| `append_scorekeeping_event` | drop + recreate, additive defaulted parameter | Migration 28 |
+| `replace_scorekeeping_event` | drop + recreate, additive defaulted parameter | Migration 28 |
+| `finalize_scorekeeping_session` | replaced at identical signature | Migration 28 |
+| `schedule_playoff_match` | signature replaced, old overload dropped | Migration 29 |
+
+The three Migration-28 endpoints are already in the denial loop, so their coverage carries over — but confirm each probe still resolves to a real function after the push rather than failing as "function not found," which would read as an authorization defect when it is a stale fixture.
+
+Because Migration 29 drops columns, and because the two migrations must publish separately, run this matrix in three passes:
+
+1. **Before any push**, with 27 hosted migrations: preflight only, to confirm history alignment and a clean dry run. Do not expect the new checks to pass — the tables do not exist yet.
+2. **Immediately after publishing Migration 28**, with 28 hosted migrations: the full pre-existing matrix, confirming the three changed ledger signatures still resolve and still deny correctly. The Migration 29 section below will not pass yet.
+3. **Immediately after publishing Migration 29**, with 29 hosted migrations: the full matrix including the Migration 29 section. This is the run that becomes the new accepted evidence.
+
+Take a fresh off-platform logical export between passes 2 and 3. Migration 29's column drop is the irreversible step, and it must never be bundled with the overtime migration.
 
 Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
@@ -140,11 +158,11 @@ The same denial loop also covers the ten Sequence 4 RPCs:
 - `start_scorekeeping_correction`
 - `finalize_scorekeeping_correction`
 
-Migration 28 adds one more to the same denial loop:
+Migration 29 adds one more to the same denial loop:
 
 - `set_game_participation`
 
-### Migration 28 surface — venues and participation
+### Migration 29 surface — venues and participation
 
 Both tables are publicly readable by design: where a game is played and who played in it are box-score facts, the same class of information as a score.
 

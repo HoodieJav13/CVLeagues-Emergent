@@ -3574,6 +3574,59 @@ select cvf_test.ok(
             where game_id = '50000000-0000-0000-0000-000000000003') = s.history_rows
   )
 );
+-- ---------------------------------------------------------------------------
+-- Participation against a LEDGER-mode game.
+--
+-- The checks above prove participation is writable on a final locked AGGREGATE
+-- game. That is not the risky case. INV-30/35/39 make effective ledger events
+-- the SOLE correction authority for a ledger-mode game, so the real question is
+-- whether a participation write can become a second one. Game ...950 is
+-- ledger-mode, finalized, and has already been through a void/replace
+-- correction, which makes it the strongest available target.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+create table cvf_test.m29_ledger_game_snapshot as
+select home_score, away_score, locked, score_status, status, periods, outcome_type,
+       (select count(*) from public.player_stats
+         where game_id = '50000000-0000-0000-0000-000000000950') as stat_rows,
+       (select count(*) from public.game_edit_history
+         where game_id = '50000000-0000-0000-0000-000000000950') as history_rows,
+       (select count(*) from public.scorekeeping_events
+         where game_id = '50000000-0000-0000-0000-000000000950') as event_rows
+  from public.games where id = '50000000-0000-0000-0000-000000000950';
+grant select on cvf_test.m29_ledger_game_snapshot to public;
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.lives_ok(
+  'migration29 21 [INV-30] participation is recordable on a final locked LEDGER game',
+  $$select public.set_game_participation(
+      '50000000-0000-0000-0000-000000000950',
+      '[{"profile_id":"10000000-0000-0000-0000-000000000001",
+         "team_id":"30000000-0000-0000-0000-000000000001",
+         "status":"played"}]'::jsonb)$$
+);
+select cvf_test.ok(
+  'migration29 22 [INV-35][INV-39] it changes no ledger projection, no event, and no audit row',
+  exists (
+    select 1
+    from public.games g, cvf_test.m29_ledger_game_snapshot s
+    where g.id = '50000000-0000-0000-0000-000000000950'
+      and g.home_score is not distinct from s.home_score
+      and g.away_score is not distinct from s.away_score
+      and g.periods is not distinct from s.periods
+      and g.outcome_type is not distinct from s.outcome_type
+      and g.locked = s.locked
+      and g.status = s.status
+      and g.score_status = s.score_status
+      and (select count(*) from public.player_stats
+            where game_id = '50000000-0000-0000-0000-000000000950') = s.stat_rows
+      and (select count(*) from public.game_edit_history
+            where game_id = '50000000-0000-0000-0000-000000000950') = s.history_rows
+      and (select count(*) from public.scorekeeping_events
+            where game_id = '50000000-0000-0000-0000-000000000950') = s.event_rows
+  )
+);
+
 -- The games column allowlist is a NAMED COLUMN LIST, which means it goes stale
 -- silently: dropping a listed column narrows the grant with no error, and
 -- adding a column leaves it unwritable with no error. Migration 29 hit exactly
