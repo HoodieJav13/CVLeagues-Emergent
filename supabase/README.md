@@ -2,9 +2,12 @@
 
 This file is authoritative for CVF Leagues schema, migration ledger, backend invariants, and hosted verification state. Current product status, roadmap, and owner actions live in [`../CLAUDE.md`](../CLAUDE.md). This dedicated Supabase project must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-25
+## Verified status — 2026-07-26
 
-- Twenty-eight migration files are present in filename order. A clean isolated Supabase reset applies all twenty-eight, and the independent pgtest run passes 318/318 plus a real two-connection idempotency race. Migration 28 is committed locally for Sequence 5A; hosted remains at the first twenty-seven migrations.
+- Twenty-nine migration files are present in filename order. A clean isolated reset applies all twenty-nine, and the independent pgtest run passes 338/338 plus a real two-connection idempotency race. Migration 28 (Sequence 5A overtime/pairing) and Migration 29 (venues, authoritative `starts_at`, participation) are both committed locally; hosted remains at the first twenty-seven.
+- **Migration 29 drops three `games` columns (`date`, `time`, `location`) and is therefore not silently reversible once hosted.** It also adds two tables (`venues`, `game_participation`), adds one RPC (`set_game_participation`), and replaces `schedule_playoff_match`'s signature. The two unhosted migrations must publish separately so the irreversible column drop is never bundled with the overtime migration.
+- The accepted 256/256 Sequence 4 matrix covers the twenty-seven-migration hosted baseline only. The combined local stack presents 28 tables and 26 RPCs, and **four** RPC signatures have changed since that acceptance: `append_scorekeeping_event`, `replace_scorekeeping_event`, and `finalize_scorekeeping_session` from Migration 28, plus `schedule_playoff_match` from Migration 29. The matrix must be expanded and re-run before either migration is pushed.
+- Local harness coverage pins the exact `games` INSERT and UPDATE column allowlists. This is a named column list, so it narrows silently when a listed column is dropped and leaves new columns unwritable — Migration 29 hit exactly that case and reissues the grant over `starts_at`/`venue_id`. Verified on the combined stack: score, stat, and history columns remain unreachable except through the scoring RPCs.
 - The linked hosted project has all twenty-seven migrations applied. Migration 24's private Event Ledger Lite boundary remains behaviorally accepted, and Migrations 25–27 passed migration, structure, row/settings baseline, privilege catalog, and advisor readback. The Season 1 operational baseline was preserved exactly.
 - Hosted verification confirms 74/74 foreign-key constraints with covering indexes, all 26 hosted tables with RLS enabled, the four empty ledger relations, and the expected operational row-count baseline. The earlier 60/60 local figure counted a narrower catalog shape and is superseded by this direct hosted constraint sweep.
 - Hosted Security and Performance Advisors were rerun after Sequence 4: 33 Security and 31 Performance findings have the itemized dispositions below. The ten additional Security warnings map exactly to the intended authenticated runtime RPCs; no ledger ACL or unindexed-foreign-key finding was reported.
@@ -64,7 +67,8 @@ The project is linked and all twenty-seven hosted migrations are applied with mi
 | `20260722052347_ledger_runtime_sessions.sql` | Adds controlled AAL2 session leases, participant capture, validated/idempotent event append, resume, renewal, and cancellation |
 | `20260722052350_ledger_projection_finalization.sql` | Adds deterministic ledger projection, atomic finalization/failure audit, explicit W/L-only forfeits, and outcome-aware bracket advancement |
 | `20260722052352_ledger_correction_authority.sql` | Adds the single ledger correction authority, atomic void-and-replace, immutable snapshot chaining, and bracket-safe refinalization |
-| `20260723154411_sequence_5a_overtime_pairing_rules.sql` | Committed local-only Sequence 5A migration adding explicit overtime-period close/continuation, paired-stat entry enforcement with append-only reasoned exceptions, and overtime-aware projection/finalization |
+| `20260723154411_sequence_5a_overtime_pairing_rules.sql` | **Migration 28. Local only, not hosted.** Sequence 5A: explicit overtime-period close/continuation, paired-stat entry enforcement with append-only reasoned exceptions, and overtime-aware projection/finalization |
+| `20260726120000_venues_game_start_times_participation.sql` | **Migration 29. Local only, not hosted.** Adds `venues`; replaces game date/display-time/free-text location with an authoritative `starts_at` timestamptz and `venue_id`; adds `game_participation` and `set_game_participation` outside the score lock; reissues Migration 23's games column allowlist over the replacement columns; replaces `schedule_playoff_match` with the new signature |
 
 ## Completed database hardening
 
@@ -154,7 +158,7 @@ The harness requires local PostgreSQL binaries and permission to allocate Postgr
 
 ## Future hosted migration procedure
 
-The hosted ledger currently contains repository Migrations 1–27; local Migration 28 is unpublished. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+The hosted ledger currently contains repository Migrations 1–27; local Migrations 28 and 29 are unpublished, and they must be pushed as separate approved actions. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
 Before a future hosted migration:
 
@@ -176,7 +180,9 @@ After an approved push, immediately re-run migration listing, compare hosted his
 ## Database-owned invariants
 
 - **Admin identity:** `admin_users` is distinct from player profiles; Auth User is not Player.
-- **RLS:** all 26 local and hosted tables enable RLS. API privileges are separately allowlisted and covered by catalog assertions plus the accepted hosted authorization matrix at its stated baseline.
+- **Game time and place:** `games.starts_at` is the single authoritative timestamptz and `games.venue_id` references a real venue. The former `date` column, `time` display string, and free-text `location` are dropped — two records of one fact drift as soon as one is edited alone.
+- **Participation is outside the score lifecycle:** `game_participation` is never written by the scoring RPCs, is not governed by the game lock, and never interacts with the aggregate or ledger correction authority. `set_game_participation` writes no score, stat, or history row, so it cannot become a second correction authority. A regression proves participation is recordable on a final locked game while leaving the published result and edit-history count unchanged. **Gap carried to R2-C:** that proof covers an aggregate final locked game; it must be extended to a ledger-finalized game so `INV-30`/`INV-35`/`INV-39` are demonstrably unaffected.
+- **RLS:** all 28 local (26 hosted) tables enable RLS. API privileges are separately allowlisted and covered by catalog assertions plus the accepted hosted authorization matrix at its stated baseline.
 - **Ledger authority:** hosted Migration 24 makes aggregate the default, permits only controlled one-way conversion before score/session evidence, and blocks aggregate RPCs from ledger projections. Hosted Migrations 25–27 add the AAL2 ledger authority; structural and real-session authorization acceptance passed, while populated-ledger behavior remains a durable-pilot gate.
 - **Game locks:** Migration 23 retires aggregate unlock locally and hosted. A final correction requires AAL2 plus a non-empty reason and atomically preserves the completed/final/locked state; unsafe winner-changing playoff corrections remain blocked after downstream scheduling.
 - **Edit history:** game history rows are RPC-written, append-only, and immutable. Aggregate before/after snapshots are audit evidence only and never projection input.
