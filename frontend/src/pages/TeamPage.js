@@ -57,7 +57,12 @@ export default function TeamPage() {
           </p>
         )}
         {/* The whole season in one file — the thing that actually gets this
-            schedule onto a player's phone. */}
+            schedule onto a player's phone.
+
+            Full width below `sm`: "Add Season to Calendar" is wider than a
+            375px card, and flex-wrap does not shrink an item below its content
+            width, so an auto-width button overflows and clips. Full-width is
+            also the right mobile CTA shape here. */}
         <div className="mt-4 flex flex-wrap gap-2.5">
           <Button
             variant="outline"
@@ -67,7 +72,7 @@ export default function TeamPage() {
               buildCalendar(state, games, { name: `${team.name} — ${league?.season || "Schedule"}`, origin: window.location.origin }),
               `${team.name}-${league?.season || "schedule"}`
             )}
-            className="h-11"
+            className="h-11 w-full sm:w-auto"
           >
             <CalendarPlus data-icon="inline-start" weight="bold" /> Add Season to Calendar
           </Button>
@@ -79,7 +84,7 @@ export default function TeamPage() {
               variant="ghost"
               data-testid="team-subscribe-schedule"
               onClick={() => subscribeLink(team.id)}
-              className="h-11 text-muted-foreground hover:text-primary"
+              className="h-11 w-full sm:w-auto text-muted-foreground hover:text-primary"
             >
               <LinkSimple data-icon="inline-start" weight="bold" /> Copy Subscribe Link
             </Button>

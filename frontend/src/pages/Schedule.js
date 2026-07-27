@@ -121,7 +121,13 @@ export default function Schedule() {
 
       {/* Calendar export for whatever the filters currently show. Subscribing to
           a whole league only makes sense once a single league is selected —
-          "all leagues" is a view, not a thing anyone follows. */}
+          "all leagues" is a view, not a thing anyone follows.
+
+          Full width below `sm` for the same reason as the team page: these
+          labels are wider than a 375px row, and flex-wrap will not shrink an
+          item below its content width. The subscribe button only renders with
+          a backend, so its overflow would otherwise first appear in hosted
+          mode rather than in local review. */}
       <div className="flex flex-wrap justify-end gap-2.5">
         <Button
           variant="outline"
@@ -131,7 +137,7 @@ export default function Schedule() {
             buildCalendar(state, games, { name: calendarLabel(state, league_id), origin: window.location.origin }),
             calendarLabel(state, league_id)
           )}
-          className="h-11"
+          className="h-11 w-full sm:w-auto"
         >
           <CalendarPlus data-icon="inline-start" weight="bold" /> Download These Games
         </Button>
@@ -140,7 +146,7 @@ export default function Schedule() {
             variant="ghost"
             data-testid="schedule-subscribe-league"
             onClick={() => copyLeagueSubscribeLink(league_id)}
-            className="h-11 text-muted-foreground hover:text-primary"
+            className="h-11 w-full sm:w-auto text-muted-foreground hover:text-primary"
           >
             <LinkSimple data-icon="inline-start" weight="bold" /> Copy League Subscribe Link
           </Button>
