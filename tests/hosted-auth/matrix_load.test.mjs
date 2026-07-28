@@ -273,3 +273,39 @@ test("database guards are asserted by their own message", () => {
     /unexpected reason/,
   );
 });
+
+/* ---------------------------------------------------------------------------
+ * The private ledger boundary makes the narrowest claim in the matrix: not
+ * "the database refused" but "it refused at the table-privilege boundary".
+ * Text alone was not enough — an authentication failure carrying incidental
+ * "permission denied" detail satisfied it, which proves the role never reached
+ * the database rather than that the grant held.
+ * ------------------------------------------------------------------------- */
+test("the ledger privilege boundary rejects authentication failures", () => {
+  const { context } = loadMatrix();
+  const rejected = [
+    { code: "PGRST301", message: "JWT expired" },
+    { code: "PGRST301", message: "permission denied for table scorekeeping_events" },
+    { code: "PGRST302", message: "No API key found in request" },
+    { code: "23514", message: "new row violates check constraint" },
+  ];
+  for (const error of rejected) {
+    assert.throws(
+      () => vm.runInContext(`requirePrivilegeDenied(${JSON.stringify({ error })})`, context),
+      /table-privilege boundary/,
+      `accepted a non-privilege failure: ${error.code} ${error.message}`,
+    );
+  }
+});
+
+test("a real table-privilege denial still passes", () => {
+  const { context } = loadMatrix();
+  const denial = { error: { code: "42501", message: "permission denied for table scorekeeping_events" } };
+  assert.match(
+    vm.runInContext(`requirePrivilegeDenied(${JSON.stringify(denial)})`, context),
+    /table-privilege boundary/,
+  );
+  // A 42501 that is NOT a privilege denial must not satisfy this narrower claim.
+  const rlsOnly = { error: { code: "42501", message: "new row violates row-level security policy" } };
+  assert.throws(() => vm.runInContext(`requirePrivilegeDenied(${JSON.stringify(rlsOnly)})`, context));
+});

@@ -151,9 +151,21 @@ function requireGuardRejection(result, pattern, label) {
   return `Rejected by ${label}.`;
 }
 
+// The private ledger boundary. This is the narrowest claim in the matrix — not
+// merely "the database refused" but "it refused at the TABLE-PRIVILEGE
+// boundary" — so it requires the permission-denied text AND a database
+// authorization result. Text alone was not enough: a PostgREST authentication
+// failure carrying incidental "permission denied" detail would have satisfied
+// it, which proves the role never reached the database rather than that the
+// grant held.
 function requirePrivilegeDenied(result) {
-  if (!result.error || !/permission denied/i.test(result.error.message || "")) {
+  if (!result.error) {
     throw new Error("Ledger mutation did not fail at the table-privilege boundary.");
+  }
+  if (!isDatabaseAuthorizationError(result.error) || !/permission denied/i.test(errorDetail(result.error))) {
+    throw new Error(
+      `Ledger mutation did not fail at the table-privilege boundary (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
+    );
   }
   return "Denied at the table-privilege boundary.";
 }
