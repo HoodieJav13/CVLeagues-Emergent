@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E through R2-I.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
+**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E through R2-J.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -441,3 +441,48 @@ pairing, uncoded rejection, and empty-result acceptance for the two helpers that
 allow it.
 
 Harness contract tests: 50 → **56**.
+
+## Repair stage R2-J — denial variants and complete wrapper coverage
+
+Exact-head review of R2-I found three remaining class-level gaps. First, the
+locked-game check assumed every protected write reached the `final and locked`
+trigger. Migration 23 deliberately revokes direct access to score columns, so
+a direct `home_score` write can correctly stop earlier with PostgreSQL `42501`;
+a granted schedule-column write reaches the trigger and returns `P0001`.
+Rejecting the former would make the live matrix fail on a boundary that is
+working as designed.
+
+Second, R2-I's `tablePrivilege` pattern also accepted function, schema,
+sequence, relation, and view denials. That was broader than the evidence row's
+claim: the four private ledger checks specifically prove a table grant is
+absent. The matcher now accepts only `42501` with a message beginning
+`permission denied for table`.
+
+Third, the cross-product named five helpers but omitted `requireAdminGuard` and
+both `requireGuardRejection` paths. That omission is what concealed the
+locked-game alternative. The executable grid now enumerates all eight wrapper
+and guard paths explicitly:
+
+1. authorization denial;
+2. table-privilege denial;
+3. absent-column proof;
+4. admin guard;
+5. correction-reason guard;
+6. locked-game direct-write boundary;
+7. zero-row protected write; and
+8. hidden private read.
+
+The declaration now binds exact code-and-message **variants**, rather than one
+code list plus one shared pattern. Multi-variant kinds are tested in both
+directions so a valid code cannot borrow another variant's message. The
+locked-game kind accepts the two legitimate outcomes and reports which boundary
+actually stopped the write: `game lock` for `P0001`, or `database authorization
+boundary` for `42501`. Function/schema/sequence/RLS-shaped `42501` results are
+executed as negative cases against the narrower table-privilege assertion.
+
+Harness contract tests: 56 → **59**.
+
+This is local harness verification only. No live matrix was run, no hosted
+state changed, and hosted remains at Migration 27. The first target-environment
+proof remains the separately approved `--surface m28` acceptance run after
+Migration 28 publication.

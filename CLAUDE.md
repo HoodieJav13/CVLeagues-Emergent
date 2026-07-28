@@ -195,6 +195,7 @@ Kickball — Offense (kicks/1B/2B/3B/HR/RBI/runs/walks/K), Defense (outs/assists
 External critical-path dependency (unchanged): NM attorney waiver review. Other lead-time items: domain purchase · confirm friend's native-app stack.
 
 ## Deferred / Backlog
+- Frontend test timing reliability: `HallOfFameTab.test.js` and `ScoreEntry.test.js` have repeatedly exceeded their fixed timeouts under the normal parallel Jest run while passing the complete serial suite. Investigate shared `act()`/open-handle cleanup and marginal timing assumptions before relying on parallel CI; do not treat another timeout increase as the fix.
 - Consolidate the remaining overlapping permissive RLS-policy cases only after measured need or during a deliberate authorization redesign. The team overlap disappeared when direct team writes were removed; preserve all remaining public/admin semantics and rerun the complete negative matrix before further consolidation.
 - Season 2 player/captain self-service: signup, email verification, password recovery, safe profile claiming, captain permissions, abuse controls, and a new authorization matrix. This remains outside Season 1 and is also gated by the waiver/eligibility design.
 - Public Hall of Fame route and publication control.
