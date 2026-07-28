@@ -291,6 +291,9 @@ function makeReport(browserResult, cleanupResult) {
 
 - **Overall:** ${overall}
 - **Project:** \`${projectRef}\`
+- **Surface:** \`${surface.key}\` — ${markdownEscape(surface.label)}
+- **Expected census:** ${surface.migrations} migrations · ${surface.tableCount} tables · ${surface.rpcCount} admin RPCs
+- **Fixture game shape:** \`${surface.gameShape}\`${surface.seedsVenue ? " (venue seeded)" : " (no venue; venues not yet published)"}
 - **Run namespace:** \`${runId}\`
 - **Executed:** ${markdownEscape(browserResult.startedAt)} to ${markdownEscape(browserResult.finishedAt)}
 - **Browser/API checks:** ${summary.browserPassed} passed, ${summary.browserFailed} failed

@@ -49,7 +49,7 @@ test("Sequence 4 runtime RPCs are covered by browser denial and catalog checks",
   // grepping matrix.js, which would only prove the names appear somewhere.
   await import("./surface_contract.js");
   const { SURFACES, hasRpc } = globalThis.CVF_MATRIX_SURFACES;
-  assert.match(browserSource, /const ADMIN_RPC_NAMES = surface\.rpcs;/);
+  assert.match(browserSource, /const adminRpcNames = \(\) => surface\.rpcs;/);
 
   for (const rpc of runtimeRpcs) {
     // Present at EVERY surface — Sequence 5A changed three of these signatures

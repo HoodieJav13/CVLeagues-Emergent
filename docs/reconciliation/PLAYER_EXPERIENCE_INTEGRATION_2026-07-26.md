@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stage R2-E.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
+**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E and R2-F.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -214,3 +214,57 @@ Verified at 340/340 database assertions plus the two-connection race, 208/208
 frontend tests across 38 suites, 21/21 API tests, 28/28 harness contract tests,
 and a passing production build. No hosted action; hosted remains at Migration
 27.
+
+## Repair stage R2-F — the harness could not execute
+
+R2-E made the two-migration procedure *expressible*. It did not make it
+*runnable*. Independent review executed the browser script instead of reading
+it and found four defects, all confirmed directly here.
+
+**P0 — the browser matrix crashed at load.** R2-E replaced a literal
+`ADMIN_RPC_NAMES` array with `surface.rpcs` at module scope, but `surface` is
+resolved from the fetched config inside `runMatrix()`. The script threw
+`TypeError: Cannot read properties of undefined (reading 'rpcs')` the instant
+the browser loaded it — killing the whole matrix before any check. All 28
+R2-E contract tests passed because **every one of them inspected source text
+rather than executing the script.** That is the real lesson of this stage: a
+regex over source can prove a string is present and prove nothing about whether
+the program runs. Now a function, resolved lazily.
+
+**P0 — the administrator success path still used the pre-29 schema.** R2-C
+claimed `a64e74d` "fixed the stale `p_date`/`p_time`/`p_location` fixture." It
+fixed exactly one call site — the *denial* probe. The success path still called
+`schedule_playoff_match` with the retired signature and inserted a linked
+playoff game using the dropped `date`/`time`/`location` columns. Both would
+have failed against a hosted Migration 29. This was pre-existing on the feature
+branch and survived the R2-C review, which is a miss in that review, not only
+in the branch.
+
+**P1 — two denial checks could pass for the wrong reason.** They submitted
+dropped legacy columns and used `requireDenied`, which accepts *any* error. A
+`column does not exist` response would have been banked as proof that RLS
+worked — a green check for a boundary never exercised. `requireAuthorizationDenied`
+now rejects schema-shaped failures (`42703`, `PGRST204`, missing column/function
+text) so a stale fixture surfaces as a harness bug instead of a false pass.
+
+**P1 — generated evidence did not say which surface it covered.** The runbook
+claimed the evidence records the tested surface; it recorded project, namespace
+and counts only. The report header now carries the surface key, its label, the
+migration number, and the expected table/RPC census.
+
+**Every games payload now flows through the shared contract** —
+`gameScheduleFields` and `schedulePlayoffMatchArgs` — so denial probes and
+success paths cannot drift apart one call site at a time. A contract test fails
+if any hard-coded `date:`/`time:`/`location:`/`p_date:` reappears.
+
+**`matrix_load.test.mjs` executes the script** in a `vm` context against a DOM
+stub shaped like `matrix.html`, then exercises both surfaces' censuses and
+payload builders. Verified non-vacuous by mutation: reintroducing the P0 fails
+all 10 of its tests, where the regex suite caught it only incidentally.
+
+Harness contract tests: 10 before R2-E → 28 after R2-E → **41 after R2-F**.
+
+Verified at 340/340 database assertions plus the two-connection race, 208/208
+frontend tests, 21/21 API tests, 41/41 harness contract tests, a passing
+production build, and Protocol v1.2 validation. No hosted action; hosted
+remains at Migration 27.

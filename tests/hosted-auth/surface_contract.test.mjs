@@ -130,8 +130,39 @@ test("an unknown surface fails loudly rather than defaulting", () => {
 test("the browser matrix gates the Migration 29 relations rather than hard-coding them", () => {
   assert.match(matrixSource, /hasTable\(surface, "venues"\)/);
   assert.match(matrixSource, /M29_TABLES\.filter\(\(name\) => hasTable\(surface, name\)\)/);
-  assert.match(matrixSource, /const ADMIN_RPC_NAMES = surface\.rpcs;/);
-  assert.match(matrixSource, /surface\.gameShape === "legacy"/);
+  // A function, not a const: `surface` is resolved from the fetched config, so
+  // dereferencing it at module scope throws at script load. See
+  // matrix_load.test.mjs, which executes the script rather than reading it.
+  assert.match(matrixSource, /const adminRpcNames = \(\) => surface\.rpcs;/);
+  assert.doesNotMatch(matrixSource, /const ADMIN_RPC_NAMES = surface\.rpcs;/);
+});
+
+test("no games payload hard-codes a surface-specific column", () => {
+  // Denial probes and success paths alike must build from the shared helpers.
+  // A hard-coded legacy column in a denial probe is the worst case: it still
+  // errors, so a permissive assertion banks a schema failure as RLS proof.
+  assert.doesNotMatch(matrixSource, /^\s+(date|time|location):\s/m);
+  assert.doesNotMatch(matrixSource, /p_date:|p_time:|p_location:/);
+  assert.match(matrixSource, /\.\.\.scheduleFields\(/);
+  assert.match(matrixSource, /schedulePlayoffMatchArgs\(surface, \{/);
+});
+
+test("game-insert denial checks demand an authorization-shaped failure", () => {
+  assert.match(matrixSource, /function requireAuthorizationDenied\(/);
+  // Both games-insert denials must use the strict helper, not the permissive one.
+  const gameInsertDenials = matrixSource.match(/direct game insert is denied[\s\S]{0,120}|insert a score-bearing game directly[\s\S]{0,120}/g) || [];
+  assert.equal(gameInsertDenials.length, 2, "expected exactly two games-insert denial checks");
+  for (const snippet of gameInsertDenials) {
+    assert.match(snippet, /requireAuthorizationDenied/);
+  }
+});
+
+test("generated evidence records the surface it covers", () => {
+  assert.match(serverSource, /\*\*Surface:\*\*/);
+  assert.match(serverSource, /surface\.key/);
+  assert.match(serverSource, /surface\.migrations/);
+  assert.match(serverSource, /surface\.tableCount/);
+  assert.match(serverSource, /surface\.rpcCount/);
 });
 
 test("the browser matrix labels the venue checks as Migration 29", () => {

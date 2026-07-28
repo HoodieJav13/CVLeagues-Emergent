@@ -28,7 +28,18 @@ const {
   checkName: ledgerCheckName,
 } = CVF_LEDGER_MATRIX_CONTRACT;
 
-const { resolveSurface, hasTable, M29_TABLES } = CVF_MATRIX_SURFACES;
+const {
+  resolveSurface, hasTable, M29_TABLES, gameScheduleFields, schedulePlayoffMatchArgs,
+} = CVF_MATRIX_SURFACES;
+
+// One place that knows what "when and where" means for a fixture game. Both
+// the denial probes and the administrator success path build from this, so a
+// surface change cannot leave one of them behind.
+function scheduleFields({ timeText = "6:30 PM", startsAt = "2099-07-13T18:30:00-06:00", dateText = "2099-07-13" } = {}) {
+  return gameScheduleFields(surface, {
+    startsAt, dateText, timeText, locationText: config.runId, venueId: config.ids.venue,
+  });
+}
 
 function log(message) {
   output.textContent += `${message}\n`;
@@ -66,6 +77,23 @@ function requireSuccess(result, message = "Request failed") {
 function requireDenied(result, message = "Request unexpectedly succeeded") {
   if (!result.error) throw new Error(message);
   return "Denied as required.";
+}
+
+// Denial checks whose claimed property is AUTHORIZATION must fail for an
+// authorization reason. `requireDenied` accepts any error, which means a
+// payload naming a column the surface does not have would record
+// "column does not exist" as proof that RLS worked — a green check for a
+// boundary that was never exercised. Schema-shaped failures are rejected here
+// so a stale fixture surfaces as a harness bug instead of a false pass.
+const SCHEMA_ERROR = /column .* does not exist|could not find the .* column|schema cache|undefined_column|function .* does not exist|could not find the function/i;
+
+function requireAuthorizationDenied(result, message = "Request unexpectedly succeeded") {
+  if (!result.error) throw new Error(message);
+  const detail = `${result.error.message || ""} ${result.error.details || ""} ${result.error.hint || ""}`;
+  if (SCHEMA_ERROR.test(detail) || result.error.code === "42703" || result.error.code === "PGRST204") {
+    throw new Error(`Denial was a SCHEMA error, not an authorization boundary: ${result.error.message}`);
+  }
+  return "Denied at the authorization boundary.";
 }
 
 function requirePrivilegeDenied(result) {
@@ -221,10 +249,13 @@ function rpcArguments(name) {
     },
     // Migration 29 replaces this signature. Probing the wrong one returns
     // "function not found", which reads as an authorization anomaly when it is
-    // really a stale fixture — so the arguments follow the surface.
-    schedule_playoff_match: surface.gameShape === "legacy"
-      ? { p_match_id: config.ids.unknownPlayoffMatch, p_date: "2099-07-14", p_time: "7:00 PM", p_location: config.runId }
-      : { p_match_id: config.ids.unknownPlayoffMatch, p_starts_at: "2099-07-14T19:00:00-06:00", p_venue_id: config.ids.venue },
+    // really a stale fixture — so the arguments come from the shared contract.
+    schedule_playoff_match: schedulePlayoffMatchArgs(surface, {
+      matchId: config.ids.unknownPlayoffMatch,
+      startsAt: "2099-07-14T19:00:00-06:00",
+      dateText: "2099-07-14", timeText: "7:00 PM",
+      locationText: config.runId, venueId: config.ids.venue,
+    }),
     link_playoff_game: { p_match_id: config.ids.unknownPlayoffMatch, p_game_id: config.ids.game },
     advance_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch },
     enroll_team_identity: {
@@ -295,7 +326,13 @@ function rpcArguments(name) {
 // The admin RPC census is surface-dependent: Migration 29 adds
 // set_game_participation. Sourced from the shared contract so the browser and
 // the privileged runner cannot disagree about how many endpoints exist.
-const ADMIN_RPC_NAMES = surface.rpcs;
+//
+// A FUNCTION, not a const. `surface` is resolved from the fetched config
+// inside runMatrix(), so reading it at module scope threw
+// "Cannot read properties of undefined" the instant the script loaded — the
+// whole matrix, before any check. Regex-based contract tests could not see it
+// because the source text looked correct.
+const adminRpcNames = () => surface.rpcs;
 
 async function runMatrix() {
   runButton.disabled = true;
@@ -346,7 +383,7 @@ async function runMatrix() {
       const data = requireSuccess(await admin.rpc("is_admin"));
       requireCondition(data === false, "AAL1 administrator was incorrectly authorized.");
     });
-    for (const rpc of ADMIN_RPC_NAMES) {
+    for (const rpc of adminRpcNames()) {
       await check("MFA authorization", `linked password-only administrator cannot execute ${rpc}`, async () => {
         return requireAdminGuard(await admin.rpc(rpc, rpcArguments(rpc)));
       });
@@ -512,32 +549,28 @@ async function runMatrix() {
     await check("Hall of Fame authorization", "non-admin cannot update Hall of Fame entries", async () => requireNoWrite(await nonadmin.from("hof_entries").update({ title: "Denied" }).eq("id", config.ids.hof).select()));
     await check("Hall of Fame authorization", "non-admin cannot delete Hall of Fame entries", async () => requireNoWrite(await nonadmin.from("hof_entries").delete().eq("id", config.ids.hof).select()));
 
-    for (const rpc of ADMIN_RPC_NAMES) {
+    for (const rpc of adminRpcNames()) {
       await check("RPC denial", `anonymous cannot execute ${rpc}`, async () => requireDenied(await anon.rpc(rpc, rpcArguments(rpc))));
       await check("RPC denial", `non-admin cannot execute ${rpc}`, async () => requireAdminGuard(await nonadmin.rpc(rpc, rpcArguments(rpc))));
     }
 
-    await check("direct-write guards", "anonymous direct game insert is denied", async () => requireDenied(await anon.from("games").insert({
+    await check("direct-write guards", "anonymous direct game insert is denied", async () => requireAuthorizationDenied(await anon.from("games").insert({
       id: config.ids.deniedGame,
       league_id: config.ids.league,
       sport: "kickball",
       home_team_id: config.ids.homeTeam,
       away_team_id: config.ids.awayTeam,
-      date: "2099-07-14",
-      time: "6:30 PM",
-      location: config.runId,
+      ...scheduleFields({ timeText: "6:30 PM", startsAt: "2099-07-14T18:30:00-06:00", dateText: "2099-07-14" }),
     })));
     await check("direct-write guards", "non-admin direct score update is denied", async () => requireNoWrite(await nonadmin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
     await check("direct-write guards", "administrator cannot directly update an unlocked score", async () => requireDenied(await admin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
-    await check("direct-write guards", "administrator cannot insert a score-bearing game directly", async () => requireDenied(await admin.from("games").insert({
+    await check("direct-write guards", "administrator cannot insert a score-bearing game directly", async () => requireAuthorizationDenied(await admin.from("games").insert({
       id: config.ids.deniedGame,
       league_id: config.ids.league,
       sport: "kickball",
       home_team_id: config.ids.homeTeam,
       away_team_id: config.ids.awayTeam,
-      date: "2099-07-14",
-      time: "6:45 PM",
-      location: config.runId,
+      ...scheduleFields({ timeText: "6:45 PM", startsAt: "2099-07-14T18:45:00-06:00", dateText: "2099-07-14" }),
       home_score: 1,
       away_score: 0,
     })));
@@ -653,12 +686,12 @@ async function runMatrix() {
     await check("playoff RPC success", "administrator schedules a ready bracket match", async () => {
       const matches = requireSuccess(await admin.from("playoff_matches").select("id").eq("status", "ready").order("match_number").limit(1));
       requireCondition(matches.length === 1, "No ready playoff match was generated.");
-      scheduledPlayoffGame = requireSuccess(await admin.rpc("schedule_playoff_match", {
-        p_match_id: matches[0].id,
-        p_date: "2099-07-14",
-        p_time: "7:00 PM",
-        p_location: config.runId,
-      }));
+      scheduledPlayoffGame = requireSuccess(await admin.rpc("schedule_playoff_match", schedulePlayoffMatchArgs(surface, {
+        matchId: matches[0].id,
+        startsAt: "2099-07-14T19:00:00-06:00",
+        dateText: "2099-07-14", timeText: "7:00 PM",
+        locationText: config.runId, venueId: config.ids.venue,
+      })));
       requireCondition(Boolean(scheduledPlayoffGame), "Schedule RPC did not return a game ID.");
     });
     await check("playoff RPC success", "administrator links a matching existing playoff game", async () => {
@@ -670,9 +703,7 @@ async function runMatrix() {
         sport: "kickball",
         home_team_id: matches[0].home_team_id,
         away_team_id: matches[0].away_team_id,
-        date: "2099-07-14",
-        time: "8:00 PM",
-        location: config.runId,
+        ...scheduleFields({ timeText: "8:00 PM", startsAt: "2099-07-14T20:00:00-06:00", dateText: "2099-07-14" }),
         stage: "playoff",
       }));
       requireSuccess(await admin.rpc("link_playoff_game", { p_match_id: matches[0].id, p_game_id: config.ids.linkedPlayoffGame }));

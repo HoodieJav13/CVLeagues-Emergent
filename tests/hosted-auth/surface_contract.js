@@ -86,6 +86,31 @@
 
   const DEFAULT_SURFACE = "m29";
 
+  /* --------------------------------------------------------------------------
+   * Payload builders. EVERY games payload in the harness goes through these —
+   * denial probes and administrator success paths alike. A denial probe built
+   * on the wrong shape is worse than a broken success path: it still errors, so
+   * a permissive assertion records "column does not exist" as proof that RLS
+   * worked. Centralising the shape is what makes that impossible to reintroduce
+   * one call site at a time.
+   * ------------------------------------------------------------------------ */
+
+  // Schedule fields for a games row at this surface, merged into a base row.
+  function gameScheduleFields(surface, { startsAt, dateText, timeText, locationText, venueId }) {
+    if (surface.gameShape === "legacy") {
+      return { date: dateText, time: timeText, location: locationText };
+    }
+    return { starts_at: startsAt, venue_id: venueId };
+  }
+
+  // Named arguments for schedule_playoff_match at this surface.
+  function schedulePlayoffMatchArgs(surface, { matchId, startsAt, dateText, timeText, locationText, venueId }) {
+    if (surface.gameShape === "legacy") {
+      return { p_match_id: matchId, p_date: dateText, p_time: timeText, p_location: locationText };
+    }
+    return { p_match_id: matchId, p_starts_at: startsAt, p_venue_id: venueId };
+  }
+
   function resolveSurface(key) {
     const resolved = SURFACES[key || DEFAULT_SURFACE];
     if (!resolved) {
@@ -108,5 +133,6 @@
   target.CVF_MATRIX_SURFACES = Object.freeze({
     SURFACES, DEFAULT_SURFACE, BASE_TABLES, BASE_RPCS, M29_TABLES, M29_RPCS,
     resolveSurface, hasTable, hasRpc,
+    gameScheduleFields, schedulePlayoffMatchArgs,
   });
 })(globalThis);
