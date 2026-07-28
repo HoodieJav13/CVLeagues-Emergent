@@ -105,7 +105,7 @@ export default function GameDetail() {
           <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {venueLabel(state, game)}</span>
         </div>
 
-        {/* Add to calendar — available to everyone, and the reason migration 28
+        {/* Add to calendar — available to everyone, and the reason migration 29
             made the start time a real timestamp. */}
         {!completed && (
           <Button

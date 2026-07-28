@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D).** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
+**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stage R2-E.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -148,3 +148,69 @@ Final head verified at 340/340 database assertions plus the two-connection
 idempotency race, 208/208 frontend tests across 38 suites, 21/21 API tests, a
 passing production build, and a fail-closed prebuild validator that still
 blocks without real environment values.
+
+## Repair stage R2-E — the two-surface matrix
+
+Found by independent review before the merge to `main`, and confirmed
+directly: **the documented Migration-28 acceptance pass could not run.**
+
+The runbook described three passes with a separate acceptance boundary per
+migration. The executable harness could not follow it. After publishing only
+Migration 28, hosted has no `venues`, no `game_participation`, no `starts_at`
+and no `venue_id` — but the harness unconditionally seeded a venue, inserted a
+game on the `starts_at` shape, counted both new tables in the baseline, deleted
+them in cleanup, and probed `schedule_playoff_match` with its post-29 signature.
+
+The failure mode was worse than failing checks. Seeding and baseline capture run
+**before** the first authorization check, so a Migration 28 pass would have died
+at setup and produced **no evidence at all** — not a partial pass with known
+gaps. The separate acceptance boundaries existed in prose only.
+
+A fourth signature problem sat inside the repair: `schedule_playoff_match`
+changes shape at Migration 29, so the `m28` mode has to probe the *old*
+arguments. Probing the new ones returns "function not found", which reads as an
+authorization anomaly rather than a stale fixture.
+
+**The repair.** `tests/hosted-auth/surface_contract.js` is a single shared
+object read by both the privileged Node runner and the browser matrix, so the
+two halves cannot disagree about which surface is under test:
+
+| | `m28` | `m29` |
+|---|---|---|
+| Tables | 26 | 28 |
+| Admin RPCs | 25 | 26 |
+| `games` fixture | `date` / `time` / `location` | `starts_at` / `venue_id` |
+| Venue seeded | no | yes |
+| `schedule_playoff_match` probe | `p_date`, `p_time`, `p_location` | `p_starts_at`, `p_venue_id` |
+| Venue / participation checks | skipped | run |
+
+`--surface` flows from `run_matrix.sh` through the runner into the served
+config and out to the browser, and an unknown value fails closed rather than
+defaulting.
+
+**Contract tests are the load-bearing part** — 18 new, 28 total in the harness
+suite. Two modes are two code paths that can drift, and the drift is silent: a
+mode that quietly does less work still reports `PASS`. The tests pin both
+censuses by exact count, assert `m28` is a strict prefix of `m29` so nothing is
+dropped between them, and verify the harness actually consumes the contract
+rather than merely agreeing with it on paper. Verified non-vacuous by mutation:
+un-gating the venue block fails the suite.
+
+Updating the RPC census also broke an existing contract test, which is the
+system working — `ledger_matrix_contract.test.mjs` asserted the ten runtime RPC
+names appear as literals in `matrix.js`, and they now live in the shared
+contract. It was repointed at the contract object rather than weakened, and now
+additionally asserts all ten are present at *every* surface.
+
+**Label sweep.** The R2-B renumbering ran before R2-C and R2-D existed and was
+never re-run, so six live sites still called the venues surface Migration 28:
+`VenuesTab.js` and its test, `calendar.js`, `GameDetail.js`, and five `check()`
+category strings in `matrix.js`. The category strings mattered most — they
+become row labels in durable evidence. A contract test now fails if any live
+harness source calls the venues surface Migration 28. The sweep must run at the
+end of any stage that adds files, not once per program.
+
+Verified at 340/340 database assertions plus the two-connection race, 208/208
+frontend tests across 38 suites, 21/21 API tests, 28/28 harness contract tests,
+and a passing production build. No hosted action; hosted remains at Migration
+27.

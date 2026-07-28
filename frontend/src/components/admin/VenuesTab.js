@@ -11,7 +11,7 @@ import { StatusBadge } from "../common/Badges";
 /* ============================================================================
  * VENUES — admin management for where games are played.
  *
- * Migration 28 made `games.venue_id` required, so an administrator must be able
+ * Migration 29 made `games.venue_id` required, so an administrator must be able
  * to create a venue before a game can be scheduled at a new field. Venues are
  * NEVER deleted: historical games reference them and the database has no delete
  * policy for any client role. The lifecycle action is therefore RETIRE, which

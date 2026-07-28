@@ -1,7 +1,7 @@
 /* ============================================================================
  * CALENDAR EXPORT — RFC 5545 (iCalendar) generation.
  * ----------------------------------------------------------------------------
- * Built on migration 28's `games.starts_at`. This was impossible before it: a
+ * Built on migration 29's `games.starts_at`. This was impossible before it: a
  * calendar event needs an actual instant, and the old schema stored a date plus
  * the display string '6:30 PM', which is not one.
  *

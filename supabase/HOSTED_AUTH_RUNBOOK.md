@@ -66,6 +66,40 @@ Because Migration 29 drops columns, and because the two migrations must publish 
 
 Take a fresh off-platform logical export between passes 2 and 3. Migration 29's column drop is the irreversible step, and it must never be bundled with the overtime migration.
 
+**Each pass runs an explicit surface mode.** The harness cannot infer which
+surface is hosted, and guessing wrong fails during fixture seeding rather than
+at a check, which produces no evidence at all:
+
+```sh
+# pass 2 — hosted at Migration 28
+CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
+  supabase/evidence/hosted-auth-matrix-YYYY-MM-DD-m28.md --surface m28
+
+# pass 3 — hosted at Migration 29
+CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
+  supabase/evidence/hosted-auth-matrix-YYYY-MM-DD-m29.md --surface m29
+```
+
+| | `m28` | `m29` |
+|---|---|---|
+| Tables | 26 | 28 |
+| Admin RPCs | 25 | 26 |
+| `games` fixture | `date` / `time` / `location` | `starts_at` / `venue_id` |
+| Venue seeded | no | yes |
+| `schedule_playoff_match` probe | `p_date`, `p_time`, `p_location` | `p_starts_at`, `p_venue_id` |
+| Venue / participation checks | skipped | run |
+
+`m29` is the default; the flag is mandatory only for the Migration 28 pass, but
+state it explicitly in both so the evidence file records which surface it
+covers. The two modes and their exact censuses are pinned by
+`tests/hosted-auth/surface_contract.test.mjs`, so a mode that quietly does less
+work fails the contract tests rather than reporting a hollow `PASS`.
+
+**Each pass is its own acceptance boundary.** Run the structural readback,
+advisors, and the full matrix after each publication, and record the two
+checkpoints as separate dated evidence files. Do not carry a Migration 28
+result forward as evidence for Migration 29.
+
 Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
 Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-24.md`](evidence/hosted-auth-matrix-2026-07-24.md) records the later run at 256/256 with fixture cleanup and exact restoration both passing. Its execution timestamps use UTC (`2026-07-25`), while the immutable filename uses the America/Denver local run date (`2026-07-24`). The independent [`2026-07-22 Migration-27 evidence`](evidence/hosted-auth-matrix-2026-07-22-m27.md) records the same accepted surface from the earlier run. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding structural gate. The immutable Migration-24 and Migration-23 evidence remain prior checkpoints.

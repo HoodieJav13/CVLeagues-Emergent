@@ -33,7 +33,7 @@ test("browser runner invokes the complete ledger boundary for every role", () =>
   }
 });
 
-test("Sequence 4 runtime RPCs are covered by browser denial and catalog checks", () => {
+test("Sequence 4 runtime RPCs are covered by browser denial and catalog checks", async () => {
   const browserSource = readFileSync(new URL("./matrix.js", import.meta.url), "utf8");
   const catalogSource = readFileSync(new URL("./ledger_catalog.sql", import.meta.url), "utf8");
   const runtimeRpcs = [
@@ -42,8 +42,21 @@ test("Sequence 4 runtime RPCs are covered by browser denial and catalog checks",
     "cancel_scorekeeping_session", "declare_ledger_forfeit", "start_scorekeeping_correction",
     "finalize_scorekeeping_correction",
   ];
+
+  // The denial loop no longer keeps its own literal list: the RPC census is
+  // surface-dependent (Migration 29 adds set_game_participation), so it comes
+  // from the shared surface contract. Assert against that object rather than
+  // grepping matrix.js, which would only prove the names appear somewhere.
+  await import("./surface_contract.js");
+  const { SURFACES, hasRpc } = globalThis.CVF_MATRIX_SURFACES;
+  assert.match(browserSource, /const ADMIN_RPC_NAMES = surface\.rpcs;/);
+
   for (const rpc of runtimeRpcs) {
-    assert.match(browserSource, new RegExp(`\\"${rpc}\\"`));
+    // Present at EVERY surface — Sequence 5A changed three of these signatures
+    // but removed none of the endpoints, so denial coverage must never lapse.
+    for (const key of Object.keys(SURFACES)) {
+      assert.ok(hasRpc(SURFACES[key], rpc), `surface ${key} does not cover ${rpc}`);
+    }
     assert.match(catalogSource, new RegExp(`\\('${rpc}'\\)`));
   }
 });

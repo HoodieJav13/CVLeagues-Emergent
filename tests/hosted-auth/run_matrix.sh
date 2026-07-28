@@ -4,6 +4,22 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 PORT="${CVF_HOSTED_AUTH_PORT:-55882}"
 REPORT_PATH="${1:-$ROOT_DIR/supabase/evidence/hosted-auth-matrix-$(date +%F).md}"
+shift || true
+# Which hosted surface this run targets. Migrations 28 and 29 publish
+# separately, so a run against the intermediate state must say so: the m29
+# fixture seeds a venue and a starts_at game, which fails during SETUP against
+# a database at Migration 28. Defaults to the current repository surface.
+SURFACE="m29"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --surface) SURFACE="${2:?--surface requires a value}"; shift 2 ;;
+    *) echo "Unknown argument: $1" >&2; exit 2 ;;
+  esac
+done
+if [[ "$SURFACE" != "m28" && "$SURFACE" != "m29" ]]; then
+  echo "Unknown matrix surface \"$SURFACE\". Expected m28 or m29." >&2
+  exit 2
+fi
 SERVER_PID=""
 
 cleanup_runner() {
@@ -22,7 +38,8 @@ test -f "$ROOT_DIR/frontend/node_modules/@supabase/supabase-js/dist/umd/supabase
 node "$ROOT_DIR/tests/hosted-auth/server.mjs" \
   --root "$ROOT_DIR" \
   --port "$PORT" \
-  --report "$REPORT_PATH" &
+  --report "$REPORT_PATH" \
+  --surface "$SURFACE" &
 SERVER_PID=$!
 
 for _ in $(seq 1 600); do
@@ -42,6 +59,7 @@ fi
 
 URL="http://127.0.0.1:$PORT/"
 echo "Hosted authorization matrix ready: $URL"
+echo "Surface under test: $SURFACE"
 echo "Enter both test-account credentials in the browser; they remain in browser memory only."
 
 if [[ "${CVF_HOSTED_AUTH_NO_OPEN:-0}" != "1" ]]; then

@@ -7,6 +7,9 @@ import { randomUUID } from "node:crypto";
 import { validateBrowserResult } from "./result_validation.mjs";
 import { summarizeChecks } from "./check_summary.mjs";
 
+await import("./surface_contract.js");
+const { resolveSurface, hasTable } = globalThis.CVF_MATRIX_SURFACES;
+
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((pairs, value, index, values) => {
     if (value.startsWith("--")) pairs.push([value.slice(2), values[index + 1]]);
@@ -18,6 +21,10 @@ const root = resolve(args.root || process.cwd());
 const port = Number(args.port || 55882);
 const reportPath = resolve(args.report || join(root, "supabase/evidence/hosted-auth-matrix.md"));
 const projectRef = "orlhqewzprjadyrdrqxw";
+// Which hosted surface this run targets. Migrations 28 and 29 publish
+// separately, so there is a real intermediate state and the harness must be
+// able to address it. Defaults to the current repository surface.
+const surface = resolveSurface(args.surface);
 const tempDir = mkdtempSync(join(tmpdir(), "cvf-hosted-auth-"));
 const runId = `cvf-matrix-${new Date().toISOString().slice(0, 10)}-${randomUUID().slice(0, 8)}`;
 const ids = Object.fromEntries(
@@ -91,9 +98,9 @@ select json_build_object(
   'team_identities', (select count(*) from public.team_identities),
   'teams', (select count(*) from public.teams),
   'team_players', (select count(*) from public.team_players),
-  'venues', (select count(*) from public.venues),
   'games', (select count(*) from public.games),
-  'game_participation', (select count(*) from public.game_participation),
+${hasTable(surface, "venues") ? "  'venues', (select count(*) from public.venues)," : ""}
+${hasTable(surface, "game_participation") ? "  'game_participation', (select count(*) from public.game_participation)," : ""}
   'game_edit_history', (select count(*) from public.game_edit_history),
   'player_stats', (select count(*) from public.player_stats),
   'career_baselines', (select count(*) from public.career_baselines),
@@ -148,6 +155,25 @@ function getLedgerCatalogChecks() {
   }));
 }
 
+// The fixture's game shape is the surface's game shape. At Migration 28 the
+// venues table does not exist yet and games still carry date/time/location;
+// seeding the Migration 29 shape there fails during SETUP, before any
+// authorization check runs, which yields no evidence rather than a partial run.
+function venueSeedSql() {
+  if (!surface.seedsVenue) return "";
+  return `insert into public.venues (id, name, address)
+values (${sqlLiteral(ids.venue)}::uuid, ${sqlLiteral(`${runId} venue`)}, ${sqlLiteral(`${runId} address`)});`;
+}
+
+function gameSeedSql() {
+  if (surface.gameShape === "legacy") {
+    return `insert into public.games (id, league_id, sport, home_team_id, away_team_id, date, time, location, stage)
+values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickball', ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.awayTeam)}::uuid, '2099-07-13'::date, '6:30 PM', ${sqlLiteral(`${runId} field`)}, 'regular');`;
+  }
+  return `insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickball', ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.awayTeam)}::uuid, '2099-07-13T18:30:00-06:00'::timestamptz, ${sqlLiteral(ids.venue)}::uuid, 'regular');`;
+}
+
 function seedFixture() {
   const waiverInsert = baseline.current_waiver_version
     ? ""
@@ -169,10 +195,8 @@ values
   (${sqlLiteral(ids.extraTeam2)}::uuid, ${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(`${runId} extra two`)}, 'kickball', '#10B981', 'active');
 insert into public.team_players (id, team_id, profile_id, season, jersey_number, roster_status)
 values (${sqlLiteral(ids.roster)}::uuid, ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.profile)}::uuid, ${sqlLiteral(season)}, 13, 'pending_waiver');
-insert into public.venues (id, name, address)
-values (${sqlLiteral(ids.venue)}::uuid, ${sqlLiteral(`${runId} venue`)}, ${sqlLiteral(`${runId} address`)});
-insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
-values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickball', ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.awayTeam)}::uuid, '2099-07-13T18:30:00-06:00'::timestamptz, ${sqlLiteral(ids.venue)}::uuid, 'regular');
+${venueSeedSql()}
+${gameSeedSql()}
 insert into public.game_edit_history (id, game_id, action)
 values (${sqlLiteral(ids.seedHistory)}::uuid, ${sqlLiteral(ids.game)}::uuid, 'Fixture seeded');
 insert into public.charges (id, season, profile_id, amount_due_cents, notes)
@@ -198,13 +222,13 @@ delete from public.hof_entries where id = ${sqlLiteral(ids.hof)}::uuid or title 
 delete from public.playoff_brackets where league_id = ${sqlLiteral(ids.league)}::uuid;
 delete from public.game_edit_history where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
 delete from public.player_stats where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
-delete from public.game_participation where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);
+${hasTable(surface, "game_participation") ? `delete from public.game_participation where game_id in (select id from public.games where league_id = ${sqlLiteral(ids.league)}::uuid);` : ""}
 delete from public.waivers where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.team_players where season = ${sqlLiteral(season)};
 delete from public.team_registrations where captain_email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.free_agents where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
 delete from public.games where league_id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
-delete from public.venues where id = ${sqlLiteral(ids.venue)}::uuid;
+${hasTable(surface, "venues") ? `delete from public.venues where id = ${sqlLiteral(ids.venue)}::uuid;` : ""}
 delete from public.teams where league_id in (${sqlLiteral(ids.league)}::uuid, ${sqlLiteral(ids.identityLeague)}::uuid);
 delete from public.team_identities where name like ${sqlLiteral(`${runId}%`)};
 delete from public.profiles where email like ${sqlLiteral(`${runId}.%@example.invalid`)};
@@ -374,6 +398,7 @@ async function main() {
     season,
     waiverVersion: baseline.current_waiver_version || fixtureWaiverVersion,
     baselineHofPublished: baseline.hof_published,
+    surface: surface.key,
     ids,
   };
 
@@ -384,6 +409,7 @@ async function main() {
       if (request.method === "GET" && url.pathname === "/config.json") return safeJsonResponse(response, 200, publicConfig);
       if (request.method === "GET" && url.pathname === "/supabase.js") return serveFile(response, join(root, "frontend/node_modules/@supabase/supabase-js/dist/umd/supabase.js"), "text/javascript; charset=utf-8");
       if (request.method === "GET" && url.pathname === "/ledger-matrix-contract.js") return serveFile(response, join(root, "tests/hosted-auth/ledger_matrix_contract.js"), "text/javascript; charset=utf-8");
+      if (request.method === "GET" && url.pathname === "/surface-contract.js") return serveFile(response, join(root, "tests/hosted-auth/surface_contract.js"), "text/javascript; charset=utf-8");
       if (request.method === "GET" && url.pathname === "/matrix.js") return serveFile(response, join(root, "tests/hosted-auth/matrix.js"), "text/javascript; charset=utf-8");
       if (request.method === "GET" && url.pathname === "/") return serveMatrixHtml(response);
       if (request.method === "POST" && url.pathname === "/results") return await handleResults(request, response);

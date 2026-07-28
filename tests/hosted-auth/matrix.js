@@ -1,4 +1,4 @@
-/* global supabase, CVF_LEDGER_MATRIX_CONTRACT */
+/* global supabase, CVF_LEDGER_MATRIX_CONTRACT, CVF_MATRIX_SURFACES */
 
 const output = document.getElementById("output");
 const runButton = document.getElementById("run");
@@ -14,6 +14,8 @@ const fields = {
 
 const checks = [];
 let config;
+// Resolved from config.surface once the runner's config lands.
+let surface;
 let admin;
 let nonadmin;
 let anon;
@@ -25,6 +27,8 @@ const {
   roles: LEDGER_ROLES,
   checkName: ledgerCheckName,
 } = CVF_LEDGER_MATRIX_CONTRACT;
+
+const { resolveSurface, hasTable, M29_TABLES } = CVF_MATRIX_SURFACES;
 
 function log(message) {
   output.textContent += `${message}\n`;
@@ -215,7 +219,12 @@ function rpcArguments(name) {
       p_league_id: config.ids.league,
       p_seed_team_ids: [config.ids.homeTeam, config.ids.awayTeam, config.ids.extraTeam1, config.ids.extraTeam2],
     },
-    schedule_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch, p_starts_at: "2099-07-14T19:00:00-06:00", p_venue_id: config.ids.venue },
+    // Migration 29 replaces this signature. Probing the wrong one returns
+    // "function not found", which reads as an authorization anomaly when it is
+    // really a stale fixture — so the arguments follow the surface.
+    schedule_playoff_match: surface.gameShape === "legacy"
+      ? { p_match_id: config.ids.unknownPlayoffMatch, p_date: "2099-07-14", p_time: "7:00 PM", p_location: config.runId }
+      : { p_match_id: config.ids.unknownPlayoffMatch, p_starts_at: "2099-07-14T19:00:00-06:00", p_venue_id: config.ids.venue },
     link_playoff_game: { p_match_id: config.ids.unknownPlayoffMatch, p_game_id: config.ids.game },
     advance_playoff_match: { p_match_id: config.ids.unknownPlayoffMatch },
     enroll_team_identity: {
@@ -283,34 +292,10 @@ function rpcArguments(name) {
   }[name];
 }
 
-const ADMIN_RPC_NAMES = [
-  "submit_score",
-  "lock_game",
-  "correct_final_score",
-  "set_game_status",
-  "approve_registration",
-  "assign_free_agent",
-  "verify_waiver",
-  "generate_single_elim_bracket",
-  "schedule_playoff_match",
-  "link_playoff_game",
-  "advance_playoff_match",
-  "enroll_team_identity",
-  "create_team_identity_and_enroll",
-  "update_team_identity",
-  "update_team_enrollment",
-  "start_scorekeeping_session",
-  "renew_scorekeeping_session",
-  "resume_scorekeeping_session",
-  "append_scorekeeping_event",
-  "replace_scorekeeping_event",
-  "finalize_scorekeeping_session",
-  "cancel_scorekeeping_session",
-  "declare_ledger_forfeit",
-  "start_scorekeeping_correction",
-  "finalize_scorekeeping_correction",
-  "set_game_participation",
-];
+// The admin RPC census is surface-dependent: Migration 29 adds
+// set_game_participation. Sourced from the shared contract so the browser and
+// the privileged runner cannot disagree about how many endpoints exist.
+const ADMIN_RPC_NAMES = surface.rpcs;
 
 async function runMatrix() {
   runButton.disabled = true;
@@ -338,6 +323,7 @@ async function runMatrix() {
 
   startedAt = new Date().toISOString();
   config = await fetch("/config.json", { cache: "no-store" }).then((response) => response.json());
+  surface = resolveSurface(config.surface);
   anon = client();
   admin = client();
   nonadmin = client();
@@ -447,7 +433,7 @@ async function runMatrix() {
         requireCondition(Array.isArray(data) && data.length === 1, `${table} fixture row was not public.`);
       });
     }
-    for (const table of ["venues", "game_participation"]) {
+    for (const table of M29_TABLES.filter((name) => hasTable(surface, name))) {
       await check("public reads", `anonymous can query ${table}`, async () => {
         requireSuccess(await anon.from(table).select("*").limit(1));
       });
@@ -473,25 +459,29 @@ async function runMatrix() {
       await check("private reads", `non-admin cannot read ${table}`, async () => requireHidden(await nonadmin.from(table).select("*").limit(1)));
     }
 
-    // Migration 28 surface. Publicly readable, admin-write, never client-deletable
-    // for venues because historical games reference them.
-    const deniedVenue = { name: `${config.runId} denied venue` };
-    const deniedParticipation = {
-      game_id: config.ids.game, profile_id: config.ids.profile,
-      team_id: config.ids.homeTeam, status: "played",
-    };
-    for (const [roleKey, roleClient] of [["anonymous", anon], ["non-admin", nonadmin]]) {
-      await check("migration 28 authorization", `${roleKey} cannot insert venues`, async () =>
-        requireDenied(await roleClient.from("venues").insert(deniedVenue)));
-      await check("migration 28 authorization", `${roleKey} cannot update venues`, async () =>
-        requireNoWrite(await roleClient.from("venues").update({ name: config.runId }).eq("id", config.ids.venue).select()));
-      await check("migration 28 authorization", `${roleKey} cannot insert participation`, async () =>
-        requireDenied(await roleClient.from("game_participation").insert(deniedParticipation)));
-      await check("migration 28 authorization", `${roleKey} cannot set participation by RPC`, async () =>
-        requireAdminGuard(await roleClient.rpc("set_game_participation", rpcArguments("set_game_participation"))));
+    // Migration 29 surface. Venues and participation are publicly readable by
+    // design, admin-write, and venues are never client-deletable because
+    // historical games reference them. Skipped entirely at Migration 28, where
+    // neither relation exists yet.
+    if (hasTable(surface, "venues")) {
+      const deniedVenue = { name: `${config.runId} denied venue` };
+      const deniedParticipation = {
+        game_id: config.ids.game, profile_id: config.ids.profile,
+        team_id: config.ids.homeTeam, status: "played",
+      };
+      for (const [roleKey, roleClient] of [["anonymous", anon], ["non-admin", nonadmin]]) {
+        await check("migration 29 authorization", `${roleKey} cannot insert venues`, async () =>
+          requireDenied(await roleClient.from("venues").insert(deniedVenue)));
+        await check("migration 29 authorization", `${roleKey} cannot update venues`, async () =>
+          requireNoWrite(await roleClient.from("venues").update({ name: config.runId }).eq("id", config.ids.venue).select()));
+        await check("migration 29 authorization", `${roleKey} cannot insert participation`, async () =>
+          requireDenied(await roleClient.from("game_participation").insert(deniedParticipation)));
+        await check("migration 29 authorization", `${roleKey} cannot set participation by RPC`, async () =>
+          requireAdminGuard(await roleClient.rpc("set_game_participation", rpcArguments("set_game_participation"))));
+      }
+      await check("migration 29 authorization", "no client role can delete a venue", async () =>
+        requireNoWrite(await admin.from("venues").delete().eq("id", config.ids.venue).select()));
     }
-    await check("migration 28 authorization", "no client role can delete a venue", async () =>
-      requireNoWrite(await admin.from("venues").delete().eq("id", config.ids.venue).select()));
 
     const deniedCharge = { season: config.season, profile_id: config.ids.profile, amount_due_cents: 100, kind: "other", notes: config.runId };
     const deniedPayment = { charge_id: config.ids.charge, amount_cents: 100, method: "matrix", note: config.runId };

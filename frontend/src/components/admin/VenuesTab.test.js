@@ -1,7 +1,7 @@
 /* ============================================================================
  * Admin venues tab.
  *
- * Migration 28 made games.venue_id required, so the operational contract under
+ * Migration 29 made games.venue_id required, so the operational contract under
  * test is that an administrator can create a venue before scheduling a game at
  * a new field — and that venues RETIRE rather than delete, because historical
  * games reference them and the database has no delete policy for any client.
