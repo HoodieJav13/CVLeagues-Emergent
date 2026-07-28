@@ -7,6 +7,9 @@ import { randomUUID } from "node:crypto";
 import { validateBrowserResult } from "./result_validation.mjs";
 import { summarizeChecks } from "./check_summary.mjs";
 
+import { readdirSync } from "node:fs";
+import { compareMigrationState, localVersions, formatMigrationStateFailure } from "./migration_state.mjs";
+
 await import("./surface_contract.js");
 const { resolveSurface, hasTable } = globalThis.CVF_MATRIX_SURFACES;
 
@@ -39,6 +42,7 @@ const fixtureWaiverVersion = `CVF-MATRIX-${runId}`;
 
 let server;
 let baseline;
+let migrationState;
 let ledgerCatalogChecks = [];
 let fixtureSeeded = false;
 let cleanupStarted = false;
@@ -174,6 +178,31 @@ values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickbal
 values (${sqlLiteral(ids.game)}::uuid, ${sqlLiteral(ids.league)}::uuid, 'kickball', ${sqlLiteral(ids.homeTeam)}::uuid, ${sqlLiteral(ids.awayTeam)}::uuid, '2099-07-13T18:30:00-06:00'::timestamptz, ${sqlLiteral(ids.venue)}::uuid, 'regular');`;
 }
 
+// Read the hosted ledger directly. supabase_migrations.schema_migrations is
+// the authoritative record of what has actually been applied.
+function readHostedMigrationVersions() {
+  const rows = runLinkedSql(
+    "migration-ledger",
+    "select version from supabase_migrations.schema_migrations order by version;",
+  );
+  return rows.map((row) => String(row.version));
+}
+
+// Runs BEFORE baseline capture and fixture creation. The surface flag states
+// which schema the operator believes is hosted; this is what checks it.
+function assertHostedMigrationState() {
+  const local = localVersions(readdirSync(join(root, "supabase/migrations")));
+  const remote = readHostedMigrationVersions();
+  const result = compareMigrationState({ local, remote, surface });
+  if (!result.ok) {
+    throw new Error(formatMigrationStateFailure(result, surface));
+  }
+  console.log(
+    `SURFACE VERIFIED ${surface.key}: hosted ledger has ${result.observed.count} migrations, latest ${result.observed.latest}.`,
+  );
+  return result;
+}
+
 function seedFixture() {
   const waiverInsert = baseline.current_waiver_version
     ? ""
@@ -293,6 +322,7 @@ function makeReport(browserResult, cleanupResult) {
 - **Project:** \`${projectRef}\`
 - **Surface:** \`${surface.key}\` — ${markdownEscape(surface.label)}
 - **Expected census:** ${surface.migrations} migrations · ${surface.tableCount} tables · ${surface.rpcCount} admin RPCs
+- **Observed hosted ledger:** ${migrationState.observed.count} migrations applied, latest \`${markdownEscape(migrationState.observed.latest)}\` — verified against the local sequence before baseline capture
 - **Fixture game shape:** \`${surface.gameShape}\`${surface.seedsVenue ? " (venue seeded)" : " (no venue; venues not yet published)"}
 - **Run namespace:** \`${runId}\`
 - **Executed:** ${markdownEscape(browserResult.startedAt)} to ${markdownEscape(browserResult.finishedAt)}
@@ -391,6 +421,7 @@ async function main() {
   if (catalogFailures.length > 0) {
     throw new Error(`Migration 24 ledger catalog preflight failed: ${catalogFailures.map((check) => check.name).join(", ")}`);
   }
+  migrationState = assertHostedMigrationState();
   baseline = getCounts("baseline");
   seedFixture();
   const publicConfig = {

@@ -188,6 +188,22 @@ CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
 | `schedule_playoff_match` probe | `p_date`, `p_time`, `p_location` | `p_starts_at`, `p_venue_id` |
 | Venue / participation checks | skipped | run |
 
+**The flag is a claim, and the runner now checks it.** Before baseline capture
+and before any fixture is created, the runner reads
+`supabase_migrations.schema_migrations` and compares the real hosted ledger
+against the first N local migrations for the declared surface. It aborts on any
+mismatch — wrong count, missing earlier migration, wrong latest version, or an
+unexpected later one — and the evidence file records the **observed** count and
+latest version alongside the declared census.
+
+This matters most for `m28`, which is census-identical to the Migration 27
+baseline: 26 tables and 25 RPCs either way, because Migration 28 adds a private
+column and changes three function signatures rather than adding relations. A
+run against the wrong database would otherwise seed cleanly, pass, and file an
+evidence artifact headed "Migration 28" that proved only the previous baseline.
+On a mismatch the runner prints the observed versus expected ledger and exits
+before touching anything.
+
 `m29` is the default; the flag is mandatory only for the Migration 28 pass, but
 state it explicitly in both so the evidence file records which surface it
 covers. The generated report header carries the surface key, label, migration
