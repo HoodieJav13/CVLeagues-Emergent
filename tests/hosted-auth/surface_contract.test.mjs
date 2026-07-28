@@ -147,14 +147,23 @@ test("no games payload hard-codes a surface-specific column", () => {
   assert.match(matrixSource, /schedulePlayoffMatchArgs\(surface, \{/);
 });
 
-test("game-insert denial checks demand an authorization-shaped failure", () => {
+test("every denial names the property it proves — no permissive helper survives", () => {
   assert.match(matrixSource, /function requireAuthorizationDenied\(/);
-  // Both games-insert denials must use the strict helper, not the permissive one.
-  const gameInsertDenials = matrixSource.match(/direct game insert is denied[\s\S]{0,120}|insert a score-bearing game directly[\s\S]{0,120}/g) || [];
-  assert.equal(gameInsertDenials.length, 2, "expected exactly two games-insert denial checks");
-  for (const snippet of gameInsertDenials) {
-    assert.match(snippet, /requireAuthorizationDenied/);
-  }
+  assert.match(matrixSource, /function requireColumnAbsent\(/);
+  assert.match(matrixSource, /function requireGuardRejection\(/);
+  // The permissive helper accepted ANY error, so an evidence row claiming an
+  // authorization boundary could be satisfied by a constraint violation. It is
+  // deleted rather than deprecated, so nobody can reach for it again.
+  assert.doesNotMatch(matrixSource, /requireDenied\s*\(/);
+});
+
+test("the authorization helper is an allowlist, not a blacklist", () => {
+  // A blacklist rots: every new error class defaults to "authorization".
+  assert.match(matrixSource, /const AUTHORIZATION_CODES = new Set\(/);
+  assert.match(matrixSource, /42501/);
+  assert.match(matrixSource, /function isAuthorizationError\(/);
+  // requireNoWrite shares the predicate, so its error path cannot drift.
+  assert.match(matrixSource, /non-authorization reason/);
 });
 
 test("generated evidence records the surface it covers", () => {

@@ -147,33 +147,46 @@ test("schedule_playoff_match arguments follow the surface in both directions", (
 });
 
 /* ---------------------------------------------------------------------------
- * A denial check whose claimed property is authorization must not be
- * satisfiable by a schema error. Otherwise a fixture naming a dropped column
- * records "column does not exist" as proof that RLS held.
+ * Denial semantics. Every probe here is EXPECTED to fail, so the only thing
+ * separating a real boundary check from a green rectangle is why it failed.
+ * These helpers are allowlists: an earlier blacklist version rejected known
+ * schema errors and accepted everything else, so a check-constraint or
+ * foreign-key violation still recorded "denied at the authorization boundary".
  * ------------------------------------------------------------------------- */
-test("a schema error is rejected as evidence of an authorization boundary", () => {
+const NON_AUTHORIZATION_FAILURES = [
+  { code: "23514", message: "new row violates check constraint games_status_check" },
+  { code: "23503", message: "insert or update on table violates foreign key constraint" },
+  { code: "23505", message: "duplicate key value violates unique constraint" },
+  { code: "23502", message: "null value in column violates not-null constraint" },
+  { code: "22P02", message: "invalid input syntax for type uuid" },
+  { code: "42703", message: 'column "location" of relation "games" does not exist' },
+  { code: "PGRST204", message: "Could not find the 'time' column of 'games' in the schema cache" },
+  { code: "42883", message: "function public.schedule_playoff_match(uuid, date, text, text) does not exist" },
+];
+
+test("no non-authorization failure can pass as an authorization result", () => {
   const { context } = loadMatrix();
-  const cases = [
-    { message: 'column "location" of relation "games" does not exist' },
-    { message: "Could not find the 'time' column of 'games' in the schema cache" },
-    { message: "boom", code: "42703" },
-    { message: "boom", code: "PGRST204" },
-    { message: "function public.schedule_playoff_match(uuid, date, text, text) does not exist" },
-  ];
-  for (const error of cases) {
+  for (const error of NON_AUTHORIZATION_FAILURES) {
     assert.throws(
       () => vm.runInContext(`requireAuthorizationDenied(${JSON.stringify({ error })})`, context),
-      /SCHEMA error/,
-      `should have rejected: ${error.message}`,
+      /not an authorization result/,
+      `${error.code} was accepted as authorization: ${error.message}`,
     );
   }
 });
 
-test("a real authorization error still counts as denial", () => {
+test("genuine authorization failures are accepted", () => {
   const { context } = loadMatrix();
-  const rlsError = { error: { message: "new row violates row-level security policy for table games", code: "42501" } };
-  const accepted = vm.runInContext(`requireAuthorizationDenied(${JSON.stringify(rlsError)})`, context);
-  assert.match(accepted, /authorization boundary/);
+  const accepted = [
+    { code: "42501", message: "permission denied for table games" },
+    { code: "42501", message: "new row violates row-level security policy for table games" },
+    { code: undefined, message: "permission denied for schema public" },
+    { code: "PGRST301", message: "JWT expired" },
+  ];
+  for (const error of accepted) {
+    const outcome = vm.runInContext(`requireAuthorizationDenied(${JSON.stringify({ error })})`, context);
+    assert.match(outcome, /authorization boundary/, `rejected a real denial: ${error.message}`);
+  }
 });
 
 test("a silent success is still a failure", () => {
@@ -181,5 +194,48 @@ test("a silent success is still a failure", () => {
   assert.throws(
     () => vm.runInContext("requireAuthorizationDenied({ data: [], error: null })", context),
     /unexpectedly succeeded/,
+  );
+});
+
+test("requireNoWrite refuses a non-authorization error too", () => {
+  const { context } = loadMatrix();
+  const checkError = { error: { code: "23514", message: "new row violates check constraint" } };
+  assert.throws(
+    () => vm.runInContext(`requireNoWrite(${JSON.stringify(checkError)})`, context),
+    /non-authorization reason/,
+  );
+  // Zero rows remains the normal RLS-filtered outcome.
+  assert.match(vm.runInContext("requireNoWrite({ data: [], error: null })", context), /zero rows/);
+});
+
+test("the PII allowlist check demands a schema error, not an authorization one", () => {
+  const { context } = loadMatrix();
+  const absent = { error: { code: "42703", message: 'column "email" does not exist' } };
+  assert.match(vm.runInContext(`requireColumnAbsent(${JSON.stringify(absent)})`, context), /absent from the allowlisted view/);
+  // An authorization error here would mean the wrong property was proven: the
+  // column must not EXIST on the view, not merely be unreadable.
+  const authz = { error: { code: "42501", message: "permission denied for table profiles" } };
+  assert.throws(
+    () => vm.runInContext(`requireColumnAbsent(${JSON.stringify(authz)})`, context),
+    /Expected the column to be absent/,
+  );
+});
+
+test("the permissive requireDenied helper is gone", () => {
+  const { context } = loadMatrix();
+  assert.equal(vm.runInContext("typeof requireDenied", context), "undefined");
+});
+
+test("database guards are asserted by their own message", () => {
+  const { context } = loadMatrix();
+  const locked = { error: { message: "Game abc is final and locked. Unlock it (with a reason) before editing." } };
+  assert.match(
+    vm.runInContext(`requireGuardRejection(${JSON.stringify(locked)}, /final and locked/i, "the game lock")`, context),
+    /Rejected by the game lock/,
+  );
+  const wrong = { error: { code: "23505", message: "duplicate key value violates unique constraint" } };
+  assert.throws(
+    () => vm.runInContext(`requireGuardRejection(${JSON.stringify(wrong)}, /final and locked/i, "the game lock")`, context),
+    /unexpected reason/,
   );
 });

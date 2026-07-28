@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E and R2-F.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
+**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E, R2-F and R2-G.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -268,3 +268,50 @@ Verified at 340/340 database assertions plus the two-connection race, 208/208
 frontend tests, 21/21 API tests, 41/41 harness contract tests, a passing
 production build, and Protocol v1.2 validation. No hosted action; hosted
 remains at Migration 27.
+
+## Repair stage R2-G — denial helpers became allowlists
+
+R2-F introduced `requireAuthorizationDenied` to stop a schema error being
+banked as proof that RLS held. Independent review executed it with a
+check-constraint failure and it returned **"Denied at the authorization
+boundary."** The helper was a **blacklist**: it rejected the specific schema
+errors R2-F had in mind and accepted everything else. Reproduced here for
+`23514`, `23503`, `23505` and `23502` — all four false-passed.
+
+That is the same defect as R2-F, one level up. R2-F fixed the instance and
+missed the shape: a blacklist rots, because every error class nobody thought of
+defaults to "authorization succeeded".
+
+**Every denial helper now positively names the property it proves.**
+
+| Helper | Passes only on | Used for |
+|---|---|---|
+| `requireAuthorizationDenied` | `42501`, `PGRST301/302`, or explicit permission-denied / row-level-security text | any row claiming an authorization boundary |
+| `requireColumnAbsent` | `42703` / `PGRST204` / "does not exist" | the `public_profiles` and `public_hof_entries` PII allowlists, where a *schema* denial is the correct proof and an authorization error would prove the wrong thing |
+| `requireGuardRejection` | a caller-supplied message pattern | database guards with their own text — the game lock, the required-correction-reason check |
+| `requireNoWrite` | zero rows, **or** an authorization-shaped error | RLS-filtered writes |
+
+`requireDenied` — which accepted any error at all — was **deleted, not
+deprecated**, and a contract test fails if the identifier reappears. 35
+authorization-labeled call sites were swept onto the strict helper; the three
+`locked-game guards` checks now assert the guard's own message rather than
+merely that something failed.
+
+Negative tests cover `23502`, `23503`, `23505`, `23514`, `22P02`, `42703`,
+`42883` and `PGRST204`, alongside positive tests that genuine `42501` and
+row-level-security failures are still accepted and that a silent success still
+fails.
+
+Harness contract tests: 10 → 28 (R2-E) → 41 (R2-F) → **46**.
+
+Verified at 340/340 database assertions plus the two-connection race, 208/208
+frontend tests, 21/21 API tests, 46/46 harness contract tests, and a passing
+production build. No hosted action; hosted remains at Migration 27.
+
+### Standing note for later stages
+
+Three consecutive review rounds found defects in this harness, and each was
+found by *executing* something that had only been reasoned about. The pattern
+worth carrying forward is not "check the matrix again" but: **a test that reads
+source text proves a string is present and nothing about behaviour**, and **a
+denial assertion must state which failure it accepts, never which it rejects.**

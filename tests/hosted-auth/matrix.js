@@ -74,26 +74,79 @@ function requireSuccess(result, message = "Request failed") {
   return result.data;
 }
 
-function requireDenied(result, message = "Request unexpectedly succeeded") {
-  if (!result.error) throw new Error(message);
-  return "Denied as required.";
+/* ----------------------------------------------------------------------------
+ * DENIAL HELPERS
+ *
+ * An evidence row that claims authorization must PROVE authorization. The
+ * distinction is not pedantic: every one of these probes is expected to fail,
+ * so the only thing separating a real boundary check from a green rectangle is
+ * WHY it failed.
+ *
+ * These are allowlists, not blacklists. An earlier version rejected known
+ * schema errors and accepted everything else, which meant a check-constraint,
+ * foreign-key, unique or not-null violation still recorded "denied at the
+ * authorization boundary" — a passing row for a boundary never exercised.
+ * Enumerating what may pass is the only form that cannot rot as new error
+ * classes appear.
+ * -------------------------------------------------------------------------- */
+
+// PostgreSQL/PostgREST responses that genuinely mean "you are not allowed".
+// 42501 is insufficient_privilege, raised for both table-privilege denial and
+// RLS policy violation on INSERT.
+const AUTHORIZATION_CODES = new Set(["42501", "PGRST301", "PGRST302"]);
+const AUTHORIZATION_TEXT = /permission denied|row-level security|insufficient[_ ]privilege|not authorized|jwt|no api key/i;
+
+// Failures that are real but say nothing about authorization. Named only for
+// clearer diagnostics; anything not on the allowlist is rejected regardless.
+const NON_AUTHORIZATION_CODES = new Set(["23502", "23503", "23505", "23514", "22P02", "42703", "42883", "PGRST204"]);
+
+function errorDetail(error) {
+  return `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.trim();
 }
 
-// Denial checks whose claimed property is AUTHORIZATION must fail for an
-// authorization reason. `requireDenied` accepts any error, which means a
-// payload naming a column the surface does not have would record
-// "column does not exist" as proof that RLS worked — a green check for a
-// boundary that was never exercised. Schema-shaped failures are rejected here
-// so a stale fixture surfaces as a harness bug instead of a false pass.
-const SCHEMA_ERROR = /column .* does not exist|could not find the .* column|schema cache|undefined_column|function .* does not exist|could not find the function/i;
+function isAuthorizationError(error) {
+  if (!error) return false;
+  if (NON_AUTHORIZATION_CODES.has(String(error.code))) return false;
+  if (AUTHORIZATION_CODES.has(String(error.code))) return true;
+  return AUTHORIZATION_TEXT.test(errorDetail(error));
+}
 
+// Use wherever the evidence row claims an authorization boundary held.
 function requireAuthorizationDenied(result, message = "Request unexpectedly succeeded") {
   if (!result.error) throw new Error(message);
-  const detail = `${result.error.message || ""} ${result.error.details || ""} ${result.error.hint || ""}`;
-  if (SCHEMA_ERROR.test(detail) || result.error.code === "42703" || result.error.code === "PGRST204") {
-    throw new Error(`Denial was a SCHEMA error, not an authorization boundary: ${result.error.message}`);
+  if (!isAuthorizationError(result.error)) {
+    throw new Error(
+      `Denial was not an authorization result (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
+    );
   }
   return "Denied at the authorization boundary.";
+}
+
+// Use where the PII allowlist is the property under test. Here a schema-shaped
+// error is exactly right — the column is absent from the view by design — and
+// an authorization error would mean the wrong thing was proven.
+const COLUMN_ABSENT = /does not exist|could not find|schema cache/i;
+
+function requireColumnAbsent(result, message = "Protected column was selectable") {
+  if (!result.error) throw new Error(message);
+  const detail = errorDetail(result.error);
+  if (!COLUMN_ABSENT.test(detail) && String(result.error.code) !== "42703" && String(result.error.code) !== "PGRST204") {
+    throw new Error(`Expected the column to be absent from the view, got: ${detail}`);
+  }
+  return "Column is absent from the allowlisted view.";
+}
+
+// Use where a database GUARD is the property under test — the game lock, a
+// required-reason validation. These raise their own exception text, which is
+// neither an authorization code nor a schema error, so the assertion names the
+// message it expects rather than accepting any failure.
+function requireGuardRejection(result, pattern, label) {
+  if (!result.error) throw new Error(`${label} did not reject the request.`);
+  const detail = errorDetail(result.error);
+  if (!pattern.test(detail)) {
+    throw new Error(`${label} rejected for an unexpected reason: ${detail}`);
+  }
+  return `Rejected by ${label}.`;
 }
 
 function requirePrivilegeDenied(result) {
@@ -111,7 +164,15 @@ function requireAdminGuard(result) {
 }
 
 function requireNoWrite(result, message = "Write affected a protected row") {
-  if (result.error) return "Denied with an API/RLS error.";
+  // Zero rows is the normal RLS-filtered outcome. An ERROR is also acceptable,
+  // but only an authorization-shaped one — otherwise a malformed payload would
+  // bank a schema failure as proof the boundary held.
+  if (result.error) {
+    if (!isAuthorizationError(result.error)) {
+      throw new Error(`Write failed for a non-authorization reason (code ${result.error.code || "none"}): ${errorDetail(result.error)}`);
+    }
+    return "Denied with an authorization error.";
+  }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS affected zero rows.";
 }
@@ -442,16 +503,16 @@ async function runMatrix() {
     };
 
     await check("protected intake", "anonymous direct team-interest write is denied", async () => {
-      return requireDenied(await anon.from("team_registrations").insert(registration));
+      return requireAuthorizationDenied(await anon.from("team_registrations").insert(registration));
     });
     await check("protected intake", "anonymous direct free-agent write is denied", async () => {
-      return requireDenied(await anon.from("free_agents").insert(freeAgent));
+      return requireAuthorizationDenied(await anon.from("free_agents").insert(freeAgent));
     });
     await check("protected intake", "anonymous direct waiver write is denied", async () => {
-      return requireDenied(await anon.from("waivers").insert(waiver));
+      return requireAuthorizationDenied(await anon.from("waivers").insert(waiver));
     });
     await check("protected intake", "authenticated non-admin direct intake is denied by RLS", async () => {
-      return requireDenied(await nonadmin.from("team_registrations").insert(registration));
+      return requireAuthorizationDenied(await nonadmin.from("team_registrations").insert(registration));
     });
 
     const publicReads = [
@@ -485,10 +546,10 @@ async function runMatrix() {
       requireCondition(data.length === 1, "Fixture public profile was not visible.");
     });
     await check("public reads", "public_profiles rejects PII column selection", async () => {
-      return requireDenied(await anon.from("public_profiles").select("id,email").eq("id", config.ids.profile));
+      return requireColumnAbsent(await anon.from("public_profiles").select("id,email").eq("id", config.ids.profile));
     });
     await check("public reads", "public_hof_entries rejects curator attribution", async () => {
-      return requireDenied(await anon.from("public_hof_entries").select("id,created_by").limit(1));
+      return requireColumnAbsent(await anon.from("public_hof_entries").select("id,created_by").limit(1));
     });
 
     for (const table of ["admin_users", "profiles", "waivers", "team_registrations", "free_agents", "game_edit_history", "charges", "payment_entries", "hof_entries"]) {
@@ -508,11 +569,11 @@ async function runMatrix() {
       };
       for (const [roleKey, roleClient] of [["anonymous", anon], ["non-admin", nonadmin]]) {
         await check("migration 29 authorization", `${roleKey} cannot insert venues`, async () =>
-          requireDenied(await roleClient.from("venues").insert(deniedVenue)));
+          requireAuthorizationDenied(await roleClient.from("venues").insert(deniedVenue)));
         await check("migration 29 authorization", `${roleKey} cannot update venues`, async () =>
           requireNoWrite(await roleClient.from("venues").update({ name: config.runId }).eq("id", config.ids.venue).select()));
         await check("migration 29 authorization", `${roleKey} cannot insert participation`, async () =>
-          requireDenied(await roleClient.from("game_participation").insert(deniedParticipation)));
+          requireAuthorizationDenied(await roleClient.from("game_participation").insert(deniedParticipation)));
         await check("migration 29 authorization", `${roleKey} cannot set participation by RPC`, async () =>
           requireAdminGuard(await roleClient.rpc("set_game_participation", rpcArguments("set_game_participation"))));
       }
@@ -522,16 +583,16 @@ async function runMatrix() {
 
     const deniedCharge = { season: config.season, profile_id: config.ids.profile, amount_due_cents: 100, kind: "other", notes: config.runId };
     const deniedPayment = { charge_id: config.ids.charge, amount_cents: 100, method: "matrix", note: config.runId };
-    await check("payments authorization", "anonymous cannot insert charges", async () => requireDenied(await anon.from("charges").insert(deniedCharge)));
-    await check("payments authorization", "anonymous cannot update charges", async () => requireDenied(await anon.from("charges").update({ amount_due_cents: 999 }).eq("id", config.ids.charge).select()));
-    await check("payments authorization", "anonymous cannot delete charges", async () => requireDenied(await anon.from("charges").delete().eq("id", config.ids.charge).select()));
-    await check("payments authorization", "anonymous cannot insert payment entries", async () => requireDenied(await anon.from("payment_entries").insert(deniedPayment)));
-    await check("payments authorization", "anonymous cannot update payment entries", async () => requireDenied(await anon.from("payment_entries").update({ amount_cents: 999 }).eq("id", config.ids.payment).select()));
-    await check("payments authorization", "anonymous cannot delete payment entries", async () => requireDenied(await anon.from("payment_entries").delete().eq("id", config.ids.payment).select()));
-    await check("payments authorization", "non-admin cannot insert charges", async () => requireDenied(await nonadmin.from("charges").insert(deniedCharge)));
+    await check("payments authorization", "anonymous cannot insert charges", async () => requireAuthorizationDenied(await anon.from("charges").insert(deniedCharge)));
+    await check("payments authorization", "anonymous cannot update charges", async () => requireAuthorizationDenied(await anon.from("charges").update({ amount_due_cents: 999 }).eq("id", config.ids.charge).select()));
+    await check("payments authorization", "anonymous cannot delete charges", async () => requireAuthorizationDenied(await anon.from("charges").delete().eq("id", config.ids.charge).select()));
+    await check("payments authorization", "anonymous cannot insert payment entries", async () => requireAuthorizationDenied(await anon.from("payment_entries").insert(deniedPayment)));
+    await check("payments authorization", "anonymous cannot update payment entries", async () => requireAuthorizationDenied(await anon.from("payment_entries").update({ amount_cents: 999 }).eq("id", config.ids.payment).select()));
+    await check("payments authorization", "anonymous cannot delete payment entries", async () => requireAuthorizationDenied(await anon.from("payment_entries").delete().eq("id", config.ids.payment).select()));
+    await check("payments authorization", "non-admin cannot insert charges", async () => requireAuthorizationDenied(await nonadmin.from("charges").insert(deniedCharge)));
     await check("payments authorization", "non-admin cannot update charges", async () => requireNoWrite(await nonadmin.from("charges").update({ amount_due_cents: 999 }).eq("id", config.ids.charge).select()));
     await check("payments authorization", "non-admin cannot delete charges", async () => requireNoWrite(await nonadmin.from("charges").delete().eq("id", config.ids.charge).select()));
-    await check("payments authorization", "non-admin cannot insert payment entries", async () => requireDenied(await nonadmin.from("payment_entries").insert(deniedPayment)));
+    await check("payments authorization", "non-admin cannot insert payment entries", async () => requireAuthorizationDenied(await nonadmin.from("payment_entries").insert(deniedPayment)));
     await check("payments authorization", "non-admin cannot update payment entries", async () => requireNoWrite(await nonadmin.from("payment_entries").update({ amount_cents: 999 }).eq("id", config.ids.payment).select()));
     await check("payments authorization", "non-admin cannot delete payment entries", async () => requireNoWrite(await nonadmin.from("payment_entries").delete().eq("id", config.ids.payment).select()));
 
@@ -542,15 +603,15 @@ async function runMatrix() {
       season: config.season,
       title: `${config.runId} denied Hall of Fame entry`,
     };
-    await check("Hall of Fame authorization", "anonymous cannot insert Hall of Fame entries", async () => requireDenied(await anon.from("hof_entries").insert(deniedHofEntry)));
-    await check("Hall of Fame authorization", "anonymous cannot update Hall of Fame entries", async () => requireDenied(await anon.from("hof_entries").update({ title: "Denied" }).eq("id", config.ids.hof).select()));
-    await check("Hall of Fame authorization", "anonymous cannot delete Hall of Fame entries", async () => requireDenied(await anon.from("hof_entries").delete().eq("id", config.ids.hof).select()));
-    await check("Hall of Fame authorization", "non-admin cannot insert Hall of Fame entries", async () => requireDenied(await nonadmin.from("hof_entries").insert(deniedHofEntry)));
+    await check("Hall of Fame authorization", "anonymous cannot insert Hall of Fame entries", async () => requireAuthorizationDenied(await anon.from("hof_entries").insert(deniedHofEntry)));
+    await check("Hall of Fame authorization", "anonymous cannot update Hall of Fame entries", async () => requireAuthorizationDenied(await anon.from("hof_entries").update({ title: "Denied" }).eq("id", config.ids.hof).select()));
+    await check("Hall of Fame authorization", "anonymous cannot delete Hall of Fame entries", async () => requireAuthorizationDenied(await anon.from("hof_entries").delete().eq("id", config.ids.hof).select()));
+    await check("Hall of Fame authorization", "non-admin cannot insert Hall of Fame entries", async () => requireAuthorizationDenied(await nonadmin.from("hof_entries").insert(deniedHofEntry)));
     await check("Hall of Fame authorization", "non-admin cannot update Hall of Fame entries", async () => requireNoWrite(await nonadmin.from("hof_entries").update({ title: "Denied" }).eq("id", config.ids.hof).select()));
     await check("Hall of Fame authorization", "non-admin cannot delete Hall of Fame entries", async () => requireNoWrite(await nonadmin.from("hof_entries").delete().eq("id", config.ids.hof).select()));
 
     for (const rpc of adminRpcNames()) {
-      await check("RPC denial", `anonymous cannot execute ${rpc}`, async () => requireDenied(await anon.rpc(rpc, rpcArguments(rpc))));
+      await check("RPC denial", `anonymous cannot execute ${rpc}`, async () => requireAuthorizationDenied(await anon.rpc(rpc, rpcArguments(rpc))));
       await check("RPC denial", `non-admin cannot execute ${rpc}`, async () => requireAdminGuard(await nonadmin.rpc(rpc, rpcArguments(rpc))));
     }
 
@@ -563,7 +624,7 @@ async function runMatrix() {
       ...scheduleFields({ timeText: "6:30 PM", startsAt: "2099-07-14T18:30:00-06:00", dateText: "2099-07-14" }),
     })));
     await check("direct-write guards", "non-admin direct score update is denied", async () => requireNoWrite(await nonadmin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
-    await check("direct-write guards", "administrator cannot directly update an unlocked score", async () => requireDenied(await admin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
+    await check("direct-write guards", "administrator cannot directly update an unlocked score", async () => requireAuthorizationDenied(await admin.from("games").update({ home_score: 99 }).eq("id", config.ids.game).select()));
     await check("direct-write guards", "administrator cannot insert a score-bearing game directly", async () => requireAuthorizationDenied(await admin.from("games").insert({
       id: config.ids.deniedGame,
       league_id: config.ids.league,
@@ -574,26 +635,26 @@ async function runMatrix() {
       home_score: 1,
       away_score: 0,
     })));
-    await check("direct-write guards", "administrator cannot insert player stats directly", async () => requireDenied(await admin.from("player_stats").insert({
+    await check("direct-write guards", "administrator cannot insert player stats directly", async () => requireAuthorizationDenied(await admin.from("player_stats").insert({
       game_id: config.ids.game,
       profile_id: config.ids.profile,
       team_id: config.ids.homeTeam,
       sport: "kickball",
       stats: { runs: 1 },
     })));
-    await check("direct-write guards", "administrator cannot insert game history directly", async () => requireDenied(await admin.from("game_edit_history").insert({
+    await check("direct-write guards", "administrator cannot insert game history directly", async () => requireAuthorizationDenied(await admin.from("game_edit_history").insert({
       game_id: config.ids.game,
       action: "Bypass",
       reason: config.runId,
     })));
-    await check("direct-write guards", "non-admin direct bracket insertion is denied", async () => requireDenied(await nonadmin.from("playoff_brackets").insert({ league_id: config.ids.league, bracket_size: 4 })));
+    await check("direct-write guards", "non-admin direct bracket insertion is denied", async () => requireAuthorizationDenied(await nonadmin.from("playoff_brackets").insert({ league_id: config.ids.league, bracket_size: 4 })));
     await check("direct-write guards", "non-admin cannot alter a team identity", async () => requireNoWrite(await nonadmin.from("team_identities").update({ name: "Changed" }).eq("name", `${config.runId} home`).select()));
-    await check("direct-write guards", "administrator cannot directly insert a team identity", async () => requireDenied(await admin.from("team_identities").insert({ name: `${config.runId} bypass identity`, logo_color: "#000000" })));
-    await check("direct-write guards", "administrator cannot directly update a team identity", async () => requireDenied(await admin.from("team_identities").update({ status: "inactive" }).eq("name", `${config.runId} home`).select()));
-    await check("direct-write guards", "administrator cannot directly delete a team identity", async () => requireDenied(await admin.from("team_identities").delete().eq("id", config.ids.unknownTeamIdentity).select()));
+    await check("direct-write guards", "administrator cannot directly insert a team identity", async () => requireAuthorizationDenied(await admin.from("team_identities").insert({ name: `${config.runId} bypass identity`, logo_color: "#000000" })));
+    await check("direct-write guards", "administrator cannot directly update a team identity", async () => requireAuthorizationDenied(await admin.from("team_identities").update({ status: "inactive" }).eq("name", `${config.runId} home`).select()));
+    await check("direct-write guards", "administrator cannot directly delete a team identity", async () => requireAuthorizationDenied(await admin.from("team_identities").delete().eq("id", config.ids.unknownTeamIdentity).select()));
     await check("direct-write guards", "administrator cannot directly insert a team enrollment", async () => {
       const source = requireSuccess(await admin.from("teams").select("identity_id").eq("id", config.ids.homeTeam).single());
-      return requireDenied(await admin.from("teams").insert({
+      return requireAuthorizationDenied(await admin.from("teams").insert({
         identity_id: source.identity_id,
         league_id: config.ids.identityLeague,
         name: `${config.runId} bypass enrollment`,
@@ -602,14 +663,14 @@ async function runMatrix() {
         status: "active",
       }));
     });
-    await check("direct-write guards", "administrator cannot directly update a team enrollment", async () => requireDenied(await admin.from("teams").update({ division: "Bypass" }).eq("id", config.ids.homeTeam).select()));
-    await check("direct-write guards", "administrator cannot directly delete a team enrollment", async () => requireDenied(await admin.from("teams").delete().eq("id", config.ids.unknownPlayoffMatch).select()));
-    await check("direct-write guards", "administrator cannot directly mutate bracket headers", async () => requireDenied(await admin.from("playoff_brackets").update({ status: "complete" }).eq("id", config.ids.unknownPlayoffMatch).select()));
-    await check("direct-write guards", "administrator cannot directly mutate locked seeds", async () => requireDenied(await admin.from("playoff_seeds").update({ seed: 99 }).eq("bracket_id", config.ids.unknownPlayoffMatch).select()));
-    await check("direct-write guards", "administrator cannot directly mutate match topology", async () => requireDenied(await admin.from("playoff_matches").update({ label: "Tampered" }).eq("id", config.ids.unknownPlayoffMatch).select()));
-    await check("direct-write guards", "admin cannot mutate signed waiver fields", async () => requireDenied(await admin.from("waivers").update({ signed_name: "Changed" }).eq("id", config.ids.waiver).select()));
-    await check("direct-write guards", "admin cannot update append-only history", async () => requireDenied(await admin.from("game_edit_history").update({ action: "Changed" }).eq("id", config.ids.seedHistory).select()));
-    await check("direct-write guards", "admin cannot delete append-only history", async () => requireDenied(await admin.from("game_edit_history").delete().eq("id", config.ids.seedHistory).select()));
+    await check("direct-write guards", "administrator cannot directly update a team enrollment", async () => requireAuthorizationDenied(await admin.from("teams").update({ division: "Bypass" }).eq("id", config.ids.homeTeam).select()));
+    await check("direct-write guards", "administrator cannot directly delete a team enrollment", async () => requireAuthorizationDenied(await admin.from("teams").delete().eq("id", config.ids.unknownPlayoffMatch).select()));
+    await check("direct-write guards", "administrator cannot directly mutate bracket headers", async () => requireAuthorizationDenied(await admin.from("playoff_brackets").update({ status: "complete" }).eq("id", config.ids.unknownPlayoffMatch).select()));
+    await check("direct-write guards", "administrator cannot directly mutate locked seeds", async () => requireAuthorizationDenied(await admin.from("playoff_seeds").update({ seed: 99 }).eq("bracket_id", config.ids.unknownPlayoffMatch).select()));
+    await check("direct-write guards", "administrator cannot directly mutate match topology", async () => requireAuthorizationDenied(await admin.from("playoff_matches").update({ label: "Tampered" }).eq("id", config.ids.unknownPlayoffMatch).select()));
+    await check("direct-write guards", "admin cannot mutate signed waiver fields", async () => requireAuthorizationDenied(await admin.from("waivers").update({ signed_name: "Changed" }).eq("id", config.ids.waiver).select()));
+    await check("direct-write guards", "admin cannot update append-only history", async () => requireAuthorizationDenied(await admin.from("game_edit_history").update({ action: "Changed" }).eq("id", config.ids.seedHistory).select()));
+    await check("direct-write guards", "admin cannot delete append-only history", async () => requireAuthorizationDenied(await admin.from("game_edit_history").delete().eq("id", config.ids.seedHistory).select()));
 
     await check("payments authorization", "administrator can insert a charge", async () => {
       requireSuccess(await admin.from("charges").insert({
@@ -663,10 +724,10 @@ async function runMatrix() {
     });
     await check("locked-game guards", "empty correction reason is rejected", async () => {
       const args = { ...rpcArguments("correct_final_score"), p_reason: "   " };
-      requireDenied(await admin.rpc("correct_final_score", args));
+      requireGuardRejection(await admin.rpc("correct_final_score", args), /requires a reason/i, "the correction-reason guard");
     });
-    await check("locked-game guards", "direct locked score update is rejected", async () => requireDenied(await admin.from("games").update({ home_score: 77 }).eq("id", config.ids.game).select()));
-    await check("locked-game guards", "direct locked stage update is rejected", async () => requireDenied(await admin.from("games").update({ stage: "playoff" }).eq("id", config.ids.game).select()));
+    await check("locked-game guards", "direct locked score update is rejected", async () => requireGuardRejection(await admin.from("games").update({ home_score: 77 }).eq("id", config.ids.game).select(), /final and locked|permission denied|row-level security/i, "the game lock"));
+    await check("locked-game guards", "direct locked stage update is rejected", async () => requireGuardRejection(await admin.from("games").update({ stage: "playoff" }).eq("id", config.ids.game).select(), /final and locked|permission denied|row-level security/i, "the game lock"));
     await check("admin RPC success", "correct_final_score succeeds with a reason and preserves final lock", async () => {
       requireSuccess(await admin.rpc("correct_final_score", rpcArguments("correct_final_score")));
       const data = requireSuccess(await admin.from("games").select("home_score,away_score,locked,score_status,status").eq("id", config.ids.game).single());
