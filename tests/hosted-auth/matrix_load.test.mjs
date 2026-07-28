@@ -259,16 +259,16 @@ test("the permissive requireDenied helper is gone", () => {
   assert.equal(vm.runInContext("typeof requireDenied", context), "undefined");
 });
 
-test("database guards are asserted by their own message", () => {
+test("database guards are asserted by their declared denial kind", () => {
   const { context } = loadMatrix();
   const locked = { error: { code: "P0001", message: "Game abc is final and locked. Unlock it (with a reason) before editing." } };
   assert.match(
-    vm.runInContext(`requireGuardRejection(${JSON.stringify(locked)}, /final and locked/i, "the game lock")`, context),
+    vm.runInContext(`requireGuardRejection(${JSON.stringify(locked)}, DENIAL_KINDS.lockedGame)`, context),
     /Rejected by the game lock/,
   );
   const wrong = { error: { code: "23505", message: "duplicate key value violates unique constraint" } };
   assert.throws(
-    () => vm.runInContext(`requireGuardRejection(${JSON.stringify(wrong)}, /final and locked/i, "the game lock")`, context),
+    () => vm.runInContext(`requireGuardRejection(${JSON.stringify(wrong)}, DENIAL_KINDS.lockedGame)`, context),
     /DENIAL-KIND-MISMATCH/,
   );
 });
@@ -334,44 +334,130 @@ const WRONG_CODES = [
 ];
 
 // text each helper is looking for — used as the decoy under every wrong code.
-const HELPERS = [
-  { call: "requireAuthorizationDenied", decoy: "permission denied for table games",
-    validCodes: ["42501"], validMessage: "permission denied for table games" },
-  { call: "requirePrivilegeDenied", decoy: "permission denied for table scorekeeping_events",
-    validCodes: ["42501"], validMessage: "permission denied for table scorekeeping_events" },
-  // Two valid codes: PostgREST reports a missing column either way.
-  { call: "requireColumnAbsent", decoy: 'column "email" does not exist',
-    validCodes: ["42703", "PGRST204"], validMessage: 'column "email" does not exist' },
-  { call: "requireNoWrite", decoy: "permission denied for table charges",
-    validCodes: ["42501"], validMessage: "permission denied for table charges" },
-  { call: "requireHidden", decoy: "permission denied for table profiles",
-    validCodes: ["42501"], validMessage: "permission denied for table profiles" },
+const DENIAL_WRAPPERS = [
+  {
+    name: "requireAuthorizationDenied",
+    invoke: (payload) => `requireAuthorizationDenied(${JSON.stringify(payload)})`,
+    decoy: "permission denied for table games",
+    valid: [{ code: "42501", message: "permission denied for table games" }],
+  },
+  {
+    name: "requirePrivilegeDenied",
+    invoke: (payload) => `requirePrivilegeDenied(${JSON.stringify(payload)})`,
+    decoy: "permission denied for table scorekeeping_events",
+    valid: [{ code: "42501", message: "permission denied for table scorekeeping_events" }],
+  },
+  {
+    name: "requireColumnAbsent",
+    invoke: (payload) => `requireColumnAbsent(${JSON.stringify(payload)})`,
+    decoy: 'column "email" does not exist',
+    valid: [
+      { code: "42703", message: 'column "email" does not exist' },
+      { code: "PGRST204", message: "Could not find the 'email' column of 'public_profiles' in the schema cache" },
+    ],
+  },
+  {
+    name: "requireAdminGuard",
+    invoke: (payload) => `requireAdminGuard(${JSON.stringify(payload)})`,
+    decoy: "Admin only: assert_admin() rejected the call.",
+    valid: [{ code: "P0001", message: "Admin only: assert_admin() rejected the call." }],
+  },
+  {
+    name: "requireGuardRejection:correctionReason",
+    invoke: (payload) => `requireGuardRejection(${JSON.stringify(payload)}, DENIAL_KINDS.correctionReason)`,
+    decoy: "Correcting a final score requires a reason.",
+    valid: [{ code: "P0001", message: "Correcting a final score requires a reason." }],
+  },
+  {
+    name: "requireGuardRejection:lockedGame",
+    invoke: (payload) => `requireGuardRejection(${JSON.stringify(payload)}, DENIAL_KINDS.lockedGame)`,
+    decoy: "Game abc is final and locked.",
+    valid: [
+      { code: "P0001", message: "Game abc is final and locked." },
+      { code: "42501", message: "permission denied for table games" },
+    ],
+  },
+  {
+    name: "requireNoWrite",
+    invoke: (payload) => `requireNoWrite(${JSON.stringify(payload)})`,
+    decoy: "permission denied for table charges",
+    valid: [{ code: "42501", message: "permission denied for table charges" }],
+  },
+  {
+    name: "requireHidden",
+    invoke: (payload) => `requireHidden(${JSON.stringify(payload)})`,
+    decoy: "permission denied for table profiles",
+    valid: [{ code: "42501", message: "permission denied for table profiles" }],
+  },
 ];
 
-test("no helper accepts its own decoy text under a wrong code", () => {
+test("the cross-product enumerates every denial wrapper and guard path", () => {
+  assert.deepEqual(
+    DENIAL_WRAPPERS.map(({ name }) => name),
+    [
+      "requireAuthorizationDenied",
+      "requirePrivilegeDenied",
+      "requireColumnAbsent",
+      "requireAdminGuard",
+      "requireGuardRejection:correctionReason",
+      "requireGuardRejection:lockedGame",
+      "requireNoWrite",
+      "requireHidden",
+    ],
+  );
+});
+
+test("no wrapper accepts its own decoy text under a wrong code", () => {
   const { context } = loadMatrix();
-  for (const helper of HELPERS) {
+  for (const helper of DENIAL_WRAPPERS) {
+    const validCodes = helper.valid.map(({ code }) => code);
     for (const code of WRONG_CODES) {
-      if (helper.validCodes.includes(code)) continue;
+      if (validCodes.includes(code)) continue;
       const payload = { error: { code, message: helper.decoy } };
       assert.throws(
-        () => vm.runInContext(`${helper.call}(${JSON.stringify(payload)})`, context),
-        undefined,
-        `${helper.call} accepted decoy text under ${code}`,
+        () => vm.runInContext(helper.invoke(payload), context),
+        /DENIAL-KIND-MISMATCH/,
+        `${helper.name} accepted decoy text under ${code}`,
       );
     }
   }
 });
 
-test("every helper still accepts its own valid code+message pair", () => {
+test("every wrapper accepts every declared valid code+message pair", () => {
   const { context } = loadMatrix();
-  for (const helper of HELPERS) {
-    for (const code of helper.validCodes) {
-      const payload = { error: { code, message: helper.validMessage } };
+  for (const helper of DENIAL_WRAPPERS) {
+    for (const error of helper.valid) {
       assert.doesNotThrow(
-        () => vm.runInContext(`${helper.call}(${JSON.stringify(payload)})`, context),
-        `${helper.call} rejected its own valid pair under ${code}`,
+        () => vm.runInContext(helper.invoke({ error }), context),
+        `${helper.name} rejected its own valid pair under ${error.code}`,
       );
+    }
+  }
+});
+
+test("valid codes cannot rescue a wrong message or another variant's message", () => {
+  const { context } = loadMatrix();
+  for (const helper of DENIAL_WRAPPERS) {
+    for (const error of helper.valid) {
+      assert.throws(
+        () => vm.runInContext(helper.invoke({
+          error: { code: error.code, message: "Some unrelated database failure." },
+        }), context),
+        /DENIAL-KIND-MISMATCH/,
+        `${helper.name} accepted a valid code with unrelated text`,
+      );
+    }
+
+    if (helper.valid.length > 1) {
+      for (let index = 0; index < helper.valid.length; index += 1) {
+        const code = helper.valid[index].code;
+        const message = helper.valid[(index + 1) % helper.valid.length].message;
+        assert.throws(
+          () => vm.runInContext(helper.invoke({ error: { code, message } }), context),
+          /DENIAL-KIND-MISMATCH/,
+          `${helper.name} accepted a code paired with another variant's message`,
+        );
+      }
     }
   }
 });
@@ -397,28 +483,49 @@ test("details and hint never decide the verdict — only message does", () => {
   );
 });
 
-test("guards require P0001 and their own message", () => {
+test("locked-game evidence names the boundary that rejected the write", () => {
   const { context } = loadMatrix();
-  const good = { error: { code: "P0001", message: "Admin only: assert_admin() rejected the call." } };
-  assert.doesNotThrow(() => vm.runInContext(`requireAdminGuard(${JSON.stringify(good)})`, context));
+  const trigger = { error: { code: "P0001", message: "Game abc is final and locked." } };
+  assert.match(
+    vm.runInContext(`requireGuardRejection(${JSON.stringify(trigger)}, DENIAL_KINDS.lockedGame)`, context),
+    /game lock/,
+  );
 
-  const lock = { error: { code: "P0001", message: "Game abc is final and locked. Unlock it (with a reason) first." } };
-  assert.doesNotThrow(() =>
-    vm.runInContext(`requireGuardRejection(${JSON.stringify(lock)}, /final and locked/i, "the game lock")`, context));
-
-  // Right code, wrong guard message.
-  const otherGuard = { error: { code: "P0001", message: "Some other business rule fired." } };
-  assert.throws(() => vm.runInContext(`requireAdminGuard(${JSON.stringify(otherGuard)})`, context));
+  const privilege = { error: { code: "42501", message: "permission denied for table games" } };
+  assert.match(
+    vm.runInContext(`requireGuardRejection(${JSON.stringify(privilege)}, DENIAL_KINDS.lockedGame)`, context),
+    /database authorization boundary/,
+  );
 });
 
 test("an uncoded error is never a denial", () => {
   const { context } = loadMatrix();
-  for (const helper of HELPERS) {
+  for (const helper of DENIAL_WRAPPERS) {
     const payload = { error: { message: helper.decoy } };
     assert.throws(
-      () => vm.runInContext(`${helper.call}(${JSON.stringify(payload)})`, context),
-      undefined,
-      `${helper.call} accepted an uncoded error`,
+      () => vm.runInContext(helper.invoke(payload), context),
+      /DENIAL-KIND-MISMATCH/,
+      `${helper.name} accepted an uncoded error`,
+    );
+  }
+});
+
+test("table-privilege evidence rejects other 42501 authorization boundaries", () => {
+  const { context } = loadMatrix();
+  const rejected = [
+    "permission denied for function submit_score",
+    "permission denied for schema public",
+    "permission denied for sequence scorekeeping_events_sequence",
+    "new row violates row-level security policy for table scorekeeping_events",
+  ];
+  for (const message of rejected) {
+    assert.throws(
+      () => vm.runInContext(
+        `requirePrivilegeDenied(${JSON.stringify({ error: { code: "42501", message } })})`,
+        context,
+      ),
+      /DENIAL-KIND-MISMATCH/,
+      `table privilege accepted a different 42501 boundary: ${message}`,
     );
   }
 });

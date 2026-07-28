@@ -119,31 +119,77 @@ function requireSuccess(result, message = "Request failed") {
 const DENIAL_KINDS = Object.freeze({
   // The database refused an authenticated request: table privilege OR RLS.
   databaseAuthorization: Object.freeze({
-    codes: Object.freeze(["42501"]),
-    pattern: /permission denied|row-level security|insufficient[_ ]privilege/i,
+    variants: Object.freeze([
+      Object.freeze({
+        code: "42501",
+        pattern: /permission denied|row-level security|insufficient[_ ]privilege/i,
+      }),
+    ]),
     label: "database authorization boundary",
   }),
-  // Narrower: refused specifically at the TABLE-PRIVILEGE boundary. An RLS
-  // policy violation is also 42501 but is a different claim, so the message
-  // must name a privilege on an object.
+  // Narrower: refused specifically at a TABLE privilege. Function, schema,
+  // sequence and RLS denials are also authorization failures, but they do not
+  // prove this relation's table-level grant boundary.
   tablePrivilege: Object.freeze({
-    codes: Object.freeze(["42501"]),
-    pattern: /permission denied for (table|relation|view|schema|function|sequence)/i,
+    variants: Object.freeze([
+      Object.freeze({
+        code: "42501",
+        pattern: /^permission denied for table\b/i,
+      }),
+    ]),
     label: "table-privilege boundary",
   }),
   // The column is absent from an allowlisted view by design. A schema error is
   // the correct proof here; an authorization error would prove the wrong thing.
   columnAbsent: Object.freeze({
-    codes: Object.freeze(["42703", "PGRST204"]),
-    pattern: /does not exist|could not find|schema cache/i,
+    variants: Object.freeze([
+      Object.freeze({
+        code: "42703",
+        pattern: /\bcolumn\b.*\bdoes not exist\b/i,
+      }),
+      Object.freeze({
+        code: "PGRST204",
+        pattern: /\bcould not find\b.*\bcolumn\b.*\bschema cache\b/i,
+      }),
+    ]),
     label: "allowlisted view",
   }),
-  // A PL/pgSQL guard raised its own exception: assert_admin(), the game lock,
-  // the required-correction-reason check. RAISE EXCEPTION defaults to P0001.
-  guard: Object.freeze({
-    codes: Object.freeze(["P0001"]),
-    pattern: null, // supplied per call site
-    label: "database guard",
+  adminGuard: Object.freeze({
+    variants: Object.freeze([
+      Object.freeze({
+        code: "P0001",
+        pattern: /\badmin only\b/i,
+      }),
+    ]),
+    label: "assert_admin() guard",
+  }),
+  correctionReason: Object.freeze({
+    variants: Object.freeze([
+      Object.freeze({
+        code: "P0001",
+        pattern: /\brequires a reason\b/i,
+      }),
+    ]),
+    label: "correction-reason guard",
+  }),
+  // A direct write to a locked game can stop at either of two real boundaries:
+  // score columns are not granted to authenticated clients (42501), while a
+  // granted schedule column reaches the final-and-locked trigger (P0001).
+  // Both prove the locked game was protected, and the result names which one.
+  lockedGame: Object.freeze({
+    variants: Object.freeze([
+      Object.freeze({
+        code: "P0001",
+        pattern: /\bfinal and locked\b/i,
+        evidence: "game lock",
+      }),
+      Object.freeze({
+        code: "42501",
+        pattern: /permission denied|row-level security|insufficient[_ ]privilege/i,
+        evidence: "database authorization boundary",
+      }),
+    ]),
+    label: "locked-game direct-write boundary",
   }),
 });
 
@@ -152,33 +198,33 @@ function errorDetail(error) {
 }
 
 // Matches ONLY error.message. details/hint are diagnostic prose that echo other
-// errors' wording and must never decide what a check proved.
-function matchesDenial(error, kind, pattern = kind.pattern) {
-  if (!error) return false;
+// errors' wording and must never decide what a check proved. Each variant binds
+// one exact code to one message shape; neither can rescue a mismatched partner.
+function denialVariant(error, kind) {
+  if (!error) return null;
   const code = String(error.code || "");
-  if (!code || !kind.codes.includes(code)) return false;
-  return pattern ? pattern.test(String(error.message || "")) : true;
+  if (!code) return null;
+  const message = String(error.message || "");
+  return kind.variants.find((variant) =>
+    variant.code === code && variant.pattern.test(message)) || null;
 }
 
-function requireTypedDenial(result, kind, { pattern, label = kind.label, absent } = {}) {
-  if (!result.error) throw new Error(absent || `Request unexpectedly succeeded; expected the ${label} to reject it.`);
-  if (!matchesDenial(result.error, kind, pattern ?? kind.pattern)) {
+function requireTypedDenial(result, kind, { absent } = {}) {
+  if (!result.error) throw new Error(absent || `Request unexpectedly succeeded; expected the ${kind.label} to reject it.`);
+  const variant = denialVariant(result.error, kind);
+  if (!variant) {
     // Stable prefix so tests can assert the CLASS of failure without coupling
     // to prose. Five rounds of edits have already churned this wording.
     throw new Error(
-      `DENIAL-KIND-MISMATCH [${label}] (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
+      `DENIAL-KIND-MISMATCH [${kind.label}] (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
     );
   }
-  return `Denied at the ${label}.`;
-}
-
-// Kept as a predicate for the two helpers that also accept an empty result.
-function isDatabaseAuthorizationError(error) {
-  return matchesDenial(error, DENIAL_KINDS.databaseAuthorization);
+  return variant.evidence || kind.label;
 }
 
 function requireAuthorizationDenied(result, message = "Request unexpectedly succeeded") {
-  return requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization, { absent: message });
+  const evidence = requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization, { absent: message });
+  return `Denied at the ${evidence}.`;
 }
 
 function requireColumnAbsent(result, message = "Protected column was selectable") {
@@ -187,33 +233,33 @@ function requireColumnAbsent(result, message = "Protected column was selectable"
   return "Column is absent from the allowlisted view.";
 }
 
-function requireGuardRejection(result, pattern, label) {
-  if (!result.error) throw new Error(`${label} did not reject the request.`);
-  requireTypedDenial(result, DENIAL_KINDS.guard, { pattern, label });
-  return `Rejected by ${label}.`;
+function requireGuardRejection(result, kind) {
+  const evidence = requireTypedDenial(result, kind, {
+    absent: `${kind.label} did not reject the request.`,
+  });
+  return `Rejected by the ${evidence}.`;
 }
 
 function requirePrivilegeDenied(result) {
-  requireTypedDenial(result, DENIAL_KINDS.tablePrivilege, {
+  const evidence = requireTypedDenial(result, DENIAL_KINDS.tablePrivilege, {
     absent: "Ledger mutation did not fail at the table-privilege boundary.",
   });
-  return "Denied at the table-privilege boundary.";
+  return `Denied at the ${evidence}.`;
 }
 
 function requireAdminGuard(result) {
-  requireTypedDenial(result, DENIAL_KINDS.guard, {
-    pattern: /admin only/i,
-    label: "assert_admin() guard",
+  const evidence = requireTypedDenial(result, DENIAL_KINDS.adminGuard, {
     absent: "RPC did not fail at the admin authorization guard.",
   });
-  return "Rejected by assert_admin().";
+  return `Rejected by the ${evidence}.`;
 }
 
 function requireNoWrite(result, message = "Write affected a protected row") {
   // Zero rows is the normal RLS-filtered outcome. An error is also acceptable,
   // but only a database-authorization one.
   if (result.error) {
-    return requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization);
+    const evidence = requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization);
+    return `Denied at the ${evidence}.`;
   }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS affected zero rows.";
@@ -225,7 +271,8 @@ function requireHidden(result, message = "Private rows were exposed") {
   // confidentiality: schema, constraint, authentication, transport and
   // configuration failures all mean the boundary was never reached.
   if (result.error) {
-    return requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization);
+    const evidence = requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization);
+    return `Denied at the ${evidence}.`;
   }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS returned zero private rows.";
@@ -772,10 +819,10 @@ async function runMatrix() {
     });
     await check("locked-game guards", "empty correction reason is rejected", async () => {
       const args = { ...rpcArguments("correct_final_score"), p_reason: "   " };
-      requireGuardRejection(await admin.rpc("correct_final_score", args), /requires a reason/i, "the correction-reason guard");
+      requireGuardRejection(await admin.rpc("correct_final_score", args), DENIAL_KINDS.correctionReason);
     });
-    await check("locked-game guards", "direct locked score update is rejected", async () => requireGuardRejection(await admin.from("games").update({ home_score: 77 }).eq("id", config.ids.game).select(), /final and locked|permission denied|row-level security/i, "the game lock"));
-    await check("locked-game guards", "direct locked stage update is rejected", async () => requireGuardRejection(await admin.from("games").update({ stage: "playoff" }).eq("id", config.ids.game).select(), /final and locked|permission denied|row-level security/i, "the game lock"));
+    await check("locked-game guards", "direct locked score update is rejected", async () => requireGuardRejection(await admin.from("games").update({ home_score: 77 }).eq("id", config.ids.game).select(), DENIAL_KINDS.lockedGame));
+    await check("locked-game guards", "direct locked stage update is rejected", async () => requireGuardRejection(await admin.from("games").update({ stage: "playoff" }).eq("id", config.ids.game).select(), DENIAL_KINDS.lockedGame));
     await check("admin RPC success", "correct_final_score succeeds with a reason and preserves final lock", async () => {
       requireSuccess(await admin.rpc("correct_final_score", rpcArguments("correct_final_score")));
       const data = requireSuccess(await admin.from("games").select("home_score,away_score,locked,score_status,status").eq("id", config.ids.game).single());

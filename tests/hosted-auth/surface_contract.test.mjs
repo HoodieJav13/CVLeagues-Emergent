@@ -164,20 +164,27 @@ test("denial kinds are declared in one table, with the code authoritative", () =
   // review rounds each found the same defect one helper further out. One
   // declared table is the form that cannot drift per call site.
   assert.match(matrixSource, /const DENIAL_KINDS = Object\.freeze\(\{/);
-  for (const kind of ["databaseAuthorization", "tablePrivilege", "columnAbsent", "guard"]) {
+  for (const kind of [
+    "databaseAuthorization",
+    "tablePrivilege",
+    "columnAbsent",
+    "adminGuard",
+    "correctionReason",
+    "lockedGame",
+  ]) {
     assert.match(matrixSource, new RegExp(`${kind}: Object\\.freeze\\(\\{`), `missing denial kind ${kind}`);
   }
-  assert.match(matrixSource, /function matchesDenial\(/);
+  assert.match(matrixSource, /function denialVariant\(/);
   assert.match(matrixSource, /function requireTypedDenial\(/);
   // The code gates everything; convenient text can never rescue a wrong code.
-  assert.match(matrixSource, /if \(!code \|\| !kind\.codes\.includes\(code\)\) return false;/);
+  assert.match(matrixSource, /variant\.code === code && variant\.pattern\.test\(message\)/);
   // Text is matched against error.message only. details/hint are diagnostic
   // prose that echo other errors and must not decide what a check proved.
-  assert.match(matrixSource, /pattern\.test\(String\(error\.message \|\| ""\)\)/);
+  assert.match(matrixSource, /const message = String\(error\.message \|\| ""\);/);
   assert.match(matrixSource, /DENIAL-KIND-MISMATCH/);
   // Guards are P0001; authentication codes appear nowhere as acceptable.
-  assert.match(matrixSource, /codes: Object\.freeze\(\["P0001"\]\)/);
-  assert.doesNotMatch(matrixSource, /codes: Object\.freeze\(\[[^\]]*PGRST30/);
+  assert.match(matrixSource, /code: "P0001"/);
+  assert.doesNotMatch(matrixSource, /code: "PGRST30[12]"/);
 });
 
 test("generated evidence records the surface it covers", () => {
