@@ -41,7 +41,7 @@ supabase db push --dry-run
 
 The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables, and 25 administrator RPCs.
 
-**Two unhosted migrations change the target surface, and neither has been accepted.**
+**Two unhosted migrations change the target surface, and neither has been accepted.** They publish as two separate approved actions with two separate acceptance boundaries; the ordered procedure is below.
 
 **Migration 28 (Sequence 5A)** adds no table and no net new RPC, so the counts are unchanged by it. It does change three RPC signatures: `append_scorekeeping_event` and `replace_scorekeeping_event` are dropped and recreated with an additive `p_pairing_override_reason text default null`, and `finalize_scorekeeping_session` is replaced at an identical signature. The added parameter is defaulted, so existing named-argument probes still resolve, and the old overloads are dropped rather than left alongside — there is no ambiguity for PostgREST to resolve.
 
@@ -58,24 +58,112 @@ The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables
 
 The three Migration-28 endpoints are already in the denial loop, so their coverage carries over — but confirm each probe still resolves to a real function after the push rather than failing as "function not found," which would read as an authorization defect when it is a stale fixture.
 
-Because Migration 29 drops columns, and because the two migrations must publish separately, run this matrix in three passes:
+## Publishing Migrations 28 and 29 — the ordered procedure
 
-1. **Before any push**, with 27 hosted migrations: preflight only, to confirm history alignment and a clean dry run. Do not expect the new checks to pass — the tables do not exist yet.
-2. **Immediately after publishing Migration 28**, with 28 hosted migrations: the full pre-existing matrix, confirming the three changed ledger signatures still resolve and still deny correctly. The Migration 29 section below will not pass yet.
-3. **Immediately after publishing Migration 29**, with 29 hosted migrations: the full matrix including the Migration 29 section. This is the run that becomes the new accepted evidence.
+**The CLI cannot publish a subset.** `supabase db push` applies every pending
+migration; `--include-all` broadens that set, it does not narrow it. There is
+no "push only this one" flag. Isolation therefore comes from **what the
+checked-out migrations directory contains**, not from a command-line option.
 
-Take a fresh off-platform logical export between passes 2 and 3. Migration 29's column drop is the irreversible step, and it must never be bundled with the overtime migration.
+That single fact drives the whole sequence below. `main` stays where it is
+until Migration 28 is published *and accepted*, because `origin/main` already
+contains Sequence 5A and nothing else beyond it — its migrations directory is
+already exactly the Migration 28 push. Advancing `main` first would put the
+venues migration in that directory and a plain `db push` would publish both,
+bundling the irreversible column drop with the overtime migration.
+
+### Step by step
+
+1. **Finish independent review of the reconciliation branch head.** No hosted
+   action before it lands.
+2. **Leave `main` where it is.** Its migrations directory is already the
+   Migration 28 push, and its frontend still reads the legacy game shape, so it
+   matches the database it is about to be pointed at.
+3. **From `main`: fresh off-platform logical export, preflight, dry run.**
+
+   ```sh
+   git branch --show-current      # must be main
+   git log -1 --oneline
+   supabase --version
+   supabase migration list
+   supabase db push --dry-run
+   ```
+
+   **The dry run must name `20260723154411_sequence_5a_overtime_pairing_rules.sql`
+   and nothing else.** Match the filename, not the number — the number is a
+   position that has already shifted once during this program. If a second
+   migration appears, stop: the wrong revision is checked out.
+4. **Exact approval token, then publish Migration 28**, then structural
+   readback: `supabase migration list`, object verification, Security and
+   Performance advisors.
+5. **Separate approval for the fixture write**, then run the matrix with
+   `--surface m28` **from a dedicated worktree at the reconciliation branch
+   head** — see "Running the matrix from a worktree" below. `main` does not
+   carry the two-surface harness at this point, so running from `main` would
+   use the old hard-wired-to-`m29` runner and die during fixture seeding.
+6. **Verify and record.** All three lines must read `PASS`. Commit the dated
+   `m28` evidence file on the reconciliation branch.
+7. **Fresh off-platform logical export.** Migration 29 is the irreversible one;
+   this is the backup that matters.
+8. **Confirm that advancing `main` cannot trigger an automatic deployment.** A
+   Vercel project exists for this repository. Verify that Git auto-deployment
+   is disabled, or that no production deployment can be produced from a push to
+   `main`. **If automatic deployment cannot be ruled out, STOP here.** Do not
+   advance `main`.
+9. **Fast-forward `main` to the current reconciliation branch head** — the head
+   that now carries the Migration 28 evidence, not whichever SHA was current
+   when this procedure was written.
+10. **This opens a deliberate incompatibility window.** `main` now reads
+    `starts_at` and `venue_id`; hosted is still at Migration 28 and has
+    neither. This interval is transitional by design and is only safe because
+    nothing is deployed from it. **No deployment, no preview build, and no
+    unrelated work while it is open.** Close it by completing step 12.
+11. **Dry run again.** It must now name
+    `20260726120000_venues_game_start_times_participation.sql` and nothing else.
+12. **New exact approval token, then publish Migration 29**, then structural
+    readback.
+13. **Separate approval**, then run the matrix with `--surface m29` and record
+    its acceptance as an independent dated evidence file.
+
+### Each pass is its own acceptance boundary
+
+Structural readback, advisors, and a full matrix run belong to **each**
+publication, recorded as separate dated evidence. A Migration 28 result is not
+evidence for Migration 29 and must never be carried forward as one.
+
+### Running the matrix from a worktree
+
+Steps 5 and 13 run the harness from the reconciliation branch head while `main`
+may be elsewhere. A dedicated worktree keeps the two from interfering:
+
+```sh
+git worktree add ../cvf-matrix-run <reconciliation-branch-head>
+```
+
+That worktree needs three things that are deliberately **not** in Git:
+
+- `frontend/.env.local` — the hosted URL, anonymous/publishable key, and
+  Turnstile site key. Copy it in; never commit it, never print its values.
+- Supabase CLI link state for `orlhqewzprjadyrdrqxw`.
+- `frontend/node_modules`, so the runner can serve the pinned local
+  `@supabase/supabase-js` browser bundle.
+
+The harness reads the hosted database and `.env.local`. It does **not** read
+the migrations directory, which is why running it from a checkout other than
+`main` is correct rather than a workaround.
+
+### Surface modes
 
 **Each pass runs an explicit surface mode.** The harness cannot infer which
 surface is hosted, and guessing wrong fails during fixture seeding rather than
 at a check, which produces no evidence at all:
 
 ```sh
-# pass 2 — hosted at Migration 28
+# after publishing Migration 28
 CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
   supabase/evidence/hosted-auth-matrix-YYYY-MM-DD-m28.md --surface m28
 
-# pass 3 — hosted at Migration 29
+# after publishing Migration 29
 CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
   supabase/evidence/hosted-auth-matrix-YYYY-MM-DD-m29.md --surface m29
 ```
@@ -91,14 +179,11 @@ CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
 
 `m29` is the default; the flag is mandatory only for the Migration 28 pass, but
 state it explicitly in both so the evidence file records which surface it
-covers. The two modes and their exact censuses are pinned by
-`tests/hosted-auth/surface_contract.test.mjs`, so a mode that quietly does less
-work fails the contract tests rather than reporting a hollow `PASS`.
-
-**Each pass is its own acceptance boundary.** Run the structural readback,
-advisors, and the full matrix after each publication, and record the two
-checkpoints as separate dated evidence files. Do not carry a Migration 28
-result forward as evidence for Migration 29.
+covers. The generated report header carries the surface key, label, migration
+number, and expected census. The two modes and their censuses are pinned by
+`tests/hosted-auth/surface_contract.test.mjs`, and `matrix_load.test.mjs`
+executes the browser script rather than reading it, so a mode that quietly does
+less work fails the contract tests instead of reporting a hollow `PASS`.
 
 Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 

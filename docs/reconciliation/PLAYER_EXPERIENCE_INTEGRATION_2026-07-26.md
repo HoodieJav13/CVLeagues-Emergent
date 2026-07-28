@@ -135,6 +135,29 @@ accept Migration 28 → fresh off-platform logical export → publish Migration 
 approval, and a hosted migration push additionally requires the literal token
 `approved: hosted push of migrations X–Y`.
 
+The ordered procedure now lives in [`../../supabase/HOSTED_AUTH_RUNBOOK.md`](../../supabase/HOSTED_AUTH_RUNBOOK.md).
+Three facts about it are worth restating here, because each was established by
+review rather than by design:
+
+1. **`supabase db push` cannot publish a subset.** `--include-all` broadens the
+   set; nothing narrows it. Isolation comes from what the checked-out
+   migrations directory contains, which is why `main` stays put until
+   Migration 28 is published and accepted — its directory is already exactly
+   that push.
+2. **The interval afterwards is a deliberate incompatibility window**, not an
+   accident to be minimised away. Once `main` advances it reads
+   `starts_at`/`venue_id` against a database still at Migration 28. It is safe
+   only because nothing deploys from it. Advancing `main` is gated on first
+   confirming no automatic deployment can fire; if that cannot be ruled out,
+   the sequence stops before `main` moves. Eliminating the window entirely
+   would mean restructuring Migration 29 as expand/deploy/contract rather than
+   relying on timing — a larger change, not currently proposed.
+3. **The acceptance runs happen from a configured worktree at the
+   reconciliation head**, not from `main`, because `main` does not carry the
+   two-surface harness while Migration 28 is being accepted. The harness reads
+   the hosted database and `.env.local`, never the migrations directory, so
+   this is correct rather than a workaround.
+
 ## Stage record
 
 | Stage | Content | Verified at |
@@ -315,3 +338,13 @@ found by *executing* something that had only been reasoned about. The pattern
 worth carrying forward is not "check the matrix again" but: **a test that reads
 source text proves a string is present and nothing about behaviour**, and **a
 denial assertion must state which failure it accepts, never which it rejects.**
+
+## Correction to an earlier proposal in this record
+
+An intermediate fast-forward of `main` to the R2-A tip was proposed as a way to
+isolate the Migration 28 push. It was unnecessary: `origin/main` already
+contained Sequence 5A and already read the legacy game shape, so the R2-A tip
+offered no additional isolation — only three unrelated stats/UI commits. The
+proposal was made with the migration counts already in hand and the wrong
+conclusion drawn from them. `main` stays where it is; the isolation was always
+already there.
