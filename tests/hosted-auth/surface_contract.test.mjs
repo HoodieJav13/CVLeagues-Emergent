@@ -11,6 +11,7 @@ const {
 
 const matrixSource = readFileSync(new URL("./matrix.js", import.meta.url), "utf8");
 const serverSource = readFileSync(new URL("./server.mjs", import.meta.url), "utf8");
+const runbookSource = readFileSync(new URL("../../supabase/HOSTED_AUTH_RUNBOOK.md", import.meta.url), "utf8");
 
 /* ---------------------------------------------------------------------------
  * Census. The whole point of two surfaces is that they cover DIFFERENT
@@ -159,11 +160,14 @@ test("every denial names the property it proves — no permissive helper survive
 
 test("the authorization helper is an allowlist, not a blacklist", () => {
   // A blacklist rots: every new error class defaults to "authorization".
-  assert.match(matrixSource, /const AUTHORIZATION_CODES = new Set\(/);
+  assert.match(matrixSource, /const DATABASE_AUTHORIZATION_CODES = new Set\(/);
   assert.match(matrixSource, /42501/);
-  assert.match(matrixSource, /function isAuthorizationError\(/);
-  // requireNoWrite shares the predicate, so its error path cannot drift.
-  assert.match(matrixSource, /non-authorization reason/);
+  assert.doesNotMatch(matrixSource, /DATABASE_AUTHORIZATION_CODES = new Set\(\["42501",/);
+  assert.match(matrixSource, /function isDatabaseAuthorizationError\(/);
+  // Write and private-read helpers share the predicate, so their error paths
+  // cannot drift back to accepting arbitrary failures.
+  assert.match(matrixSource, /Write failed for a non-database-authorization reason/);
+  assert.match(matrixSource, /Private read failed for a non-database-authorization reason/);
 });
 
 test("generated evidence records the surface it covers", () => {
@@ -212,6 +216,15 @@ test("every documented surface key is actually accepted by the wrapper", () => {
   for (const key of Object.keys(SURFACES)) {
     assert.ok(runner.includes(`"${key}"`), `run_matrix.sh does not accept surface ${key}`);
   }
+});
+
+test("the publication preflight pins clean local main to freshly fetched origin/main", () => {
+  assert.match(runbookSource, /git fetch origin --prune/);
+  assert.match(runbookSource, /git status --short\s+# must print nothing/);
+  assert.match(runbookSource, /local_main="\$\(git rev-parse HEAD\)"/);
+  assert.match(runbookSource, /remote_main="\$\(git rev-parse origin\/main\)"/);
+  assert.match(runbookSource, /test "\$local_main" = "\$remote_main"/);
+  assert.match(runbookSource, /Stop if local `main` is stale,\s+ahead, or divergent from `origin\/main`/);
 });
 
 test("no live harness source still calls the venues surface Migration 28", () => {

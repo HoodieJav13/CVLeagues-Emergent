@@ -164,28 +164,35 @@ const NON_AUTHORIZATION_FAILURES = [
   { code: "42883", message: "function public.schedule_playoff_match(uuid, date, text, text) does not exist" },
 ];
 
-test("no non-authorization failure can pass as an authorization result", () => {
+const AUTHENTICATION_FAILURES = [
+  { code: "PGRST301", message: "JWT expired" },
+  { code: "PGRST302", message: "No API key found in request" },
+  { code: "PGRST301", message: "permission denied for table games" },
+  { code: undefined, message: "invalid JWT" },
+  { code: undefined, message: "no API key supplied" },
+];
+
+test("no non-authorization failure can pass as a database authorization result", () => {
   const { context } = loadMatrix();
-  for (const error of NON_AUTHORIZATION_FAILURES) {
+  for (const error of [...NON_AUTHORIZATION_FAILURES, ...AUTHENTICATION_FAILURES]) {
     assert.throws(
       () => vm.runInContext(`requireAuthorizationDenied(${JSON.stringify({ error })})`, context),
-      /not an authorization result/,
-      `${error.code} was accepted as authorization: ${error.message}`,
+      /not a database authorization result/,
+      `${error.code} was accepted as database authorization: ${error.message}`,
     );
   }
 });
 
-test("genuine authorization failures are accepted", () => {
+test("genuine database authorization failures are accepted", () => {
   const { context } = loadMatrix();
   const accepted = [
     { code: "42501", message: "permission denied for table games" },
     { code: "42501", message: "new row violates row-level security policy for table games" },
     { code: undefined, message: "permission denied for schema public" },
-    { code: "PGRST301", message: "JWT expired" },
   ];
   for (const error of accepted) {
     const outcome = vm.runInContext(`requireAuthorizationDenied(${JSON.stringify({ error })})`, context);
-    assert.match(outcome, /authorization boundary/, `rejected a real denial: ${error.message}`);
+    assert.match(outcome, /database authorization boundary/, `rejected a real database denial: ${error.message}`);
   }
 });
 
@@ -199,13 +206,40 @@ test("a silent success is still a failure", () => {
 
 test("requireNoWrite refuses a non-authorization error too", () => {
   const { context } = loadMatrix();
-  const checkError = { error: { code: "23514", message: "new row violates check constraint" } };
-  assert.throws(
-    () => vm.runInContext(`requireNoWrite(${JSON.stringify(checkError)})`, context),
-    /non-authorization reason/,
-  );
+  for (const error of [...NON_AUTHORIZATION_FAILURES, ...AUTHENTICATION_FAILURES]) {
+    assert.throws(
+      () => vm.runInContext(`requireNoWrite(${JSON.stringify({ error })})`, context),
+      /non-database-authorization reason/,
+      `${error.code} was accepted as an RLS-filtered write: ${error.message}`,
+    );
+  }
   // Zero rows remains the normal RLS-filtered outcome.
   assert.match(vm.runInContext("requireNoWrite({ data: [], error: null })", context), /zero rows/);
+  assert.match(
+    vm.runInContext(`requireNoWrite(${JSON.stringify({ error: { code: "42501", message: "permission denied for table games" } })})`, context),
+    /database authorization error/,
+  );
+});
+
+test("requireHidden accepts only database denial or an RLS-empty result", () => {
+  const { context } = loadMatrix();
+  for (const error of [...NON_AUTHORIZATION_FAILURES, ...AUTHENTICATION_FAILURES]) {
+    assert.throws(
+      () => vm.runInContext(`requireHidden(${JSON.stringify({ error })})`, context),
+      /non-database-authorization reason/,
+      `${error.code} was accepted as proof that private rows were hidden: ${error.message}`,
+    );
+  }
+
+  assert.match(
+    vm.runInContext(`requireHidden(${JSON.stringify({ error: { code: "42501", message: "permission denied for table profiles" } })})`, context),
+    /database authorization boundary/,
+  );
+  assert.match(vm.runInContext("requireHidden({ data: [], error: null })", context), /zero private rows/);
+  assert.throws(
+    () => vm.runInContext("requireHidden({ data: [{ id: 1 }], error: null })", context),
+    /Private rows were exposed/,
+  );
 });
 
 test("the PII allowlist check demands a schema error, not an authorization one", () => {

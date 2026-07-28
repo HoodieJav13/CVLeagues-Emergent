@@ -90,36 +90,38 @@ function requireSuccess(result, message = "Request failed") {
  * classes appear.
  * -------------------------------------------------------------------------- */
 
-// PostgreSQL/PostgREST responses that genuinely mean "you are not allowed".
-// 42501 is insufficient_privilege, raised for both table-privilege denial and
-// RLS policy violation on INSERT.
-const AUTHORIZATION_CODES = new Set(["42501", "PGRST301", "PGRST302"]);
-const AUTHORIZATION_TEXT = /permission denied|row-level security|insufficient[_ ]privilege|not authorized|jwt|no api key/i;
-
-// Failures that are real but say nothing about authorization. Named only for
-// clearer diagnostics; anything not on the allowlist is rejected regardless.
-const NON_AUTHORIZATION_CODES = new Set(["23502", "23503", "23505", "23514", "22P02", "42703", "42883", "PGRST204"]);
+// PostgreSQL responses that prove the request reached the database permission
+// boundary. 42501 is insufficient_privilege, raised for both table-privilege
+// denial and RLS policy violation on INSERT. PostgREST authentication errors
+// such as PGRST301/PGRST302 are deliberately excluded: an expired JWT or
+// missing API key proves only that the intended role never reached the
+// database, so it cannot substantiate an RLS or grant claim.
+const DATABASE_AUTHORIZATION_CODES = new Set(["42501"]);
+const DATABASE_AUTHORIZATION_TEXT = /permission denied|row-level security|insufficient[_ ]privilege/i;
 
 function errorDetail(error) {
   return `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.trim();
 }
 
-function isAuthorizationError(error) {
+function isDatabaseAuthorizationError(error) {
   if (!error) return false;
-  if (NON_AUTHORIZATION_CODES.has(String(error.code))) return false;
-  if (AUTHORIZATION_CODES.has(String(error.code))) return true;
-  return AUTHORIZATION_TEXT.test(errorDetail(error));
+  const code = String(error.code || "");
+  // When the API supplies a code, it is authoritative. Do not let an
+  // authentication/schema/constraint code pass because incidental detail text
+  // happens to contain "permission denied".
+  if (code) return DATABASE_AUTHORIZATION_CODES.has(code);
+  return DATABASE_AUTHORIZATION_TEXT.test(errorDetail(error));
 }
 
-// Use wherever the evidence row claims an authorization boundary held.
+// Use wherever the evidence row claims a database authorization boundary held.
 function requireAuthorizationDenied(result, message = "Request unexpectedly succeeded") {
   if (!result.error) throw new Error(message);
-  if (!isAuthorizationError(result.error)) {
+  if (!isDatabaseAuthorizationError(result.error)) {
     throw new Error(
-      `Denial was not an authorization result (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
+      `Denial was not a database authorization result (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
     );
   }
-  return "Denied at the authorization boundary.";
+  return "Denied at the database authorization boundary.";
 }
 
 // Use where the PII allowlist is the property under test. Here a schema-shaped
@@ -165,20 +167,29 @@ function requireAdminGuard(result) {
 
 function requireNoWrite(result, message = "Write affected a protected row") {
   // Zero rows is the normal RLS-filtered outcome. An ERROR is also acceptable,
-  // but only an authorization-shaped one — otherwise a malformed payload would
-  // bank a schema failure as proof the boundary held.
+  // but only a database-authorization-shaped one — otherwise a malformed
+  // payload or invalid session would bank the wrong failure as RLS proof.
   if (result.error) {
-    if (!isAuthorizationError(result.error)) {
-      throw new Error(`Write failed for a non-authorization reason (code ${result.error.code || "none"}): ${errorDetail(result.error)}`);
+    if (!isDatabaseAuthorizationError(result.error)) {
+      throw new Error(`Write failed for a non-database-authorization reason (code ${result.error.code || "none"}): ${errorDetail(result.error)}`);
     }
-    return "Denied with an authorization error.";
+    return "Denied with a database authorization error.";
   }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS affected zero rows.";
 }
 
 function requireHidden(result, message = "Private rows were exposed") {
-  if (result.error) return "Denied at the Data API boundary.";
+  // A relation may be hidden either by a real database privilege/RLS denial or
+  // by a successful query whose rows were filtered to an empty set. No other
+  // error proves confidentiality: schema, constraint, authentication, network,
+  // and configuration failures all mean the intended boundary was not tested.
+  if (result.error) {
+    if (!isDatabaseAuthorizationError(result.error)) {
+      throw new Error(`Private read failed for a non-database-authorization reason (code ${result.error.code || "none"}): ${errorDetail(result.error)}`);
+    }
+    return "Denied at the database authorization boundary.";
+  }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS returned zero private rows.";
 }
