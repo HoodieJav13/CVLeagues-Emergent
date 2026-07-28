@@ -158,16 +158,26 @@ test("every denial names the property it proves — no permissive helper survive
   assert.doesNotMatch(matrixSource, /requireDenied\s*\(/);
 });
 
-test("the authorization helper is an allowlist, not a blacklist", () => {
-  // A blacklist rots: every new error class defaults to "authorization".
-  assert.match(matrixSource, /const DATABASE_AUTHORIZATION_CODES = new Set\(/);
-  assert.match(matrixSource, /42501/);
-  assert.doesNotMatch(matrixSource, /DATABASE_AUTHORIZATION_CODES = new Set\(\["42501",/);
-  assert.match(matrixSource, /function isDatabaseAuthorizationError\(/);
-  // Write and private-read helpers share the predicate, so their error paths
-  // cannot drift back to accepting arbitrary failures.
-  assert.match(matrixSource, /Write failed for a non-database-authorization reason/);
-  assert.match(matrixSource, /Private read failed for a non-database-authorization reason/);
+test("denial kinds are declared in one table, with the code authoritative", () => {
+  // A blacklist rots: every new error class defaults to "authorization". A
+  // per-helper allowlist rots more slowly but still drifts, which is how five
+  // review rounds each found the same defect one helper further out. One
+  // declared table is the form that cannot drift per call site.
+  assert.match(matrixSource, /const DENIAL_KINDS = Object\.freeze\(\{/);
+  for (const kind of ["databaseAuthorization", "tablePrivilege", "columnAbsent", "guard"]) {
+    assert.match(matrixSource, new RegExp(`${kind}: Object\\.freeze\\(\\{`), `missing denial kind ${kind}`);
+  }
+  assert.match(matrixSource, /function matchesDenial\(/);
+  assert.match(matrixSource, /function requireTypedDenial\(/);
+  // The code gates everything; convenient text can never rescue a wrong code.
+  assert.match(matrixSource, /if \(!code \|\| !kind\.codes\.includes\(code\)\) return false;/);
+  // Text is matched against error.message only. details/hint are diagnostic
+  // prose that echo other errors and must not decide what a check proved.
+  assert.match(matrixSource, /pattern\.test\(String\(error\.message \|\| ""\)\)/);
+  assert.match(matrixSource, /DENIAL-KIND-MISMATCH/);
+  // Guards are P0001; authentication codes appear nowhere as acceptable.
+  assert.match(matrixSource, /codes: Object\.freeze\(\["P0001"\]\)/);
+  assert.doesNotMatch(matrixSource, /codes: Object\.freeze\(\[[^\]]*PGRST30/);
 });
 
 test("generated evidence records the surface it covers", () => {

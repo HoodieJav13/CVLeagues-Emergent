@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E, R2-F and R2-G.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
+**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E through R2-I.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -325,7 +325,7 @@ Negative tests cover `23502`, `23503`, `23505`, `23514`, `22P02`, `42703`,
 row-level-security failures are still accepted and that a silent success still
 fails.
 
-Harness contract tests: 10 → 28 (R2-E) → 41 (R2-F) → **46**.
+Harness contract tests: 10 → 28 (R2-E) → 41 (R2-F) → 46 (R2-G) → 50 (R2-H) → **56** (R2-I).
 
 Verified at 340/340 database assertions plus the two-connection race, 208/208
 frontend tests, 21/21 API tests, 46/46 harness contract tests, and a passing
@@ -376,7 +376,7 @@ result and rejects a populated result.
 Executable regressions cover every previously reproduced constraint/schema
 failure plus `PGRST301`, `PGRST302`, message-only JWT/missing-key failures,
 real `42501` denial, RLS-empty success, and exposed-row failure through all
-applicable helpers. The complete hosted-auth contract suite is now **48/48**.
+applicable helpers. The suite stood at 48/48 at that stage; R2-I later took it to 56/56.
 The broader verification remains green at 340/340 database assertions plus the
 real two-connection race, 208/208 frontend tests across 38 suites, 21/21 API
 tests, and a successful production build.
@@ -387,3 +387,57 @@ another commit can carry a same-named file with different contents. Before the
 Migration 28 dry run, the runbook now requires a successful fetch, a clean
 `main`, and byte-for-byte equality between local `HEAD` and `origin/main`.
 Stale, ahead, or divergent local state is a hard stop.
+
+## Repair stages R2-H and R2-I — the typed denial model
+
+R2-G converted the denial helpers to allowlists. Review then found the same
+defect in `requireAuthorizationDenied`, `requireNoWrite` and `requireHidden`
+(authentication codes accepted as authorization evidence). That was fixed. The
+next review found it in `requirePrivilegeDenied`. That was fixed. The next found
+it in `requireColumnAbsent`, `requireAdminGuard` and `requireGuardRejection`,
+plus a `42501` RLS error whose **hint** carried table-privilege wording.
+
+Five rounds, five fixes, same defect one helper further out each time. Fixing
+instances was the mistake: each repair re-derived "what counts as this denial"
+from whichever error classes were front of mind, so the next helper inherited a
+slightly different, slightly wrong answer.
+
+**R2-I replaces per-helper reasoning with one declared table.**
+
+| Kind | Required code | Required `message` |
+|---|---|---|
+| `databaseAuthorization` | `42501` | permission denied / row-level security / insufficient privilege |
+| `tablePrivilege` | `42501` | permission denied **for** table/relation/view/schema/function/sequence |
+| `columnAbsent` | `42703`, `PGRST204` | does not exist / could not find / schema cache |
+| `guard` | `P0001` | supplied per call site |
+
+Three rules make it non-drifting:
+
+1. **The code is always authoritative.** Convenient text cannot rescue a wrong
+   code. This is what stops an authentication failure from proving a grant.
+2. **Text matches `error.message` only.** `details` and `hint` are diagnostic
+   prose that routinely echo other errors' wording — exactly how a `42501` RLS
+   violation with a `permission denied for table` hint satisfied the narrower
+   table-privilege assertion.
+3. **An uncoded error is never a denial.** Supabase populates `code` from the
+   SQLSTATE for every database error, so a missing code means the request never
+   reached the database. This is a deliberate tightening: a false FAIL costs a
+   re-run, a false PASS is filed as acceptance evidence.
+
+`tablePrivilege` is deliberately narrower than `databaseAuthorization`. Both are
+`42501`, but the private ledger boundary asserts a grant held, not merely that
+the database refused, so an RLS policy violation must not satisfy it.
+
+Errors now carry a stable `DENIAL-KIND-MISMATCH [kind]` prefix so tests assert
+the class of failure rather than prose — five rounds of edits had already
+churned that wording and broken assertions that were otherwise correct.
+
+Coverage is a cross product rather than a list: every helper against every
+wrong code, each carrying **the exact decoy text that helper looks for**. A
+wrong code with innocuous text proves little; a wrong code with convincing text
+is the failure that actually occurred, five times. Plus positive pairs for every
+valid code (`columnAbsent` has two), the hint-decoy case, guard code/message
+pairing, uncoded rejection, and empty-result acceptance for the two helpers that
+allow it.
+
+Harness contract tests: 50 → **56**.

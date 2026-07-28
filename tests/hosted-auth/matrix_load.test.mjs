@@ -177,7 +177,7 @@ test("no non-authorization failure can pass as a database authorization result",
   for (const error of [...NON_AUTHORIZATION_FAILURES, ...AUTHENTICATION_FAILURES]) {
     assert.throws(
       () => vm.runInContext(`requireAuthorizationDenied(${JSON.stringify({ error })})`, context),
-      /not a database authorization result/,
+      /DENIAL-KIND-MISMATCH/,
       `${error.code} was accepted as database authorization: ${error.message}`,
     );
   }
@@ -188,7 +188,6 @@ test("genuine database authorization failures are accepted", () => {
   const accepted = [
     { code: "42501", message: "permission denied for table games" },
     { code: "42501", message: "new row violates row-level security policy for table games" },
-    { code: undefined, message: "permission denied for schema public" },
   ];
   for (const error of accepted) {
     const outcome = vm.runInContext(`requireAuthorizationDenied(${JSON.stringify({ error })})`, context);
@@ -209,7 +208,7 @@ test("requireNoWrite refuses a non-authorization error too", () => {
   for (const error of [...NON_AUTHORIZATION_FAILURES, ...AUTHENTICATION_FAILURES]) {
     assert.throws(
       () => vm.runInContext(`requireNoWrite(${JSON.stringify({ error })})`, context),
-      /non-database-authorization reason/,
+      /DENIAL-KIND-MISMATCH/,
       `${error.code} was accepted as an RLS-filtered write: ${error.message}`,
     );
   }
@@ -217,7 +216,7 @@ test("requireNoWrite refuses a non-authorization error too", () => {
   assert.match(vm.runInContext("requireNoWrite({ data: [], error: null })", context), /zero rows/);
   assert.match(
     vm.runInContext(`requireNoWrite(${JSON.stringify({ error: { code: "42501", message: "permission denied for table games" } })})`, context),
-    /database authorization error/,
+    /database authorization boundary/,
   );
 });
 
@@ -226,7 +225,7 @@ test("requireHidden accepts only database denial or an RLS-empty result", () => 
   for (const error of [...NON_AUTHORIZATION_FAILURES, ...AUTHENTICATION_FAILURES]) {
     assert.throws(
       () => vm.runInContext(`requireHidden(${JSON.stringify({ error })})`, context),
-      /non-database-authorization reason/,
+      /DENIAL-KIND-MISMATCH/,
       `${error.code} was accepted as proof that private rows were hidden: ${error.message}`,
     );
   }
@@ -251,7 +250,7 @@ test("the PII allowlist check demands a schema error, not an authorization one",
   const authz = { error: { code: "42501", message: "permission denied for table profiles" } };
   assert.throws(
     () => vm.runInContext(`requireColumnAbsent(${JSON.stringify(authz)})`, context),
-    /Expected the column to be absent/,
+    /DENIAL-KIND-MISMATCH/,
   );
 });
 
@@ -262,7 +261,7 @@ test("the permissive requireDenied helper is gone", () => {
 
 test("database guards are asserted by their own message", () => {
   const { context } = loadMatrix();
-  const locked = { error: { message: "Game abc is final and locked. Unlock it (with a reason) before editing." } };
+  const locked = { error: { code: "P0001", message: "Game abc is final and locked. Unlock it (with a reason) before editing." } };
   assert.match(
     vm.runInContext(`requireGuardRejection(${JSON.stringify(locked)}, /final and locked/i, "the game lock")`, context),
     /Rejected by the game lock/,
@@ -270,7 +269,7 @@ test("database guards are asserted by their own message", () => {
   const wrong = { error: { code: "23505", message: "duplicate key value violates unique constraint" } };
   assert.throws(
     () => vm.runInContext(`requireGuardRejection(${JSON.stringify(wrong)}, /final and locked/i, "the game lock")`, context),
-    /unexpected reason/,
+    /DENIAL-KIND-MISMATCH/,
   );
 });
 
@@ -292,7 +291,7 @@ test("the ledger privilege boundary rejects authentication failures", () => {
   for (const error of rejected) {
     assert.throws(
       () => vm.runInContext(`requirePrivilegeDenied(${JSON.stringify({ error })})`, context),
-      /table-privilege boundary/,
+      /DENIAL-KIND-MISMATCH/,
       `accepted a non-privilege failure: ${error.code} ${error.message}`,
     );
   }
@@ -308,4 +307,126 @@ test("a real table-privilege denial still passes", () => {
   // A 42501 that is NOT a privilege denial must not satisfy this narrower claim.
   const rlsOnly = { error: { code: "42501", message: "new row violates row-level security policy" } };
   assert.throws(() => vm.runInContext(`requirePrivilegeDenied(${JSON.stringify(rlsOnly)})`, context));
+});
+
+/* ===========================================================================
+ * TYPED DENIAL — CROSS PRODUCT
+ *
+ * Five review rounds found the same defect one helper further out each time.
+ * Enumerating helpers one at a time is what kept missing it, so this asserts
+ * the whole grid: every helper against every wrong code, each carrying text
+ * that would satisfy it if the code were ignored.
+ *
+ * The decoy text is the point. A wrong code with innocuous text proves little;
+ * a wrong code carrying EXACTLY the words the helper looks for is the failure
+ * mode that actually occurred, five times.
+ * ========================================================================= */
+
+// Codes that must never satisfy any denial helper.
+const WRONG_CODES = [
+  "PGRST301", "PGRST302",           // authentication — role never reached the DB
+  "23502", "23503", "23505", "23514", // constraint violations
+  "22P02",                            // invalid input syntax
+  "42703", "PGRST204",                // schema / missing column
+  "42883",                            // missing function
+  "P0001",                            // a guard raise, when a guard is not the claim
+  "42501",                            // real authorization, when it is not THIS claim
+];
+
+// text each helper is looking for — used as the decoy under every wrong code.
+const HELPERS = [
+  { call: "requireAuthorizationDenied", decoy: "permission denied for table games",
+    validCodes: ["42501"], validMessage: "permission denied for table games" },
+  { call: "requirePrivilegeDenied", decoy: "permission denied for table scorekeeping_events",
+    validCodes: ["42501"], validMessage: "permission denied for table scorekeeping_events" },
+  // Two valid codes: PostgREST reports a missing column either way.
+  { call: "requireColumnAbsent", decoy: 'column "email" does not exist',
+    validCodes: ["42703", "PGRST204"], validMessage: 'column "email" does not exist' },
+  { call: "requireNoWrite", decoy: "permission denied for table charges",
+    validCodes: ["42501"], validMessage: "permission denied for table charges" },
+  { call: "requireHidden", decoy: "permission denied for table profiles",
+    validCodes: ["42501"], validMessage: "permission denied for table profiles" },
+];
+
+test("no helper accepts its own decoy text under a wrong code", () => {
+  const { context } = loadMatrix();
+  for (const helper of HELPERS) {
+    for (const code of WRONG_CODES) {
+      if (helper.validCodes.includes(code)) continue;
+      const payload = { error: { code, message: helper.decoy } };
+      assert.throws(
+        () => vm.runInContext(`${helper.call}(${JSON.stringify(payload)})`, context),
+        undefined,
+        `${helper.call} accepted decoy text under ${code}`,
+      );
+    }
+  }
+});
+
+test("every helper still accepts its own valid code+message pair", () => {
+  const { context } = loadMatrix();
+  for (const helper of HELPERS) {
+    for (const code of helper.validCodes) {
+      const payload = { error: { code, message: helper.validMessage } };
+      assert.doesNotThrow(
+        () => vm.runInContext(`${helper.call}(${JSON.stringify(payload)})`, context),
+        `${helper.call} rejected its own valid pair under ${code}`,
+      );
+    }
+  }
+});
+
+test("details and hint never decide the verdict — only message does", () => {
+  const { context } = loadMatrix();
+  // The exact shape that slipped through round five: a real 42501 RLS
+  // violation whose HINT echoes table-privilege wording.
+  const rlsWithPrivilegeHint = {
+    error: {
+      code: "42501",
+      message: "new row violates row-level security policy for table games",
+      hint: "permission denied for table games",
+    },
+  };
+  assert.throws(
+    () => vm.runInContext(`requirePrivilegeDenied(${JSON.stringify(rlsWithPrivilegeHint)})`, context),
+    /DENIAL-KIND-MISMATCH/,
+  );
+  // It IS a valid database-authorization denial, just not a table-privilege one.
+  assert.doesNotThrow(
+    () => vm.runInContext(`requireAuthorizationDenied(${JSON.stringify(rlsWithPrivilegeHint)})`, context),
+  );
+});
+
+test("guards require P0001 and their own message", () => {
+  const { context } = loadMatrix();
+  const good = { error: { code: "P0001", message: "Admin only: assert_admin() rejected the call." } };
+  assert.doesNotThrow(() => vm.runInContext(`requireAdminGuard(${JSON.stringify(good)})`, context));
+
+  const lock = { error: { code: "P0001", message: "Game abc is final and locked. Unlock it (with a reason) first." } };
+  assert.doesNotThrow(() =>
+    vm.runInContext(`requireGuardRejection(${JSON.stringify(lock)}, /final and locked/i, "the game lock")`, context));
+
+  // Right code, wrong guard message.
+  const otherGuard = { error: { code: "P0001", message: "Some other business rule fired." } };
+  assert.throws(() => vm.runInContext(`requireAdminGuard(${JSON.stringify(otherGuard)})`, context));
+});
+
+test("an uncoded error is never a denial", () => {
+  const { context } = loadMatrix();
+  for (const helper of HELPERS) {
+    const payload = { error: { message: helper.decoy } };
+    assert.throws(
+      () => vm.runInContext(`${helper.call}(${JSON.stringify(payload)})`, context),
+      undefined,
+      `${helper.call} accepted an uncoded error`,
+    );
+  }
+});
+
+test("requireNoWrite and requireHidden still accept an empty successful result", () => {
+  const { context } = loadMatrix();
+  assert.match(vm.runInContext("requireNoWrite({ data: [], error: null })", context), /zero rows/);
+  assert.match(vm.runInContext("requireHidden({ data: [], error: null })", context), /zero private rows/);
+  // A non-empty result is exposure, not confidentiality.
+  assert.throws(() => vm.runInContext('requireHidden({ data: [{ id: 1 }], error: null })', context));
 });

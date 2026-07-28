@@ -90,117 +90,142 @@ function requireSuccess(result, message = "Request failed") {
  * classes appear.
  * -------------------------------------------------------------------------- */
 
-// PostgreSQL responses that prove the request reached the database permission
-// boundary. 42501 is insufficient_privilege, raised for both table-privilege
-// denial and RLS policy violation on INSERT. PostgREST authentication errors
-// such as PGRST301/PGRST302 are deliberately excluded: an expired JWT or
-// missing API key proves only that the intended role never reached the
-// database, so it cannot substantiate an RLS or grant claim.
-const DATABASE_AUTHORIZATION_CODES = new Set(["42501"]);
-const DATABASE_AUTHORIZATION_TEXT = /permission denied|row-level security|insufficient[_ ]privilege/i;
+/* ----------------------------------------------------------------------------
+ * TYPED DENIAL MODEL
+ *
+ * One table, one predicate. Five review rounds each found the same defect one
+ * helper further out: a probe that is EXPECTED to fail was satisfied by the
+ * wrong kind of failure, so an evidence row asserted a boundary that was never
+ * exercised. Fixing helpers individually kept reproducing it, because each fix
+ * re-derived "what counts" from whichever errors were on my mind that round.
+ *
+ * So denial kinds are declared, not reasoned about at the call site. Each names
+ * the SQLSTATE it requires and the message it must carry:
+ *
+ *   THE CODE IS ALWAYS AUTHORITATIVE. A wrong code cannot be rescued by
+ *   convenient text, and text is matched against `error.message` only —
+ *   `details` and `hint` are diagnostic prose that routinely echo other
+ *   errors' wording, which is how a 42501 RLS violation with a
+ *   "permission denied for table" hint passed the narrower table-privilege
+ *   assertion.
+ *
+ * An uncoded error is never a denial. Supabase populates `code` from the
+ * SQLSTATE for every database error, so a missing code means the request never
+ * reached the database — a transport or client failure, which proves nothing
+ * about a boundary. Failing loudly on that is correct; a false FAIL costs a
+ * re-run, a false PASS is recorded as acceptance evidence.
+ * -------------------------------------------------------------------------- */
+
+const DENIAL_KINDS = Object.freeze({
+  // The database refused an authenticated request: table privilege OR RLS.
+  databaseAuthorization: Object.freeze({
+    codes: Object.freeze(["42501"]),
+    pattern: /permission denied|row-level security|insufficient[_ ]privilege/i,
+    label: "database authorization boundary",
+  }),
+  // Narrower: refused specifically at the TABLE-PRIVILEGE boundary. An RLS
+  // policy violation is also 42501 but is a different claim, so the message
+  // must name a privilege on an object.
+  tablePrivilege: Object.freeze({
+    codes: Object.freeze(["42501"]),
+    pattern: /permission denied for (table|relation|view|schema|function|sequence)/i,
+    label: "table-privilege boundary",
+  }),
+  // The column is absent from an allowlisted view by design. A schema error is
+  // the correct proof here; an authorization error would prove the wrong thing.
+  columnAbsent: Object.freeze({
+    codes: Object.freeze(["42703", "PGRST204"]),
+    pattern: /does not exist|could not find|schema cache/i,
+    label: "allowlisted view",
+  }),
+  // A PL/pgSQL guard raised its own exception: assert_admin(), the game lock,
+  // the required-correction-reason check. RAISE EXCEPTION defaults to P0001.
+  guard: Object.freeze({
+    codes: Object.freeze(["P0001"]),
+    pattern: null, // supplied per call site
+    label: "database guard",
+  }),
+});
 
 function errorDetail(error) {
   return `${error?.message || ""} ${error?.details || ""} ${error?.hint || ""}`.trim();
 }
 
-function isDatabaseAuthorizationError(error) {
+// Matches ONLY error.message. details/hint are diagnostic prose that echo other
+// errors' wording and must never decide what a check proved.
+function matchesDenial(error, kind, pattern = kind.pattern) {
   if (!error) return false;
   const code = String(error.code || "");
-  // When the API supplies a code, it is authoritative. Do not let an
-  // authentication/schema/constraint code pass because incidental detail text
-  // happens to contain "permission denied".
-  if (code) return DATABASE_AUTHORIZATION_CODES.has(code);
-  return DATABASE_AUTHORIZATION_TEXT.test(errorDetail(error));
+  if (!code || !kind.codes.includes(code)) return false;
+  return pattern ? pattern.test(String(error.message || "")) : true;
 }
 
-// Use wherever the evidence row claims a database authorization boundary held.
-function requireAuthorizationDenied(result, message = "Request unexpectedly succeeded") {
-  if (!result.error) throw new Error(message);
-  if (!isDatabaseAuthorizationError(result.error)) {
+function requireTypedDenial(result, kind, { pattern, label = kind.label, absent } = {}) {
+  if (!result.error) throw new Error(absent || `Request unexpectedly succeeded; expected the ${label} to reject it.`);
+  if (!matchesDenial(result.error, kind, pattern ?? kind.pattern)) {
+    // Stable prefix so tests can assert the CLASS of failure without coupling
+    // to prose. Five rounds of edits have already churned this wording.
     throw new Error(
-      `Denial was not a database authorization result (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
+      `DENIAL-KIND-MISMATCH [${label}] (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
     );
   }
-  return "Denied at the database authorization boundary.";
+  return `Denied at the ${label}.`;
 }
 
-// Use where the PII allowlist is the property under test. Here a schema-shaped
-// error is exactly right — the column is absent from the view by design — and
-// an authorization error would mean the wrong thing was proven.
-const COLUMN_ABSENT = /does not exist|could not find|schema cache/i;
+// Kept as a predicate for the two helpers that also accept an empty result.
+function isDatabaseAuthorizationError(error) {
+  return matchesDenial(error, DENIAL_KINDS.databaseAuthorization);
+}
+
+function requireAuthorizationDenied(result, message = "Request unexpectedly succeeded") {
+  return requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization, { absent: message });
+}
 
 function requireColumnAbsent(result, message = "Protected column was selectable") {
   if (!result.error) throw new Error(message);
-  const detail = errorDetail(result.error);
-  if (!COLUMN_ABSENT.test(detail) && String(result.error.code) !== "42703" && String(result.error.code) !== "PGRST204") {
-    throw new Error(`Expected the column to be absent from the view, got: ${detail}`);
-  }
+  requireTypedDenial(result, DENIAL_KINDS.columnAbsent, { absent: message });
   return "Column is absent from the allowlisted view.";
 }
 
-// Use where a database GUARD is the property under test — the game lock, a
-// required-reason validation. These raise their own exception text, which is
-// neither an authorization code nor a schema error, so the assertion names the
-// message it expects rather than accepting any failure.
 function requireGuardRejection(result, pattern, label) {
   if (!result.error) throw new Error(`${label} did not reject the request.`);
-  const detail = errorDetail(result.error);
-  if (!pattern.test(detail)) {
-    throw new Error(`${label} rejected for an unexpected reason: ${detail}`);
-  }
+  requireTypedDenial(result, DENIAL_KINDS.guard, { pattern, label });
   return `Rejected by ${label}.`;
 }
 
-// The private ledger boundary. This is the narrowest claim in the matrix — not
-// merely "the database refused" but "it refused at the TABLE-PRIVILEGE
-// boundary" — so it requires the permission-denied text AND a database
-// authorization result. Text alone was not enough: a PostgREST authentication
-// failure carrying incidental "permission denied" detail would have satisfied
-// it, which proves the role never reached the database rather than that the
-// grant held.
 function requirePrivilegeDenied(result) {
-  if (!result.error) {
-    throw new Error("Ledger mutation did not fail at the table-privilege boundary.");
-  }
-  if (!isDatabaseAuthorizationError(result.error) || !/permission denied/i.test(errorDetail(result.error))) {
-    throw new Error(
-      `Ledger mutation did not fail at the table-privilege boundary (code ${result.error.code || "none"}): ${errorDetail(result.error)}`,
-    );
-  }
+  requireTypedDenial(result, DENIAL_KINDS.tablePrivilege, {
+    absent: "Ledger mutation did not fail at the table-privilege boundary.",
+  });
   return "Denied at the table-privilege boundary.";
 }
 
 function requireAdminGuard(result) {
-  if (!result.error || !/admin only/i.test(result.error.message || "")) {
-    throw new Error("RPC did not fail at the admin authorization guard.");
-  }
+  requireTypedDenial(result, DENIAL_KINDS.guard, {
+    pattern: /admin only/i,
+    label: "assert_admin() guard",
+    absent: "RPC did not fail at the admin authorization guard.",
+  });
   return "Rejected by assert_admin().";
 }
 
 function requireNoWrite(result, message = "Write affected a protected row") {
-  // Zero rows is the normal RLS-filtered outcome. An ERROR is also acceptable,
-  // but only a database-authorization-shaped one — otherwise a malformed
-  // payload or invalid session would bank the wrong failure as RLS proof.
+  // Zero rows is the normal RLS-filtered outcome. An error is also acceptable,
+  // but only a database-authorization one.
   if (result.error) {
-    if (!isDatabaseAuthorizationError(result.error)) {
-      throw new Error(`Write failed for a non-database-authorization reason (code ${result.error.code || "none"}): ${errorDetail(result.error)}`);
-    }
-    return "Denied with a database authorization error.";
+    return requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization);
   }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS affected zero rows.";
 }
 
 function requireHidden(result, message = "Private rows were exposed") {
-  // A relation may be hidden either by a real database privilege/RLS denial or
-  // by a successful query whose rows were filtered to an empty set. No other
-  // error proves confidentiality: schema, constraint, authentication, network,
-  // and configuration failures all mean the intended boundary was not tested.
+  // A relation is hidden either by a real privilege/RLS denial or by a
+  // successful query filtered to an empty set. No other error proves
+  // confidentiality: schema, constraint, authentication, transport and
+  // configuration failures all mean the boundary was never reached.
   if (result.error) {
-    if (!isDatabaseAuthorizationError(result.error)) {
-      throw new Error(`Private read failed for a non-database-authorization reason (code ${result.error.code || "none"}): ${errorDetail(result.error)}`);
-    }
-    return "Denied at the database authorization boundary.";
+    return requireTypedDenial(result, DENIAL_KINDS.databaseAuthorization);
   }
   requireCondition(Array.isArray(result.data) && result.data.length === 0, message);
   return "RLS returned zero private rows.";
