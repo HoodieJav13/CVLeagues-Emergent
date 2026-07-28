@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. **The current target surface is Migrations 28 and 29 combined: 28 tables and 26 privileged RPCs.** The last ACCEPTED baseline is Sequence 4 at 27 migrations, covering 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
+This runbook is authoritative for the repeatable hosted authorization procedure. **Migration 28 is published and authorization-accepted; the current target is Migration 29's 28-table / 26-privileged-RPC surface.** The last ACCEPTED baseline is Migration 28 at 28 migrations, covering 26 tables and 25 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
 The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. Both accepted Sequence 4 runs include 248 browser/API checks and eight exact catalog checks, including runtime-RPC ACL coverage plus anonymous/non-admin/AAL1 denial for all ten new endpoints. A populated positive read/write proof remains a separate durable-pilot gate.
 
@@ -39,47 +39,40 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted behavioral baseline is Sequence 4: 27 migrations, 26 tables, and 25 administrator RPCs.
+The current accepted behavioral baseline is Migration 28: 28 migrations, 26 tables, and 25 administrator RPCs.
 
-**Two unhosted migrations change the target surface, and neither has been accepted.** They publish as two separate approved actions with two separate acceptance boundaries; the ordered procedure is below.
+**Migration 28 is complete at its independent acceptance boundary. Migration 29 remains unhosted and unaccepted.** The ordered procedure below preserves the completed Migration 28 record and governs the remaining Migration 29 boundary.
 
 **Migration 28 (Sequence 5A)** adds no table and no net new RPC, so the counts are unchanged by it. It does change three RPC signatures: `append_scorekeeping_event` and `replace_scorekeeping_event` are dropped and recreated with an additive `p_pairing_override_reason text default null`, and `finalize_scorekeeping_session` is replaced at an identical signature. The added parameter is defaulted, so existing named-argument probes still resolve, and the old overloads are dropped rather than left alongside — there is no ambiguity for PostgREST to resolve.
 
 **Migration 29 (venues / `starts_at` / participation)** adds `venues` and `game_participation` (28 tables), adds `set_game_participation` (26 RPCs), and REPLACES `schedule_playoff_match`'s signature — `(uuid, date, text, text)` becomes `(uuid, timestamptz, uuid)`. It also drops `games.date`, `games.time`, and `games.location`, so it is not silently reversible once applied.
 
-**Four RPC signatures have therefore changed since the accepted 256/256 baseline, not one.** This runbook's own re-run trigger fires on any signature change, so all four are in scope:
+**One RPC signature changes beyond the accepted Migration 28 baseline.** Migration 28's three function replacements are already inside the accepted 256/256 surface; Migration 29's `schedule_playoff_match` replacement is the remaining re-run trigger:
 
 | RPC | Change | From |
 |---|---|---|
-| `append_scorekeeping_event` | drop + recreate, additive defaulted parameter | Migration 28 |
-| `replace_scorekeeping_event` | drop + recreate, additive defaulted parameter | Migration 28 |
-| `finalize_scorekeeping_session` | replaced at identical signature | Migration 28 |
 | `schedule_playoff_match` | signature replaced, old overload dropped | Migration 29 |
 
-The three Migration-28 endpoints are already in the denial loop, so their coverage carries over — but confirm each probe still resolves to a real function after the push rather than failing as "function not found," which would read as an authorization defect when it is a stale fixture.
+The three Migration-28 endpoints remain in the denial loop, and their coverage carries forward from the accepted `m28` run. The typed denial model rejects "function not found" as authorization evidence, so stale signatures fail closed.
 
-## Publishing Migrations 28 and 29 — the ordered procedure
+## Publishing Migrations 28 and 29 — ordered checkpoint record
 
 **The CLI cannot publish a subset.** `supabase db push` applies every pending
 migration; `--include-all` broadens that set, it does not narrow it. There is
 no "push only this one" flag. Isolation therefore comes from **what the
 checked-out migrations directory contains**, not from a command-line option.
 
-That single fact drives the whole sequence below. `main` stays where it is
-until Migration 28 is published *and accepted*, because `origin/main` already
-contains Sequence 5A and nothing else beyond it — its migrations directory is
-already exactly the Migration 28 push. Advancing `main` first would put the
-venues migration in that directory and a plain `db push` would publish both,
-bundling the irreversible column drop with the overtime migration.
+That single fact drove the isolated Migration 28 publication and still governs
+Migration 29. Migration 28 was published from `main` and accepted before the
+reconciliation head was allowed onto `main`, preventing the irreversible venues
+migration from riding with it. The remaining steps begin with the post-Migration-28
+checkpoint below.
 
 ### Step by step
 
-1. **Finish independent review of the reconciliation branch head.** No hosted
-   action before it lands.
-2. **Leave `main` where it is.** Its migrations directory is already the
-   Migration 28 push, and its frontend still reads the legacy game shape, so it
-   matches the database it is about to be pointed at.
-3. **From `main`: fresh off-platform logical export, preflight, dry run.**
+1. **COMPLETED — independent review of the reconciliation branch head.**
+2. **COMPLETED — `main` remained at the Migration 28-only surface.**
+3. **COMPLETED — fresh off-platform logical export, preflight, and filename-exact dry run from `main`.**
 
    ```sh
    git fetch origin --prune
@@ -104,16 +97,9 @@ bundling the irreversible column drop with the overtime migration.
    and nothing else.** Match the filename, not the number — the number is a
    position that has already shifted once during this program. If a second
    migration appears, stop: the wrong revision is checked out.
-4. **Exact approval token, then publish Migration 28**, then structural
-   readback: `supabase migration list`, object verification, Security and
-   Performance advisors.
-5. **Separate approval for the fixture write**, then run the matrix with
-   `--surface m28` **from a dedicated worktree at the reconciliation branch
-   head** — see "Running the matrix from a worktree" below. `main` does not
-   carry the two-surface harness at this point, so running from `main` would
-   use the old hard-wired-to-`m29` runner and die during fixture seeding.
-6. **Verify and record.** All three lines must read `PASS`. Commit the dated
-   `m28` evidence file on the reconciliation branch.
+4. **COMPLETED — exact approval token, Migration 28 publication, and structural readback.**
+5. **COMPLETED — separately approved fixture write and `--surface m28` matrix from the reviewed reconciliation worktree.**
+6. **COMPLETED — 248/248 browser/API checks plus 8/8 catalog checks; cleanup and baseline restoration both PASS.** Preserve and commit [`evidence/hosted-auth-matrix-2026-07-28-m28.md`](evidence/hosted-auth-matrix-2026-07-28-m28.md).
 7. **Fresh off-platform logical export.** Migration 29 is the irreversible one;
    this is the backup that matters.
 8. **Confirm that advancing `main` cannot trigger an automatic deployment.** A
@@ -214,7 +200,7 @@ less work fails the contract tests instead of reporting a hollow `PASS`.
 
 Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
-Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-24.md`](evidence/hosted-auth-matrix-2026-07-24.md) records the later run at 256/256 with fixture cleanup and exact restoration both passing. Its execution timestamps use UTC (`2026-07-25`), while the immutable filename uses the America/Denver local run date (`2026-07-24`). The independent [`2026-07-22 Migration-27 evidence`](evidence/hosted-auth-matrix-2026-07-22-m27.md) records the same accepted surface from the earlier run. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding structural gate. The immutable Migration-24 and Migration-23 evidence remain prior checkpoints.
+Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-28-m28.md`](evidence/hosted-auth-matrix-2026-07-28-m28.md) records Migration 28 at 256/256, observed hosted ledger count 28 with latest version `20260723154411`, zero fixture residue, and exact baseline restoration. The prior [`2026-07-25 execution`](evidence/hosted-auth-matrix-2026-07-24.md) and independent [`2026-07-22 Migration-27 evidence`](evidence/hosted-auth-matrix-2026-07-22-m27.md) preserve the Sequence 4 baseline. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding structural gate. The immutable Migration-24 and Migration-23 evidence remain prior checkpoints.
 
 ## Run
 
