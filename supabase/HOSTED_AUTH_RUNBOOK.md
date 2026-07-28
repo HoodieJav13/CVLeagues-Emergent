@@ -82,12 +82,23 @@ bundling the irreversible column drop with the overtime migration.
 3. **From `main`: fresh off-platform logical export, preflight, dry run.**
 
    ```sh
+   git fetch origin --prune
    git branch --show-current      # must be main
-   git log -1 --oneline
+   git status --short             # must print nothing
+   local_main="$(git rev-parse HEAD)"
+   remote_main="$(git rev-parse origin/main)"
+   test "$local_main" = "$remote_main"
+   git log -1 --oneline --decorate
    supabase --version
    supabase migration list
    supabase db push --dry-run
    ```
+
+   The fetch must succeed, the worktree must be clean, and the two resolved
+   SHAs must be byte-for-byte identical. **Stop if local `main` is stale,
+   ahead, or divergent from `origin/main`.** The expected migration filename
+   alone is insufficient: a different commit can carry a same-named migration
+   with different contents.
 
    **The dry run must name `20260723154411_sequence_5a_overtime_pairing_rules.sql`
    and nothing else.** Match the filename, not the number — the number is a

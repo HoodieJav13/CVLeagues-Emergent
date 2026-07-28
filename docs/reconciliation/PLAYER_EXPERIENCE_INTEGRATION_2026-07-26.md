@@ -309,7 +309,7 @@ defaults to "authorization succeeded".
 
 | Helper | Passes only on | Used for |
 |---|---|---|
-| `requireAuthorizationDenied` | `42501`, `PGRST301/302`, or explicit permission-denied / row-level-security text | any row claiming an authorization boundary |
+| `requireAuthorizationDenied` | `42501`, `PGRST301/302`, or explicit permission-denied / row-level-security text **at the R2-G checkpoint; superseded by R2-H below** | any row claiming an authorization boundary |
 | `requireColumnAbsent` | `42703` / `PGRST204` / "does not exist" | the `public_profiles` and `public_hof_entries` PII allowlists, where a *schema* denial is the correct proof and an authorization error would prove the wrong thing |
 | `requireGuardRejection` | a caller-supplied message pattern | database guards with their own text — the game lock, the required-correction-reason check |
 | `requireNoWrite` | zero rows, **or** an authorization-shaped error | RLS-filtered writes |
@@ -348,3 +348,42 @@ offered no additional isolation — only three unrelated stats/UI commits. The
 proposal was made with the migration counts already in hand and the wrong
 conclusion drawn from them. `main` stays where it is; the isolation was always
 already there.
+
+## Repair stage R2-H — authentication failure is not authorization evidence
+
+Independent review found that R2-G's allowlist still combined two different
+boundaries. `PGRST301` and `PGRST302` mean the request's JWT is invalid or the
+required bearer header is absent; they prove the intended session did not
+reach Postgres, not that Postgres grants or RLS denied that session. The shared
+predicate also accepted message-only `jwt` and `no api key` failures, so an
+expired administrator session or broken harness configuration could make
+negative authorization rows pass.
+
+The same class survived separately in `requireHidden`: any error at all was
+reported as a Data API denial. A missing column, constraint failure, invalid
+JWT, or other unrelated error therefore counted as proof that private rows
+were protected.
+
+**The repair separates database authorization from authentication.**
+Database-boundary evidence accepts only PostgreSQL `42501` or explicit
+permission-denied / row-level-security / insufficient-privilege text.
+`PGRST301`, `PGRST302`, JWT errors, missing-key errors, schema errors, and
+constraint errors are rejected. `requireAuthorizationDenied`,
+`requireNoWrite`, and `requireHidden` all consume that same predicate;
+`requireHidden` additionally accepts the intended successful empty-array RLS
+result and rejects a populated result.
+
+Executable regressions cover every previously reproduced constraint/schema
+failure plus `PGRST301`, `PGRST302`, message-only JWT/missing-key failures,
+real `42501` denial, RLS-empty success, and exposed-row failure through all
+applicable helpers. The complete hosted-auth contract suite is now **48/48**.
+The broader verification remains green at 340/340 database assertions plus the
+real two-connection race, 208/208 frontend tests across 38 suites, 21/21 API
+tests, and a successful production build.
+
+The publication preflight was tightened in the same repair. A dry run naming
+the expected migration file is necessary but cannot prove source identity:
+another commit can carry a same-named file with different contents. Before the
+Migration 28 dry run, the runbook now requires a successful fetch, a clean
+`main`, and byte-for-byte equality between local `HEAD` and `origin/main`.
+Stale, ahead, or divergent local state is a hard stop.
