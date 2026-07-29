@@ -70,7 +70,9 @@ describe("Home hierarchy", () => {
     expect(container.textContent).not.toContain("CVF Sports");
     expect(container.querySelectorAll('a[href="/register-team"]')).toHaveLength(1);
     expect(container.querySelectorAll('a[href="/free-agent-signup"]')).toHaveLength(1);
-    expect(container.querySelector('[data-testid="home-desktop-join-actions"]')?.className).toContain("hidden");
+    // C2 (decision 5): the newcomer CTA lives below the fold, not in the hero.
+    expect(container.querySelector('[data-testid="home-desktop-join-actions"]')).toBeNull();
+    expect(container.querySelector('[data-testid="home-join-below-fold"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="cta-register-team"]')).toBeNull();
     expect(container.querySelector('[data-testid="cta-free-agent"]')).toBeNull();
     expect(container.firstElementChild?.className).not.toContain("animate-fade-up");

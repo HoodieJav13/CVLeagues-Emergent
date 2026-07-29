@@ -270,5 +270,79 @@ Clean branch (`d550315`, before any edit):
 `CI=true npm test -- --watchAll=false` → **38 suites passed, 208 tests passed,
 0 failed** (48.2s). This is the floor the batch must stay at or above.
 
+---
+
+# Pass 4 — Remaining batches, HALF 1 (2026-07-29)
+
+Owner authorized executing the rest of Pass 4, then split it in two on
+review-cadence grounds. **Half 1 = the four decided page recompositions**
+(Schedule D2 #8, Standings A2 #3 + data graphics #4, Game Detail B2 #1,
+Home C2 #5) on branch `pass4-remaining` off `main` at `ba2d995`. **Half 2**
+(Team/Profile, Playoffs, forms, voice #9) waits for owner review of this half.
+Out of scope and untouched: cinematic budget (#6, Pass 5), page-signature X3
+and OG cards (undecided/deferred), B3 poster (approved only as a dedicated
+shareable frame; not built).
+
+Baseline: the Identity-batch merge state — 38 suites / 208 tests passing.
+
+## Batch A — Schedule D2 (decision 8)
+
+Mobile rows became stacked scorelines: away line first (list-order convention
+stated once in the page subtitle), score per line, winner bold / loser muted,
+display-type names that wrap — the 38-char fixture renders whole. Kickoff time
+rides the away line on upcoming games; forfeits read W/L with "Forfeit" in the
+meta line. Calendar export moved below the register. The ALREADY FINE desktop
+grid is untouched (dual-render with CSS breakpoint switching — the component
+renders both layouts; the test asserts both).
+
+## Batch B — Standings A2 + worm (decisions 3, 4)
+
+Addendum 7 recorded before the code. Leader hero row (40px gold numeral,
+2rem record), 20px full-opacity form chips (the carried Batch 2 spec), W-L-T
+records, PF/diff/streak context line, and a per-row point-share bar replacing
+the always-on gold rail. One layout at every viewport — **the latent
+tie-honesty BLOCKING is resolved** (a 1-1-1 team can never again render as
+0-0). The differential worm renders behind the "Season shape" disclosure,
+closed by default, `aria-hidden`, from a local pure helper over existing
+selectors.
+
+## Batch C — Game Detail B2 (decision 1, Addendum 8)
+
+Addendum 8 recorded before the code. Team-color fields at 38% mix meet at the
+score; matchup h1 is sr-only (the scoreboard is the title); scores at
+4rem/4.5rem; state/date/time each speak once. Judgment calls:
+
+18. **The centered FINAL/FORFEIT chip is the sole state statement on decided
+    games**, so the StatusBadge renders only for undecided states — which also
+    retires the red CANCELED badge beside FORFEIT (the Identity batch's logged
+    status-language finding, resolved here as designed rather than patched).
+19. **Chip anchors to the score band**, not the vertical center — the first
+    draft overlapped the 38-char name; bold placement must not occlude.
+20. **Upcoming games keep the proven focal time** inside the new color
+    environment; their meta line shows venue only (the focal already states
+    date and time).
+21. GameDetail.test's h1 typography assertions were replaced with sr-only
+    assertions — deliberate, per Addendum 8.
+
+## Batch D — Home C2 (decision 5)
+
+- Hero arrival states, decided on the league's calendar date: game day →
+  "GAMES TONIGHT/TODAY" (via `isNightGame` — the Addendum 6 cutoff reused) +
+  first-kick time at 3rem/4.5rem + venue; off-day → "NEXT: {WEEKDAY}" +
+  first-kick fact; no future games → the original Current Leagues block
+  (honest fallback — the frozen seed relative to the real clock hits this).
+- Game-day strip: scroll-snap, finger-driven, no idle motion; card per game.
+- "New Teams" feed from `registrations`: **"wants in" for unapproved
+  submissions, "just joined" only for approved ones** (judgment call 22 — the
+  decision's example copy said "just joined", but announcing an unreviewed
+  interest form as a joined team would misstate the product's own
+  interest-≠-registration rule; team name + sport only, no captain PII).
+- Newcomer CTA moved below the fold; **the sticky MobileJoinBar is unmounted
+  from the layout everywhere** (judgment call 23: with data pages excluded by
+  decision 5 and Home's CTA below the fold, the bar had no remaining surface;
+  the component and its tests stay dormant rather than deleted).
+- Captures use Playwright clock injection (2026-06-30 15:00 league time for
+  game day; 2026-06-29 for off-day) — the seed itself is untouched.
+
 ## Out-of-scope observations for later batches
 
