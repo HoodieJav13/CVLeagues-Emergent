@@ -4,6 +4,7 @@ import { CheckCircle, Warning } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { SectionHeading } from "../components/common/Section";
+import { FormSurface, FormSection } from "../components/common/FormSection";
 import { SPORTS } from "../lib/statsConfig";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -123,9 +124,9 @@ export default function TeamRegistration() {
         </div>
       )}
 
+      <FormSurface>
       {/* Captain info */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-foreground text-sm">Captain Info</p>
+      <FormSection n={1} title="Captain Info">
         <Field label="Legal Name" required error={errors.captain_name}>
           <Input data-testid="reg-captain-name" value={form.captain_name} onChange={(e) => set("captain_name", e.target.value)} placeholder="First and last name" className="bg-surface-sunken border-border" />
         </Field>
@@ -135,11 +136,10 @@ export default function TeamRegistration() {
             <Input data-testid="reg-captain-email" aria-label="Email" type="email" value={form.captain_email} onChange={(e) => set("captain_email", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
-      </div>
+      </FormSection>
 
       {/* Team info */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-foreground text-sm">Team Info</p>
+      <FormSection n={2} title="Team Info">
         <Field label="Team Name" required error={errors.team_name}>
           <Input data-testid="reg-team-name" value={form.team_name} onChange={(e) => set("team_name", e.target.value)} placeholder="e.g. Westside Warriors" className="bg-surface-sunken border-border" />
         </Field>
@@ -179,10 +179,10 @@ export default function TeamRegistration() {
             className="bg-surface-sunken border-border"
           />
         </Field>
-      </div>
+      </FormSection>
 
       {/* Consent */}
-      <div className="bg-card border border-border rounded-2xl p-5">
+      <FormSection n={3} title="Consent">
         <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
           <Checkbox data-testid="reg-consent" checked={consent_to_contact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
@@ -191,7 +191,8 @@ export default function TeamRegistration() {
           </span>
         </label>
         {errors.consent && <p className="text-xs text-destructive mt-2 ml-7">{errors.consent}</p>}
-      </div>
+      </FormSection>
+      </FormSurface>
 
       <Button
         onClick={submit}
