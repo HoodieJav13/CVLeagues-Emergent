@@ -6,6 +6,21 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start", "--prefix", "frontend"],
       "port": 3000
+    },
+    {
+      "name": "cvf-mock",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "REACT_APP_SUPABASE_URL=",
+        "REACT_APP_SUPABASE_ANON_KEY=",
+        "REACT_APP_TURNSTILE_SITE_KEY=",
+        "BROWSER=none",
+        "npm",
+        "start",
+        "--prefix",
+        "frontend"
+      ],
+      "port": 3000
     }
   ]
 }
