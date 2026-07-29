@@ -238,6 +238,37 @@ The app speaks **broadcast as its base register with a local-warm lean**:
 - Operational/admin surfaces keep their precise, denser register — this
   section governs public copy.
 
+## Pass 5 motion scope — cinematic budget spend (ADDENDUM 10)
+
+**Balance amendment (owner-approved in principle as Pass 4 decision 6;
+scoped and recorded here at the start of the Pass 5 motion pass, 2026-07-29).**
+
+The 70/20/10 balance shifts to **65/20/15**, with the additional cinematic
+weight spent only on audience-guaranteed state moments, in the contract's
+existing vocabulary (settle / shift-weight / reveal; 400–600ms; ease-out with
+a confident stop; transform/opacity only for the 60fps floor):
+
+- **Game-day arrival settle** — the Home takeover hero and today's-games strip
+  settle in once on arrival; the strip staggers. Never idles afterward.
+- **Fresh-final settle** — the Game Detail color fields, FINAL chip, and
+  scores settle when a decided game renders; the Home featured final shares
+  the beat.
+- **The monument settles** — Standings rows settle with a short stagger and
+  each point-share bar grows once to its width (scaleX, origin left).
+- **Bracket reveal** — the secondary showcase: playoff rounds reveal
+  left-to-right with staggered match settles, same vocabulary, no separate
+  language. The **Eliminated** state from the original contract ships with
+  it (desaturated identity, muted label, no red).
+- **Clinch/Advanced flourish stays dormant** in Season 1: every team
+  qualifies, so the state never varies; the beat waits for data that can
+  actually change.
+
+Motion tokens are defined (not just referenced) from this pass:
+`--motion-fast` 200ms, `--motion-settle` 500ms, `--ease-out` ease-out, and
+`--ease-settle` (a decelerating cubic-bezier with no overshoot).
+`prefers-reduced-motion` always receives the complete final state instantly —
+every beat is enhancement on top of an already-correct static rendering.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

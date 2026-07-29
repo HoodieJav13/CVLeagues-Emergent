@@ -392,5 +392,49 @@ results land here after opening night"). Admin/auth surfaces keep their
 precise register per the addendum — the "administrator" strings in RoleGate/
 recovery flows are deliberately untouched.
 
+---
+
+# Post-Pass 4 stage work (2026-07-29, on `main` after the owner's push)
+
+## Maintenance — parallel-test flake (owner-directed)
+
+Resolved with evidence; see the rewritten backlog entry in CLAUDE.md. Zero
+open handles; cause is chronic machine contention; mega-test split + one
+documented global 20s budget. 210/210 parallel under load ~390.
+
+## Signed rushing yardage (INV-03) — done locally
+
+No schema needed: the ledger runtime already allowlists signed `rushYards` on
+`carry` events (local harness re-baselined at 340/340 + concurrency,
+`LC_ALL=C` required on this machine). The carry control gained the signed
+yards input parallel to the completed-pass control; one event carries
+`carries +1` and the signed `rushYards` delta. Invariant matrix row updated to
+RESOLVED LOCALLY; hosted positive proof stays with the durable pilot.
+
+## Practice mode — STOPPED at an owner gate, by design
+
+Every candidate shape amends a load-bearing Migration 24 invariant (game-bound
+sessions, composite anti-fork keys, per-game sequencing). Three shapes with
+tradeoffs and a recommendation (Option B — practice sessions without games,
+structural exclusion inside the already-private tables) are recorded in
+`docs/scoring/PRACTICE_MODE_DESIGN_2026-07-29.md`. Migration 30 waits for the
+owner's shape choice.
+
+## Pass 5 motion (Addendum 10 recorded first)
+
+Motion tokens defined (`--motion-fast/settle`, `--ease-out/settle` — they were
+referenced but never defined; judgment call 26: defining them fixed silently
+zero-duration transitions on two hover states). Four beats in the contract
+vocabulary, transform/opacity only, one-time, non-idle: game-day arrival
+settle + strip stagger; fresh-final settle (fields, chip, scores); the
+monument settle (row stagger + share-bar scaleX growth); bracket reveal
+stagger as the secondary showcase. The **Eliminated** contract state shipped
+with it (desaturated identity, muted label, no red) on bracket loser slots.
+Clinch flourish stays dormant (judgment call 27: all Season 1 teams qualify,
+so the state cannot vary — building it would animate a constant).
+Reduced-motion: every class no-ops under `reduce`; parity directly verified by
+computed-style assertion and four forced-reduce captures
+(`docs/audit/pass5-motion-captures/`).
+
 ## Out-of-scope observations for later batches
 

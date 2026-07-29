@@ -143,7 +143,7 @@ const BracketView = ({ state, seeds, matches, isAdmin, app, league }) => {
   const rounds = [...new Set(matches.map((item) => item.round_number))].sort((a, b) => a - b);
   return (
     <div className="space-y-4">
-      <div className="flex gap-4 overflow-x-auto pb-3" data-testid="playoff-bracket">
+      <div className="flex gap-4 overflow-x-auto pb-3 cvf-bracket-reveal" data-testid="playoff-bracket">
         {rounds.map((round) => (
           <div key={round} className="w-72 shrink-0 space-y-3">
             <h2 className="font-display uppercase tracking-tight text-sm text-gold">Round {round}</h2>
@@ -182,8 +182,8 @@ const MatchCard = ({ state, match, isAdmin, app, league }) => {
         <span className="text-micro uppercase tracking-widest text-muted-foreground">{match.label}</span>
         <StatusBadge status={match.status} />
       </div>
-      <TeamSlot state={state} teamId={match.home_team_id} seed={match.home_seed} winner={match.winner_team_id === match.home_team_id} />
-      <TeamSlot state={state} teamId={match.away_team_id} seed={match.away_seed} winner={match.winner_team_id === match.away_team_id} />
+      <TeamSlot state={state} teamId={match.home_team_id} seed={match.home_seed} winner={match.winner_team_id === match.home_team_id} eliminated={Boolean(match.winner_team_id) && match.home_team_id && match.winner_team_id !== match.home_team_id} />
+      <TeamSlot state={state} teamId={match.away_team_id} seed={match.away_seed} winner={match.winner_team_id === match.away_team_id} eliminated={Boolean(match.winner_team_id) && match.away_team_id && match.winner_team_id !== match.away_team_id} />
       {game && <Link to={`/game/${game.id}`} className="block px-3 py-2 border-t border-border text-xs text-primary hover:bg-white/5"><CalendarBlank size={13} className="inline mr-1" />{formatGameDateTime(game)} · {game.status}</Link>}
       {isAdmin && match.status === "ready" && !match.game_id && <button type="button" ref={scheduleTriggerRef} data-testid={`schedule-match-${match.id}`} onClick={() => setOpen(true)} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-primary hover:bg-primary/10">Schedule or Link Game</button>}
       {isAdmin && canAdvance && <button type="button" data-testid={`advance-match-${match.id}`} onClick={advance} className="w-full border-t border-border px-3 py-2 text-xs font-bold uppercase text-gold hover:bg-gold/10">Advance Final Result</button>}
@@ -192,9 +192,11 @@ const MatchCard = ({ state, match, isAdmin, app, league }) => {
   );
 };
 
-const TeamSlot = ({ state, teamId, seed, winner }) => {
+// Eliminated is the contract's standings-state, not a score-state: identity
+// desaturates and recedes, the label stays muted, and red never appears.
+const TeamSlot = ({ state, teamId, seed, winner, eliminated }) => {
   const team = getTeam(state, teamId);
-  return <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-border last:border-0 ${winner ? "bg-primary/10" : ""}`}><span className="font-mono-score text-xs text-muted-foreground w-5">{seed ? `#${seed}` : "—"}</span><StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} /><span className={`text-sm ${winner ? "text-primary font-semibold" : "text-foreground"}`}>{team?.name || "TBD"}</span></div>;
+  return <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-border last:border-0 ${winner ? "bg-primary/10" : ""} ${eliminated ? "cvf-eliminated" : ""}`}><span className="font-mono-score text-xs text-muted-foreground w-5">{seed ? `#${seed}` : "—"}</span><StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} /><span className={`text-sm ${winner ? "text-primary font-semibold" : "text-foreground"}`}>{team?.name || "TBD"}</span>{eliminated && <span className="cvf-eliminated-label ml-auto">Eliminated</span>}</div>;
 };
 
 const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) => {

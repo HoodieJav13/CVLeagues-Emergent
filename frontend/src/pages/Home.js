@@ -220,7 +220,7 @@ export default function Home() {
         <div className="relative z-10 px-5 py-6 md:px-8 md:py-8 md:max-w-[62%]">
           <div className="min-w-0">
             {gameDay ? (
-              <div data-testid="home-hero-gameday">
+              <div data-testid="home-hero-gameday" className="cvf-settle">
                 <p className="text-label uppercase tracking-widest text-primary">
                   Game day · {formatGameDate(firstKick)}
                 </p>
@@ -263,7 +263,7 @@ export default function Home() {
       {/* TODAY'S GAMES STRIP — game day only, finger-driven scroll-snap, no
           idle motion (decision 5). */}
       {gameDay && (
-        <section aria-label="Today's games" data-testid="home-today-strip" className="cvf-today-strip">
+        <section aria-label="Today's games" data-testid="home-today-strip" className="cvf-today-strip cvf-settle-group">
           {todaysGames.map((g) => <TodayCard key={g.id} game={g} state={state} />)}
         </section>
       )}

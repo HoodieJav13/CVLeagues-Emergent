@@ -18,6 +18,15 @@
 
 @layer base {
     :root {
+        /* ---- Motion (Pass 5, Addendum 10) ----
+           settle / shift-weight / reveal only; micro 150-300ms, transitions
+           400-600ms; confident stop, never overshoot. These were referenced
+           before Pass 5 but never defined — defined here on purpose. */
+        --motion-fast: 200ms;
+        --motion-settle: 500ms;
+        --ease-out: ease-out;
+        --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
+
         /* ---- Brand core ---- */
         --cvf-teal: #5BB8CC;        /* primary brand + primary action */
         --cvf-teal-deep: #3A8A9E;   /* hover/pressed for teal */
@@ -243,6 +252,70 @@
     background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.35) 40%, hsl(var(--primary) / 0.35) 60%, transparent);
     border: none;
     margin: 0;
+}
+
+/* Pass 5 motion beats (Addendum 10). Every beat is a one-time settle or
+   reveal on a state the page has already rendered correctly — transform and
+   opacity only, no idle motion, and under prefers-reduced-motion none of
+   these classes do anything at all: the static rendering IS the content. */
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes cvf-settle-up {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cvf-settle-fade {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes cvf-chip-settle {
+        from { opacity: 0; transform: translate(-50%, 6px); }
+        to { opacity: 1; transform: translate(-50%, 0); }
+    }
+    @keyframes cvf-share-grow {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+    .cvf-settle { animation: cvf-settle-up var(--motion-settle) var(--ease-settle) both; }
+    .cvf-settle-fade { animation: cvf-settle-fade var(--motion-settle) var(--ease-settle) both; }
+    /* Staggered settle for short lists (strip cards, standings rows, bracket
+       matches). Caps at 8 children — beyond that the tail settles together,
+       which reads calmer than a long parade. */
+    .cvf-settle-group > * { animation: cvf-settle-up var(--motion-settle) var(--ease-settle) both; }
+    .cvf-settle-group > *:nth-child(2) { animation-delay: 60ms; }
+    .cvf-settle-group > *:nth-child(3) { animation-delay: 120ms; }
+    .cvf-settle-group > *:nth-child(4) { animation-delay: 180ms; }
+    .cvf-settle-group > *:nth-child(5) { animation-delay: 240ms; }
+    .cvf-settle-group > *:nth-child(6) { animation-delay: 300ms; }
+    .cvf-settle-group > *:nth-child(7) { animation-delay: 360ms; }
+    .cvf-settle-group > *:nth-child(n+8) { animation-delay: 420ms; }
+    .cvf-gd-state-chip.cvf-settle-chip {
+        animation: cvf-chip-settle var(--motion-settle) var(--ease-settle) both;
+        animation-delay: 180ms;
+    }
+    .cvf-standings-row__share > span {
+        transform-origin: left center;
+        animation: cvf-share-grow var(--motion-settle) var(--ease-settle) both;
+        animation-delay: 200ms;
+    }
+    /* Bracket reveal — the secondary showcase: rounds sweep left to right,
+       matches settle inside each round. Same vocabulary, longer stage. */
+    .cvf-bracket-reveal > * { animation: cvf-settle-up var(--motion-settle) var(--ease-settle) both; }
+    .cvf-bracket-reveal > *:nth-child(2) { animation-delay: 180ms; }
+    .cvf-bracket-reveal > *:nth-child(3) { animation-delay: 360ms; }
+    .cvf-bracket-reveal > *:nth-child(n+4) { animation-delay: 540ms; }
+}
+
+/* Eliminated (contract state language, first build): a standings-state, not a
+   score-state — identity desaturates and recedes, label stays muted, no red.
+   Static by design; elimination is a fact, not a performance. */
+.cvf-eliminated { opacity: 0.55; }
+.cvf-eliminated .cvf-identity-badge { filter: saturate(0.25); }
+.cvf-eliminated-label {
+    color: var(--text-secondary);
+    font-size: 0.625rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 /* Pass 4 structural identity system. These lines encode brand, state, stage,

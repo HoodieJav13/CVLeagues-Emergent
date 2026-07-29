@@ -93,7 +93,7 @@ export default function GameDetail() {
         {/* B2 team-color environment: each side is a field of that team's own
             color at ~38% mix, meeting at the score. */}
         <div className="cvf-gd-scoreboard relative -mx-5 md:-mx-7">
-          <div className={`grid items-stretch ${completed ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"}`}>
+          <div className={`grid items-stretch ${completed ? "grid-cols-2 cvf-settle-fade" : "grid-cols-2 md:grid-cols-3"}`}>
             <TeamHead team={away} score={forfeit ? (game.winner_team_id === away?.id ? "W" : "L") : game.away_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === away?.id : game.away_score > game.home_score)} />
             {!completed && (
               <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 pb-2 text-center md:order-none md:col-span-1 md:mt-0 md:self-center" dateTime={gameDateKey(game)}>
@@ -104,7 +104,7 @@ export default function GameDetail() {
             <TeamHead team={home} score={forfeit ? (game.winner_team_id === home?.id ? "W" : "L") : game.home_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === home?.id : game.home_score > game.away_score)} home />
           </div>
           {completed && (
-            <span className="cvf-gd-state-chip">{forfeit ? "Forfeit" : "Final"}</span>
+            <span className="cvf-gd-state-chip cvf-settle-chip">{forfeit ? "Forfeit" : "Final"}</span>
           )}
         </div>
 

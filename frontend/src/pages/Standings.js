@@ -81,7 +81,7 @@ export default function Standings() {
                 <p><span aria-hidden="true" /> All teams qualify · final standings set playoff seeds</p>
               </div>
               <SeasonShape state={state} league={league} rows={rows} />
-              <div className="cvf-standings-register bg-card border border-border overflow-hidden">
+              <div className="cvf-standings-register cvf-settle-group bg-card border border-border overflow-hidden">
                 {rows.length === 0 && (
                   <EmptyState icon={Ranking} title="No teams enrolled yet" message="Teams land here as they join the league." density="compact" />
                 )}
