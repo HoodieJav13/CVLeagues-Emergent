@@ -234,6 +234,8 @@
     text-transform: uppercase;
     color: var(--text-primary);
 }
+/* Stage surfaces (Playoffs) carry the gold stage vocabulary on the band. */
+.cvf-band--gold { border-left-color: var(--cvf-gold); }
 
 /* Teal glow divider for premium section separation */
 .cvf-rule {
