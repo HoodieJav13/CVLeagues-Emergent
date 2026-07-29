@@ -7,7 +7,7 @@ import { SportBadge } from "../components/common/Badges";
 import { PlayerCard } from "../components/player/PlayerCard";
 import { GameCard } from "../components/game/GameCard";
 import { EmptyState, SectionHeading } from "../components/common/Section";
-import { Avatar } from "../components/common/Avatar";
+import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { buildCalendar, downloadCalendar } from "../lib/calendar";
@@ -35,9 +35,7 @@ export default function TeamPage() {
       <Card density="spacious" className="relative overflow-hidden rounded-2xl" style={{ background: `linear-gradient(135deg, ${team.logo_color}22, transparent)` }}>
         <CardContent className="p-[var(--card-spacing)]">
         <div className="flex items-center gap-4">
-          <span className="w-16 h-16 rounded-2xl flex items-center justify-center font-display font-bold text-2xl text-ink" style={{ backgroundColor: team.logo_color }}>
-            {team.name.split(" ").map((w) => w[0]).slice(0, 2).join("")}
-          </span>
+          <StructuralIdentityBadge team={team} />
           <div className="min-w-0">
             <h1 className="font-display uppercase text-display-xl text-foreground">{team.name}</h1>
             <div className="flex items-center gap-2 mt-2">
@@ -103,7 +101,7 @@ export default function TeamPage() {
               <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">{statLabel(team.sport, l.key)}</p>
               {l.profile ? (
                 <>
-                  <Avatar name={l.profile.name} color={l.profile.avatar_color} size={40} className="mx-auto my-2" />
+                  <StructuralIdentityBadge className="cvf-identity-badge--md mx-auto my-2" color={l.profile.avatar_color} name={l.profile.name} />
                   <p className="font-mono-score text-2xl font-bold text-primary leading-none">{l.value}</p>
                   <Link to={`/profile/${l.profile.id}`} className="text-xs text-foreground hover:text-primary truncate block mt-1">{l.profile.name.split(" ")[0]}</Link>
                 </>

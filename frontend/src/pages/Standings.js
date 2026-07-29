@@ -120,7 +120,7 @@ export default function Standings() {
                     {rankLabel}
                   </span>
                   <span className="flex items-center gap-2 min-w-0">
-                    <StructuralIdentityBadge className="cvf-identity-badge--standings" team={team} />
+                    <StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} />
                     <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight whitespace-normal sm:text-base sm:whitespace-nowrap">{team.name}</span>
                   </span>
                   <span className="hidden text-right font-mono-score text-muted-foreground tabular-nums sm:block">{record.played}</span>
