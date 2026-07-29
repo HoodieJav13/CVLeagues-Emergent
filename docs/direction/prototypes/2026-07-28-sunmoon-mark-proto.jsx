@@ -53,16 +53,14 @@ const SunCompliant = ({ color }) => (
   </svg>
 );
 
+/* Moon revision (2026-07-28, owner feedback on the first pair): night is the
+ * league's common state, so the moon carries more weight — solid filled
+ * crescent instead of an outline, which is what actually registers on the
+ * dark surface in a cold read. */
 const MoonCompliant = ({ color }) => (
   <svg width="56" height="44" viewBox="0 0 56 44" aria-hidden="true">
-    <path
-      d="M46 8 a 10.5 10.5 0 1 0 6 18 a 8.5 8.5 0 0 1 -6 -18 Z"
-      stroke={color}
-      strokeWidth="2"
-      fill="none"
-      strokeLinejoin="round"
-    />
-    <path d="M30 10 l1.3 3 3 1.3 -3 1.3 -1.3 3 -1.3 -3 -3 -1.3 3 -1.3 Z" fill={color} />
+    <path d="M42 3 a 14 14 0 1 0 9.5 25 a 11 11 0 0 1 -9.5 -25 Z" fill={color} />
+    <path d="M26 6 l1.8 4 4 1.8 -4 1.8 -1.8 4 -1.8 -4 -4 -1.8 4 -1.8 Z" fill={color} />
   </svg>
 );
 
@@ -90,21 +88,19 @@ const SunBold = ({ color }) => (
 const MoonBold = ({ color }) => (
   <svg width="96" height="72" viewBox="0 0 96 72" aria-hidden="true">
     <defs>
-      <radialGradient id="cvf-moon-wash" cx="80%" cy="20%" r="75%">
-        <stop offset="0%" stopColor={color} stopOpacity="0.18" />
+      <radialGradient id="cvf-moon-wash" cx="78%" cy="22%" r="75%">
+        <stop offset="0%" stopColor={color} stopOpacity="0.24" />
         <stop offset="100%" stopColor={color} stopOpacity="0" />
       </radialGradient>
     </defs>
     <rect width="96" height="72" fill="url(#cvf-moon-wash)" />
-    <path
-      d="M80 5 a 13.5 13.5 0 1 0 9 24 a 11 11 0 0 1 -9 -24 Z"
-      stroke={color}
-      strokeWidth="3.5"
-      fill="none"
-      strokeLinejoin="round"
-    />
-    <path d="M60 4 l1.6 3.6 3.6 1.6 -3.6 1.6 -1.6 3.6 -1.6 -3.6 -3.6 -1.6 3.6 -1.6 Z" fill={color} />
-    <path d="M64 40 l1.1 2.4 2.4 1.1 -2.4 1.1 -1.1 2.4 -1.1 -2.4 -2.4 -1.1 2.4 -1.1 Z" fill={color} />
+    {/* Offset echo first (badge-signature move: duplicate shifted lower-right),
+        then the solid crescent on top — the motif borrows the hexagon badge's
+        own offset-outline grammar instead of generic clip-art moonlight. */}
+    <path d="M81 5 a 16 16 0 1 0 10.5 28.5 a 12.5 12.5 0 0 1 -10.5 -28.5 Z" fill={color} opacity="0.45" />
+    <path d="M78 2 a 16 16 0 1 0 10.5 28.5 a 12.5 12.5 0 0 1 -10.5 -28.5 Z" fill={color} />
+    <path d="M50 3 l2 4.5 4.5 2 -4.5 2 -2 4.5 -2 -4.5 -4.5 -2 4.5 -2 Z" fill={color} />
+    <path d="M64 41 l1.2 2.6 2.6 1.2 -2.6 1.2 -1.2 2.6 -1.2 -2.6 -2.6 -1.2 2.6 -1.2 Z" fill={color} />
   </svg>
 );
 

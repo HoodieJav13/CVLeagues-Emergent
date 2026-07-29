@@ -199,9 +199,29 @@ authority).
     ≥ 6:30 PM); the day captures use the Fall 2025 10:00 AM fixture. Flagged
     to the owner in the manifest.
 
-**STOP: the mark choice (A vs B vs neither) is the owner's. Nothing ships
-until the chosen drawing and confirmed cutoff hour are recorded in the
-contract per Addendum 6.**
+### Moon revision (owner feedback, 2026-07-28, second iteration)
+
+The owner reviewed the first pair and asked for a more impactful moon,
+noting night is the common state (correct — every current-season game starts
+after 6:30 PM, so the moon is effectively the motif). Both moons redrawn:
+
+- **A2 (compliant):** outline crescent → solid filled crescent, ~2× the area,
+  one larger star. Same 56×44 corner zone, no wash.
+- **B2 (bolder):** solid crescent at 16px radius with the badge's
+  offset-echo signature (45%-opacity duplicate shifted 3px lower-right —
+  ties the motif to the hexagon identity grammar), two stars, wash raised to
+  24%. Geometry tightened so the crescent's lower horn clears the status
+  pill instead of re-emerging beneath it (first draft did, and read broken).
+- Suns unchanged; original A/B night captures kept in the folder as decision
+  trail, superseded by `motif-A2/B2-*.jpeg`.
+- Same discipline as the first pass: temporary wiring, captured at 375px,
+  reverted; docs prototype source updated to the revised drawings; product
+  code untouched (verified `git diff frontend/` empty against the verified
+  head, so the 208/208 + build evidence stands).
+
+**STOP (unchanged): the mark choice — A2 vs B2 vs another iteration — is the
+owner's. Nothing ships until the chosen drawing and confirmed cutoff hour are
+recorded in the contract per Addendum 6.**
 
 ## Test baseline
 

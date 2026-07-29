@@ -62,6 +62,27 @@ a ≤22%-opacity tone wash).
 | `motif-B-playoff-upcoming-g13.jpeg` | B · gold; same StageBanner collision |
 | `motif-B-home-featured.jpeg` | B · on Home featured cards (slight sport-pill overlap, visible) |
 
+### Moon revision (owner-directed, same day)
+
+On owner review of the first pair the moon was judged not impactful enough for
+what is in practice the league's default state (every current-season game is a
+night game). Both moons were redrawn — **solid filled crescents replacing the
+outlines** (mass registers on the dark surface where hairline outlines
+disappear), and the bolder variant's crescent now carries the **badge's own
+offset-echo signature** (a 45%-opacity duplicate shifted 3px lower-right, the
+same grammar as the hexagon's offset outline). The suns are unchanged; the
+`motif-A/B-*.jpeg` night shots above are superseded by these and kept only as
+the decision trail:
+
+| File | State |
+| --- | --- |
+| `motif-A2-night-upcoming-g5.jpeg` | A2 · solid crescent + star, teal, 2× area of A's outline moon |
+| `motif-A2-night-final-g1.jpeg` | A2 · neutral tone on a final |
+| `motif-A2-home-featured.jpeg` | A2 · on Home featured cards |
+| `motif-B2-night-upcoming-g5.jpeg` | B2 · solid crescent + offset echo + two stars + 24% wash |
+| `motif-B2-night-final-g1.jpeg` | B2 · neutral tone on a final |
+| `motif-B2-home-featured.jpeg` | B2 · Home; the sport-pill overlap remains visible (placement finding below) |
+
 **Findings shipped with the proposal (not resolved here):**
 
 - **NON-BLOCKING (layout, must be resolved with the mark decision):** on
