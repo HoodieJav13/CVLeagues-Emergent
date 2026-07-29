@@ -254,6 +254,12 @@ function requireAdminGuard(result) {
   return `Rejected by the ${evidence}.`;
 }
 
+function requireAdminRpcDenied(roleKey, result) {
+  return roleKey === "anonymous"
+    ? requireAuthorizationDenied(result)
+    : requireAdminGuard(result);
+}
+
 function requireNoWrite(result, message = "Write affected a protected row") {
   // Zero rows is the normal RLS-filtered outcome. An error is also acceptable,
   // but only a database-authorization one.
@@ -670,7 +676,10 @@ async function runMatrix() {
         await check("migration 29 authorization", `${roleKey} cannot insert participation`, async () =>
           requireAuthorizationDenied(await roleClient.from("game_participation").insert(deniedParticipation)));
         await check("migration 29 authorization", `${roleKey} cannot set participation by RPC`, async () =>
-          requireAdminGuard(await roleClient.rpc("set_game_participation", rpcArguments("set_game_participation"))));
+          requireAdminRpcDenied(
+            roleKey,
+            await roleClient.rpc("set_game_participation", rpcArguments("set_game_participation")),
+          ));
       }
       await check("migration 29 authorization", "no client role can delete a venue", async () =>
         requireNoWrite(await admin.from("venues").delete().eq("id", config.ids.venue).select()));

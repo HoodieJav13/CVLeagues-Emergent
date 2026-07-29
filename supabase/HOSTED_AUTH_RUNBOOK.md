@@ -300,7 +300,8 @@ Both tables are publicly readable by design: where a game is played and who play
 
 - Anonymous and non-admin sessions can query `venues` and `game_participation`.
 - Anonymous and non-admin insert and update are denied on both.
-- Anonymous and non-admin `set_game_participation` fails at `assert_admin()`.
+- Anonymous `set_game_participation` fails at the function-execute privilege
+  boundary; authenticated non-admin access reaches and fails at `assert_admin()`.
 - **No client role can delete a venue**, administrator included. Historical games reference venues, so the lifecycle action is a `status` change to `retired`, never a delete. The migration grants no DELETE to any client role.
 - The `games` column allowlist still holds over the replacement columns: `authenticated` may write `starts_at` and `venue_id` but not `home_score`, `away_score`, or `periods`. The local harness pins the exact allowlist for both INSERT and UPDATE; confirm the hosted grant matches.
 

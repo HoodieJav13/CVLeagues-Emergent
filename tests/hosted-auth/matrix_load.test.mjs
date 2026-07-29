@@ -118,6 +118,45 @@ test("set_game_participation is probed only where the RPC exists", () => {
   );
 });
 
+test("M29 participation RPC denial distinguishes anonymous from authenticated non-admin", () => {
+  const { context } = loadMatrix();
+  const functionPrivilege = {
+    error: { code: "42501", message: "permission denied for function set_game_participation" },
+  };
+  const adminGuard = {
+    error: { code: "P0001", message: "Admin only" },
+  };
+
+  assert.match(
+    vm.runInContext(
+      `requireAdminRpcDenied("anonymous", ${JSON.stringify(functionPrivilege)})`,
+      context,
+    ),
+    /database authorization boundary/,
+  );
+  assert.match(
+    vm.runInContext(
+      `requireAdminRpcDenied("non-admin", ${JSON.stringify(adminGuard)})`,
+      context,
+    ),
+    /assert_admin\(\) guard/,
+  );
+  assert.throws(
+    () => vm.runInContext(
+      `requireAdminRpcDenied("anonymous", ${JSON.stringify(adminGuard)})`,
+      context,
+    ),
+    /DENIAL-KIND-MISMATCH/,
+  );
+  assert.throws(
+    () => vm.runInContext(
+      `requireAdminRpcDenied("non-admin", ${JSON.stringify(functionPrivilege)})`,
+      context,
+    ),
+    /DENIAL-KIND-MISMATCH/,
+  );
+});
+
 test("game payloads carry the right columns for each surface", () => {
   const { context } = loadMatrix();
   vm.runInContext('config = { runId: "run", ids: { venue: "venue-uuid" } };', context);
