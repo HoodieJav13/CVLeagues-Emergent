@@ -168,6 +168,41 @@ authority).
 
 ## Step 3 — Sun/moon motif (decision 7) — proposal only
 
+- **Addendum 6 recorded first** (contract change-control): state-bearing
+  motif, sun = day / moon = night, fixed league-local clock-hour cutoff
+  (working value 6:00 PM America/Denver, confirmed with the mark decision),
+  state tones keep carrying color so no meaning rides on shape alone. The
+  drawing itself is explicitly NOT decided. Non-game ray surfaces (Leaderboards
+  hero) keep the existing rays until the mark is chosen — no false time state.
+- **Both variants rendered in place** on Game Detail and Home featured cards at
+  375px via a temporary wiring that was reverted after capture (PROPOSE, not
+  BUILD — no product surface ships the mark). The SVG source is preserved at
+  `docs/direction/prototypes/2026-07-28-sunmoon-mark-proto.jsx` (not imported
+  by the app) so the chosen drawing doesn't have to be reinvented.
+- Variant A (compliant): 56×44 corner zone, 2px strokes — sun as half-disc on
+  a horizon line with a five-stroke Zia-derived ray fan; moon as open crescent
+  with one four-point star. Variant B (bolder): 96×72 zone, 3.5px strokes,
+  larger disc/crescent, second star, and a ≤22%-opacity tone wash — a genuine
+  push past comfortable, not a second conservative reading.
+- Captures: `docs/audit/pass4-identity-captures/motif-*.jpeg` (10 shots:
+  day/night × final/upcoming/playoff/home × both variants).
+
+### Judgment calls in Step 3
+
+10. **First bold-moon geometry collided with the status badge** and read as
+    broken rather than bold; redrawn to clear the badge before capture. Bold
+    means larger and heavier, not occluded.
+11. **StageBanner/sport-pill collisions were captured, not designed around** —
+    placement on banner-topped frames is part of the owner's mark decision and
+    is logged as a NON-BLOCKING finding in the capture manifest.
+12. **Sun state is rare in current data** (all current-season games start
+    ≥ 6:30 PM); the day captures use the Fall 2025 10:00 AM fixture. Flagged
+    to the owner in the manifest.
+
+**STOP: the mark choice (A vs B vs neither) is the owner's. Nothing ships
+until the chosen drawing and confirmed cutoff hour are recorded in the
+contract per Addendum 6.**
+
 ## Test baseline
 
 Clean branch (`d550315`, before any edit):

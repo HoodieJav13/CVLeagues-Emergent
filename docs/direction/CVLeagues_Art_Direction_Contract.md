@@ -135,6 +135,33 @@ Two decisions ride with the shape:
    record of a changed decision, not a contradiction: where any earlier text
    says octagon, this addendum governs.
 
+## State-bearing sun/moon motif — principle (ADDENDUM 6)
+
+**Motif principle revision (owner-directed, Pass 4 decision 7, 2026-07-28;
+recorded at the start of the Identity batch per change control).**
+
+The three-stroke corner rays are **rejected as drawn**. The ray-derived motif
+becomes **state-bearing**: on game-anchored surfaces it renders as a
+**Zia-derived sun mark for day games** and a **moon/crescent mark for night
+games**. Day versus night is decided by a **fixed league-local clock-hour
+cutoff** — a plain clock hour, never sunset math or location lookup. The
+working cutoff is **6:00 PM America/Denver** (games starting at or after the
+cutoff are night games); the final hour is confirmed alongside the mark
+decision below. The mark keeps the existing structural-tone color system
+(teal upcoming / gold playoff-stage / neutral final) — time-of-day changes the
+*shape*, state keeps the *color*, so no status meaning ever rides on the
+sun/moon distinction alone.
+
+**The drawing itself is not decided.** Per Addendum 2, a contract-compliant
+treatment and a deliberately bolder compliant variant were rendered in place on
+real screens at 375px for the owner to choose between; the chosen mark (and
+its confirmed cutoff hour) must be recorded here before any product surface
+ships it. Non-game surfaces that currently carry the corner rays (e.g. the
+Leaderboards category hero) have no game time and therefore no sun/moon state;
+what replaces their rays is part of the same pending mark decision, and until
+it is recorded they keep the existing rays rather than gaining a false time
+state.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.
