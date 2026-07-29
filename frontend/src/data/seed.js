@@ -28,6 +28,9 @@ export const CURRENT_SEASON = "Summer 2026";
 
 export const seasons = [
   { name: CURRENT_SEASON, status: "active", starts_on: "2026-06-01", ends_on: "2026-08-31" },
+  // Prior season so a franchise can carry real multi-enrollment history
+  // (unkind fixture set, Pass 4 decision 10).
+  { name: "Fall 2025", status: "completed", starts_on: "2025-09-01", ends_on: "2025-11-30" },
 ];
 
 const AVATAR_COLORS = [
@@ -87,6 +90,10 @@ export const profiles = [
 export const leagues = [
   { id: "l1", name: "Duke City Kickball", sport: "kickball", season: CURRENT_SEASON, kind: "league", playoff_format: "single_elim", description: "Albuquerque's premier adult co-ed kickball league. Tuesday & Thursday nights." },
   { id: "l2", name: "Burque Flag Football", sport: "flag_football", season: CURRENT_SEASON, kind: "league", playoff_format: "single_elim", description: "5-on-5 adult flag football under the lights at the West Mesa fields." },
+  // Completed prior season (unkind fixture set): gives two identities a second
+  // enrollment so Franchise History is reachable, and makes the historical
+  // season selectable on season-filtered surfaces.
+  { id: "l3", name: "Duke City Kickball", sport: "kickball", season: "Fall 2025", kind: "league", playoff_format: null, description: "The inaugural Duke City Kickball season." },
 ];
 
 /* ------------------------------- TEAMS ----------------------------------- */
@@ -99,6 +106,10 @@ export const teamIdentities = [
   { id: "ti6", name: "Frontier Force", logo_color: "#3b82f6", founded: "2024", status: "active" },
   { id: "ti7", name: "High Desert Heat", logo_color: "#facc15", founded: "2026", status: "active" },
   { id: "ti8", name: "Route 66 Rush", logo_color: "#ec4899", founded: "2026", status: "active" },
+  // Unkind fixture: 38-character name — the longest a real ABQ team plausibly
+  // registers. Every identity surface must survive it without truncating the
+  // payload (Pass 4 decision 10).
+  { id: "ti9", name: "Los Ranchos de Albuquerque Roadrunners", logo_color: "#14b8a6", founded: "2026", status: "active" },
 ];
 
 export const teams = [
@@ -110,6 +121,15 @@ export const teams = [
   { id: "t6", identity_id: "ti6", name: "Frontier Force", sport: "flag_football", league_id: "l2", captain_id: "p26", logo_color: "#3b82f6", founded: "2024" },
   { id: "t7", identity_id: "ti7", name: "High Desert Heat", sport: "kickball", league_id: "l1", captain_id: null, logo_color: "#facc15", founded: "2026" },
   { id: "t8", identity_id: "ti8", name: "Route 66 Rush", sport: "flag_football", league_id: "l2", captain_id: null, logo_color: "#ec4899", founded: "2026" },
+  // Unkind fixtures (Pass 4 decision 10):
+  // t9 — the 38-char name enrolled in the current kickball season (no roster,
+  //      like t7; its only result is the 0-0 forfeit loss in g16).
+  // t10/t11 — Fall 2025 enrollments of the Rollers and Sluggers identities, so
+  //      both franchises have a real two-enrollment history (t7 stays the
+  //      deliberate empty-team fixture; do not give it games or roster).
+  { id: "t9", identity_id: "ti9", name: "Los Ranchos de Albuquerque Roadrunners", sport: "kickball", league_id: "l1", captain_id: null, logo_color: "#14b8a6", founded: "2026" },
+  { id: "t10", identity_id: "ti2", name: "Rio Grande Rollers", sport: "kickball", league_id: "l3", captain_id: "p6", logo_color: "#f97316", founded: "2022" },
+  { id: "t11", identity_id: "ti1", name: "Sandia Sluggers", sport: "kickball", league_id: "l3", captain_id: "p1", logo_color: "#22d3ee", founded: "2023" },
 ];
 
 /* --------------------------- TEAM_PLAYERS -------------------------------- */
@@ -192,6 +212,16 @@ export const games = [
   { id: "g1", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-06-09T18:30:00-06:00", venue_id: "v2", status: "completed", score_status: "approved", home_score: 7, away_score: 4, periods: { home: [2, 0, 1, 3, 1], away: [0, 1, 2, 0, 1] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g2", league_id: "l1", sport: "kickball", home_team_id: "t2", away_team_id: "t3", starts_at: "2026-06-11T19:30:00-06:00", venue_id: "v1", status: "completed", score_status: "approved", home_score: 4, away_score: 6, periods: { home: [1, 2, 0, 1, 0], away: [0, 3, 1, 2, 0] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g3", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t3", starts_at: "2026-06-16T18:30:00-06:00", venue_id: "v2", status: "completed", score_status: "approved", home_score: 8, away_score: 5, periods: { home: [3, 1, 2, 0, 2], away: [1, 0, 1, 2, 1] }, temp_admin_id: null, locked: false, edit_history: [] },
+  // --- Unkind fixtures (Pass 4 decision 10) ---
+  // g15: a real tie — every ranked surface must express it (W-L-T, T chip,
+  //      shared-rank honesty). Aggregate score only; no per-player stat rows,
+  //      which is itself a legitimate state (score entered, box score skipped).
+  { id: "g15", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t2", starts_at: "2026-06-23T18:30:00-06:00", venue_id: "v1", status: "completed", score_status: "approved", home_score: 5, away_score: 5, periods: { home: [1, 2, 0, 1, 1], away: [0, 2, 1, 2, 0] }, temp_admin_id: null, locked: false, edit_history: [] },
+  // g16: a 0-0 forfeit final in the exact shape isForfeitOutcome requires —
+  //      canceled + final + locked + winner/loser. The Roadrunners (38-char
+  //      name) forfeit to the Sluggers, so long-name and forfeit stress
+  //      combine on one auditable game.
+  { id: "g16", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t9", starts_at: "2026-06-25T19:30:00-06:00", venue_id: "v2", status: "canceled", score_status: "final", outcome_type: "forfeit", winner_team_id: "t1", loser_team_id: "t9", home_score: 0, away_score: 0, periods: { home: [], away: [] }, temp_admin_id: null, locked: true, edit_history: [{ action: "Forfeit recorded", created_at: "2026-06-25T20:05:00Z", reason: "Roadrunners unable to field a team" }] },
   // --- Kickball upcoming ---
   { id: "g4", league_id: "l1", sport: "kickball", home_team_id: "t2", away_team_id: "t1", starts_at: "2026-06-30T18:30:00-06:00", venue_id: "v1", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g5", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t1", starts_at: "2026-07-02T19:30:00-06:00", venue_id: "v2", status: "upcoming", score_status: "pending", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
@@ -201,12 +231,17 @@ export const games = [
   { id: "g8", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t6", starts_at: "2026-06-14T19:00:00-06:00", venue_id: "v4", status: "completed", score_status: "approved", home_score: 13, away_score: 20, periods: { home: [6, 0, 7, 0], away: [7, 7, 0, 6] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g9", league_id: "l2", sport: "flag_football", home_team_id: "t4", away_team_id: "t6", starts_at: "2026-06-21T20:00:00-06:00", venue_id: "v3", status: "completed", score_status: "approved", home_score: 21, away_score: 17, periods: { home: [0, 7, 7, 7], away: [7, 0, 7, 3] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Flag football playoffs (round robin; g10 played, g11/g12 upcoming) ---
-  { id: "g10", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t4", starts_at: "2026-06-26T19:00:00-06:00", venue_id: "v4", status: "completed", score_status: "approved", stage: "playoff", home_score: 20, away_score: 28, periods: { home: [7, 6, 0, 7], away: [7, 7, 7, 7] }, temp_admin_id: null, locked: false, edit_history: [] },
+  // g10 is final + locked (not merely approved) because the seeded bracket
+  // below has already advanced its winner, and advancement legitimately
+  // requires a locked final — the fixture must not contradict that guard.
+  { id: "g10", league_id: "l2", sport: "flag_football", home_team_id: "t5", away_team_id: "t4", starts_at: "2026-06-26T19:00:00-06:00", venue_id: "v4", status: "completed", score_status: "final", stage: "playoff", home_score: 20, away_score: 28, periods: { home: [7, 6, 0, 7], away: [7, 7, 7, 7] }, temp_admin_id: null, locked: true, edit_history: [{ action: "Marked final", created_at: "2026-06-26T21:30:00Z" }] },
   { id: "g11", league_id: "l2", sport: "flag_football", home_team_id: "t6", away_team_id: "t8", starts_at: "2026-07-05T20:00:00-06:00", venue_id: "v3", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
   // --- Kickball playoffs (single elim, after the 07-07 finale; matchups are
   //     mock placeholders — real seeding/bracket UI is a later pass) ---
   { id: "g13", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-07-09T18:30:00-06:00", venue_id: "v2", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
   { id: "g14", league_id: "l1", sport: "kickball", home_team_id: "t3", away_team_id: "t7", starts_at: "2026-07-14T19:00:00-06:00", venue_id: "v1", status: "upcoming", score_status: "pending", stage: "playoff", home_score: null, away_score: null, periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [] },
+  // --- Fall 2025 (completed prior season; franchise-history fixture) ---
+  { id: "g17", league_id: "l3", sport: "kickball", home_team_id: "t11", away_team_id: "t10", starts_at: "2025-10-12T10:00:00-06:00", venue_id: "v1", status: "completed", score_status: "approved", home_score: 9, away_score: 6, periods: { home: [2, 3, 1, 2, 1], away: [1, 2, 0, 2, 1] }, temp_admin_id: null, locked: false, edit_history: [] },
 ].map((g) => ({ stage: "regular", ...g }));
 
 /* ---------------------------- PLAYER_STATS ------------------------------- */
@@ -293,6 +328,31 @@ export const playerStats = [
   ps("s_g10_p23", "g10", "p23", "t5", "flag_football", { catches: 4, recYards: 50, recTDs: 1, recFirstDowns: 2, tds: 1 }),
   ps("s_g10_p24", "g10", "p24", "t5", "flag_football", { flagPulls: 5, defInts: 1 }),
   ps("s_g10_p25", "g10", "p25", "t5", "flag_football", { flagPulls: 4, sacks: 2 }),
+];
+
+/* --------------------------- PLAYOFF BRACKET ------------------------------ */
+// Populated single-elim bracket for Burque Flag Football (unkind fixture set,
+// Pass 4 decision 10) — mirrors exactly what buildSingleElimBracket +
+// advancePlayoffMatch produce for seeds t4/t6/t8/t5 with g10 advanced:
+// Semifinal 1 is complete (t4 over t5, game g10), Semifinal 2 is ready and
+// linked to the scheduled g11, Championship and Third Place each hold one
+// advanced slot and await the second.
+export const playoffBrackets = [
+  { id: "pb1", league_id: "l2", bracket_size: 4, status: "active" },
+];
+
+export const playoffSeeds = [
+  { bracket_id: "pb1", team_id: "t4", seed: 1 },
+  { bracket_id: "pb1", team_id: "t6", seed: 2 },
+  { bracket_id: "pb1", team_id: "t8", seed: 3 },
+  { bracket_id: "pb1", team_id: "t5", seed: 4 },
+];
+
+export const playoffMatches = [
+  { id: "pm1", bracket_id: "pb1", round_number: 1, match_number: 1, label: "Semifinal", home_team_id: "t4", away_team_id: "t5", home_seed: 1, away_seed: 4, game_id: "g10", status: "completed", winner_team_id: "t4", loser_team_id: "t5", winner_to_match_id: "pm3", winner_to_slot: "home", loser_to_match_id: "pm4", loser_to_slot: "home" },
+  { id: "pm2", bracket_id: "pb1", round_number: 1, match_number: 2, label: "Semifinal", home_team_id: "t6", away_team_id: "t8", home_seed: 2, away_seed: 3, game_id: "g11", status: "ready", winner_team_id: null, loser_team_id: null, winner_to_match_id: "pm3", winner_to_slot: "away", loser_to_match_id: "pm4", loser_to_slot: "away" },
+  { id: "pm3", bracket_id: "pb1", round_number: 2, match_number: 1, label: "Championship", home_team_id: "t4", away_team_id: null, home_seed: 1, away_seed: null, game_id: null, status: "pending", winner_team_id: null, loser_team_id: null, winner_to_match_id: null, winner_to_slot: null, loser_to_match_id: null, loser_to_slot: null },
+  { id: "pm4", bracket_id: "pb1", round_number: 2, match_number: 2, label: "Third Place", home_team_id: "t5", away_team_id: null, home_seed: 4, away_seed: null, game_id: null, status: "pending", winner_team_id: null, loser_team_id: null, winner_to_match_id: null, winner_to_slot: null, loser_to_match_id: null, loser_to_slot: null },
 ];
 
 /* --------------- CAREER BASELINE (prior seasons, per player) -------------- */
@@ -416,9 +476,9 @@ export const initialState = {
   scorekeepingParticipants: [],
   scorekeepingEvents: [],
   scorekeepingEventAttributions: [],
-  playoffBrackets: [],
-  playoffSeeds: [],
-  playoffMatches: [],
+  playoffBrackets,
+  playoffSeeds,
+  playoffMatches,
   careerBaselines,
   freeAgents,
   registrations,

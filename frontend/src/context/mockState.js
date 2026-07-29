@@ -7,7 +7,10 @@ export { initialState };
 // date/time/location, and venues/gameParticipation are new collections. A
 // persisted v9 state cannot be repaired into the new game shape without
 // inventing kickoff times, so it is discarded rather than migrated.
-export const STORAGE_VERSION = 10;
+// Bumped to 11 for the Pass 4 unkind fixture set (decision 10): the fixtures
+// exist to keep five stress states permanently auditable, and a persisted v10
+// state would silently hide them, so it is discarded rather than merged.
+export const STORAGE_VERSION = 11;
 export const STORAGE_KEY = `cvf_app_state_v${STORAGE_VERSION}`;
 export const LEGACY_STORAGE_KEYS = Array.from(
   { length: STORAGE_VERSION - 1 },

@@ -8,11 +8,11 @@ import { buildCalendar, downloadCalendar } from "../lib/calendar";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
 import { Button } from "../components/ui/button";
-import { Avatar } from "../components/common/Avatar";
 import { EmptyState } from "../components/common/Section";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { AthleteHoverCard } from "../components/player/AthleteHoverCard";
-import { StructuralCorner, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { SunMoonMark } from "../components/direction/SunMoonMark";
 
 const PERIOD_LABEL = (sport, i) => (sport === "kickball" ? `${i + 1}` : `Q${i + 1}`);
 const PERIOD_HEAD = (sport) => (sport === "kickball" ? "Inning" : "Quarter");
@@ -74,12 +74,14 @@ export default function GameDetail() {
         data-game-stage={game.stage}
         data-testid="game-event-frame"
       >
-        <StructuralCorner tone={isSpecialStage(game) ? "gold" : completed ? "neutral" : "teal"} size="feature" />
+        <SunMoonMark game={game} className={isSpecialStage(game) ? "cvf-sunmoon--below-banner" : ""} />
         <CardContent className="relative z-10 p-5 md:p-7">
         {isSpecialStage(game) && (
           <StageBanner stage={game.stage} className="-mx-5 -mt-5 md:-mx-7 md:-mt-7 mb-5 px-5 md:px-7 py-2 rounded-t-2xl" />
         )}
-        <div className="flex items-center justify-between mb-5">
+        {/* Both badges cluster left so the sun/moon mark owns the corner
+            unoccluded (Addendum 6 placement rule). */}
+        <div className="flex items-center gap-2 mb-5">
           <SportBadge sport={game.sport} />
           <StatusBadge status={game.status} />
         </div>
@@ -181,7 +183,7 @@ export default function GameDetail() {
               <Card key={t.id} density="compact" className="rounded-2xl overflow-hidden">
                 <CardHeader className="border-b border-border py-2.5">
                 <p className="font-display uppercase tracking-tight text-foreground flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.logo_color }} /> {t.name}
+                  <StructuralIdentityBadge className="cvf-identity-badge--sm" team={t} /> {t.name}
                 </p>
                 </CardHeader>
                 <div className="overflow-x-auto">
@@ -200,7 +202,7 @@ export default function GameDetail() {
                             <td className="px-4 py-2.5">
                               <AthleteHoverCard profile={p} team={t}>
                                 <Link to={`/profile/${p.id}`} className="flex items-center gap-2 hover:text-primary active:opacity-80">
-                                  <Avatar name={p.name} color={p.avatar_color} size={28} />
+                                  <StructuralIdentityBadge className="cvf-identity-badge--sm" color={p.avatar_color} name={p.name} />
                                   <span className="font-medium text-foreground truncate">{p.name}</span>
                                 </Link>
                               </AthleteHoverCard>

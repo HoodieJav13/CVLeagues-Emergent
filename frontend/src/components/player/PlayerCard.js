@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Crown } from "@phosphor-icons/react";
-import { Avatar } from "../common/Avatar";
+import { StructuralIdentityBadge } from "../direction/StructuralIdentity";
 import { EligibilityIndicator } from "../common/EligibilityIndicator";
 import { AthleteHoverCard } from "./AthleteHoverCard";
 
@@ -12,7 +12,7 @@ export const PlayerCard = ({ profile, jersey_number, position, isCaptain }) => (
       data-testid={`player-card-${profile.id}`}
       className="flex items-center gap-3 bg-card border border-border rounded-xl p-3 shadow-card transition-all duration-200 hover:border-primary/50 hover:-translate-y-1 hover:shadow-card-hover active:translate-y-0 active:scale-[0.99]"
     >
-      <Avatar name={profile.name} color={profile.avatar_color} size={42} />
+      <StructuralIdentityBadge className="cvf-identity-badge--md" color={profile.avatar_color} name={profile.name} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="font-display uppercase tracking-tight text-foreground truncate text-base">

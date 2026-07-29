@@ -12,6 +12,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from ".
 import { SPORTS } from "../lib/statsConfig";
 import { usePersistedPreference } from "../hooks/usePersistedPreference";
 import { StructuralCorner, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { SunMoonMark } from "../components/direction/SunMoonMark";
 
 // Sandia ridge backgrounds (brand pass) — self-contained dark dusk scenes,
 // used at full opacity. Replaces the stadium/stock photos.
@@ -106,8 +107,9 @@ const ScoreboardFeature = ({ game, kind, state }) => {
       data-testid={`home-scoreboard-${kind}`}
       className="relative overflow-hidden block bg-card border border-border rounded-2xl p-4 md:p-5 shadow-card hover:border-primary/50 hover:shadow-card-hover"
     >
-      <StructuralCorner tone={completed ? "neutral" : "teal"} size="feature" />
-      <div className="flex items-center justify-between mb-3">
+      <SunMoonMark game={game} />
+      {/* Label and sport badge cluster left so the mark owns the corner. */}
+      <div className="flex items-center gap-2 mb-3">
         <span className="text-label uppercase text-muted-foreground">
           {kind === "latest" ? "Latest Final" : "Up Next"}
         </span>

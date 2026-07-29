@@ -11,7 +11,7 @@ import {
 import { HIGHLIGHT_STATS, statLabel, sportName, LEADERBOARD_CATEGORIES, DERIVED_STATS, computeDerivedStat, formatDerivedStat } from "../lib/statsConfig";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { formatGameShortDate } from "../lib/gameTime";
-import { Avatar } from "../components/common/Avatar";
+import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 import { SportBadge } from "../components/common/Badges";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
@@ -45,7 +45,7 @@ export default function AthleteProfile() {
       <Card density="spacious" className="relative overflow-hidden rounded-2xl" style={{ background: `linear-gradient(135deg, ${profile.avatar_color}22, transparent)` }}>
         <CardContent className="p-[var(--card-spacing)]">
         <div className="flex items-center gap-4">
-          <Avatar name={profile.name} color={profile.avatar_color} size={72} />
+          <StructuralIdentityBadge color={profile.avatar_color} name={profile.name} />
           <div className="min-w-0">
             <h1 className="font-display uppercase text-display-xl text-foreground">{profile.name}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -134,7 +134,7 @@ const TeamHistory = ({ teams }) => (
       {teams.map((t) => (
         <Link key={t.id} to={`/team/${t.team.id}`} className="flex items-center justify-between gap-3 min-h-11 p-2.5 rounded-xl hover:bg-white/5 active:bg-white/10 transition-colors">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.team.logo_color }} />
+            <StructuralIdentityBadge className="cvf-identity-badge--sm" team={t.team} />
             <span className="font-medium text-foreground truncate">{t.team.name}</span>
             <SportBadge sport={t.team.sport} />
           </div>

@@ -19,7 +19,7 @@ describe("structural identity primitives", () => {
     container.remove();
   });
 
-  test("renders a team-colored octagonal fallback with an offset outline", async () => {
+  test("renders a team-colored hexagonal fallback with an offset outline", async () => {
     await act(async () => root.render(
       <StructuralIdentityBadge team={{ name: "Rio Runners", logo_color: "#5BB8CC" }} testId="identity" />
     ));

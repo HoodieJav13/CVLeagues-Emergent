@@ -9,6 +9,7 @@ import { formatGameDateTime, fromDateTimeLocalValue, LEAGUE_TIME_ZONE } from "..
 import { SPORTS } from "../lib/statsConfig";
 import { SectionHeading, EmptyState } from "../components/common/Section";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
+import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../components/ui/select";
@@ -95,7 +96,7 @@ export default function Playoffs() {
               return (
                 <div key={teamId} className="flex items-center gap-3 bg-surface-sunken border border-border rounded-xl px-3 py-2">
                   <span className="font-mono-score text-primary w-6 text-center">{index + 1}</span>
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: team.logo_color }} />
+                  <StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} />
                   <span className="font-medium text-foreground flex-1">{team.name}</span>
                   <span className="text-xs text-muted-foreground">{record?.wins || 0}-{record?.losses || 0} · {record?.diff > 0 ? "+" : ""}{record?.diff || 0}</span>
                   <button type="button" aria-label={`Move ${team.name} up`} disabled={index === 0} onClick={() => moveSeed(index, -1)} className="p-2 disabled:opacity-25"><ArrowUp size={15} /></button>
@@ -169,7 +170,7 @@ const MatchCard = ({ state, match, isAdmin, app, league }) => {
 
 const TeamSlot = ({ state, teamId, seed, winner }) => {
   const team = getTeam(state, teamId);
-  return <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-border last:border-0 ${winner ? "bg-primary/10" : ""}`}><span className="font-mono-score text-xs text-muted-foreground w-5">{seed ? `#${seed}` : "—"}</span><span className="w-2 h-2 rounded-full" style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }} /><span className={`text-sm ${winner ? "text-primary font-semibold" : "text-foreground"}`}>{team?.name || "TBD"}</span></div>;
+  return <div className={`flex items-center gap-2 px-3 py-2.5 border-b border-border last:border-0 ${winner ? "bg-primary/10" : ""}`}><span className="font-mono-score text-xs text-muted-foreground w-5">{seed ? `#${seed}` : "—"}</span><StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} /><span className={`text-sm ${winner ? "text-primary font-semibold" : "text-foreground"}`}>{team?.name || "TBD"}</span></div>;
 };
 
 const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) => {

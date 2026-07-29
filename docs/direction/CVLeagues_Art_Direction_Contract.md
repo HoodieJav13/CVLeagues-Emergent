@@ -135,6 +135,53 @@ Two decisions ride with the shape:
    record of a changed decision, not a contradiction: where any earlier text
    says octagon, this addendum governs.
 
+## State-bearing sun/moon motif — principle (ADDENDUM 6)
+
+**Motif principle revision (owner-directed, Pass 4 decision 7, 2026-07-28;
+recorded at the start of the Identity batch per change control).**
+
+The three-stroke corner rays are **rejected as drawn**. The ray-derived motif
+becomes **state-bearing**: on game-anchored surfaces it renders as a
+**Zia-derived sun mark for day games** and a **moon/crescent mark for night
+games**. Day versus night is decided by a **fixed league-local clock-hour
+cutoff** — a plain clock hour, never sunset math or location lookup. The
+working cutoff is **6:00 PM America/Denver** (games starting at or after the
+cutoff are night games); the final hour is confirmed alongside the mark
+decision below. The mark keeps the existing structural-tone color system
+(teal upcoming / gold playoff-stage / neutral final) — time-of-day changes the
+*shape*, state keeps the *color*, so no status meaning ever rides on the
+sun/moon distinction alone.
+
+**The mark is decided (owner choice, 2026-07-28, from the rendered A2/B2
+pair plus color direction).** The chosen drawing is **A2 — the solid filled
+crescent with a single four-point star** — with fixed celestial colors
+replacing the state-tone coloring originally proposed above:
+
+- **Moon:** solid crescent in white (`--text-primary`), star in Zia gold
+  (`--cvf-gold`). Chosen directly by the owner.
+- **Sun:** a **solid gold half-disc rising over a grounded horizon line, with
+  a symmetric five-ray fan in the Zia alternating-length rhythm** — built with
+  the same filled solidity as the crescent so the pair reads as one system.
+  (Supersedes the stroke-built A2 sun, which the owner rejected on review as
+  amateurish.) *The gold color is an implementation extrapolation of the
+  owner's white-moon/gold-star direction — the gold sun is the brand's own
+  symbol color — and remains vetoable; day games are currently rare (no
+  in-season game starts before 6 PM).*
+- Because the mark no longer carries state tone, game state continues to read
+  from the StatusBadge label and the event-frame border color — consistent
+  with the three-signal rule that meaning never rides on one channel.
+- **Cutoff confirmed: 6:00 PM America/Denver** (start at or after = night).
+  Changing the hour later is a one-constant edit.
+- **Placement rule:** the mark owns the frame's top-right corner; the
+  StatusBadge moves out of that corner (clustered left with the SportBadge)
+  so the mark renders unoccluded at full size. On banner-topped playoff/
+  tournament frames the mark drops below the StageBanner rather than
+  colliding with it.
+- Scope: game-anchored surfaces (Game Detail event frame, Home featured
+  scoreboard cards). Non-game surfaces that carry the corner rays (e.g. the
+  Leaderboards category hero) have no game time and keep the existing rays;
+  their eventual treatment is a later-batch decision.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

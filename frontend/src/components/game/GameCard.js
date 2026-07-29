@@ -4,6 +4,7 @@ import { useApp } from "../../context/AppStateContext";
 import { getTeam, isFinalOutcome, isForfeitOutcome } from "../../lib/selectors";
 import { formatGameDate, formatGameTime, venueLabel } from "../../lib/gameTime";
 import { SportBadge, StatusBadge } from "../common/Badges";
+import { StructuralIdentityBadge } from "../direction/StructuralIdentity";
 import { StageBanner, isSpecialStage } from "./StageBanner";
 
 // Winner/loser weighting (spec §5). Winner: --win text, body-strong weight,
@@ -29,10 +30,7 @@ const TeamLine = ({ team, score, isWinner, isLoser, completed }) => {
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
-        <span
-          className="w-2.5 h-2.5 rounded-full shrink-0"
-          style={{ backgroundColor: team?.logo_color || "var(--border-strong)" }}
-        />
+        <StructuralIdentityBadge className="cvf-identity-badge--sm shrink-0" team={team} />
         <span className={`font-sans normal-case tracking-normal text-base sm:text-sm leading-snug whitespace-normal break-words ${nameEmphasis}`}>
           {team?.name || "TBD"}
         </span>

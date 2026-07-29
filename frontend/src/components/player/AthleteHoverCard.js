@@ -1,5 +1,5 @@
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "../ui/hover-card";
-import { Avatar } from "../common/Avatar";
+import { StructuralIdentityBadge } from "../direction/StructuralIdentity";
 import { SportBadge } from "../common/Badges";
 
 // Desktop enhancement only: the trigger remains an ordinary link on touch
@@ -9,7 +9,7 @@ export const AthleteHoverCard = ({ profile, team, children }) => (
     <HoverCardTrigger asChild>{children}</HoverCardTrigger>
     <HoverCardContent sideOffset={8} className="hidden w-72 border-border bg-card p-4 shadow-lg md:block">
       <div className="flex items-center gap-3">
-        <Avatar name={profile.name} color={profile.avatar_color} size={46} />
+        <StructuralIdentityBadge className="cvf-identity-badge--md" color={profile.avatar_color} name={profile.name} />
         <div className="min-w-0">
           <p className="truncate font-display text-base uppercase tracking-tight text-foreground">{profile.name}</p>
           <p className="text-xs text-muted-foreground">{profile.experience || "CVF athlete"}{team ? ` · ${team.name}` : ""}</p>
