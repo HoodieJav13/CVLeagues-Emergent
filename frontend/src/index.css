@@ -23,7 +23,7 @@
            400-600ms; confident stop, never overshoot. These were referenced
            before Pass 5 but never defined — defined here on purpose. */
         --motion-fast: 200ms;
-        --motion-settle: 500ms;
+        --motion-settle: 560ms;
         --ease-out: ease-out;
         --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -260,7 +260,7 @@
    these classes do anything at all: the static rendering IS the content. */
 @media (prefers-reduced-motion: no-preference) {
     @keyframes cvf-settle-up {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(18px); }
         to { opacity: 1; transform: translateY(0); }
     }
     @keyframes cvf-settle-fade {
@@ -268,8 +268,8 @@
         to { opacity: 1; }
     }
     @keyframes cvf-chip-settle {
-        from { opacity: 0; transform: translate(-50%, 6px); }
-        to { opacity: 1; transform: translate(-50%, 0); }
+        from { opacity: 0; transform: translate(-50%, 12px) scale(0.94); }
+        to { opacity: 1; transform: translate(-50%, 0) scale(1); }
     }
     @keyframes cvf-share-grow {
         from { transform: scaleX(0); }
@@ -281,21 +281,21 @@
        matches). Caps at 8 children — beyond that the tail settles together,
        which reads calmer than a long parade. */
     .cvf-settle-group > * { animation: cvf-settle-up var(--motion-settle) var(--ease-settle) both; }
-    .cvf-settle-group > *:nth-child(2) { animation-delay: 60ms; }
-    .cvf-settle-group > *:nth-child(3) { animation-delay: 120ms; }
-    .cvf-settle-group > *:nth-child(4) { animation-delay: 180ms; }
-    .cvf-settle-group > *:nth-child(5) { animation-delay: 240ms; }
-    .cvf-settle-group > *:nth-child(6) { animation-delay: 300ms; }
-    .cvf-settle-group > *:nth-child(7) { animation-delay: 360ms; }
-    .cvf-settle-group > *:nth-child(n+8) { animation-delay: 420ms; }
+    .cvf-settle-group > *:nth-child(2) { animation-delay: 80ms; }
+    .cvf-settle-group > *:nth-child(3) { animation-delay: 160ms; }
+    .cvf-settle-group > *:nth-child(4) { animation-delay: 240ms; }
+    .cvf-settle-group > *:nth-child(5) { animation-delay: 320ms; }
+    .cvf-settle-group > *:nth-child(6) { animation-delay: 400ms; }
+    .cvf-settle-group > *:nth-child(7) { animation-delay: 480ms; }
+    .cvf-settle-group > *:nth-child(n+8) { animation-delay: 560ms; }
     .cvf-gd-state-chip.cvf-settle-chip {
         animation: cvf-chip-settle var(--motion-settle) var(--ease-settle) both;
-        animation-delay: 180ms;
+        animation-delay: 260ms;
     }
     .cvf-standings-row__share > span {
         transform-origin: left center;
-        animation: cvf-share-grow var(--motion-settle) var(--ease-settle) both;
-        animation-delay: 200ms;
+        animation: cvf-share-grow 700ms var(--ease-settle) both;
+        animation-delay: 280ms;
     }
     /* Bracket reveal — the secondary showcase: rounds sweep left to right,
        matches settle inside each round. Same vocabulary, longer stage. */
