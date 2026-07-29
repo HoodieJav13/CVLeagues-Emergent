@@ -63,7 +63,7 @@ For schema, Auth, RLS, or security work, also run the relevant negative authoriz
 
 ## Visual-pass calibration
 
-- Before any visual audit or implementation pass, read [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md) in full. All addenda are binding, including Addendum 4's badge-outline revision, copper rank-three token, tie convention, and OT7 Leaderboards/stats anchor.
+- Before any visual audit or implementation pass, read [`docs/direction/CVLeagues_Art_Direction_Contract.md`](docs/direction/CVLeagues_Art_Direction_Contract.md) in full. All addenda are binding, including Addendum 4's copper rank-three token, tie convention, and OT7 Leaderboards/stats anchor, and Addendum 5's flat-top hexagon identity badge, which supersedes the octagon while retaining the offset outline.
 - Genuine visual-direction choices require both a compliant treatment and a deliberately bolder contract-compliant variant. A motif or accent must be obvious in a cold still screenshot; ambiguity must not silently resolve toward the least visible option.
 - Use Apple Sports as the Home/Schedule reference anchor, “World Cup 2026, simplified” by sheets.works as the Standings/Playoffs anchor, and OT7 as the Leaderboards/stats anchor.
 - Visual findings use four verdicts: **BLOCKING / NON-BLOCKING / VISUALLY INSUFFICIENT / ALREADY FINE**. VISUALLY INSUFFICIENT catches work that is correct but still reads as a competent template against the reference anchors; include capture evidence and a proposed direction.
