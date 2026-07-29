@@ -248,18 +248,26 @@ describe("franchise history", () => {
         { id: "t1-prev", identity_id: "ti1", name: "Sandia Sluggers", sport: "kickball", league_id: "l-prev", captain_id: "p1", logo_color: "#22d3ee" },
       ],
     };
+    // Seed ti1 already carries a real Fall 2025 enrollment (t11), so the
+    // synthetic Spring row makes three seasons — ordering must hold across
+    // all of them, newest first.
     const history = identityEnrollments(multiSeason, "ti1");
-    expect(history).toHaveLength(2);
+    expect(history).toHaveLength(3);
     expect(history[0].league.season).toBe("Summer 2026");
     expect(history[1].league.season).toBe("Spring 2026");
+    expect(history[2].league.season).toBe("Fall 2025");
   });
 
   test("career record sums every enrollment", () => {
+    // ti1 has two seed enrollments (t1 Summer 2026, t11 Fall 2025), so this
+    // now asserts genuine summation instead of a single-season passthrough.
     const career = identityCareerRecord(state, "ti1");
-    const single = computeTeamRecord(state, "t1");
-    expect(career.seasons).toBe(1);
-    expect(career.wins).toBe(single.wins);
-    expect(career.losses).toBe(single.losses);
+    const current = computeTeamRecord(state, "t1");
+    const prior = computeTeamRecord(state, "t11");
+    expect(career.seasons).toBe(2);
+    expect(career.wins).toBe(current.wins + prior.wins);
+    expect(career.losses).toBe(current.losses + prior.losses);
+    expect(career.ties).toBe(current.ties + prior.ties);
   });
 
   test("an unknown identity yields no history rather than throwing", () => {
