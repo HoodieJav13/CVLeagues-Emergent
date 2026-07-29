@@ -182,6 +182,28 @@ replacing the state-tone coloring originally proposed above:
   Leaderboards category hero) have no game time and keep the existing rays;
   their eventual treatment is a later-batch decision.
 
+## Data graphics behind controls (ADDENDUM 7)
+
+**Anti-pattern amendment (owner-directed, Pass 4 decision 4, 2026-07-28;
+recorded at the start of the Standings batch per change control).**
+
+The anti-pattern list's "decorative charts" line gains a carve-out:
+**hand-drawn SVG data graphics are permitted when they communicate faster than
+the table they accompany**, under all of these conditions:
+
+- **Disclosed behind an explicit control, never open by default** — a labeled
+  toggle the reader chooses to open; the table remains the primary surface.
+- **Never background texture** — a data graphic is content, not atmosphere.
+- Rendered in **team colors and the existing palette only**; no new hues.
+- **Hand-drawn SVG from the app's own selectors** — chart libraries stay
+  shelved, unchanged from the original anti-pattern list.
+- The information in the graphic must also exist in accessible textual form
+  (the table itself); the graphic is `aria-hidden` reinforcement, never the
+  only source.
+
+First approved instances: the Standings point-differential worm and team-form
+sparklines. Every other line of the anti-pattern list stands.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

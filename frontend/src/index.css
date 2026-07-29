@@ -741,7 +741,7 @@
 .cvf-standings-heading h2 {
     color: var(--text-primary);
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -763,17 +763,86 @@
     background: var(--cvf-gold);
 }
 .cvf-standings-register { border-radius: var(--radius-lg); }
-.cvf-standings-row {
-    position: relative;
-    min-height: 3.5rem;
-    padding-left: 1rem;
+/* A2 recomposition (decision 3): one row layout at every viewport — rank
+   numeral, badge, name + form chips, record + PF/diff/streak — with a
+   point-share bar per row. The old always-on gold qualification rail is
+   retired; qualification lives in the aria-label and the seed number. */
+.cvf-standings-row { position: relative; }
+.cvf-standings-row__body {
+    display: grid;
+    grid-template-columns: 2.5rem auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    padding: 0.75rem 1rem 0.625rem;
 }
-.cvf-standings-row[data-playoff-qualified="true"]::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: var(--cvf-gold);
+.cvf-standings-row__rank {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-align: center;
+}
+.cvf-standings-row--leader .cvf-standings-row__rank { font-size: 2.5rem; }
+.cvf-standings-row--leader .cvf-standings-row__body { padding-block: 0.875rem 0.75rem; }
+.cvf-standings-row__identity { display: flex; min-width: 0; flex-direction: column; gap: 0.375rem; }
+.cvf-standings-row__name {
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+.cvf-standings-row--leader .cvf-standings-row__name { font-size: 1.125rem; font-weight: 700; }
+.cvf-standings-row__figures {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    text-align: right;
+}
+.cvf-standings-row__record {
+    color: var(--text-primary);
+    font-family: var(--font-score);
+    font-size: 1.625rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+}
+.cvf-standings-row--leader .cvf-standings-row__record { font-size: 2rem; }
+.cvf-standings-row__context {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-family: var(--font-score);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.cvf-standings-row__share {
+    display: block;
+    height: 4px;
+    background: var(--surface-sunken);
+}
+.cvf-standings-row__share > span { display: block; height: 100%; }
+
+@media (min-width: 768px) {
+    .cvf-standings-row__body { grid-template-columns: 3.25rem auto minmax(0, 1fr) auto; column-gap: 1rem; padding: 0.875rem 1.25rem 0.75rem; }
+    .cvf-standings-row__rank { font-size: 1.75rem; }
+    .cvf-standings-row--leader .cvf-standings-row__rank { font-size: 3rem; }
+    .cvf-standings-row__name { font-size: 1.125rem; }
+    .cvf-standings-row--leader .cvf-standings-row__name { font-size: 1.375rem; }
+    .cvf-standings-row__record { font-size: 1.875rem; }
+    .cvf-standings-row--leader .cvf-standings-row__record { font-size: 2.5rem; }
+    .cvf-standings-row__context { font-size: 0.8125rem; }
 }
 
 /* Pass 4, Batch 2.5: OT7-informed multi-category leaderboard dashboard. */
