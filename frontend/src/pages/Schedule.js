@@ -132,7 +132,7 @@ export default function Schedule() {
           {state.seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
         </Filter>
         <Filter label="League" value={league_id} onChange={(v) => { setLeagueId(v); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-league">
-          <SelectItem value="all">All Containers</SelectItem>
+          <SelectItem value="all">All Leagues</SelectItem>
           {leagues.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}{l.kind === "tournament" ? " · Tournament" : ""}</SelectItem>)}
         </Filter>
         <Filter label="Team" value={team_id} onChange={(v) => { setTeamId(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-team">
@@ -162,7 +162,7 @@ export default function Schedule() {
             </section>
           ))
         ) : (
-          <EmptyState icon={CalendarX} title="No games found" message="Try adjusting your filters." />
+          <EmptyState icon={CalendarX} title="No games match these filters" message="Loosen one and the schedule opens back up." />
         )}
       </FilterResultRegion>
 

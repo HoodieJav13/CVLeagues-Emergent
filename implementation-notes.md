@@ -344,5 +344,53 @@ score; matchup h1 is sr-only (the scoreboard is the title); scores at
 - Captures use Playwright clock injection (2026-06-30 15:00 league time for
   game day; 2026-06-29 for off-day) — the seed itself is untouched.
 
+---
+
+# Pass 4 — Remaining batches, HALF 2 (2026-07-29)
+
+Branch `pass4-half2` off `main` at `ceb028b` (the Half-1 merge). Scope: the
+approved-but-unbuilt Team/Profile, Playoffs, and forms batches plus the voice
+pass (decision 9, Addendum 9 recorded first).
+
+## Batch E — Team/Profile
+
+TeamPage: stat pills → the previously-dead StatStrip (record now shows ties);
+roster card grid → hairline register rows (badge, name, crown/eligibility,
+position · jersey). AthleteProfile: highlight tiles → StatStrip with
+league-rank sub-lines (rank testids preserved); card headings adopt
+SectionHeading. StatStrip gained an optional `sub`/`subTestId`.
+
+24. **Stat-leader links show the full name** (was bare first name — audit X2's
+    "6 / Marcus" finding), folded in here since the element was already open.
+25. **PUBLIC/PRIVATE tabs left as-is** for anonymous visitors — the audit's
+    "consider removing" is a product question, not a copy fix; logged, not
+    decided.
+
+## Batch F — Playoffs vocabulary
+
+Gold band on the page heading (SectionHeading `tone` prop, `.cvf-band--gold`);
+the generic trophy empty state became a structural bracket silhouette — seed
+lines merging into a champion flat-top hexagon, gold on the path — the Pass 1R
+finding finally built.
+
+## Batch G — Forms
+
+Both intake forms consolidated onto one FormSurface with numbered FormSection
+steps and internal hairlines (new shared grammar in
+`components/common/FormSection.js`). All testids/validation/Turnstile behavior
+unchanged. Free Agent h1 → "Free Agent Signup" (hyphen wrap fix).
+
+## Batch H — Voice pass (decision 9, Addendum 9)
+
+Addendum 9 (voice register) recorded first: broadcast base, local-warm lean,
+schema vocabulary never leaks, nothing sounds like a form validator. Then the
+public-copy sweep (13 strings): "All Containers" → "All Leagues"; "the
+administrator locks the seeds" → "the league locks the seeds"; empty states
+become invitations with facts ("First game, first numbers", "The table opens
+with the season", "Roster in progress", "No box score for this one", "First
+results land here after opening night"). Admin/auth surfaces keep their
+precise register per the addendum — the "administrator" strings in RoleGate/
+recovery flows are deliberately untouched.
+
 ## Out-of-scope observations for later batches
 

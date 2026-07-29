@@ -110,7 +110,7 @@ export default function TeamPage() {
                 <>
                   <StructuralIdentityBadge className="cvf-identity-badge--md mx-auto my-2" color={l.profile.avatar_color} name={l.profile.name} />
                   <p className="font-mono-score text-2xl font-bold text-primary leading-none">{l.value}</p>
-                  <Link to={`/profile/${l.profile.id}`} className="text-xs text-foreground hover:text-primary truncate block mt-1">{l.profile.name.split(" ")[0]}</Link>
+                  <Link to={`/profile/${l.profile.id}`} className="text-xs text-foreground hover:text-primary truncate block mt-1">{l.profile.name}</Link>
                 </>
               ) : (
                 <p className="text-muted-foreground text-sm mt-3">—</p>
@@ -125,7 +125,7 @@ export default function TeamPage() {
       <section>
         <SectionHeading title="Roster" subtitle={`${roster.length} players`} />
         {roster.length === 0 ? (
-          <EmptyState icon={UsersThree} title="No players assigned" message="Names appear here once an admin builds the roster." density="default" className="bg-card border border-border rounded-xl" />
+          <EmptyState icon={UsersThree} title="Roster in progress" message="Names land here as the lineup comes together." density="default" className="bg-card border border-border rounded-xl" />
         ) : (
           <div className="bg-card border border-border rounded-xl overflow-hidden">
             {roster.map((r) => (

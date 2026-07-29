@@ -353,7 +353,7 @@ export default function Home() {
           {upcoming.length ? (
             upcoming.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
-            <EmptyState icon={CalendarX} title="No upcoming games" message="Try another sport or league filter." density="compact" className="sm:col-span-2 lg:col-span-3" />
+            <EmptyState icon={CalendarX} title="Nothing on the calendar here" message="Try another sport or league." density="compact" className="sm:col-span-2 lg:col-span-3" />
           )}
         </FilterResultRegion>
       </section>
@@ -379,7 +379,7 @@ export default function Home() {
           {recent.length ? (
             recent.map((g) => <GameCard key={g.id} game={g} />)
           ) : (
-            <EmptyState icon={Trophy} title="No final scores yet" message="Results appear after the first games wrap." density="compact" className="sm:col-span-2 lg:col-span-3" />
+            <EmptyState icon={Trophy} title="No finals yet" message="First results land here after opening night." density="compact" className="sm:col-span-2 lg:col-span-3" />
           )}
         </FilterResultRegion>
       </section>

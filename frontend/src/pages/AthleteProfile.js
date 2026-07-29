@@ -220,7 +220,7 @@ const PublicSport = ({ state, profile, sport }) => {
       </div>
 
       {empty ? (
-        <EmptyState icon={Trophy} title="No stats yet" message="Statistics appear after completed games are recorded." density="compact" className="py-4" data-testid="profile-public-nostats" />
+        <EmptyState icon={Trophy} title="First game, first numbers" message="Stats start counting after the first final." density="compact" className="py-4" data-testid="profile-public-nostats" />
       ) : (
       <>
       {/* Highlight strip: the StatStrip grammar with each value carrying its
@@ -295,7 +295,7 @@ const PublicSport = ({ state, profile, sport }) => {
               <span className="font-mono-score text-xs text-primary">{keys.slice(0, 3).map((k) => `${row.stats[k] || 0} ${statLabel(sport, k).split(" ")[0]}`).join(" · ")}</span>
             </Link>
           );
-        }) : <EmptyState icon={CalendarX} title="No games logged" message="Completed games appear here." density="compact" />}
+        }) : <EmptyState icon={CalendarX} title="Game log opens soon" message="Every final this season lands here." density="compact" />}
       </div>
       </>
       )}

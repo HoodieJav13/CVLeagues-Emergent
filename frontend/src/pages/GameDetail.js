@@ -233,7 +233,7 @@ export default function GameDetail() {
         </div>
       )}
       {completed && gameStats.length === 0 && (
-        <EmptyState title="No player stats recorded" message="The final score is available, but no individual box-score rows were submitted." density="default" className="bg-card border border-border rounded-2xl" />
+        <EmptyState title="No box score for this one" message="The final is official — individual stats never made it off the field." density="default" className="bg-card border border-border rounded-2xl" />
       )}
     </div>
   );

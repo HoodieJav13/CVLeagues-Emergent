@@ -73,7 +73,7 @@ export default function Playoffs() {
       </div>
 
       {!league ? (
-        <EmptyState icon={Trophy} title="No playoff league" message="A single-elimination league must be configured before a bracket can be created." />
+        <EmptyState icon={Trophy} title="No playoffs here yet" message="This sport gets a bracket once its league is set up for one." />
       ) : bracket ? (
         <div key={bracket.id} className="space-y-5 animate-fade-in" data-testid="playoff-bracket-reveal">
           <div className="flex flex-wrap items-center gap-2">
@@ -109,7 +109,7 @@ export default function Playoffs() {
           {seedIds.length < 4 && <p className="text-xs text-destructive">At least four active teams are required.</p>}
         </section>
       ) : (
-        <EmptyState icon={BracketSilhouette} title="Bracket not published yet" message={`${league.name}'s bracket will appear after the administrator locks the seeds.`} />
+        <EmptyState icon={BracketSilhouette} title="Bracket not published yet" message={`${league.name}'s bracket goes live once the league locks the seeds.`} />
       )}
     </div>
   );
