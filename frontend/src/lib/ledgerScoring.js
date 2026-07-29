@@ -34,7 +34,7 @@ export const LEDGER_EVENT_OPTIONS = {
     event("three_point", "3-point try", "three_point", 3, "threePoint"),
     event("safety", "Safety", "safety", 2, "safeties"),
     event("completion", "Completed pass", "completion", 0, "completions", "completion"),
-    event("carry", "Carry", "carry", 0, "carries"),
+    event("carry", "Carry (signed yards)", "carry", 0, "carries", "rush"),
     event("flag_pull", "Flag pull", "flag_pull", 0, "flagPulls"),
     event("sack", "Sack", "sack", 0, "sacks"),
     event("interception", "Interception", "interception", 0, "defInts", "interception"),
@@ -87,6 +87,12 @@ export function buildLedgerEventCommand({
       attributions.push(attribution(counterpartParticipantId, "receiver", "catches", 1));
       attributions.push(attribution(counterpartParticipantId, "receiver", "recYards", yardDelta));
     }
+  } else if (option.mode === "rush") {
+    // INV-03: rushing yards are signed — a real play can lose yardage. The
+    // carry count and the yard delta ride one event so the pair can never
+    // drift apart in a correction.
+    attributions.push(attribution(primaryParticipantId, "rusher", "carries", 1));
+    attributions.push(attribution(primaryParticipantId, "rusher", "rushYards", yardDelta));
   } else if (option.mode === "passingTouchdown") {
     attributions.push(attribution(primaryParticipantId, "passer", "passTDs", 1));
     if (counterpartParticipantId) {

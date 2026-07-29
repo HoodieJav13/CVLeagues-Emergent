@@ -31,6 +31,49 @@ describe("ledger scoring commands", () => {
     }));
   });
 
+  test("[INV-03] a carry pairs its count with signed rushing yards in one event", () => {
+    expect(buildLedgerEventCommand({
+      option: option("flag_football", "carry"),
+      periodType: "regulation",
+      periodNumber: 3,
+      creditedTeamId: "offense",
+      primaryParticipantId: "rusher",
+      yardDelta: -6,
+    })).toEqual(expect.objectContaining({
+      event_type: "carry",
+      period_type: "regulation",
+      period_number: 3,
+      points: 0,
+      pairing_override_reason: null,
+      attributions: [
+        { participant_id: "rusher", role: "rusher", stat_key: "carries", stat_delta: 1 },
+        { participant_id: "rusher", role: "rusher", stat_key: "rushYards", stat_delta: -6 },
+      ],
+    }));
+  });
+
+  test("[INV-03] a no-gain carry records zero yards, not a missing delta", () => {
+    const command = buildLedgerEventCommand({
+      option: option("flag_football", "carry"),
+      periodType: "regulation",
+      periodNumber: 1,
+      creditedTeamId: "offense",
+      primaryParticipantId: "rusher",
+      yardDelta: 0,
+    });
+    expect(command.attributions).toContainEqual(
+      { participant_id: "rusher", role: "rusher", stat_key: "rushYards", stat_delta: 0 }
+    );
+    expect(() => buildLedgerEventCommand({
+      option: option("flag_football", "carry"),
+      periodType: "regulation",
+      periodNumber: 1,
+      creditedTeamId: "offense",
+      primaryParticipantId: "",
+      yardDelta: 5,
+    })).toThrow("primary player");
+  });
+
   test("[INV-07] an unpaired command requires and preserves its own reason", () => {
     expect(() => buildLedgerEventCommand({
       option: option("flag_football", "interception"),

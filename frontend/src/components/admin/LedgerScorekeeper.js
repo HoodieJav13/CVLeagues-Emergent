@@ -350,10 +350,14 @@ export function LedgerScorekeeper({ game, onExit }) {
           </div> : null}
         </div> : null}
 
-        {option.mode === "completion" ? <div className="max-w-xs">
-          <Label htmlFor="ledger-yards">Completed-pass yards</Label>
-          <Input id="ledger-yards" type="number" value={yardDelta} onChange={(event) => setYardDelta(Number(event.target.value))} />
-          <p className="mt-1 text-xs text-muted-foreground">Negative yardage is allowed and is mirrored to passer and receiver.</p>
+        {["completion", "rush"].includes(option.mode) ? <div className="max-w-xs">
+          <Label htmlFor="ledger-yards">{option.mode === "rush" ? "Rushing yards (signed)" : "Completed-pass yards"}</Label>
+          <Input id="ledger-yards" type="number" data-testid="ledger-yards" value={yardDelta} onChange={(event) => setYardDelta(Number(event.target.value))} />
+          <p className="mt-1 text-xs text-muted-foreground">
+            {option.mode === "rush"
+              ? "Negative yardage is allowed — a carry can lose ground."
+              : "Negative yardage is allowed and is mirrored to passer and receiver."}
+          </p>
         </div> : null}
 
         {pairedEvent ? <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
