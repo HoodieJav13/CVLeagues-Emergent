@@ -7,7 +7,7 @@ import { SportBadge } from "../components/common/Badges";
 import { PlayerCard } from "../components/player/PlayerCard";
 import { GameCard } from "../components/game/GameCard";
 import { EmptyState, SectionHeading } from "../components/common/Section";
-import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { StatStrip, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { buildCalendar, downloadCalendar } from "../lib/calendar";
@@ -44,11 +44,18 @@ export default function TeamPage() {
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 mt-5">
-          <Stat label="Record" value={`${record.wins}-${record.losses}`} />
-          <Stat label="Pts For" value={record.pointsFor} />
-          <Stat label="Diff" value={`${record.diff > 0 ? "+" : ""}${record.diff}`} accent={record.diff > 0} />
-        </div>
+        {/* The dead StatStrip primitive finally does the job it was built for
+            (audit X1) — one continuous strip with internal rules, and the
+            record now carries ties. */}
+        <StatStrip
+          className="mt-5 bg-surface/60"
+          testId="team-stat-strip"
+          items={[
+            { key: "record", label: "Record", value: `${record.wins}-${record.losses}${record.ties ? `-${record.ties}` : ""}` },
+            { key: "pf", label: "Pts For", value: record.pointsFor },
+            { key: "diff", label: "Diff", value: `${record.diff > 0 ? "+" : ""}${record.diff}`, color: record.diff > 0 ? "var(--cvf-teal)" : undefined },
+          ]}
+        />
         {captain && (
           <p className="text-xs text-muted-foreground mt-4">
             Captain: <Link to={`/profile/${captain.id}`} className="text-primary font-semibold">{captain.name}</Link>
@@ -120,7 +127,7 @@ export default function TeamPage() {
         {roster.length === 0 ? (
           <EmptyState icon={UsersThree} title="No players assigned" message="Names appear here once an admin builds the roster." density="default" className="bg-card border border-border rounded-xl" />
         ) : (
-          <div className="grid sm:grid-cols-2 gap-3">
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
             {roster.map((r) => (
               <PlayerCard key={r.id} profile={r.profile} jersey_number={r.jersey_number} position={r.position} isCaptain={team.captain_id === r.profile_id} />
             ))}
@@ -206,11 +213,3 @@ const FranchiseHistory = ({ state, team }) => {
   );
 };
 
-const Stat = ({ label, value, accent }) => (
-  <Card density="compact" className="bg-surface/60 text-center">
-    <CardContent className="p-[var(--card-spacing)]">
-      <p className={`font-mono-score text-xl font-bold ${accent ? "text-teal" : "text-foreground"}`}>{value}</p>
-      <p className="text-micro uppercase tracking-widest text-muted-foreground mt-0.5">{label}</p>
-    </CardContent>
-  </Card>
-);

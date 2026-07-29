@@ -11,12 +11,12 @@ import {
 import { HIGHLIGHT_STATS, statLabel, sportName, LEADERBOARD_CATEGORIES, DERIVED_STATS, computeDerivedStat, formatDerivedStat } from "../lib/statsConfig";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "../components/ui/select";
 import { formatGameShortDate } from "../lib/gameTime";
-import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { StatStrip, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
 import { SportBadge } from "../components/common/Badges";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 import { Button } from "../components/ui/button";
 import { ComingSoon } from "../components/common/ComingSoon";
-import { EmptyState } from "../components/common/Section";
+import { EmptyState, SectionHeading } from "../components/common/Section";
 import { Card, CardContent } from "../components/ui/card";
 
 export default function AthleteProfile() {
@@ -129,7 +129,7 @@ const SportTabs = ({ sports, render, testid }) => {
 const TeamHistory = ({ teams }) => (
   <Card density="default" className="rounded-2xl">
     <CardContent className="p-[var(--card-spacing)]">
-    <h3 className="font-display uppercase tracking-tight text-foreground mb-3">Team History</h3>
+    <SectionHeading as="h3" title="Team History" className="mb-3" />
     {teams.length ? <div className="space-y-2">
       {teams.map((t) => (
         <Link key={t.id} to={`/team/${t.team.id}`} className="flex items-center justify-between gap-3 min-h-11 p-2.5 rounded-xl hover:bg-white/5 active:bg-white/10 transition-colors">
@@ -223,25 +223,24 @@ const PublicSport = ({ state, profile, sport }) => {
         <EmptyState icon={Trophy} title="No stats yet" message="Statistics appear after completed games are recorded." density="compact" className="py-4" data-testid="profile-public-nostats" />
       ) : (
       <>
-      {/* highlight tiles, each carrying its league rank for this season */}
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        {HIGHLIGHT_STATS[sport].map((key) => {
+      {/* Highlight strip: the StatStrip grammar with each value carrying its
+          league-rank context — the page's best content, now in the system's
+          own voice instead of three floating cards. */}
+      <StatStrip
+        className="mb-5 bg-surface/60"
+        testId={`profile-stat-strip-${sport}`}
+        items={HIGHLIGHT_STATS[sport].map((key) => {
           const rank = playerRankContext(state, profile.id, sport, key, "season", season);
-          return (
-            <Card key={key} density="compact" className="bg-surface/60 text-center">
-              <CardContent className="p-[var(--card-spacing)]">
-                <p className="font-mono-score text-2xl font-bold text-primary leading-none">{seasonTotals[key] || 0}</p>
-                <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1">{statLabel(sport, key)}</p>
-                {rank && (
-                  <p className="text-micro uppercase tracking-widest text-muted-foreground mt-1" data-testid={`profile-rank-${key}`}>
-                    {rank.rankLabel} of {rank.fieldSize}
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-          );
+          return {
+            key,
+            label: statLabel(sport, key),
+            value: seasonTotals[key] || 0,
+            color: "var(--cvf-teal)",
+            sub: rank ? `${rank.rankLabel} of ${rank.fieldSize}` : undefined,
+            subTestId: rank ? `profile-rank-${key}` : undefined,
+          };
         })}
-      </div>
+      />
 
       {/* season vs career table */}
       <div className="overflow-x-auto mb-5">
@@ -319,7 +318,7 @@ const PrivateDetails = ({ profile }) => {
   return (
     <Card density="default" className="rounded-2xl" data-testid="profile-private-details">
       <CardContent className="p-[var(--card-spacing)]">
-        <h3 className="font-display uppercase tracking-tight text-foreground mb-3">Contact &amp; Emergency</h3>
+        <SectionHeading as="h3" title="Contact &amp; Emergency" className="mb-3" />
         <dl className="space-y-2">
           {rows.map((row) => (
             <div key={row.label} className="flex items-baseline justify-between gap-3 border-t border-border pt-2 first:border-0 first:pt-0">

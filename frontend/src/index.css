@@ -407,6 +407,16 @@
     font-variant-numeric: tabular-nums;
     font-weight: 700;
 }
+.cvf-stat-strip__sub {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
 
 .cvf-home-hero { min-height: 13.5rem; isolation: isolate; }
 .cvf-home-hero__backdrop { opacity: 0.58; filter: saturate(0.72) contrast(1.08); }
