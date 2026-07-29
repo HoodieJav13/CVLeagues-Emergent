@@ -107,6 +107,34 @@ Broadcast/editorial governs by default. Culture is texture, not wallpaper. Cinem
 4. **Do not copy:** 10-deep lists. At CVF roster sizes a top-10 is the whole league. Cap at top 5 per category module with an expansion for full leaders.
 Anchor A remains primary for Home/Schedule; Anchor B for Standings/Playoffs; Anchor C for Leaderboards/stats surfaces.
 
+## Identity badge shape — hexagon (ADDENDUM 5)
+
+**Identity badge shape revision (owner-directed, Pass 4 discovery, 2026-07-28).**
+The octagon specified in Addendum 4 and recorded as approved Pass 4 scope in the
+Pass 3 addendum is replaced by a **flat-top hexagon** (flat edge up, vertices
+left/right). The **3px team-color offset outline is retained unchanged**, as are
+the existing badge sizes and the surface-level placement rules. **Supersedes the
+badge shape in Addendum 4 ("badges carry the octagon + offset outline") and the
+Pass 4 scope note in the Pass 3 addendum ("octagon outline + ray mark");** every
+other clause of both addenda stands. All badge work — Game Detail, Team, Profile,
+Schedule/Standings/Leaderboards marks, compact table marks — follows the flat-top
+hexagon.
+
+Two decisions ride with the shape:
+
+1. **One device for every entity.** The hexagon badge is the identity device for
+   teams **and** players, at every size, on every surface. The Team-page
+   rounded-square tile, the color dots on GameCard/Playoffs/box-score headers,
+   and plain circular avatars in identity positions are all retired in favor of
+   the hexagon as batches reach them.
+2. **Evidence basis.** This reverses a decision originally made on owner review
+   of real captures, so it was decided the same way: the owner chose the
+   flat-top hexagon against the octagon and the pointy-top alternative in a
+   side-by-side comparison of identical content at 64/44/28px in 375px frames
+   (`docs/direction/prototypes/2026-07-28-directions.html`, section E0). A
+   record of a changed decision, not a contradiction: where any earlier text
+   says octagon, this addendum governs.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.
