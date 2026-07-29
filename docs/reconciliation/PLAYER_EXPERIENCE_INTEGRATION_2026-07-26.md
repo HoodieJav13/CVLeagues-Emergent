@@ -1,6 +1,6 @@
 # Player-Experience Branch Integration (R2) — 2026-07-26
 
-**Status:** OWNER-APPROVED, staged. **All four stages complete (R2-A through R2-D), plus repair stages R2-E through R2-J.** The player-experience branch is fully integrated; nothing remains unmerged on it. Hosted state unchanged at Migration 27.
+**Status:** OWNER-APPROVED and integrated. **All four stages complete (R2-A through R2-D), plus repair stages R2-E through R2-J.** The player-experience branch is fully integrated; nothing remains unmerged on it. The original integration stages made no hosted mutation. The later gated closeout published and independently accepted Migrations 28 and 29.
 
 Records the staged reconciliation of `claude/sports-league-improvements-esu4eb`
 into `main`, the migration renumbering and the evidence that it is safe, the
@@ -486,3 +486,34 @@ This is local harness verification only. No live matrix was run, no hosted
 state changed, and hosted remains at Migration 27. The first target-environment
 proof remains the separately approved `--surface m28` acceptance run after
 Migration 28 publication.
+
+## Hosted closeout — 2026-07-28/29
+
+The later acceptance program preserved the integration stage's no-hosted-write
+boundary and advanced one separately approved checkpoint at a time:
+
+1. Migration 28 was published and accepted at 256/256.
+2. A fresh off-platform export was captured before the irreversible Migration
+   29 boundary, and Git auto-deployment was ruled out before `main` advanced.
+3. `main` fast-forwarded through the reconciliation head, Migration 29 was the
+   only dry-run delta, and the exact `approved: hosted push of migrations
+   29–29` token authorized its publication.
+4. Structural readback observed 29/29 migrations, 28/28 public tables with
+   RLS, 82/82 indexed public foreign keys, the expected 34 Security / 36
+   Performance advisor census, and the unchanged operational baseline.
+5. The separately approved `--surface m29` matrix first exposed a one-off
+   harness expectation defect: anonymous execution correctly stopped at the
+   function privilege boundary while the duplicated M29 probe incorrectly
+   required `assert_admin()`. Commit `f561c9a` split the role expectations
+   without changing `DENIAL_KINDS`; 75/75 contract tests passed.
+6. The filename-new accepted rerun passed 270/270, removed its fixture
+   namespace, and restored every row count and singleton setting exactly.
+
+Durable acceptance is
+[`hosted-auth-matrix-2026-07-28-m29-rerun-02.md`](../../supabase/evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md)
+(SHA-256
+`81e29cceffb24ec7ab1653bf6cfcf8d3261f508eb8f334ab4a0fc9af97a94158`).
+The invalid-TOTP attempt and the cleanup-safe 269/270 harness-defect run remain
+preserved beside it. `main` contains the reconciliation head and presents the
+same schema surface now hosted. The reconciliation branch has no remaining
+product or migration work.

@@ -21,7 +21,7 @@ const ok = (surface, remote) => compareMigrationState({ local: REPO_VERSIONS, re
 /* ---------------------------------------------------------------------------
  * The repository's real state. If these drift, the surface table is stale.
  * ------------------------------------------------------------------------- */
-test("the repository has 29 migrations and the two unhosted ones are last", () => {
+test("the repository has 29 migrations and Migrations 28–29 remain the final ordered pair", () => {
   assert.equal(REPO_VERSIONS.length, 29);
   assert.equal(REPO_VERSIONS[27], "20260723154411"); // Migration 28, Sequence 5A
   assert.equal(REPO_VERSIONS[28], "20260726120000"); // Migration 29, venues
