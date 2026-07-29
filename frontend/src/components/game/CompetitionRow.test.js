@@ -55,7 +55,9 @@ describe("CompetitionRow", () => {
     const row = container.querySelector('[data-testid="competition-row-playoff-1"]');
     expect(row?.getAttribute("href")).toBe("/game/playoff-1");
     expect(row?.dataset.gameStage).toBe("playoff");
-    expect(container.querySelectorAll('[data-cvf-identity-badge="true"]')).toHaveLength(2);
+    // Two layouts render side by side (stacked mobile + desktop grid), each
+    // carrying both team badges.
+    expect(container.querySelectorAll('[data-cvf-identity-badge="true"]')).toHaveLength(4);
     expect(container.querySelectorAll(".cvf-identity-badge--register")).toHaveLength(2);
     expect(container.querySelector(".cvf-competition-row__focal")?.textContent).toBe("8–5");
     expect(container.querySelector('[data-testid="sport-badge-kickball"]')).not.toBeNull();
@@ -66,6 +68,18 @@ describe("CompetitionRow", () => {
     const homeName = container.querySelector(".cvf-competition-row__team--home .cvf-competition-row__team-name");
     expect(homeName?.classList.contains("text-[var(--loss-text)]")).toBe(true);
     expect(homeName?.textContent).toBe("Rio Runners");
+
+    // D2 stacked scorelines: away line first with its own score, winner bold,
+    // loser muted, full names never truncated into an ellipsis container.
+    const stacked = container.querySelector('[data-testid="competition-stacked-playoff-1"]');
+    const lines = stacked?.querySelectorAll(".cvf-competition-row__stacked-line");
+    expect(lines).toHaveLength(2);
+    expect(lines[0].textContent).toContain("Mesa Heat");
+    expect(lines[0].querySelector(".cvf-competition-row__stacked-value")?.textContent).toBe("8");
+    expect(lines[0].querySelector(".cvf-competition-row__stacked-name")?.classList.contains("font-semibold")).toBe(true);
+    expect(lines[1].textContent).toContain("Rio Runners");
+    expect(lines[1].querySelector(".cvf-competition-row__stacked-value")?.textContent).toBe("5");
+    expect(lines[1].querySelector(".cvf-competition-row__stacked-name")?.classList.contains("text-[var(--loss-text)]")).toBe(true);
   });
 
   test("renders an upcoming regular game with time as its central focal value", async () => {
@@ -84,5 +98,12 @@ describe("CompetitionRow", () => {
     expect(container.querySelector(".cvf-competition-row__focal")?.textContent).toBe("7:15 PM");
     expect(container.textContent).toContain("Upcoming");
     expect(container.querySelector('[data-testid^="stage-banner-"]')).toBeNull();
+
+    // Stacked layout: kickoff time rides the away line; the home line carries
+    // no value until there is a score.
+    const stacked = container.querySelector('[data-testid="competition-stacked-regular-1"]');
+    expect(stacked?.querySelector(".cvf-competition-row__stacked-value--time")?.textContent).toBe("7:15 PM");
+    const lines = stacked?.querySelectorAll(".cvf-competition-row__stacked-line");
+    expect(lines[1].querySelector(".cvf-competition-row__stacked-value")).toBeNull();
   });
 });

@@ -531,20 +531,65 @@
 }
 .cvf-competition-row {
     position: relative;
-    display: grid;
-    min-height: 6rem;
-    grid-template-areas:
-        "sport center status"
-        "away center home"
-        "details details details";
-    grid-template-columns: minmax(0, 1fr) 5rem minmax(0, 1fr);
-    grid-template-rows: 1.125rem minmax(3.125rem, 1fr) 0.875rem;
-    align-items: center;
-    column-gap: 0.5rem;
-    padding: 0.375rem 0.75rem 0.375rem 1rem;
+    display: block;
+    padding: 0.75rem 0.75rem 0.75rem 1rem;
     color: var(--text-primary);
     transition: background-color var(--motion-fast) var(--ease-out);
 }
+/* D2 stacked scorelines (decision 8): away over home, one score per line,
+   names in display type that wrap rather than truncate. Mobile only — the
+   desktop register keeps its proven Batch 1 grid. */
+.cvf-competition-row__stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+}
+.cvf-competition-row__stacked-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.cvf-competition-row__stacked-line {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.625rem;
+}
+.cvf-competition-row__stacked-name {
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+.cvf-competition-row__stacked-value {
+    color: var(--text-primary);
+    font-family: var(--font-score);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+}
+.cvf-competition-row__stacked-value--time {
+    color: var(--cvf-teal);
+    font-size: 1.25rem;
+}
+.cvf-competition-row__stacked-meta {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.625rem;
+    padding-left: 2.375rem;
+    color: var(--text-secondary);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+}
+.cvf-competition-row__grid { display: none; }
 .cvf-competition-row + .cvf-competition-row { border-top: 1px solid hsl(var(--border)); }
 .cvf-competition-row:hover { background: hsl(var(--muted) / 0.35); }
 .cvf-competition-row:focus-visible {
@@ -644,15 +689,18 @@
 .cvf-competition-row__location span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (min-width: 768px) {
-    .cvf-competition-row {
-        min-height: 4.5rem;
+    .cvf-competition-row { min-height: 4.5rem; padding: 0.375rem 1rem; }
+    .cvf-competition-row__stacked { display: none; }
+    .cvf-competition-row__grid {
+        display: grid;
+        min-height: 3.75rem;
         grid-template-areas: "sport away center home meta";
         grid-template-columns: 7.25rem minmax(7.5rem, 1fr) 6.25rem minmax(7.5rem, 1fr) minmax(8.75rem, 11.25rem);
         grid-template-rows: 1fr;
+        align-items: center;
         column-gap: 0.75rem;
-        padding: 0.375rem 1rem;
     }
-    .cvf-competition-row__sport { align-self: center; }
+    .cvf-competition-row__sport { grid-area: sport; align-self: center; min-width: 0; }
     .cvf-competition-row__team { gap: 0.625rem; }
     .cvf-competition-row__team-name { font-size: 0.875rem; }
     .cvf-competition-row .cvf-identity-badge--register {
