@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CVF Pass 4 — Direction Gallery · 2026-07-28</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ————— gallery chrome (not product) ————— */
+  :root{
+    --surface:#0F1416; --raised:#171D20; --sunken:#0A0E10;
+    --border:#2A3236; --border-strong:#3C464B;
+    --teal:#5BB8CC; --teal-deep:#3A8A9E; --teal-tint:#10282E;
+    --gold:#F5B82E; --gold-tint:#2E2410; --zia:#FF5A6E;
+    --copper:#C9825F; --silver:#A9B0B6; --orange:#FB923C;
+    --t1:#F4F6F5; --t2:#A8B0AD; --t3:#7E8883; --ink:#0F1416;
+    --leader-bg:#2E2410;
+    /* seed team colors */
+    --ss:#22d3ee; --rg:#f97316; --nh:#a855f7; --bb:#10b981;
+    --mm:#ef4444; --ff:#3b82f6; --hd:#facc15; --r6:#ec4899;
+    --disp:'Oswald','Arial Narrow',sans-serif; --body:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#070a0b;color:var(--t1);font-family:var(--body);line-height:1.5;padding:2rem 1rem 6rem}
+  .wrap{max-width:1400px;margin:0 auto}
+  h1{font-family:var(--disp);font-size:2rem;text-transform:uppercase;letter-spacing:.02em}
+  .gallery-sub{color:var(--t2);font-size:.875rem;max-width:64ch;margin:.5rem 0 1rem}
+  .legend{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2.5rem}
+  .badge{font-size:.6875rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:.2rem .55rem;border-radius:4px;border:1px solid}
+  .b-compliant{color:var(--teal);border-color:var(--teal)}
+  .b-bolder{color:var(--gold);border-color:var(--gold)}
+  .b-amend{color:var(--zia);border-color:var(--zia)}
+  section.dir{margin:3.5rem 0;border-top:1px solid var(--border-strong);padding-top:2rem}
+  section.dir>h2{font-family:var(--disp);font-size:1.5rem;text-transform:uppercase;color:var(--t1)}
+  section.dir>.why{color:var(--t2);font-size:.875rem;max-width:70ch;margin:.5rem 0 1.5rem}
+  .row{display:flex;gap:1.5rem;overflow-x:auto;padding-bottom:1rem;align-items:flex-start}
+  .variant{flex:0 0 auto;width:375px}
+  .variant .vhead{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem;flex-wrap:wrap}
+  .variant .vhead h3{font-family:var(--disp);font-size:1rem;text-transform:uppercase;font-weight:600}
+  .variant .delta{font-size:.75rem;color:var(--t3);margin:.5rem 0 0;line-height:1.55}
+  .variant .delta b{color:var(--t2)}
+  .phone{width:375px;background:var(--surface);border:1px solid var(--border-strong);border-radius:14px;overflow:hidden;box-shadow:0 14px 36px rgba(0,0,0,.6)}
+  /* ————— shared product primitives ————— */
+  .oct{display:grid;place-items:center;font-family:var(--disp);font-weight:700;color:var(--t1);position:relative;
+       clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%);background:var(--oc,#5BB8CC)}
+  .oct>span{display:grid;place-items:center;position:absolute;inset:2px;background:var(--raised);
+       clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%)}
+  .o64{width:64px;height:64px;font-size:1.25rem}
+  .o44{width:44px;height:44px;font-size:.875rem}
+  .o28{width:28px;height:28px;font-size:.625rem}
+  /* E0 comparison shapes — override the octagon clip on frame and field */
+  .hexf, .hexf>span{clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+  .hexp, .hexp>span{clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+  .lbl{font-size:.8125rem;letter-spacing:.04em;text-transform:uppercase;color:var(--t2);font-weight:500}
+  .micro{font-size:.6875rem;letter-spacing:.08em;text-transform:uppercase;color:var(--t3);font-weight:500}
+  .band{border-left:4px solid var(--teal);background:var(--sunken);padding:.375rem 1rem .375rem .75rem;
+        font-family:var(--disp);font-size:1.35rem;text-transform:uppercase;font-weight:700;display:inline-block}
+  .score{font-family:var(--disp);font-variant-numeric:tabular-nums;font-weight:700}
+  .pill{font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;border:1px solid;border-radius:999px;padding:.1rem .6rem}
+  .p-kb{color:var(--teal);border-color:var(--teal)} .p-ffb{color:var(--orange);border-color:var(--orange)}
+  .p-final{color:var(--silver);border-color:transparent;background:#1C2327;border-radius:6px}
+  .chip{width:20px;height:20px;border-radius:4px;border:1px solid;display:grid;place-items:center;font-size:11px;font-weight:700}
+  .cw{color:var(--teal);border-color:var(--teal)} .cl{color:var(--t3);border-color:var(--t3)} .ct{color:var(--silver);border-color:var(--silver)}
+  .pad{padding:1rem}
+  .hair{border-top:1px solid var(--border)}
+  /* corner-ray mark */
+  .rays{position:absolute;top:10px;right:10px;width:56px;height:40px;pointer-events:none}
+  .rays i{position:absolute;right:0;top:0;height:2px;background:var(--rc,#F5B82E);transform-origin:right center;display:block}
+  .rays i:nth-child(1){width:44px;transform:rotate(-16deg)}
+  .rays i:nth-child(2){width:34px;transform:rotate(-31deg)}
+  .rays i:nth-child(3){width:25px;transform:rotate(-47deg)}
+  .note{font-size:.75rem;color:var(--t3);border:1px dashed var(--border-strong);border-radius:8px;padding:.6rem .8rem;margin-top:.75rem}
+  /* brainstorm ladder */
+  .ladder{list-style:none;counter-reset:step}
+  .ladder li{counter-increment:step;border-left:2px solid var(--border-strong);padding:.9rem 0 .9rem 1.25rem;position:relative;max-width:78ch}
+  .ladder li::before{content:counter(step,decimal-leading-zero);position:absolute;left:-1.05rem;top:1rem;background:#070a0b;
+        font-family:var(--disp);font-weight:700;color:var(--teal);font-size:.875rem;padding:.1rem .2rem}
+  .ladder b{display:block;font-family:var(--disp);text-transform:uppercase;font-size:.9375rem;letter-spacing:.02em}
+  .ladder p{font-size:.8125rem;color:var(--t2);margin-top:.15rem}
+  .ladder .cost{font-size:.6875rem;text-transform:uppercase;letter-spacing:.06em;color:var(--t3)}
+  a{color:var(--teal)}
+</style>
+</head>
+<body><div class="wrap">
+
+<h1>Pass 4 — Direction Gallery</h1>
+<p class="gallery-sub">Phone-width (375px) mocks for the highest-value findings in the
+<a href="../PASS4_PRE_IMPLEMENTATION_AUDIT_2026-07-28.md">pre-implementation audit</a>. Every direction set pairs a
+contract-compliant treatment with a deliberately bolder compliant variant (Addendum 2 requirement); anything outside
+the current contract is labeled for amendment rather than suppressed. These are scratch artifacts — nothing here is implemented.</p>
+<div class="legend">
+  <span class="badge b-compliant">Compliant</span>
+  <span class="badge b-bolder">Bolder — still compliant</span>
+  <span class="badge b-amend">Requires contract amendment</span>
+</div>
+
+<!-- ============================================================ A. STANDINGS -->
+<section class="dir">
+  <h2>A · Standings, recomposed mobile-first</h2>
+  <p class="why">Finding: at 375px the R2 story (form, streak, ties, GP) is deleted; at 1440 the biggest number is 14px.
+  All three variants below restore content parity at phone width — they differ in how loud the season's shape is allowed to be.</p>
+  <div class="row">
+
+    <!-- A1 compliant -->
+    <div class="variant">
+      <div class="vhead"><h3>A1 · Parity register</h3><span class="badge b-compliant">Compliant</span></div>
+      <div class="phone">
+        <div class="pad">
+          <span class="band">Standings</span>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:14px">
+            <div style="font-family:var(--disp);font-size:1.25rem;text-transform:uppercase;font-weight:700">Duke City Kickball</div>
+            <span class="pill p-kb">Kickball</span>
+          </div>
+          <div class="micro" style="margin-top:2px;border-left:4px solid var(--gold);padding-left:6px">All teams qualify · standings set seeds</div>
+        </div>
+        <div class="hair"></div>
+        <!-- rows: two-line rows, form on line 2 -->
+        <div style="background:var(--leader-bg)">
+          <div style="display:grid;grid-template-columns:26px 28px 1fr 44px 44px 48px;gap:8px;align-items:center;padding:10px 12px 2px">
+            <div class="score" style="font-size:1.125rem;color:var(--gold)">1</div>
+            <div class="oct o28" style="--oc:var(--ss)"><span>SS</span></div>
+            <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.9375rem">Sandia Sluggers</div>
+            <div class="score" style="font-size:1.125rem;text-align:right">2-0</div>
+            <div class="score" style="font-size:.875rem;color:var(--teal);text-align:right">+6</div>
+            <div class="score" style="font-size:.875rem;color:var(--teal);text-align:right">W2</div>
+          </div>
+          <div style="display:flex;gap:4px;padding:4px 12px 10px 74px;align-items:center">
+            <span class="chip cw">W</span><span class="chip cw">W</span>
+            <span class="micro" style="margin-left:6px">last 5</span>
+          </div>
+        </div>
+        <div class="hair"></div>
+        <div>
+          <div style="display:grid;grid-template-columns:26px 28px 1fr 44px 44px 48px;gap:8px;align-items:center;padding:10px 12px 2px">
+            <div class="score" style="font-size:1.125rem;color:var(--t2)">2</div>
+            <div class="oct o28" style="--oc:var(--nh)"><span>NH</span></div>
+            <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.9375rem">Nob Hill Nomads</div>
+            <div class="score" style="font-size:1.125rem;text-align:right">1-1</div>
+            <div class="score" style="font-size:.875rem;color:var(--t3);text-align:right">-1</div>
+            <div class="score" style="font-size:.875rem;color:var(--t3);text-align:right">L1</div>
+          </div>
+          <div style="display:flex;gap:4px;padding:4px 12px 10px 74px"><span class="chip cw">W</span><span class="chip cl">L</span></div>
+        </div>
+        <div class="hair"></div>
+        <div>
+          <div style="display:grid;grid-template-columns:26px 28px 1fr 44px 44px 48px;gap:8px;align-items:center;padding:10px 12px 2px">
+            <div class="score" style="font-size:1.125rem;color:var(--t2)">3</div>
+            <div class="oct o28" style="--oc:var(--rg)"><span>RG</span></div>
+            <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.9375rem">Rio Grande Rollers</div>
+            <div class="score" style="font-size:1.125rem;text-align:right">0-1-1</div>
+            <div class="score" style="font-size:.875rem;color:var(--t3);text-align:right">-3</div>
+            <div class="score" style="font-size:.875rem;color:var(--silver);text-align:right">T1</div>
+          </div>
+          <div style="display:flex;gap:4px;padding:4px 12px 10px 74px"><span class="chip ct">T</span><span class="chip cl">L</span></div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> rows 56→~74px two-line; W-L record at 18px display (was 14px Inter); form chips 20px/11px full-opacity on line 2 (were absent at 375); ties render as W-L-T + T chip. <b>Cost:</b> Standings.js + register CSS; no new components.</p>
+    </div>
+
+    <!-- A2 bolder -->
+    <div class="variant">
+      <div class="vhead"><h3>A2 · The table is the monument</h3><span class="badge b-bolder">Bolder — compliant</span></div>
+      <div class="phone">
+        <div class="pad" style="padding-bottom:.5rem">
+          <span class="band">Standings</span>
+          <div style="font-family:var(--disp);font-size:1.75rem;text-transform:uppercase;font-weight:700;margin-top:12px;line-height:1.05">Duke City<br>Kickball</div>
+          <div class="micro" style="margin-top:4px;border-left:4px solid var(--gold);padding-left:6px">Week 4 of 6 · All teams qualify</div>
+        </div>
+        <!-- leader block -->
+        <div style="background:linear-gradient(135deg,var(--leader-bg),var(--surface) 70%);border-top:1px solid var(--border);position:relative">
+          <div class="rays"><i></i><i></i><i></i></div>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 12px">
+            <div class="score" style="font-size:2.5rem;color:var(--gold);width:34px">1</div>
+            <div class="oct o44" style="--oc:var(--ss)"><span>SS</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:1.125rem">Sandia Sluggers</div>
+              <div style="display:flex;gap:4px;margin-top:4px"><span class="chip cw">W</span><span class="chip cw">W</span></div>
+            </div>
+            <div style="text-align:right">
+              <div class="score" style="font-size:2rem;line-height:1">2-0</div>
+              <div class="micro" style="color:var(--teal)">+6 · W2</div>
+            </div>
+          </div>
+          <!-- diff bar -->
+          <div style="height:4px;background:var(--sunken)"><div style="height:4px;width:70%;background:var(--gold)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px">
+            <div class="score" style="font-size:1.5rem;color:var(--t2);width:34px">2</div>
+            <div class="oct o44" style="--oc:var(--nh)"><span>NH</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:1rem">Nob Hill Nomads</div>
+              <div style="display:flex;gap:4px;margin-top:4px"><span class="chip cw">W</span><span class="chip cl">L</span></div>
+            </div>
+            <div style="text-align:right">
+              <div class="score" style="font-size:1.625rem;line-height:1">1-1</div>
+              <div class="micro">-1 · L1</div>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--sunken)"><div style="height:4px;width:38%;background:var(--border-strong)"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;align-items:center;gap:12px;padding:12px">
+            <div class="score" style="font-size:1.5rem;color:var(--t2);width:34px">3</div>
+            <div class="oct o44" style="--oc:var(--rg)"><span>RG</span></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:1rem">Rio Grande Rollers</div>
+              <div style="display:flex;gap:4px;margin-top:4px"><span class="chip ct">T</span><span class="chip cl">L</span></div>
+            </div>
+            <div style="text-align:right">
+              <div class="score" style="font-size:1.625rem;line-height:1">0-1-1</div>
+              <div class="micro">-3 · T1</div>
+            </div>
+          </div>
+          <div style="height:4px;background:var(--sunken)"><div style="height:4px;width:22%;background:var(--border-strong)"></div></div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> league title 28px; leader row becomes a hero block (40px rank numeral, 44px badge, 32px record, gold rays); every row carries a point-share bar (gold for leader, neutral otherwise — the rail's meaning moves somewhere that varies). <b>Cost:</b> same files as A1 plus hero-row styles; still no dependency.</p>
+    </div>
+
+    <!-- A3 amendment -->
+    <div class="variant">
+      <div class="vhead"><h3>A3 · The season, drawn</h3><span class="badge b-amend">Requires contract amendment</span></div>
+      <div class="phone">
+        <div class="pad" style="padding-bottom:.5rem">
+          <span class="band">Standings</span>
+          <div style="font-family:var(--disp);font-size:1.75rem;text-transform:uppercase;font-weight:700;margin-top:12px">Duke City Kickball</div>
+          <div class="micro" style="margin-top:2px">Point differential, game by game</div>
+        </div>
+        <!-- worm chart -->
+        <div style="padding:8px 12px 4px;position:relative">
+          <svg width="351" height="120" viewBox="0 0 351 120" style="display:block">
+            <line x1="0" y1="60" x2="351" y2="60" stroke="#2A3236" stroke-width="1"/>
+            <polyline points="0,60 117,42 234,24 351,24" fill="none" stroke="var(--ss)" stroke-width="3"/>
+            <polyline points="0,60 117,78 234,66 351,66" fill="none" stroke="var(--nh)" stroke-width="2.5"/>
+            <polyline points="0,60 117,74 234,92 351,92" fill="none" stroke="var(--rg)" stroke-width="2.5"/>
+            <polyline points="0,60 117,60 234,60 351,60" fill="none" stroke="var(--hd)" stroke-width="2" stroke-dasharray="3 5"/>
+            <circle cx="351" cy="24" r="4" fill="var(--ss)"/>
+          </svg>
+          <div class="micro" style="display:flex;justify-content:space-between"><span>Jun 7</span><span>Jun 14</span><span>Jun 21</span><span>now</span></div>
+        </div>
+        <div class="hair" style="margin-top:8px"></div>
+        <div style="display:grid;grid-template-columns:26px 28px 1fr auto;gap:10px;align-items:center;padding:10px 12px;background:var(--leader-bg)">
+          <div class="score" style="font-size:1.125rem;color:var(--gold)">1</div>
+          <div class="oct o28" style="--oc:var(--ss)"><span>SS</span></div>
+          <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.9375rem">Sandia Sluggers</div>
+          <div class="score" style="font-size:1.125rem">2-0 · <span style="color:var(--teal)">+6</span></div>
+        </div>
+        <div class="hair"></div>
+        <div style="display:grid;grid-template-columns:26px 28px 1fr auto;gap:10px;align-items:center;padding:10px 12px">
+          <div class="score" style="font-size:1.125rem;color:var(--t2)">2</div>
+          <div class="oct o28" style="--oc:var(--nh)"><span>NH</span></div>
+          <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.9375rem">Nob Hill Nomads</div>
+          <div class="score" style="font-size:1.125rem">1-1 · <span style="color:var(--t3)">-1</span></div>
+        </div>
+        <div class="hair"></div>
+        <div style="display:grid;grid-template-columns:26px 28px 1fr auto;gap:10px;align-items:center;padding:10px 12px">
+          <div class="score" style="font-size:1.125rem;color:var(--t2)">3</div>
+          <div class="oct o28" style="--oc:var(--rg)"><span>RG</span></div>
+          <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.9375rem">Rio Grande Rollers</div>
+          <div class="score" style="font-size:1.125rem">0-2 · <span style="color:var(--t3)">-5</span></div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> a team-colored differential worm (the season's shape in one glance — Anchor B's actual method) above a compact register. <b>Why amendment:</b> the anti-pattern list shelves chart libraries and decorative charts; this is a data graphic that communicates faster than the table, but the contract does not yet distinguish those. Proposed amendment: permit hand-drawn SVG data graphics when they pass the "faster than the table" test, rendered in team colors/existing palette, never as background texture. <b>Cost:</b> medium — one SVG builder from existing selectors, no library.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ B. GAME DETAIL -->
+<section class="dir">
+  <h2>B · Game Detail — the theater</h2>
+  <p class="why">Finding: the matchup h1 repeats the scoreboard and pushes the score below the fold at 375; the desktop frame has a silent center; every game looks identical because team color is unused. A tie/forfeit state also has no design (stress capture) — B1/B2 include the forfeit answer.</p>
+  <div class="row">
+
+    <!-- B1 compliant -->
+    <div class="variant">
+      <div class="vhead"><h3>B1 · Compressed scoreboard</h3><span class="badge b-compliant">Compliant</span></div>
+      <div class="phone">
+        <div class="pad" style="padding-bottom:.25rem">
+          <div class="micro">← Back · Kickball · Tuesday, June 9</div>
+        </div>
+        <div style="margin:10px 12px;border:2px solid rgba(60,70,75,.9);border-radius:14px;position:relative;overflow:hidden">
+          <div class="rays" style="--rc:var(--border-strong)"><i></i><i></i><i></i></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px 0">
+            <span class="pill p-kb">Kickball</span><span class="pill p-final">● Final</span>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:12px;gap:4px">
+            <div style="text-align:center">
+              <div class="oct o64" style="--oc:var(--rg);margin:0 auto"><span>RG</span></div>
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.8125rem;margin-top:6px">Rio Grande<br>Rollers</div>
+              <div class="score" style="font-size:3.25rem;color:var(--t3);line-height:1.1">4</div>
+            </div>
+            <div class="micro" style="align-self:center">final</div>
+            <div style="text-align:center">
+              <div class="oct o64" style="--oc:var(--ss);margin:0 auto"><span>SS</span></div>
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:.8125rem;margin-top:6px">Sandia<br>Sluggers</div>
+              <div class="score" style="font-size:3.25rem;line-height:1.1">7</div>
+            </div>
+          </div>
+          <div class="hair"></div>
+          <div class="micro" style="padding:8px 12px">6:30 PM · Los Altos Park · Field 2</div>
+        </div>
+        <div style="margin:0 12px 12px;border:1px solid var(--border);border-radius:12px">
+          <div class="micro" style="padding:8px 12px;border-bottom:1px solid var(--border)">Inning by inning</div>
+          <div style="display:grid;grid-template-columns:1fr repeat(6,32px);gap:0;padding:8px 12px;font-size:.8125rem;color:var(--t2)">
+            <div></div><div>1</div><div>2</div><div>3</div><div>4</div><div>5</div><div style="color:var(--teal)">T</div>
+            <div style="font-family:var(--disp);text-transform:uppercase">RG</div><div>0</div><div>1</div><div>2</div><div>0</div><div>1</div><div style="color:var(--t1)">4</div>
+            <div style="font-family:var(--disp);text-transform:uppercase">SS</div><div>2</div><div>0</div><div>1</div><div>3</div><div>1</div><div style="color:var(--teal);font-weight:700">7</div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> the 3-line 40px h1 is deleted — the scoreboard IS the title (h1 lives visually-hidden for a11y); score 52px above the fold at 375; FINAL/date/time each stated once; box score rises one full viewport. Forfeit state: score cell renders W/L at the same 52px with a "FORFEIT" pill replacing FINAL. <b>Cost:</b> GameDetail.js + event-frame CSS only.</p>
+    </div>
+
+    <!-- B2 bolder -->
+    <div class="variant">
+      <div class="vhead"><h3>B2 · Team-color broadcast</h3><span class="badge b-bolder">Bolder — compliant</span></div>
+      <div class="phone">
+        <div class="pad" style="padding-bottom:.25rem"><div class="micro">← Back · Kickball · Tue, Jun 9</div></div>
+        <div style="margin:10px 12px;border-radius:14px;overflow:hidden;border:2px solid rgba(60,70,75,.9)">
+          <div style="display:grid;grid-template-columns:1fr 1fr;position:relative">
+            <div style="background:linear-gradient(160deg,color-mix(in srgb,var(--rg) 38%,var(--surface)),var(--surface) 85%);padding:16px 8px;text-align:center">
+              <div class="oct o64" style="--oc:var(--rg);margin:0 auto"><span>RG</span></div>
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.8125rem;margin-top:8px;color:var(--t2)">Rio Grande Rollers</div>
+              <div class="score" style="font-size:4rem;color:var(--t3);line-height:1.05">4</div>
+            </div>
+            <div style="background:linear-gradient(200deg,color-mix(in srgb,var(--ss) 38%,var(--surface)),var(--surface) 85%);padding:16px 8px;text-align:center">
+              <div class="oct o64" style="--oc:var(--ss);margin:0 auto"><span>SS</span></div>
+              <div style="font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:.8125rem;margin-top:8px">Sandia Sluggers</div>
+              <div class="score" style="font-size:4rem;line-height:1.05">7</div>
+            </div>
+            <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--sunken);border:1px solid var(--border-strong);border-radius:6px;padding:.15rem .6rem" class="micro">Final</div>
+          </div>
+          <div class="hair"></div>
+          <div class="micro" style="padding:8px 12px;display:flex;justify-content:space-between"><span>6:30 PM · Los Altos Park · Field 2</span><span style="color:var(--teal)">CVF · Summer 2026</span></div>
+        </div>
+        <div class="note">Same layout answers the forfeit case: the color fields stay, scores become
+        <span class="score" style="font-size:1rem">W</span>/<span class="score" style="font-size:1rem;color:var(--t3)">L</span>
+        with a FORFEIT pill — the game still belongs to the two teams.</div>
+      </div>
+      <p class="delta"><b>Delta:</b> two team-color fields at 38% mix meeting at center (identity as environment — Anchor A's game pages); scores 64px; a page signature ("CVF · Summer 2026") enters the capture zone (audit X3). Uses existing per-team `logo_color` in an existing zone, so it is inside the fallback-first rule — flag to the owner only because color at this saturation exceeds anything shipped so far. <b>Cost:</b> GameDetail.js + CSS; `color-mix` is already used by the badge primitive.</p>
+    </div>
+
+    <!-- B3 amendment: match poster -->
+    <div class="variant">
+      <div class="vhead"><h3>B3 · The match poster</h3><span class="badge b-amend">Requires contract amendment</span></div>
+      <div class="phone">
+        <div style="position:relative;height:640px;background:
+          linear-gradient(20deg,color-mix(in srgb,var(--rg) 45%,var(--surface)) 0%,var(--surface) 48%,
+          color-mix(in srgb,var(--ss) 45%,var(--surface)) 100%);display:flex;flex-direction:column;justify-content:space-between;overflow:hidden">
+          <div class="rays" style="--rc:var(--gold);width:90px;height:64px"><i style="width:70px"></i><i style="width:54px"></i><i style="width:40px"></i></div>
+          <div style="padding:18px 16px">
+            <div class="micro" style="color:var(--t2)">Duke City Kickball · Tue, Jun 9 · Field 2</div>
+          </div>
+          <div style="padding:0 16px">
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="oct o44" style="--oc:var(--rg)"><span>RG</span></div>
+              <div style="font-family:var(--disp);font-size:1.625rem;text-transform:uppercase;font-weight:600;color:var(--t2);flex:1">Rio Grande Rollers</div>
+              <div class="score" style="font-size:4.5rem;color:var(--t3);line-height:1">4</div>
+            </div>
+            <div style="height:1px;background:var(--border-strong);margin:10px 0"></div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div class="oct o44" style="--oc:var(--ss)"><span>SS</span></div>
+              <div style="font-family:var(--disp);font-size:1.625rem;text-transform:uppercase;font-weight:700;flex:1">Sandia Sluggers</div>
+              <div class="score" style="font-size:4.5rem;line-height:1;color:var(--gold)">7</div>
+            </div>
+          </div>
+          <div style="padding:16px;display:flex;justify-content:space-between;align-items:center">
+            <span class="pill p-final">● Final</span>
+            <div class="micro" style="color:var(--t2)">CVF SPORTS · ALBUQUERQUE</div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> the game page's hero becomes a full-viewport shareable poster — stacked broadcast lockup, 72px scores, winner in gold, wordmark signature; the box score starts one swipe down. This is the "social object" answer: the screenshot a player sends IS this frame. <b>Why amendment:</b> full-bleed team-color composition and winner-score-in-gold both exceed current palette-role rules (gold = achievement only… arguably a win qualifies, but the contract should say so). <b>Cost:</b> medium — one hero component; no dependency, no schema.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ C. HOME ARRIVAL -->
+<section class="dir">
+  <h2>C · Home — arrival states, not a welcome mat</h2>
+  <p class="why">Finding: the hero is a permanent label ("CURRENT LEAGUES") spending the page's largest type on no information; nothing anywhere says TODAY. Both variants make the hero carry the league's temporal state; they differ in how much of the page game day takes over.</p>
+  <div class="row">
+
+    <!-- C1 compliant -->
+    <div class="variant">
+      <div class="vhead"><h3>C1 · The hero tells the time</h3><span class="badge b-compliant">Compliant</span></div>
+      <div class="phone">
+        <div style="position:relative;background:linear-gradient(135deg,var(--teal-tint),var(--surface) 70%);border-bottom:1px solid var(--border);padding:20px 16px 18px;overflow:hidden">
+          <div class="rays" style="--rc:var(--gold)"><i></i><i></i><i></i></div>
+          <div class="micro" style="color:var(--teal)">Tuesday · June 30 · Albuquerque</div>
+          <div style="font-family:var(--disp);font-size:2.25rem;text-transform:uppercase;font-weight:700;line-height:1.05;margin-top:4px">Games<br>Tonight</div>
+          <div class="lbl" style="margin-top:6px;color:var(--t2)">Kickball · First kick 6:30 PM · Los Altos Park</div>
+        </div>
+        <div class="pad" style="display:flex;gap:8px">
+          <span class="pill p-kb">2 games</span><span class="micro" style="align-self:center">Sluggers–Rollers · Nomads–Heat</span>
+        </div>
+        <div class="hair"></div>
+        <div class="pad">
+          <div class="micro" style="margin-bottom:8px">Up next</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="oct o44" style="--oc:var(--ss)"><span>SS</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:600">Sandia Sluggers</div>
+            <div class="score" style="font-size:1.75rem;color:var(--teal)">6:30</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px">
+            <div class="oct o44" style="--oc:var(--rg)"><span>RG</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:600">Rio Grande Rollers</div>
+            <div class="micro">Field 1</div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> hero copy is computed from the schedule (game day → "GAMES TONIGHT" + first-kick fact; off-day → "NEXT: SUNDAY" + countdown-free framing; playoff week → gold variant). CTAs demote below the fold — recruitment stops being every session's first pixel. <b>Cost:</b> Home.js + one selector; the geometry/texture stays as-is.</p>
+    </div>
+
+    <!-- C2 bolder -->
+    <div class="variant">
+      <div class="vhead"><h3>C2 · Game-day takeover</h3><span class="badge b-bolder">Bolder — compliant</span></div>
+      <div class="phone">
+        <div style="position:relative;background:linear-gradient(160deg,var(--teal-tint) 0%,var(--surface) 75%);padding:22px 16px;overflow:hidden;border-bottom:1px solid var(--border)">
+          <div class="rays" style="--rc:var(--gold);width:80px;height:56px"><i style="width:62px"></i><i style="width:48px"></i><i style="width:36px"></i></div>
+          <div class="micro" style="color:var(--teal)">Game day · Tue Jun 30</div>
+          <div class="score" style="font-size:4.5rem;line-height:1;margin-top:2px">6:30<span style="font-size:1.5rem;color:var(--t2)"> PM</span></div>
+          <div class="lbl" style="color:var(--t2);margin-top:2px">First kick · Los Altos Park</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:14px;background:color-mix(in srgb,var(--sunken) 80%,transparent);border:1px solid var(--border);border-radius:12px;padding:10px">
+            <div class="oct o44" style="--oc:var(--ss)"><span>SS</span></div>
+            <div style="font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:.9375rem;flex:1;text-align:center">vs</div>
+            <div class="oct o44" style="--oc:var(--rg)"><span>RG</span></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:8px;background:color-mix(in srgb,var(--sunken) 80%,transparent);border:1px solid var(--border);border-radius:12px;padding:10px">
+            <div class="oct o44" style="--oc:var(--nh)"><span>NH</span></div>
+            <div style="font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:.9375rem;flex:1;text-align:center">vs</div>
+            <div class="oct o44" style="--oc:var(--hd)"><span>HD</span></div>
+          </div>
+        </div>
+        <div class="pad"><div class="micro">Latest final</div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <div class="oct o28" style="--oc:var(--bb)"><span>BB</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:.875rem">Bosque Blitz</div>
+            <div class="score" style="font-size:1.5rem">28</div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> on game day the entire hero is the day — 72px first-kick time (the score ladder's largest step, currently unused on Home), tonight's matchups as badge pairs; on off-days it falls back to C1. <b>Cost:</b> same files as C1 plus the takeover styles. The 10% cinematic budget would later live here (Pass 5): the settle-in of tonight's card is the one moment with a guaranteed audience.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ D. SCHEDULE ROWS -->
+<section class="dir">
+  <h2>D · Schedule register at 375 — names are the payload</h2>
+  <p class="why">Finding: every team name truncates to ~9 characters because the center date+score column reserves ~40% of the row. Current row shown first for comparison; both variants target ≥16 visible characters and keep the 4px playoff rail.</p>
+  <div class="row">
+
+    <div class="variant">
+      <div class="vhead"><h3>D0 · Today (for reference)</h3></div>
+      <div class="phone">
+        <div class="pad micro">Week of Jun 14</div>
+        <div class="hair"></div>
+        <div style="display:grid;grid-template-columns:auto 1fr auto 1fr auto;gap:6px;align-items:center;padding:12px 10px">
+          <div class="oct o28" style="--oc:var(--ff)"><span>FF</span></div>
+          <div style="font-size:.75rem;color:var(--t1);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">Frontier …</div>
+          <div style="text-align:center"><div class="micro">Sun, Jun 14</div><div class="score" style="font-size:1.5rem">20–13</div></div>
+          <div style="font-size:.75rem;color:var(--t3);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;text-align:right">Mesa Ma…</div>
+          <div class="oct o28" style="--oc:var(--mm)"><span>MM</span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="note">18-char names → 9 visible characters. The row's most-scanned content is the only thing that truncates.</div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><h3>D1 · Rebalanced grid</h3><span class="badge b-compliant">Compliant</span></div>
+      <div class="phone">
+        <div class="pad micro">Week of Jun 14</div>
+        <div class="hair"></div>
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr) 84px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px">
+          <div class="oct o28" style="--oc:var(--ff)"><span>FF</span></div>
+          <div style="font-size:.8125rem;font-weight:600;line-height:1.2">Frontier Force</div>
+          <div style="text-align:center"><div class="micro">Sun 14</div><div class="score" style="font-size:1.375rem">20–13</div></div>
+          <div style="font-size:.8125rem;color:var(--t3);text-align:right;line-height:1.2">Mesa Mavericks</div>
+          <div class="oct o28" style="--oc:var(--mm)"><span>MM</span></div>
+        </div>
+        <div class="hair"></div>
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr) 84px minmax(0,1fr) auto;gap:8px;align-items:center;padding:10px">
+          <div class="oct o28" style="--oc:var(--nh)"><span>NH</span></div>
+          <div style="font-size:.8125rem;color:var(--t3);line-height:1.2">Nob Hill Nomads</div>
+          <div style="text-align:center"><div class="micro">Tue 16</div><div class="score" style="font-size:1.375rem">5–8</div></div>
+          <div style="font-size:.8125rem;font-weight:600;text-align:right;line-height:1.2">Sandia Sluggers</div>
+          <div class="oct o28" style="--oc:var(--ss)"><span>SS</span></div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> center column 84px (was ~140px), date compressed to "Sun 14", score 22px (was 24px), names 13px/2-line-capable — 38-char stress name fits on two lines. <b>Cost:</b> CompetitionRow CSS grid values only.</p>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><h3>D2 · Stacked scoreline</h3><span class="badge b-bolder">Bolder — compliant</span></div>
+      <div class="phone">
+        <div class="pad micro">Week of Jun 14</div>
+        <div class="hair"></div>
+        <div style="padding:10px 12px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="oct o28" style="--oc:var(--ff)"><span>FF</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:700;font-size:1rem">Frontier Force</div>
+            <div class="score" style="font-size:1.5rem">20</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <div class="oct o28" style="--oc:var(--mm)"><span>MM</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:500;font-size:1rem;color:var(--t3)">Mesa Mavericks</div>
+            <div class="score" style="font-size:1.5rem;color:var(--t3)">13</div>
+          </div>
+          <div class="micro" style="margin-top:6px;padding-left:38px">Final · Sun Jun 14 · West Mesa Fields · Field B</div>
+        </div>
+        <div class="hair"></div>
+        <div style="padding:10px 12px;border-left:4px solid var(--gold)">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="oct o28" style="--oc:var(--r6)"><span>R6</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:1rem">Route 66 Rush</div>
+            <div class="score" style="font-size:1.25rem;color:var(--teal)">8:00</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:6px">
+            <div class="oct o28" style="--oc:var(--ff)"><span>FF</span></div>
+            <div style="flex:1;font-family:var(--disp);text-transform:uppercase;font-weight:600;font-size:1rem">Frontier Force</div>
+            <div class="micro" style="color:var(--gold)">Playoffs</div>
+          </div>
+          <div class="micro" style="margin-top:6px;padding-left:38px">Sun Jul 5 · West Mesa Fields · Field A</div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> Apple-Sports-style stacked rows — full names in 16px Oswald, never truncated at any length; winner bold/loser muted reads top-to-bottom; row grows 96→~110px. Away/home orientation becomes list order (convention note needed). <b>Cost:</b> CompetitionRow rewrite (one component + its test).</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ E0. SHAPE EVIDENCE BAR -->
+<section class="dir">
+  <h2>E0 · Octagon vs hexagon — the evidence bar</h2>
+  <p class="why">The octagon was selected on owner review of real captures (Pass 3 addendum) and reaffirmed owner-directed in
+  Addendum 4. Replacing it is a <em>reversal</em>, not an addition — so it must clear the same bar it overturns: the same
+  content, same sizes, same contexts, side by side. A new shape always flatters itself shown alone. Compare cold, at a squint,
+  before deciding. (The unification decision — one device everywhere — stands regardless of which shape wins.)</p>
+  <div class="row">
+
+    <div class="variant">
+      <div class="vhead"><h3>E0-a · Octagon (current spec)</h3><span class="badge b-compliant">Addendum 4 baseline</span></div>
+      <div class="phone">
+        <div class="pad" style="display:flex;gap:14px;align-items:center;border-bottom:1px solid var(--border)">
+          <div class="oct o64" style="--oc:var(--ss)"><span>SS</span></div>
+          <div><div style="font-family:var(--disp);font-size:1.5rem;text-transform:uppercase;font-weight:700;line-height:1">Sandia<br>Sluggers</div><div class="micro" style="margin-top:4px">Game Detail · 64px</div></div>
+        </div>
+        <div class="pad" style="display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)">
+          <div class="oct o44" style="--oc:var(--ss)"><span>MT</span></div>
+          <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Marcus Trujillo</div><div class="micro">Roster · 44px</div></div>
+        </div>
+        <div style="padding:10px 16px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center">
+          <div class="oct o28" style="--oc:var(--nh)"><span>NH</span></div>
+          <div style="font-size:.8125rem;font-weight:600">Nob Hill Nomads</div>
+          <div class="score" style="font-size:1.25rem">5–8</div>
+        </div>
+        <div style="padding:0 16px 14px"><span class="micro">Register · 28px</span></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><h3>E0-b · Hexagon, flat-top</h3><span class="badge b-amend">Reverses Addendum 4</span></div>
+      <div class="phone">
+        <div class="pad" style="display:flex;gap:14px;align-items:center;border-bottom:1px solid var(--border)">
+          <div class="oct o64 hexf" style="--oc:var(--ss)"><span>SS</span></div>
+          <div><div style="font-family:var(--disp);font-size:1.5rem;text-transform:uppercase;font-weight:700;line-height:1">Sandia<br>Sluggers</div><div class="micro" style="margin-top:4px">Game Detail · 64px</div></div>
+        </div>
+        <div class="pad" style="display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)">
+          <div class="oct o44 hexf" style="--oc:var(--ss)"><span>MT</span></div>
+          <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Marcus Trujillo</div><div class="micro">Roster · 44px</div></div>
+        </div>
+        <div style="padding:10px 16px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center">
+          <div class="oct o28 hexf" style="--oc:var(--nh)"><span>NH</span></div>
+          <div style="font-size:.8125rem;font-weight:600">Nob Hill Nomads</div>
+          <div class="score" style="font-size:1.25rem">5–8</div>
+        </div>
+        <div style="padding:0 16px 14px"><span class="micro">Register · 28px</span></div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><h3>E0-c · Hexagon, pointy-top</h3><span class="badge b-amend">Reverses Addendum 4</span></div>
+      <div class="phone">
+        <div class="pad" style="display:flex;gap:14px;align-items:center;border-bottom:1px solid var(--border)">
+          <div class="oct o64 hexp" style="--oc:var(--ss)"><span>SS</span></div>
+          <div><div style="font-family:var(--disp);font-size:1.5rem;text-transform:uppercase;font-weight:700;line-height:1">Sandia<br>Sluggers</div><div class="micro" style="margin-top:4px">Game Detail · 64px</div></div>
+        </div>
+        <div class="pad" style="display:flex;gap:10px;align-items:center;border-bottom:1px solid var(--border)">
+          <div class="oct o44 hexp" style="--oc:var(--ss)"><span>MT</span></div>
+          <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Marcus Trujillo</div><div class="micro">Roster · 44px</div></div>
+        </div>
+        <div style="padding:10px 16px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center">
+          <div class="oct o28 hexp" style="--oc:var(--nh)"><span>NH</span></div>
+          <div style="font-size:.8125rem;font-weight:600">Nob Hill Nomads</div>
+          <div class="score" style="font-size:1.25rem">5–8</div>
+        </div>
+        <div style="padding:0 16px 14px"><span class="micro">Register · 28px</span></div>
+      </div>
+      <p class="delta"><b>What to look for at a squint:</b> which silhouette survives 28px; whether the flat-top's wide side edges
+      read heavier than the octagon's corner facets; whether initials sit better in the octagon's squarer field or the hexagon's
+      pinched one; and which reads "sports crest" vs "generic app icon" cold. Decide from this section rendered at 375px —
+      not from the hexagon appearing alone elsewhere.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ E. IDENTITY COHERENCE -->
+<section class="dir">
+  <h2>E · One grammar everywhere — and the player-shape decision</h2>
+  <p class="why">Finding X1: the octagon stops at some page borders (Team header is a rounded square, GameCard/Playoffs use dots, players are circles except on Leaderboards). E1 shows the Team header unified — that part is not a direction choice, just unfinished systemization. The genuine decision is E2 vs E3: what shape is a <em>person</em>?</p>
+  <div class="row">
+
+    <div class="variant">
+      <div class="vhead"><h3>E1 · Team page, unified</h3><span class="badge b-compliant">Compliant</span></div>
+      <div class="phone">
+        <div style="margin:12px;border:1px solid var(--border);border-radius:14px;background:linear-gradient(135deg,color-mix(in srgb,var(--ss) 14%,var(--raised)),var(--raised) 70%);padding:16px;position:relative;overflow:hidden">
+          <div class="rays" style="--rc:var(--ss)"><i></i><i></i><i></i></div>
+          <div style="display:flex;gap:14px;align-items:center">
+            <div class="oct o64" style="--oc:var(--ss)"><span>SS</span></div>
+            <div>
+              <div style="font-family:var(--disp);font-size:1.75rem;text-transform:uppercase;font-weight:700;line-height:1">Sandia<br>Sluggers</div>
+              <div style="display:flex;gap:6px;margin-top:6px"><span class="pill p-kb">Kickball</span><span class="micro" style="align-self:center">Duke City</span></div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;margin-top:14px;border:1px solid var(--border);border-radius:10px;background:var(--sunken)">
+            <div style="padding:10px;text-align:center"><div class="score" style="font-size:1.375rem">2-0</div><div class="micro">Record</div></div>
+            <div style="padding:10px;text-align:center;border-inline:1px solid var(--border)"><div class="score" style="font-size:1.375rem">15</div><div class="micro">Pts for</div></div>
+            <div style="padding:10px;text-align:center"><div class="score" style="font-size:1.375rem;color:var(--teal)">+6</div><div class="micro">Diff</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>Delta:</b> Team header gets the base octagon (replacing the rounded square), a team-color corner mark (rays reach a page they've never been on), and the three stat pills fuse into the already-built-but-dead StatStrip. <b>Cost:</b> TeamPage.js swap-in; StatStrip exists.</p>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><h3>E2 · Players are octagons too</h3><span class="badge b-compliant">Compliant (Option 1)</span></div>
+      <div class="phone">
+        <div class="pad"><div class="micro" style="margin-bottom:8px">Roster · 6 players</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div class="oct o44" style="--oc:var(--ss)"><span>MT</span></div>
+            <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Marcus Trujillo <span style="color:var(--gold)">♛</span></div><div class="micro">Pitcher · #7</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div class="oct o44" style="--oc:var(--ss)"><span>DS</span></div>
+            <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Diego Sanchez</div><div class="micro">Shortstop · #12</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+            <div class="oct o44" style="--oc:var(--ss)"><span>AC</span></div>
+            <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Aaron Chavez</div><div class="micro">1st Base · #3</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>One shape, one brand:</b> everything in CVF is an octagon; players inherit their team's color. Strongest coherence, and Leaderboards already does it. Tradeoff: teams and people are no longer distinguishable by silhouette; a future photo-avatar sits oddly in a clipped octagon.</p>
+    </div>
+
+    <div class="variant">
+      <div class="vhead"><h3>E3 · Octagon = team, circle = person</h3><span class="badge b-compliant">Compliant (Option 2)</span></div>
+      <div class="phone">
+        <div class="pad"><div class="micro" style="margin-bottom:8px">Roster · 6 players</div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ss);display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:.875rem;background:var(--raised)">MT</div>
+            <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Marcus Trujillo <span style="color:var(--gold)">♛</span></div><div class="micro">Pitcher · #7</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ss);display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:.875rem;background:var(--raised)">DS</div>
+            <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Diego Sanchez</div><div class="micro">Shortstop · #12</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0">
+            <div style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ss);display:grid;place-items:center;font-family:var(--disp);font-weight:700;font-size:.875rem;background:var(--raised)">AC</div>
+            <div style="flex:1"><div style="font-family:var(--disp);text-transform:uppercase;font-weight:600">Aaron Chavez</div><div class="micro">1st Base · #3</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="delta"><b>Two shapes with meaning:</b> the silhouette itself encodes entity type — octagon means team, circle means person — but circles get the team-color ring treatment so they join the system instead of floating outside it. Requires restyling Leaderboards' player octagons to circles for consistency. Either option is coherent; the current octagon/circle/square/dot mix is the only wrong answer.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ LADDER -->
+<section class="dir">
+  <h2>Interventions, cheapest → most ambitious</h2>
+  <p class="why">Everything proposed anywhere in this pass, ordered by cost. Items 1–6 are individually smaller than any shipped batch. Items 10+ are deliberately beyond what was asked for — priced so they can be rejected consciously rather than never seen.</p>
+  <ol class="ladder">
+    <li><b>Copy pass — give the app a voice</b><p>~20 strings: "All Containers" → "All Leagues", "the administrator" → "the league", empty states become editorial. No layout change.</p><p class="cost">Cost: hours · Audit X2</p></li>
+    <li><b>Form-chip + streak spec fix</b><p>The logged finding: 20px chips, 11px text, full-opacity borders, `--leader-bg` contrast pass — executed inside item 6 rather than alone.</p><p class="cost">Cost: hours · Standings finding</p></li>
+    <li><b>Free Agent h1 wrap + "Download These Games" placement</b><p>Two mechanical NON-BLOCKING fixes riding along with any batch.</p><p class="cost">Cost: trivial</p></li>
+    <li><b>Identity swaps (X1)</b><p>Octagon replaces the Team-header square, GameCard dots, Playoffs dots, box-score dots; StatStrip replaces hand-rolled stat tiles. Existing primitives, ~6 files.</p><p class="cost">Cost: 1 short batch · Top-3 #1</p></li>
+    <li><b>Schedule mobile row rebalance (D1 or D2)</b><p>Names stop truncating at 375; CSS-only in D1.</p><p class="cost">Cost: 1 component · Top-3 #3 adjacent</p></li>
+    <li><b>Standings recomposition (A1 or A2)</b><p>Mobile content parity incl. the latent tie-honesty BLOCKING, bigger numerals, rail re-scoped. One page.</p><p class="cost">Cost: 1 batch · Top-3 #2</p></li>
+    <li><b>Game Detail recomposition (B1 or B2)</b><p>Scoreboard-as-title, single state grammar, forfeit/tie design, optional team-color fields.</p><p class="cost">Cost: 1 batch · Top-3 #3</p></li>
+    <li><b>Page signature in the capture zone (X3)</b><p>Small wordmark + season on Standings/Game/Leaderboards so every player screenshot carries the brand.</p><p class="cost">Cost: 1 shared component</p></li>
+    <li><b>Home arrival states (C1/C2)</b><p>The hero computes from the schedule; game day exists. First candidate surface for Pass 5 motion.</p><p class="cost">Cost: 1 batch</p></li>
+    <li><b>Unkind fixture set + latent-state designs (X4)</b><p>Owner-approved seed additions (tie, 0-0, forfeit, 38-char name, 2-enrollment franchise, populated bracket) plus FORFEIT/TIE visual language — makes five currently-unauditable states permanently auditable.</p><p class="cost">Cost: 1 batch incl. seed governance</p></li>
+    <li><b>Season-shape data graphics (A3)</b><p>Differential worm on Standings, form sparkline on Team. Needs the data-graphic vs decorative-chart contract amendment.</p><p class="cost">Cost: medium · Amendment</p></li>
+    <li><b>Match poster hero (B3)</b><p>Full-viewport shareable game frame; the social object designed as one.</p><p class="cost">Cost: medium · Amendment</p></li>
+    <li><b>Per-entity OG cards</b><p>Team/player/game links unfurl with real identity in group chats — where the league actually markets itself. Needs serverless render at deploy time.</p><p class="cost">Cost: high · post-deployment infrastructure</p></li>
+    <li><b>Sunlight/outdoor legibility variant</b><p>A high-contrast mode for Schedule + Game Detail (the on-field surfaces): larger minimums, no sub-60% opacity signals, optional light surface. The dark canonical surface is a locked decision — this would amend it deliberately, priced against a real phone-in-the-sun test.</p><p class="cost">Cost: high · Amendment + research</p></li>
+    <li><b>Public live scoring day (with the flag-football pilot)</b><p>The palette's most aggressive color is reserved for LIVE and LIVE never happens publicly. If the ledger pilot ever feeds a public surface, game day becomes the product's defining moment — red earns its reservation, and the Pass 5 motion budget has its stage.</p><p class="cost">Cost: product decision + full stack · far beyond this pass</p></li>
+  </ol>
+  <p class="note" style="max-width:78ch">Reference material that would beat another named app: any broadcast score-bug/lower-third design system (the compressed team-color + numeral grammar B2 borrows), and one real photo of a CVF game night — a single usable photo would resolve the fallback-vs-photography question better than any anchor discussion.</p>
+</section>
+
+</div></body>
+</html>
