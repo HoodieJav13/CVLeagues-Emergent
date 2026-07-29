@@ -83,6 +83,26 @@ the decision trail:
 | `motif-B2-night-final-g1.jpeg` | B2 · neutral tone on a final |
 | `motif-B2-home-featured.jpeg` | B2 · Home; the sport-pill overlap remains visible (placement finding below) |
 
+### Shipped mark (owner decision: A2, white moon / gold star, corner cleared)
+
+The owner chose A2 with fixed celestial colors — solid white
+(`--text-primary`) crescent, gold (`--cvf-gold`) star, gold sun — and asked
+for the corner to be cleared so the mark renders bigger. The StatusBadge now
+clusters left beside the SportBadge on the Game Detail frame (and the sport
+pill beside the label on Home featured cards), freeing the top-right corner
+for the mark at 84×64 (~1.5× the proposed A2). On banner-topped playoff
+frames the mark drops below the StageBanner. These captures show the
+**shipped** component, not a prototype:
+
+| File | Viewport | State |
+| --- | ---: | --- |
+| `mark-night-upcoming-g5-375.jpeg` / `-1440.jpeg` | 375 / 1440 | White crescent + gold star, corner unoccluded |
+| `mark-night-final-g1-375.jpeg` | 375 | Same mark on a final (state reads from badge/border, not the mark) |
+| `mark-night-forfeit-g16-375.jpeg` | 375 | Forfeit stress: mark coexists with CANCELED badge + long name |
+| `mark-day-final-g17-375.jpeg` | 375 | Gold sun over horizon on the 10:00 AM Fall 2025 game |
+| `mark-playoff-below-banner-g13-375.jpeg` | 375 | Below-banner placement rule on a gold playoff frame |
+| `mark-home-featured-375.jpeg` / `-1440.jpeg` | 375 / 1440 | Home featured cards, label + sport pill clustered left |
+
 **Findings shipped with the proposal (not resolved here):**
 
 - **NON-BLOCKING (layout, must be resolved with the mark decision):** on

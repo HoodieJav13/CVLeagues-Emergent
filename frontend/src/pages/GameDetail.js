@@ -11,7 +11,8 @@ import { Button } from "../components/ui/button";
 import { EmptyState } from "../components/common/Section";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { AthleteHoverCard } from "../components/player/AthleteHoverCard";
-import { StructuralCorner, StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { StructuralIdentityBadge } from "../components/direction/StructuralIdentity";
+import { SunMoonMark } from "../components/direction/SunMoonMark";
 
 const PERIOD_LABEL = (sport, i) => (sport === "kickball" ? `${i + 1}` : `Q${i + 1}`);
 const PERIOD_HEAD = (sport) => (sport === "kickball" ? "Inning" : "Quarter");
@@ -73,12 +74,14 @@ export default function GameDetail() {
         data-game-stage={game.stage}
         data-testid="game-event-frame"
       >
-        <StructuralCorner tone={isSpecialStage(game) ? "gold" : completed ? "neutral" : "teal"} size="feature" />
+        <SunMoonMark game={game} className={isSpecialStage(game) ? "cvf-sunmoon--below-banner" : ""} />
         <CardContent className="relative z-10 p-5 md:p-7">
         {isSpecialStage(game) && (
           <StageBanner stage={game.stage} className="-mx-5 -mt-5 md:-mx-7 md:-mt-7 mb-5 px-5 md:px-7 py-2 rounded-t-2xl" />
         )}
-        <div className="flex items-center justify-between mb-5">
+        {/* Both badges cluster left so the sun/moon mark owns the corner
+            unoccluded (Addendum 6 placement rule). */}
+        <div className="flex items-center gap-2 mb-5">
           <SportBadge sport={game.sport} />
           <StatusBadge status={game.status} />
         </div>

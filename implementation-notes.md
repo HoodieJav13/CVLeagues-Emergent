@@ -219,9 +219,38 @@ after 6:30 PM, so the moon is effectively the motif). Both moons redrawn:
   code untouched (verified `git diff frontend/` empty against the verified
   head, so the 208/208 + build evidence stands).
 
-**STOP (unchanged): the mark choice — A2 vs B2 vs another iteration — is the
-owner's. Nothing ships until the chosen drawing and confirmed cutoff hour are
-recorded in the contract per Addendum 6.**
+### Mark decided and shipped (owner choice, 2026-07-28, third iteration)
+
+The owner chose **A2 with fixed celestial colors** — white moon, gold star —
+and directed respacing so the mark isn't crowded by the status pill. Recorded
+in Addendum 6 first (per change control), then implemented as real product
+code: `frontend/src/components/direction/SunMoonMark.js` on the Game Detail
+event frame and Home featured cards, replacing `StructuralCorner` there.
+`StructuralCorner` remains on non-game surfaces (Leaderboards hero, Home hero)
+per Addendum 6's no-false-time-state rule.
+
+### Judgment calls in the shipped mark
+
+13. **Sun color = gold** is an extrapolation of the owner's white-moon /
+    gold-star direction (the Zia sun is the brand's gold symbol), not an
+    explicit owner choice — recorded as vetoable in Addendum 6. Day games are
+    currently rare (only the Fall 2025 fixture starts before 6 PM).
+14. **Respacing implemented as relocation, not shrinking:** the StatusBadge
+    keeps its size (shrinking it would change the status system app-wide) and
+    moves left beside the SportBadge; on Home the sport pill joins the kind
+    label on the left. The freed corner lets the mark render at 84×64,
+    ~1.5× the proposed A2, unoccluded.
+15. **Fixed colors mean the mark no longer carries state tone.** State still
+    reads from the StatusBadge label and frame border color, so the
+    three-signal rule holds; noted in Addendum 6.
+16. **Banner collision resolved by the below-banner rule** (`--below-banner`
+    modifier, 2.75rem top offset) rather than hiding the mark on playoff
+    frames.
+17. **Unknown start time renders as night** — every real league game is at
+    night, so night is the honest default rather than a guess at noon.
+
+Verified: 208/208 suite, production build, live captures at 375/1440 across
+night/day/final/forfeit/playoff/Home states (`mark-*.jpeg`).
 
 ## Test baseline
 

@@ -152,15 +152,33 @@ decision below. The mark keeps the existing structural-tone color system
 *shape*, state keeps the *color*, so no status meaning ever rides on the
 sun/moon distinction alone.
 
-**The drawing itself is not decided.** Per Addendum 2, a contract-compliant
-treatment and a deliberately bolder compliant variant were rendered in place on
-real screens at 375px for the owner to choose between; the chosen mark (and
-its confirmed cutoff hour) must be recorded here before any product surface
-ships it. Non-game surfaces that currently carry the corner rays (e.g. the
-Leaderboards category hero) have no game time and therefore no sun/moon state;
-what replaces their rays is part of the same pending mark decision, and until
-it is recorded they keep the existing rays rather than gaining a false time
-state.
+**The mark is decided (owner choice, 2026-07-28, from the rendered A2/B2
+pair plus color direction).** The chosen drawing is **A2 — the solid filled
+crescent with a single four-point star** — with fixed celestial colors
+replacing the state-tone coloring originally proposed above:
+
+- **Moon:** solid crescent in white (`--text-primary`), star in Zia gold
+  (`--cvf-gold`). Chosen directly by the owner.
+- **Sun:** the A2 sun drawing (half-disc on a horizon line with a Zia-derived
+  ray fan) rendered in Zia gold — the gold sun is the brand's own symbol
+  color. *This color is an implementation extrapolation of the owner's
+  white-moon/gold-star direction, not an explicit owner choice; day games are
+  currently rare (no in-season game starts before 6 PM), and the owner may
+  veto or recolor it at review.*
+- Because the mark no longer carries state tone, game state continues to read
+  from the StatusBadge label and the event-frame border color — consistent
+  with the three-signal rule that meaning never rides on one channel.
+- **Cutoff confirmed: 6:00 PM America/Denver** (start at or after = night).
+  Changing the hour later is a one-constant edit.
+- **Placement rule:** the mark owns the frame's top-right corner; the
+  StatusBadge moves out of that corner (clustered left with the SportBadge)
+  so the mark renders unoccluded at full size. On banner-topped playoff/
+  tournament frames the mark drops below the StageBanner rather than
+  colliding with it.
+- Scope: game-anchored surfaces (Game Detail event frame, Home featured
+  scoreboard cards). Non-game surfaces that carry the corner rays (e.g. the
+  Leaderboards category hero) have no game time and keep the existing rays;
+  their eventual treatment is a later-batch decision.
 
 ## Change control
 
