@@ -3664,6 +3664,444 @@ select cvf_test.ok(
         where game_id = '50000000-0000-0000-0000-000000000003') = 1
 );
 
+-- ---------------------------------------------------------------------------
+-- Migration 30 — practice mode: sessions without games (Option B).
+--
+-- Practice evidence lives only in the four private scorekeeping tables. Every
+-- assertion that says "writes nothing official" compares row counts AND
+-- order-independent row hashes of games / player_stats / game_edit_history /
+-- playoff_matches against this owner-captured baseline.
+--
+-- Not separately asserted because they are game-keyed by signature and cannot
+-- name a practice session at all: declare_ledger_forfeit(p_game_id, ...) and
+-- start_scorekeeping_correction(p_game_id, ...) take a game id, and a
+-- practice session has none.
+-- ---------------------------------------------------------------------------
+select cvf_test.as_owner();
+create table cvf_test.practice_official_baseline as
+select
+  (select count(*) from public.games) as games_count,
+  (select coalesce(sum(hashtextextended(g::text, 0)), 0) from public.games g) as games_hash,
+  (select count(*) from public.player_stats) as stats_count,
+  (select coalesce(sum(hashtextextended(s::text, 0)), 0) from public.player_stats s) as stats_hash,
+  (select count(*) from public.game_edit_history) as history_count,
+  (select coalesce(sum(hashtextextended(h::text, 0)), 0) from public.game_edit_history h) as history_hash,
+  (select count(*) from public.playoff_matches) as matches_count,
+  (select coalesce(sum(hashtextextended(m::text, 0)), 0) from public.playoff_matches m) as matches_hash;
+grant select on cvf_test.practice_official_baseline to public;
+
+select cvf_test.ok(
+  'practice 01 [INV-19] practice RPC privilege boundary matches the official pattern',
+  has_function_privilege('authenticated', 'public.start_practice_session(uuid,uuid,text,integer,text,jsonb)', 'execute')
+  and not has_function_privilege('anon', 'public.start_practice_session(uuid,uuid,text,integer,text,jsonb)', 'execute')
+  and not has_function_privilege('service_role', 'public.start_practice_session(uuid,uuid,text,integer,text,jsonb)', 'execute')
+  and has_function_privilege('authenticated', 'public.append_practice_event(uuid,text,integer,text,text,text,text,integer,uuid,integer,uuid,uuid,jsonb,jsonb,text)', 'execute')
+  and not has_function_privilege('anon', 'public.append_practice_event(uuid,text,integer,text,text,text,text,integer,uuid,integer,uuid,uuid,jsonb,jsonb,text)', 'execute')
+  and not has_function_privilege('service_role', 'public.append_practice_event(uuid,text,integer,text,text,text,text,integer,uuid,integer,uuid,uuid,jsonb,jsonb,text)', 'execute')
+  and has_function_privilege('authenticated', 'public.finalize_practice_session(uuid,text,integer,text,text)', 'execute')
+  and not has_function_privilege('anon', 'public.finalize_practice_session(uuid,text,integer,text,text)', 'execute')
+  and not has_function_privilege('service_role', 'public.finalize_practice_session(uuid,text,integer,text,text)', 'execute')
+  and not has_function_privilege('anon', 'public.start_practice_correction(uuid,text)', 'execute')
+  and not has_function_privilege('service_role', 'public.start_practice_correction(uuid,text)', 'execute')
+  and has_function_privilege('authenticated', 'public.start_practice_correction(uuid,text)', 'execute')
+);
+
+select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'practice 02 [INV-19] AAL1 admin cannot start a practice session',
+  $$select public.start_practice_session('30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','CVF-KB-PRAC-2026.1',5)$$,
+  '%Admin only%'
+);
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.throws_ok(
+  'practice 03 [INV-19] non-admin cannot start a practice session',
+  $$select public.start_practice_session('30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','CVF-KB-PRAC-2026.1',5)$$,
+  '%Admin only%'
+);
+select cvf_test.throws_ok(
+  'practice 04 [INV-19] non-admin cannot finalize a practice session',
+  $$select public.finalize_practice_session('00000000-0000-0000-0000-000000000000','invalid',1,'denied')$$,
+  '%Admin only%'
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.throws_ok(
+  'practice 05 [INV-10] practice teams must share one sport and league season',
+  $$select public.start_practice_session('30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000005','CVF-PRAC-2026.1',5)$$,
+  '%one sport and league season%'
+);
+
+insert into cvf_test.ledger_runtime_state values ('practice-flag', public.start_practice_session(
+  '30000000-0000-0000-0000-000000000005',
+  (select id from public.teams where league_id='20000000-0000-0000-0000-000000000002'
+    and id<>'30000000-0000-0000-0000-000000000005' order by created_at limit 1),
+  'CVF-FF-PRAC-2026.1', 4, 'one possession each', '{"practice":true}'::jsonb));
+select cvf_test.ok(
+  'practice 06 [INV-10][INV-11][INV-27] practice start snapshots both rosters with no game and stage=practice',
+  (select session.session_kind='practice' and session.game_id is null and session.stage='practice'
+      and session.status='open' and session.allow_ties=false
+      and (state.value->>'lease_version')::int=1 and length(state.value->>'lease_token')>20
+      and exists (select 1 from public.scorekeeping_participants participant
+            where participant.session_id=session.id and participant.team_id=session.home_team_id and participant.game_id is null)
+      and exists (select 1 from public.scorekeeping_participants participant
+            where participant.session_id=session.id and participant.team_id=session.away_team_id and participant.game_id is null)
+      and (select count(*) from public.games) = (select games_count from cvf_test.practice_official_baseline)
+   from cvf_test.ledger_runtime_state state
+   join public.scorekeeping_sessions session on session.id=(state.value->>'session_id')::uuid
+   where state.key='practice-flag')
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'practice-td-home', public.append_practice_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-td-home',
+  'record','touchdown','regulation',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+insert into cvf_test.ledger_runtime_state
+select 'practice-carry', public.append_practice_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-carry',
+  'record','carry','regulation',2,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+  jsonb_build_array(
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+      'role','rusher','stat_key','carries','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+      'role','rusher','stat_key','rushYards','stat_delta',-3)),null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+insert into cvf_test.ledger_runtime_state
+select 'practice-td-away', public.append_practice_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-td-away',
+  'record','touchdown','regulation',3,
+  (select away_team_id from public.scorekeeping_sessions where id=(s.value->>'session_id')::uuid),6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id=(select away_team_id from public.scorekeeping_sessions where id=(s.value->>'session_id')::uuid) order by id limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+
+select cvf_test.ok(
+  'practice 07 [INV-03][INV-14] practice events sequence densely from 1 and accept signed rushing yardage',
+  (select array_agg(event.sequence_number order by event.sequence_number)=array[1,2,3]
+     from public.scorekeeping_events event
+     join cvf_test.ledger_runtime_state s on s.key='practice-flag'
+    where event.session_id=(s.value->>'session_id')::uuid)
+  and exists (
+    select 1 from cvf_test.ledger_runtime_state carry
+    join public.scorekeeping_event_attributions attr on attr.event_id=(carry.value->>'event_id')::uuid
+    where carry.key='practice-carry' and attr.stat_key='rushYards' and attr.stat_delta=-3 and attr.game_id is null)
+);
+select cvf_test.ok(
+  'practice 08 [INV-15] same practice command replay returns the original event with no duplicate row',
+  (select (public.append_practice_event(
+    (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-carry',
+    'record','carry','regulation',2,'30000000-0000-0000-0000-000000000005',0,null,null,'{}',
+    jsonb_build_array(
+      jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+        where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+        'role','rusher','stat_key','carries','stat_delta',1),
+      jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+        where session_id=(s.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+        'role','rusher','stat_key','rushYards','stat_delta',-3)),null) ->> 'replayed')::boolean
+   from cvf_test.ledger_runtime_state s where s.key='practice-flag')
+  and (select count(*)=3 from public.scorekeeping_events event
+        join cvf_test.ledger_runtime_state s on s.key='practice-flag'
+       where event.session_id=(s.value->>'session_id')::uuid)
+);
+select cvf_test.throws_ok(
+  'practice 09 [INV-15] changed command cannot reuse a practice event key',
+  $$select public.append_practice_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-carry','record','carry','regulation',2,'30000000-0000-0000-0000-000000000005',0,null,null,'{"changed":true}'::jsonb,'[]'::jsonb,null)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%different command%'
+);
+select cvf_test.throws_ok(
+  'practice 10 [INV-04][INV-30] append_practice_event rejects an ordinary game session',
+  $$select public.append_practice_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-cross-key','record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}','[]',null)
+    from cvf_test.ledger_runtime_state where key='concurrency'$$,
+  '%only a practice session%'
+);
+select cvf_test.throws_ok(
+  'practice 11 [INV-04][INV-30] the official append path rejects a practice session',
+  $$select public.append_scorekeeping_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-cross-official','record','touchdown','regulation',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}','[]',null)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%Unknown scorekeeping session%'
+);
+select cvf_test.throws_ok(
+  'practice 12 [INV-04][INV-30] the official finalize path rejects a practice session',
+  $$select public.finalize_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-cross-final',null)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%Unknown scorekeeping session%'
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'practice-reg-eval', public.finalize_practice_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-reg-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+select cvf_test.ok(
+  'practice 13 [INV-08] tied practice regulation returns continue_overtime without closing the session',
+  (select (result.value->>'ok')::boolean and result.value->>'status'='continue_overtime'
+      and (result.value->>'next_overtime_period')::int=1
+      and session.status='open'
+   from cvf_test.ledger_runtime_state result
+   join cvf_test.ledger_runtime_state s on s.key='practice-flag'
+   join public.scorekeeping_sessions session on session.id=(s.value->>'session_id')::uuid
+   where result.key='practice-reg-eval')
+);
+select cvf_test.throws_ok(
+  'practice 14 [INV-08] practice overtime enforces the current open period',
+  $$select public.append_practice_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-ot2-early','record','touchdown','overtime',2,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select id from public.scorekeeping_participants where session_id=(value->>'session_id')::uuid
+        and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+      'role','scorer','stat_key','tds','stat_delta',1)),null)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%not the current open period 1%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'practice-ot1-home', public.append_practice_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-ot1-home',
+  'record','touchdown','overtime',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select id from public.scorekeeping_participants where session_id=(s.value->>'session_id')::uuid
+      and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+    'role','scorer','stat_key','tds','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+insert into cvf_test.ledger_runtime_state
+select 'practice-ot1-open-eval', public.finalize_practice_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-ot1-open-eval',null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+select cvf_test.ok(
+  'practice 15 [INV-08] an open practice overtime period cannot finalize before the admin close',
+  (select result.value->>'status'='overtime_period_open' and session.status='open'
+   from cvf_test.ledger_runtime_state result
+   join cvf_test.ledger_runtime_state s on s.key='practice-flag'
+   join public.scorekeeping_sessions session on session.id=(s.value->>'session_id')::uuid
+   where result.key='practice-ot1-open-eval')
+);
+insert into cvf_test.ledger_runtime_state
+select 'practice-ot1-close', public.append_practice_event(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-ot1-close',
+  'record','period_close','overtime',1,null,0,null,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+insert into cvf_test.ledger_runtime_state
+select 'practice-final', public.finalize_practice_session(
+  (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-final',null)
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+select cvf_test.ok(
+  'practice 16 [INV-01][INV-08] practice finalization returns the projection preview and closes only the private session',
+  (select result.value->>'status'='practice_finalized'
+      and (result.value#>>'{projection,home_score}')::int=12
+      and (result.value#>>'{projection,away_score}')::int=6
+      and result.value#>'{projection,periods}'='{"home":[6,0,0,0,6],"away":[0,0,6,0,0]}'::jsonb
+      and result.value#>>'{projection,winner_team_id}'='30000000-0000-0000-0000-000000000005'
+      and session.status='finalized' and session.closed_at is not null
+   from cvf_test.ledger_runtime_state result
+   join cvf_test.ledger_runtime_state s on s.key='practice-flag'
+   join public.scorekeeping_sessions session on session.id=(s.value->>'session_id')::uuid
+   where result.key='practice-final')
+);
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'practice 17 [INV-25][INV-35][INV-39] practice finalization writes nothing official',
+  (select (select count(*) from public.games)=b.games_count
+      and (select coalesce(sum(hashtextextended(g::text,0)),0) from public.games g)=b.games_hash
+      and (select count(*) from public.player_stats)=b.stats_count
+      and (select coalesce(sum(hashtextextended(s::text,0)),0) from public.player_stats s)=b.stats_hash
+      and (select count(*) from public.game_edit_history)=b.history_count
+      and (select coalesce(sum(hashtextextended(h::text,0)),0) from public.game_edit_history h)=b.history_hash
+      and (select count(*) from public.playoff_matches)=b.matches_count
+      and (select coalesce(sum(hashtextextended(m::text,0)),0) from public.playoff_matches m)=b.matches_hash
+   from cvf_test.practice_official_baseline b)
+);
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.ok(
+  'practice 18 [INV-15] practice finalization replay is stable',
+  (select public.finalize_practice_session(
+    (s.value->>'session_id')::uuid,s.value->>'lease_token',(s.value->>'lease_version')::int,'practice-final',null)=final.value
+   from cvf_test.ledger_runtime_state s cross join cvf_test.ledger_runtime_state final
+   where s.key='practice-flag' and final.key='practice-final')
+);
+select cvf_test.throws_ok(
+  'practice 19 [INV-15] a different key cannot replay the finalized practice result',
+  $$select public.finalize_practice_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-final-different',null)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%different command%'
+);
+
+insert into cvf_test.ledger_runtime_state
+select 'practice-correction', public.start_practice_correction(
+  (s.value->>'session_id')::uuid, 'Rehearse a yardage correction')
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+select cvf_test.throws_ok(
+  'practice 20 [INV-16][INV-17] a practice correction rejects new record events',
+  $$select public.append_practice_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
+    'practice-correction-record','record','touchdown','regulation',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}',
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select id from public.scorekeeping_participants where session_id=(value->>'session_id')::uuid
+        and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+      'role','scorer','stat_key','tds','stat_delta',1)),null)
+    from cvf_test.ledger_runtime_state where key='practice-correction'$$,
+  '%only void or replace%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'practice-void', public.append_practice_event(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,'practice-void',
+  'void','void',null,null,null,0,(carry.value->>'event_id')::uuid,null,'{}','[]',null)
+from cvf_test.ledger_runtime_state c cross join cvf_test.ledger_runtime_state carry
+where c.key='practice-correction' and carry.key='practice-carry';
+insert into cvf_test.ledger_runtime_state
+select 'practice-replace', public.append_practice_event(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,'practice-replace',
+  'replace','carry','regulation',2,'30000000-0000-0000-0000-000000000005',0,null,(carry.value->>'event_id')::uuid,'{}',
+  jsonb_build_array(
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(c.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+      'role','rusher','stat_key','carries','stat_delta',1),
+    jsonb_build_object('participant_id',(select id from public.scorekeeping_participants
+      where session_id=(c.value->>'session_id')::uuid and team_id='30000000-0000-0000-0000-000000000005' order by id limit 1),
+      'role','rusher','stat_key','rushYards','stat_delta',7)),null)
+from cvf_test.ledger_runtime_state c cross join cvf_test.ledger_runtime_state carry
+where c.key='practice-correction' and carry.key='practice-carry';
+insert into cvf_test.ledger_runtime_state
+select 'practice-correction-final', public.finalize_practice_session(
+  (c.value->>'session_id')::uuid,c.value->>'lease_token',(c.value->>'lease_version')::int,'practice-correction-final',null)
+from cvf_test.ledger_runtime_state c where c.key='practice-correction';
+select cvf_test.ok(
+  'practice 21 [INV-16][INV-17][INV-36] practice correction voids and replaces inside the private chain',
+  (select result.value->>'status'='practice_finalized'
+      and (result.value#>>'{projection,home_score}')::int=12
+      and (result.value#>>'{projection,away_score}')::int=6
+      and exists (select 1 from jsonb_each(result.value#>'{projection,player_stats}') player
+            where (player.value#>>'{stats,rushYards}')::int=7)
+      and (select array_agg(event.sequence_number order by event.sequence_number)=array[1,2]
+             from public.scorekeeping_events event
+             join cvf_test.ledger_runtime_state c on c.key='practice-correction'
+            where event.session_id=(c.value->>'session_id')::uuid)
+   from cvf_test.ledger_runtime_state result
+   where result.key='practice-correction-final')
+);
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'practice 22 [INV-25][INV-35][INV-39] practice correction finalization also writes nothing official',
+  (select (select count(*) from public.games)=b.games_count
+      and (select coalesce(sum(hashtextextended(g::text,0)),0) from public.games g)=b.games_hash
+      and (select count(*) from public.player_stats)=b.stats_count
+      and (select coalesce(sum(hashtextextended(s::text,0)),0) from public.player_stats s)=b.stats_hash
+      and (select count(*) from public.game_edit_history)=b.history_count
+      and (select coalesce(sum(hashtextextended(h::text,0)),0) from public.game_edit_history h)=b.history_hash
+   from cvf_test.practice_official_baseline b)
+);
+
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+insert into cvf_test.ledger_runtime_state values ('practice-kb', public.start_practice_session(
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','CVF-KB-PRAC-2026.1',5,null,'{}'::jsonb));
+insert into cvf_test.ledger_runtime_state
+select 'practice-kb-renewed', public.renew_practice_session(
+  (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int)
+from cvf_test.ledger_runtime_state where key='practice-kb';
+select cvf_test.throws_ok(
+  'practice 23 [INV-20] practice lease renewal invalidates the old token and version',
+  $$select public.renew_practice_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int)
+    from cvf_test.ledger_runtime_state where key='practice-kb'$$,
+  '%stale or invalid%'
+);
+insert into cvf_test.ledger_runtime_state
+select 'practice-kb-resumed', public.resume_practice_session((value->>'session_id')::uuid, null)
+from cvf_test.ledger_runtime_state where key='practice-kb';
+select cvf_test.ok(
+  'practice 24 [INV-20] practice resume rotates the lease',
+  (select (resumed.value->>'lease_version')::int=3
+      and resumed.value->>'session_id'=started.value->>'session_id'
+   from cvf_test.ledger_runtime_state resumed cross join cvf_test.ledger_runtime_state started
+   where resumed.key='practice-kb-resumed' and started.key='practice-kb')
+);
+select cvf_test.throws_ok(
+  'practice 25 [INV-25] canceling a practice session requires a reason',
+  $$select public.cancel_practice_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'   ')
+    from cvf_test.ledger_runtime_state where key='practice-kb-resumed'$$,
+  '%requires a reason%'
+);
+select public.cancel_practice_session(
+  (value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'Rehearsal complete')
+from cvf_test.ledger_runtime_state where key='practice-kb-resumed';
+select cvf_test.as_owner();
+select cvf_test.ok(
+  'practice 26 [INV-25] practice cancel closes the private session and writes no official audit',
+  (select session.status='canceled' and session.closed_at is not null
+      and (select count(*) from public.game_edit_history)=(select history_count from cvf_test.practice_official_baseline)
+   from cvf_test.ledger_runtime_state state
+   join public.scorekeeping_sessions session on session.id=(state.value->>'session_id')::uuid
+   where state.key='practice-kb')
+);
+
+-- Structural impossibilities, attempted through the controlled path itself.
+select set_config('cvf.ledger_session_mutation', 'on', false);
+select cvf_test.throws_ok(
+  'practice 27 [INV-28] an ordinary session can never have a NULL game',
+  $$insert into public.scorekeeping_sessions
+      (game_id, session_kind, status, opened_by, lease_token_hash, lease_expires_at,
+       sport, league_id, season, stage, home_team_id, away_team_id, rule_version,
+       regulation_period_count, allow_ties, rules_snapshot)
+    values (null,'ordinary','open','00000000-0000-0000-0000-000000000001','deadbeef',now()+interval '10 minutes',
+       'kickball','20000000-0000-0000-0000-000000000001','Summer 2026','regular',
+       '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','CVF-KB-2026.1',5,false,'{}')$$,
+  '%ledger-mode game%'
+);
+select cvf_test.throws_ok(
+  'practice 28 [INV-28] a practice session can never reference a game',
+  $$insert into public.scorekeeping_sessions
+      (game_id, session_kind, status, opened_by, lease_token_hash, lease_expires_at,
+       sport, league_id, season, stage, home_team_id, away_team_id, rule_version,
+       regulation_period_count, allow_ties, rules_snapshot)
+    values ('50000000-0000-0000-0000-000000000950','practice','open','00000000-0000-0000-0000-000000000001','deadbeef',now()+interval '10 minutes',
+       'kickball','20000000-0000-0000-0000-000000000001','Summer 2026','practice',
+       '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','CVF-KB-2026.1',5,false,'{}')$$,
+  '%practice_game%'
+);
+select set_config('cvf.ledger_session_mutation', '', false);
+
+-- A live practice session between two teams must not consume any real game's
+-- one-active-session slot.
+insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id)
+values ('50000000-0000-0000-0000-000000000958','20000000-0000-0000-0000-000000000001','kickball',
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002',
+  '2026-11-12 18:00:00-07'::timestamptz,'60000000-0000-0000-0000-000000000003');
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+insert into cvf_test.ledger_runtime_state values ('practice-kb2', public.start_practice_session(
+  '30000000-0000-0000-0000-000000000001','30000000-0000-0000-0000-000000000002','CVF-KB-PRAC-2026.2',5,null,'{}'::jsonb));
+insert into cvf_test.ledger_runtime_state values ('practice-real-game', public.start_scorekeeping_session(
+  '50000000-0000-0000-0000-000000000958','CVF-KB-2026.1',5,null,false,'{}'::jsonb));
+select cvf_test.ok(
+  'practice 29 [INV-18] an open practice session never blocks a real game''s ordinary session',
+  (select length(realgame.value->>'session_id')=36
+      and (select status='live' from public.games where id='50000000-0000-0000-0000-000000000958')
+      and (select status='open' from public.scorekeeping_sessions where id=(kb2.value->>'session_id')::uuid)
+   from cvf_test.ledger_runtime_state realgame cross join cvf_test.ledger_runtime_state kb2
+   where realgame.key='practice-real-game' and kb2.key='practice-kb2')
+);
+
+select cvf_test.as_user('00000000-0000-0000-0000-000000000002');
+select cvf_test.ok(
+  'practice 30 [INV-27] practice evidence is invisible to non-admin clients',
+  (select count(*)=0 from public.scorekeeping_sessions where session_kind='practice')
+  and (select count(*)=0 from public.scorekeeping_events where game_id is null)
+);
+select cvf_test.as_admin('00000000-0000-0000-0000-000000000001');
+select cvf_test.ok(
+  'practice 31 [INV-27] the administrator can read practice evidence',
+  (select count(*)>0 from public.scorekeeping_sessions where session_kind='practice')
+  and (select count(*)>0 from public.scorekeeping_events where game_id is null)
+);
+
 select cvf_test.as_owner();
 
 \echo ''
