@@ -1,7 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { TopBar } from "./TopBar";
 import { BottomNav } from "./BottomNav";
-import { MobileJoinBar } from "./MobileJoinBar";
 import { RoleSwitcher } from "../RoleSwitcher";
 import { useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { MOCK_MODE } from "../../lib/supabase";
@@ -16,7 +15,9 @@ export const AppLayout = () => {
   return (
   <div className="min-h-screen bg-background flex flex-col">
     <TopBar />
-    <MobileJoinBar />
+    {/* The sticky mobile JOIN bar is retired by Pass 4 decision 5: recruitment
+        no longer tops every session. The newcomer CTA lives on Home below the
+        fold; the MobileJoinBar component stays dormant for a future call. */}
     {/* pb clears the fixed mobile BottomNav (h-16) so the last content / form
         field is never covered; smaller padding on desktop where there's no nav. */}
     <main className="flex-1 w-full max-w-6xl mx-auto px-4 pt-5 pb-32 md:pb-12">

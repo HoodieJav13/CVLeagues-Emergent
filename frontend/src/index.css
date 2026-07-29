@@ -417,6 +417,58 @@
 .cvf-home-hero__focal { display: none; }
 .cvf-home-hero__mobile-mark { color: var(--cvf-teal); }
 
+/* C2 game-day strip: finger-driven scroll-snap, no idle motion. */
+.cvf-today-strip {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+}
+.cvf-today-card {
+    display: flex;
+    flex: 0 0 17rem;
+    flex-direction: column;
+    gap: 0.5rem;
+    scroll-snap-align: start;
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 0.875rem;
+}
+.cvf-today-card__line {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.5rem;
+}
+.cvf-today-card__name {
+    min-width: 0;
+    overflow: hidden;
+    font-family: var(--font-display);
+    font-size: 0.9375rem;
+    letter-spacing: -0.01em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.cvf-today-card__value {
+    color: var(--text-primary);
+    font-family: var(--font-score);
+    font-size: 1.375rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+.cvf-today-card__meta {
+    overflow: hidden;
+    padding-left: 2.25rem;
+    color: var(--text-secondary);
+    font-size: 0.6875rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .cvf-event-frame {
     border-width: 2px;
     border-color: rgb(60 70 75 / 0.9);
@@ -426,7 +478,29 @@
 .cvf-event-frame[data-game-state="upcoming"] { border-color: rgb(91 184 204 / 0.72); }
 .cvf-event-frame[data-game-stage="playoff"],
 .cvf-event-frame[data-game-stage="championship"] { border-color: rgb(245 184 46 / 0.72); }
-.cvf-game-score { font-size: 2.75rem; line-height: 1; }
+.cvf-game-score { font-size: 4rem; line-height: 1; letter-spacing: -0.03em; }
+/* B2 team-color environment (Addendum 8). */
+.cvf-gd-field { padding: 1.25rem 0.75rem 1.5rem; }
+/* The chip anchors to the score band, not the vertical center — long names
+   wrap toward the middle of the card and must never run under it. */
+.cvf-gd-state-chip {
+    position: absolute;
+    left: 50%;
+    bottom: 3.25rem;
+    z-index: 2;
+    transform: translateX(-50%);
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
 .cvf-upcoming-focal { display: flex; min-width: 0; flex-direction: column; align-items: center; }
 .cvf-upcoming-focal__date {
     color: var(--text-secondary);
@@ -505,7 +579,7 @@
     .cvf-home-hero__focal .cvf-structural-corner--hero > span:nth-child(2) { top: 2.25rem; width: 5.75rem; }
     .cvf-home-hero__focal .cvf-structural-corner--hero > span:nth-child(3) { top: 3.35rem; width: 4rem; }
     .cvf-home-hero__mobile-mark { display: none; }
-    .cvf-game-score { font-size: 3.5rem; }
+    .cvf-game-score { font-size: 4.5rem; }
     .cvf-upcoming-focal__time { font-size: 3rem; }
 }
 
@@ -531,20 +605,65 @@
 }
 .cvf-competition-row {
     position: relative;
-    display: grid;
-    min-height: 6rem;
-    grid-template-areas:
-        "sport center status"
-        "away center home"
-        "details details details";
-    grid-template-columns: minmax(0, 1fr) 5rem minmax(0, 1fr);
-    grid-template-rows: 1.125rem minmax(3.125rem, 1fr) 0.875rem;
-    align-items: center;
-    column-gap: 0.5rem;
-    padding: 0.375rem 0.75rem 0.375rem 1rem;
+    display: block;
+    padding: 0.75rem 0.75rem 0.75rem 1rem;
     color: var(--text-primary);
     transition: background-color var(--motion-fast) var(--ease-out);
 }
+/* D2 stacked scorelines (decision 8): away over home, one score per line,
+   names in display type that wrap rather than truncate. Mobile only — the
+   desktop register keeps its proven Batch 1 grid. */
+.cvf-competition-row__stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4375rem;
+}
+.cvf-competition-row__stacked-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+.cvf-competition-row__stacked-line {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.625rem;
+}
+.cvf-competition-row__stacked-name {
+    min-width: 0;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    line-height: 1.15;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+.cvf-competition-row__stacked-value {
+    color: var(--text-primary);
+    font-family: var(--font-score);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+}
+.cvf-competition-row__stacked-value--time {
+    color: var(--cvf-teal);
+    font-size: 1.25rem;
+}
+.cvf-competition-row__stacked-meta {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.625rem;
+    padding-left: 2.375rem;
+    color: var(--text-secondary);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+}
+.cvf-competition-row__grid { display: none; }
 .cvf-competition-row + .cvf-competition-row { border-top: 1px solid hsl(var(--border)); }
 .cvf-competition-row:hover { background: hsl(var(--muted) / 0.35); }
 .cvf-competition-row:focus-visible {
@@ -644,15 +763,18 @@
 .cvf-competition-row__location span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (min-width: 768px) {
-    .cvf-competition-row {
-        min-height: 4.5rem;
+    .cvf-competition-row { min-height: 4.5rem; padding: 0.375rem 1rem; }
+    .cvf-competition-row__stacked { display: none; }
+    .cvf-competition-row__grid {
+        display: grid;
+        min-height: 3.75rem;
         grid-template-areas: "sport away center home meta";
         grid-template-columns: 7.25rem minmax(7.5rem, 1fr) 6.25rem minmax(7.5rem, 1fr) minmax(8.75rem, 11.25rem);
         grid-template-rows: 1fr;
+        align-items: center;
         column-gap: 0.75rem;
-        padding: 0.375rem 1rem;
     }
-    .cvf-competition-row__sport { align-self: center; }
+    .cvf-competition-row__sport { grid-area: sport; align-self: center; min-width: 0; }
     .cvf-competition-row__team { gap: 0.625rem; }
     .cvf-competition-row__team-name { font-size: 0.875rem; }
     .cvf-competition-row .cvf-identity-badge--register {
@@ -693,7 +815,7 @@
 .cvf-standings-heading h2 {
     color: var(--text-primary);
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -715,17 +837,86 @@
     background: var(--cvf-gold);
 }
 .cvf-standings-register { border-radius: var(--radius-lg); }
-.cvf-standings-row {
-    position: relative;
-    min-height: 3.5rem;
-    padding-left: 1rem;
+/* A2 recomposition (decision 3): one row layout at every viewport — rank
+   numeral, badge, name + form chips, record + PF/diff/streak — with a
+   point-share bar per row. The old always-on gold qualification rail is
+   retired; qualification lives in the aria-label and the seed number. */
+.cvf-standings-row { position: relative; }
+.cvf-standings-row__body {
+    display: grid;
+    grid-template-columns: 2.5rem auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.75rem;
+    padding: 0.75rem 1rem 0.625rem;
 }
-.cvf-standings-row[data-playoff-qualified="true"]::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: var(--cvf-gold);
+.cvf-standings-row__rank {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    text-align: center;
+}
+.cvf-standings-row--leader .cvf-standings-row__rank { font-size: 2.5rem; }
+.cvf-standings-row--leader .cvf-standings-row__body { padding-block: 0.875rem 0.75rem; }
+.cvf-standings-row__identity { display: flex; min-width: 0; flex-direction: column; gap: 0.375rem; }
+.cvf-standings-row__name {
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.1;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+.cvf-standings-row--leader .cvf-standings-row__name { font-size: 1.125rem; font-weight: 700; }
+.cvf-standings-row__figures {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    text-align: right;
+}
+.cvf-standings-row__record {
+    color: var(--text-primary);
+    font-family: var(--font-score);
+    font-size: 1.625rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1;
+    white-space: nowrap;
+}
+.cvf-standings-row--leader .cvf-standings-row__record { font-size: 2rem; }
+.cvf-standings-row__context {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-family: var(--font-score);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.cvf-standings-row__share {
+    display: block;
+    height: 4px;
+    background: var(--surface-sunken);
+}
+.cvf-standings-row__share > span { display: block; height: 100%; }
+
+@media (min-width: 768px) {
+    .cvf-standings-row__body { grid-template-columns: 3.25rem auto minmax(0, 1fr) auto; column-gap: 1rem; padding: 0.875rem 1.25rem 0.75rem; }
+    .cvf-standings-row__rank { font-size: 1.75rem; }
+    .cvf-standings-row--leader .cvf-standings-row__rank { font-size: 3rem; }
+    .cvf-standings-row__name { font-size: 1.125rem; }
+    .cvf-standings-row--leader .cvf-standings-row__name { font-size: 1.375rem; }
+    .cvf-standings-row__record { font-size: 1.875rem; }
+    .cvf-standings-row--leader .cvf-standings-row__record { font-size: 2.5rem; }
+    .cvf-standings-row__context { font-size: 0.8125rem; }
 }
 
 /* Pass 4, Batch 2.5: OT7-informed multi-category leaderboard dashboard. */

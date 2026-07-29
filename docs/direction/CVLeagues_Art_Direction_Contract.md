@@ -182,6 +182,43 @@ replacing the state-tone coloring originally proposed above:
   Leaderboards category hero) have no game time and keep the existing rays;
   their eventual treatment is a later-batch decision.
 
+## Data graphics behind controls (ADDENDUM 7)
+
+**Anti-pattern amendment (owner-directed, Pass 4 decision 4, 2026-07-28;
+recorded at the start of the Standings batch per change control).**
+
+The anti-pattern list's "decorative charts" line gains a carve-out:
+**hand-drawn SVG data graphics are permitted when they communicate faster than
+the table they accompany**, under all of these conditions:
+
+- **Disclosed behind an explicit control, never open by default** — a labeled
+  toggle the reader chooses to open; the table remains the primary surface.
+- **Never background texture** — a data graphic is content, not atmosphere.
+- Rendered in **team colors and the existing palette only**; no new hues.
+- **Hand-drawn SVG from the app's own selectors** — chart libraries stay
+  shelved, unchanged from the original anti-pattern list.
+- The information in the graphic must also exist in accessible textual form
+  (the table itself); the graphic is `aria-hidden` reinforcement, never the
+  only source.
+
+First approved instances: the Standings point-differential worm and team-form
+sparklines. Every other line of the anti-pattern list stands.
+
+## Game Detail team-color environment — clarification (ADDENDUM 8)
+
+**Clarifying note (owner-directed, Pass 4 decision 1, 2026-07-28; recorded at
+the start of the Game Detail batch per that decision's own instruction).**
+
+Game Detail is a **team-color environment at the B2 level**: two fields of the
+teams' own `logo_color` at a **~38% surface mix** meet at the score. This uses
+existing per-team color inside existing fallback-first zones, so it is a
+clarification, not a new motif — recorded because color at this saturation
+exceeds anything previously shipped. The scoreboard **is** the page title (the
+matchup `h1` becomes visually hidden but remains for accessibility and
+document structure); game state, date, and time are each stated **once**.
+The **B3 full-bleed poster** remains approved *only* as a dedicated shareable
+frame — it is **not** the default game page and is not built by this batch.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

@@ -3,7 +3,9 @@ import { Link } from "react-router-dom";
 import { ArrowRight, CalendarX, Clock, MapPin, Trophy } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
 import { getTeam, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
-import { formatGameDate, formatGameTime, venueLabel, byStartAscending, byStartDescending } from "../lib/gameTime";
+import { formatGameDate, formatGameTime, venueLabel, byStartAscending, byStartDescending, gameDateKey, LEAGUE_TIME_ZONE } from "../lib/gameTime";
+import { isNightGame } from "../components/direction/SunMoonMark";
+import { sportName } from "../lib/statsConfig";
 import { EmptyState, SectionHeading } from "../components/common/Section";
 import { GameCard } from "../components/game/GameCard";
 import { SportBadge } from "../components/common/Badges";
@@ -182,6 +184,27 @@ export default function Home() {
   );
   const featuredCount = Number(Boolean(latestFinal)) + Number(Boolean(nextUp));
 
+  // --- C2 arrival states (decision 5): the hero carries the league's
+  // temporal state instead of a permanent welcome mat. Game day is decided on
+  // the LEAGUE's calendar date, never the viewer's timezone.
+  const now = new Date();
+  const todayKey = gameDateKey({ starts_at: now.toISOString() });
+  const todaysGames = state.games
+    .filter((g) => g.status !== "canceled" && g.status !== "postponed" && gameDateKey(g) === todayKey)
+    .sort(byStartAscending);
+  const gameDay = todaysGames.length > 0;
+  const firstKick = todaysGames.find((g) => g.status === "upcoming") || todaysGames[0];
+  const nextGame = gameDay
+    ? null
+    : state.games.filter((g) => g.status === "upcoming" && new Date(g.starts_at) > now).sort(byStartAscending)[0] || null;
+
+  // Recent registrations feed: prospective team names only — no captain
+  // contact details ever reach a public surface.
+  const newTeams = (state.registrations || [])
+    .filter((item) => item.status !== "archived")
+    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+    .slice(0, 3);
+
   return (
     <div className="space-y-10">
       {/* LEAGUE BAND — the global shell owns the CVF identity lockup. */}
@@ -196,27 +219,54 @@ export default function Home() {
         <StructuralCorner className="cvf-home-hero__mobile-mark" size="compact" />
         <div className="relative z-10 px-5 py-6 md:px-8 md:py-8 md:max-w-[62%]">
           <div className="min-w-0">
-            <h1 className="font-display text-display-xl uppercase text-foreground">
-              Current Leagues
-            </h1>
-            <p className="text-label uppercase tracking-widest text-primary mt-1.5">
-              Albuquerque, NM
-            </p>
-          </div>
-          <div className="mt-5 hidden md:flex flex-wrap gap-2.5" data-testid="home-desktop-join-actions">
-            <Button asChild className="h-11">
-              <Link to="/register-team" data-testid="hero-register-team">
-                Submit Team Interest <ArrowRight size={14} weight="bold" />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-11">
-              <Link to="/free-agent-signup" data-testid="hero-free-agent">
-                Join Free Agent Pool
-              </Link>
-            </Button>
+            {gameDay ? (
+              <div data-testid="home-hero-gameday">
+                <p className="text-label uppercase tracking-widest text-primary">
+                  Game day · {formatGameDate(firstKick)}
+                </p>
+                <h1 className="font-display text-display-xl uppercase text-foreground mt-1">
+                  {isNightGame(firstKick) ? "Games Tonight" : "Games Today"}
+                </h1>
+                <p className="font-mono-score tabular-nums font-bold leading-none text-foreground text-[3rem] md:text-[4.5rem] mt-2">
+                  {formatGameTime(firstKick)}
+                </p>
+                <p className="text-label uppercase tracking-widest text-muted-foreground mt-2">
+                  First kick · {venueLabel(state, firstKick)}
+                </p>
+              </div>
+            ) : nextGame ? (
+              <div data-testid="home-hero-next">
+                <p className="text-label uppercase tracking-widest text-primary">
+                  {formatGameDate(nextGame)} · Albuquerque
+                </p>
+                <h1 className="font-display text-display-xl uppercase text-foreground mt-1">
+                  Next: {gameWeekday(nextGame)}
+                </h1>
+                <p className="text-label uppercase tracking-widest text-muted-foreground mt-2">
+                  First kick {formatGameTime(nextGame)} · {venueLabel(state, nextGame)}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <h1 className="font-display text-display-xl uppercase text-foreground">
+                  Current Leagues
+                </h1>
+                <p className="text-label uppercase tracking-widest text-primary mt-1.5">
+                  Albuquerque, NM
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </section>
+
+      {/* TODAY'S GAMES STRIP — game day only, finger-driven scroll-snap, no
+          idle motion (decision 5). */}
+      {gameDay && (
+        <section aria-label="Today's games" data-testid="home-today-strip" className="cvf-today-strip">
+          {todaysGames.map((g) => <TodayCard key={g.id} game={g} state={state} />)}
+        </section>
+      )}
 
       {/* FEATURED SCOREBOARD — latest final + next game, league-wide */}
       {(latestFinal || nextUp) && (
@@ -334,6 +384,83 @@ export default function Home() {
         </FilterResultRegion>
       </section>
 
+      {/* NEW TEAMS — the community feed half of decision 5's body. Team names
+          only; captain contact details never reach a public surface. */}
+      {newTeams.length > 0 && (
+        <section data-testid="home-new-teams">
+          <SectionHeading title="New Teams" subtitle="Who's joining the league" />
+          <div className="bg-card border border-border rounded-xl overflow-hidden">
+            {newTeams.map((item) => (
+              <div key={item.id} className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0">
+                <StructuralIdentityBadge className="cvf-identity-badge--sm" name={item.team_name} color="var(--cvf-teal)" />
+                <span className="min-w-0 flex-1 text-sm text-foreground">
+                  <span className="font-semibold">{item.team_name}</span>{" "}
+                  <span className="text-muted-foreground">
+                    {item.status === "approved" ? "just joined" : "wants in"} · {sportName(item.sport)}
+                  </span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* NEWCOMER CTA — below the fold per decision 5; recruitment stops being
+          every session's first pixel. */}
+      <section data-testid="home-join-below-fold" className="bg-card border border-border rounded-2xl p-5 md:p-6">
+        <h2 className="font-display uppercase text-display-lg text-foreground">New to CVF?</h2>
+        <p className="text-sm text-muted-foreground mt-1 max-w-md">
+          Adult kickball and flag football in Albuquerque. Bring a team or come solo — we'll find you one.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2.5">
+          <Button asChild className="h-11 w-full sm:w-auto">
+            <Link to="/register-team" data-testid="hero-register-team">
+              Submit Team Interest <ArrowRight size={14} weight="bold" />
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="h-11 w-full sm:w-auto">
+            <Link to="/free-agent-signup" data-testid="hero-free-agent">
+              Join Free Agent Pool
+            </Link>
+          </Button>
+        </div>
+      </section>
+
     </div>
   );
 }
+
+const gameWeekday = (game) =>
+  new Intl.DateTimeFormat("en-US", { timeZone: LEAGUE_TIME_ZONE, weekday: "long" }).format(new Date(game.starts_at));
+
+// One card of the game-day strip: both identities, the score or kickoff time,
+// and the field — sized so the next card peeks in at 375px, inviting the swipe.
+const TodayCard = ({ game, state }) => {
+  const home = getTeam(state, game.home_team_id);
+  const away = getTeam(state, game.away_team_id);
+  const completed = isFinalOutcome(game);
+  const forfeit = isForfeitOutcome(game);
+  const homeWin = completed && (forfeit ? game.winner_team_id === game.home_team_id : game.home_score > game.away_score);
+  const awayWin = completed && (forfeit ? game.winner_team_id === game.away_team_id : game.away_score > game.home_score);
+  return (
+    <Link to={`/game/${game.id}`} data-testid={`today-card-${game.id}`} className="cvf-today-card bg-card border border-border hover:border-primary/50">
+      <TodayLine team={away} value={completed ? (forfeit ? (awayWin ? "W" : "L") : game.away_score) : formatGameTime(game)} isWinner={awayWin} isLoser={homeWin} isTime={!completed} />
+      <TodayLine team={home} value={completed ? (forfeit ? (homeWin ? "W" : "L") : game.home_score) : null} isWinner={homeWin} isLoser={awayWin} />
+      <span className="cvf-today-card__meta">{completed ? (forfeit ? "Forfeit" : "Final") : venueLabel(state, game)}</span>
+    </Link>
+  );
+};
+
+const TodayLine = ({ team, value, isWinner, isLoser, isTime }) => (
+  <span className="cvf-today-card__line">
+    <StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} />
+    <span className={`cvf-today-card__name ${isWinner ? "text-[var(--win)] font-semibold" : isLoser ? "text-[var(--loss-text)]" : "text-foreground"}`}>
+      {team?.name || "TBD"}
+    </span>
+    {value != null && (
+      <span className={`cvf-today-card__value ${isTime ? "text-teal text-xl" : isWinner ? "text-[var(--win)]" : isLoser ? "text-[var(--loss-text)]" : ""}`}>
+        {value}
+      </span>
+    )}
+  </span>
+);
