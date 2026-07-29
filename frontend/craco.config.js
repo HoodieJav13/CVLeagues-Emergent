@@ -19,6 +19,20 @@ if (config.enableHealthCheck) {
 }
 
 let webpackConfig = {
+  // 2026-07-29 flake investigation (see CLAUDE.md backlog resolution): the
+  // ScoreEntry/HallOfFameTab timeouts were never a leak — a full
+  // --detectOpenHandles run reports zero open handles — but a per-act() cost
+  // multiplier from chronic machine contention on the dev box (load averages
+  // 250-400 from unrelated long-running apps turn ~100ms React commits into
+  // 2-4s). The mega-test was split; this budget gives every test the same
+  // documented headroom instead of ad-hoc per-test bumps. A genuinely hung
+  // test still fails — just at 20s instead of 5s.
+  jest: {
+    configure: (jestConfig) => {
+      jestConfig.testTimeout = 20000;
+      return jestConfig;
+    },
+  },
   eslint: {
     configure: {
       extends: ["plugin:react-hooks/recommended"],

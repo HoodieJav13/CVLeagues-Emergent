@@ -22,8 +22,27 @@ const initialState = {
   },
 };
 
-function HallOfFameHarness() {
-  const [state, setState] = useState(initialState);
+// A curated entry as the tab itself saves one, so the edit/delete tests can
+// start from an existing entry instead of re-driving the creation dialog —
+// each test stays inside a handful of act() cycles.
+const curatedEntry = {
+  id: "hof-1",
+  entry_type: "player",
+  profile_id: "profile-1",
+  team_id: null,
+  game_id: null,
+  sport: "kickball",
+  season: "Summer 2026",
+  record_scope: "season",
+  title: "First Induction",
+  blurb: "",
+  stat_key: "",
+  stat_value: "",
+  display_order: 0,
+};
+
+function HallOfFameHarness({ seededEntries = [] }) {
+  const [state, setState] = useState({ ...initialState, hofEntries: seededEntries });
   const createEntity = async (collection, entity) => {
     setState((current) => ({ ...current, [collection]: [...current[collection], { id: "hof-1", ...entity }] }));
   };
@@ -87,7 +106,11 @@ describe("HallOfFameTab curation", () => {
     container.remove();
   });
 
-  test("creates, edits, and deletes a curated entry through the admin UI", async () => {
+  // Formerly one create+edit+delete mega-test carrying a raised 15s timeout —
+  // the documented parallel-run flake. Split so each operation fits a handful
+  // of act() cycles inside the default budget and a failure isolates;
+  // edit/delete start from a seeded entry instead of re-driving the dialog.
+  test("creates a curated entry through the admin UI", async () => {
     await act(async () => root.render(<HallOfFameHarness />));
 
     await act(async () => click(container.querySelector('[data-testid="hof-add-entry"]')));
@@ -96,12 +119,20 @@ describe("HallOfFameTab curation", () => {
     await act(async () => click(document.querySelector('[data-testid="hof-save-entry"]')));
 
     expect(container.querySelector('[data-testid="hof-entry-hof-1"]')?.textContent).toContain("First Induction");
+  });
+
+  test("edits an existing curated entry", async () => {
+    await act(async () => root.render(<HallOfFameHarness seededEntries={[curatedEntry]} />));
 
     await act(async () => click(container.querySelector('[aria-label="Edit entry"]')));
     await act(async () => setInputValue(document.querySelector('[data-testid="hof-title"]'), "Updated Induction"));
     await act(async () => click(document.querySelector('[data-testid="hof-save-entry"]')));
 
     expect(container.querySelector('[data-testid="hof-entry-hof-1"]')?.textContent).toContain("Updated Induction");
+  });
+
+  test("deletes a curated entry after confirmation", async () => {
+    await act(async () => root.render(<HallOfFameHarness seededEntries={[curatedEntry]} />));
 
     await act(async () => click(container.querySelector('[aria-label="Delete entry"]')));
     const deleteButton = [...document.querySelectorAll("button")].find((button) => button.textContent === "Delete");
@@ -109,5 +140,5 @@ describe("HallOfFameTab curation", () => {
 
     expect(container.querySelector('[data-testid="hof-entry-hof-1"]')).toBeNull();
     expect(container.textContent).toContain("No curated entries");
-  }, 15000);
+  });
 });
