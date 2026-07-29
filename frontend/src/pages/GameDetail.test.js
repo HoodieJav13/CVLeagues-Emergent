@@ -69,9 +69,11 @@ describe("GameDetail score action", () => {
   test("renders an authorized score link through the shared Button contract", async () => {
     await act(async () => root.render(<GameDetail />));
 
-    const title = container.querySelector('[data-testid="game-detail-heading"] h1');
-    expect(title?.className).toContain("text-display-xl");
-    expect(title?.className).not.toContain("text-display-lg");
+    // B2 (Addendum 8): the scoreboard is the visual title; the matchup h1
+    // remains in the document, visually hidden, for accessibility.
+    const heading = container.querySelector('[data-testid="game-detail-heading"]');
+    expect(heading?.className).toContain("sr-only");
+    expect(heading?.querySelector("h1")?.textContent).toContain("vs");
 
     const action = container.querySelector('[data-testid="game-enter-score"]');
     expect(action?.tagName).toBe("A");

@@ -204,6 +204,21 @@ the table they accompany**, under all of these conditions:
 First approved instances: the Standings point-differential worm and team-form
 sparklines. Every other line of the anti-pattern list stands.
 
+## Game Detail team-color environment — clarification (ADDENDUM 8)
+
+**Clarifying note (owner-directed, Pass 4 decision 1, 2026-07-28; recorded at
+the start of the Game Detail batch per that decision's own instruction).**
+
+Game Detail is a **team-color environment at the B2 level**: two fields of the
+teams' own `logo_color` at a **~38% surface mix** meet at the score. This uses
+existing per-team color inside existing fallback-first zones, so it is a
+clarification, not a new motif — recorded because color at this saturation
+exceeds anything previously shipped. The scoreboard **is** the page title (the
+matchup `h1` becomes visually hidden but remains for accessibility and
+document structure); game state, date, and time are each stated **once**.
+The **B3 full-bleed poster** remains approved *only* as a dedicated shareable
+frame — it is **not** the default game page and is not built by this batch.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

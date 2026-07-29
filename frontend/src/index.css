@@ -426,7 +426,29 @@
 .cvf-event-frame[data-game-state="upcoming"] { border-color: rgb(91 184 204 / 0.72); }
 .cvf-event-frame[data-game-stage="playoff"],
 .cvf-event-frame[data-game-stage="championship"] { border-color: rgb(245 184 46 / 0.72); }
-.cvf-game-score { font-size: 2.75rem; line-height: 1; }
+.cvf-game-score { font-size: 4rem; line-height: 1; letter-spacing: -0.03em; }
+/* B2 team-color environment (Addendum 8). */
+.cvf-gd-field { padding: 1.25rem 0.75rem 1.5rem; }
+/* The chip anchors to the score band, not the vertical center — long names
+   wrap toward the middle of the card and must never run under it. */
+.cvf-gd-state-chip {
+    position: absolute;
+    left: 50%;
+    bottom: 3.25rem;
+    z-index: 2;
+    transform: translateX(-50%);
+    padding: 0.2rem 0.65rem;
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    font-family: var(--font-display);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
 .cvf-upcoming-focal { display: flex; min-width: 0; flex-direction: column; align-items: center; }
 .cvf-upcoming-focal__date {
     color: var(--text-secondary);
@@ -505,7 +527,7 @@
     .cvf-home-hero__focal .cvf-structural-corner--hero > span:nth-child(2) { top: 2.25rem; width: 5.75rem; }
     .cvf-home-hero__focal .cvf-structural-corner--hero > span:nth-child(3) { top: 3.35rem; width: 4rem; }
     .cvf-home-hero__mobile-mark { display: none; }
-    .cvf-game-score { font-size: 3.5rem; }
+    .cvf-game-score { font-size: 4.5rem; }
     .cvf-upcoming-focal__time { font-size: 3rem; }
 }
 

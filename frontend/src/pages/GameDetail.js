@@ -59,12 +59,13 @@ export default function GameDetail() {
         <ArrowLeft size={16} weight="bold" /> Back
       </Button>
 
-      {/* Page-level matchup title. */}
-      <div data-testid="game-detail-heading">
-        <h1 className="font-display uppercase text-display-xl text-foreground">
-          {away?.name || "TBD"} <span className="text-muted-foreground">vs</span> {home?.name || "TBD"}
+      {/* B2 (Addendum 8): the scoreboard IS the page title. The matchup h1
+          stays for accessibility and document structure but no longer spends
+          three viewport lines repeating what the scoreboard states. */}
+      <div data-testid="game-detail-heading" className="sr-only">
+        <h1>
+          {away?.name || "TBD"} vs {home?.name || "TBD"}
         </h1>
-        <p className="text-caption text-muted-foreground mt-1">{dateStr}</p>
       </div>
 
       <Card
@@ -79,31 +80,41 @@ export default function GameDetail() {
         {isSpecialStage(game) && (
           <StageBanner stage={game.stage} className="-mx-5 -mt-5 md:-mx-7 md:-mt-7 mb-5 px-5 md:px-7 py-2 rounded-t-2xl" />
         )}
-        {/* Both badges cluster left so the sun/moon mark owns the corner
-            unoccluded (Addendum 6 placement rule). */}
+        {/* Sport clusters left so the sun/moon mark owns the corner (Addendum
+            6). For a decided game the centered FINAL/FORFEIT chip is the one
+            state statement, so the StatusBadge renders only while the game is
+            still live in the schedule — state, date, and time each speak once
+            (Addendum 8). */}
         <div className="flex items-center gap-2 mb-5">
           <SportBadge sport={game.sport} />
-          <StatusBadge status={game.status} />
+          {!completed && <StatusBadge status={game.status} />}
         </div>
 
-        <div className={`grid items-center gap-2 ${completed ? "grid-cols-3" : "grid-cols-2 md:grid-cols-3"}`}>
-          <TeamHead team={away} score={forfeit ? (game.winner_team_id === away?.id ? "W" : "L") : game.away_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === away?.id : game.away_score > game.home_score)} />
-          {completed ? (
-            <div className="text-center">
-              <span className="font-display text-muted-foreground text-sm uppercase tracking-widest">{forfeit ? "Forfeit" : "Final"}</span>
-            </div>
-          ) : (
-            <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 text-center md:order-none md:col-span-1 md:mt-0" dateTime={gameDateKey(game)}>
-              <span className="cvf-upcoming-focal__date">{shortDate}</span>
-              <span className="cvf-upcoming-focal__time">{formatGameTime(game)}</span>
-            </time>
+        {/* B2 team-color environment: each side is a field of that team's own
+            color at ~38% mix, meeting at the score. */}
+        <div className="cvf-gd-scoreboard relative -mx-5 md:-mx-7">
+          <div className={`grid items-stretch ${completed ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"}`}>
+            <TeamHead team={away} score={forfeit ? (game.winner_team_id === away?.id ? "W" : "L") : game.away_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === away?.id : game.away_score > game.home_score)} />
+            {!completed && (
+              <time className="cvf-upcoming-focal order-3 col-span-2 mt-3 pb-2 text-center md:order-none md:col-span-1 md:mt-0 md:self-center" dateTime={gameDateKey(game)}>
+                <span className="cvf-upcoming-focal__date">{shortDate}</span>
+                <span className="cvf-upcoming-focal__time">{formatGameTime(game)}</span>
+              </time>
+            )}
+            <TeamHead team={home} score={forfeit ? (game.winner_team_id === home?.id ? "W" : "L") : game.home_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === home?.id : game.home_score > game.away_score)} home />
+          </div>
+          {completed && (
+            <span className="cvf-gd-state-chip">{forfeit ? "Forfeit" : "Final"}</span>
           )}
-          <TeamHead team={home} score={forfeit ? (game.winner_team_id === home?.id ? "W" : "L") : game.home_score} completed={completed} win={completed && (forfeit ? game.winner_team_id === home?.id : game.home_score > game.away_score)} home />
         </div>
 
         <div className="mt-6 pt-5 border-t border-border flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5"><CalendarBlank size={15} weight="bold" /> {dateStr}</span>
-          <span className="flex items-center gap-1.5"><Clock size={15} weight="bold" /> {formatGameTime(game)}</span>
+          {completed && (
+            <>
+              <span className="flex items-center gap-1.5"><CalendarBlank size={15} weight="bold" /> {dateStr}</span>
+              <span className="flex items-center gap-1.5"><Clock size={15} weight="bold" /> {formatGameTime(game)}</span>
+            </>
+          )}
           <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {venueLabel(state, game)}</span>
         </div>
 
@@ -228,8 +239,20 @@ export default function GameDetail() {
   );
 }
 
+// One team half of the color environment: the field is that team's own
+// logo_color mixed to ~38% against the card surface, angled toward the
+// center so the two fields meet at the score.
+const fieldBackground = (team, home) =>
+  team?.logo_color
+    ? { background: `linear-gradient(${home ? 200 : 160}deg, color-mix(in srgb, ${team.logo_color} 38%, hsl(var(--card))), hsl(var(--card)) 85%)` }
+    : undefined;
+
 const TeamHead = ({ team, score, completed, win, home }) => (
-  <Link to={`/team/${team.id}`} className="flex min-w-0 flex-col items-center rounded-cvf-md text-center group">
+  <Link
+    to={`/team/${team.id}`}
+    className="cvf-gd-field flex min-w-0 flex-col items-center text-center group"
+    style={fieldBackground(team, home)}
+  >
     <StructuralIdentityBadge team={team} className="mb-2" />
     <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
     <span className="text-micro text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
