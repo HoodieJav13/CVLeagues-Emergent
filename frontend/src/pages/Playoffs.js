@@ -62,7 +62,7 @@ export default function Playoffs() {
 
   return (
     <div className="space-y-5">
-      <SectionHeading as="h1" band title="Playoffs" subtitle="Single elimination · all teams qualify · third-place game included" />
+      <SectionHeading as="h1" band tone="gold" title="Playoffs" subtitle="Single elimination · all teams qualify · third-place game included" />
       <div className="grid sm:grid-cols-2 gap-2.5">
         <Filter label="Sport" value={sport} onChange={onSport} testid="playoffs-sport">
           {SPORTS.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
@@ -73,7 +73,7 @@ export default function Playoffs() {
       </div>
 
       {!league ? (
-        <EmptyState icon={Trophy} title="No playoff league" message="A single-elimination league must be configured before a bracket can be created." />
+        <EmptyState icon={Trophy} title="No playoffs here yet" message="This sport gets a bracket once its league is set up for one." />
       ) : bracket ? (
         <div key={bracket.id} className="space-y-5 animate-fade-in" data-testid="playoff-bracket-reveal">
           <div className="flex flex-wrap items-center gap-2">
@@ -109,11 +109,35 @@ export default function Playoffs() {
           {seedIds.length < 4 && <p className="text-xs text-destructive">At least four active teams are required.</p>}
         </section>
       ) : (
-        <EmptyState icon={Trophy} title="Bracket not published yet" message={`${league.name}'s bracket will appear after the administrator locks the seeds.`} />
+        <EmptyState icon={BracketSilhouette} title="Bracket not published yet" message={`${league.name}'s bracket goes live once the league locks the seeds.`} />
       )}
     </div>
   );
 }
+
+// Structural bracket silhouette (Pass 1R finding, finally built): the empty
+// state shows the shape of what's coming — seed lines merging toward a
+// champion hexagon — in the page's own structural-line grammar.
+const BracketSilhouette = ({ size = 40 }) => (
+  <svg
+    width={size * 2}
+    height={size * 1.4}
+    viewBox="0 0 80 56"
+    fill="none"
+    strokeWidth="2"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <g stroke="var(--border-strong)">
+      <path d="M2 6 h12 M2 18 h12 M14 6 v12 M14 12 h10" />
+      <path d="M2 38 h12 M2 50 h12 M14 38 v12 M14 44 h10" />
+    </g>
+    <g stroke="var(--cvf-gold)">
+      <path d="M24 12 v32 M24 28 h16" />
+      <polygon points="46,21 54,21 58,28 54,35 46,35 42,28" />
+    </g>
+  </svg>
+);
 
 const BracketView = ({ state, seeds, matches, isAdmin, app, league }) => {
   const rounds = [...new Set(matches.map((item) => item.round_number))].sort((a, b) => a - b);

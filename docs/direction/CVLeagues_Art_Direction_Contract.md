@@ -219,6 +219,25 @@ document structure); game state, date, and time are each stated **once**.
 The **B3 full-bleed poster** remains approved *only* as a dedicated shareable
 frame — it is **not** the default game page and is not built by this batch.
 
+## Voice register (ADDENDUM 9)
+
+**New section (owner-directed, Pass 4 decision 9, 2026-07-28; recorded at the
+start of the voice pass per change control).**
+
+The app speaks **broadcast as its base register with a local-warm lean**:
+
+- **Data surfaces speak broadcast**: numbers first, no filler, no hedging.
+  Labels are sports vocabulary, never schema vocabulary — "leagues," never
+  "containers"; "the league," never "the administrator."
+- **Empty and community moments carry Albuquerque warmth**: an empty state is
+  an invitation with a fact in it, not an apology ("Season opens June 14"
+  energy), and community moments ("Westside Warriors wants in") sound like a
+  league, not a database.
+- **Nothing sounds like a form validator.** Guidance says what to do next in
+  plain language; it never recites rule names or scolds.
+- Operational/admin surfaces keep their precise, denser register — this
+  section governs public copy.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

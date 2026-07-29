@@ -4,6 +4,7 @@ import { CheckCircle } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useApp } from "../context/AppStateContext";
 import { SectionHeading } from "../components/common/Section";
+import { FormSurface, FormSection } from "../components/common/FormSection";
 import { SPORTS } from "../lib/statsConfig";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
@@ -123,11 +124,13 @@ export default function FreeAgentSignup() {
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-up">
-      <SectionHeading as="h1" band title="Free Agent Sign-Up" subtitle="No team? No problem. Get on the list for a roster spot." />
+      {/* "Signup" as one word — the hyphenated form broke across lines at
+          375px (Pass 4 mechanical fix). */}
+      <SectionHeading as="h1" band title="Free Agent Signup" subtitle="No team? No problem. Get on the list for a roster spot." />
 
+      <FormSurface>
       {/* Personal info */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-foreground text-sm">Your Info</p>
+      <FormSection n={1} title="Your Info">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="First Name" required error={errors.first_name}>
             <Input data-testid="fa-first-name" value={form.first_name} onChange={(e) => set("first_name", e.target.value)} className="bg-surface-sunken border-border" />
@@ -145,11 +148,10 @@ export default function FreeAgentSignup() {
             <Input data-testid="fa-email" aria-label="Email" type="email" value={form.email} onChange={(e) => set("email", e.target.value)} placeholder="Email" className="bg-surface-sunken border-border" />
           </div>
         </Field>
-      </div>
+      </FormSection>
 
       {/* Sport & availability */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-foreground text-sm">Sport & Availability</p>
+      <FormSection n={2} title="Sport & Availability">
         <Field label="Sport Interest" required error={errors.sports}>
           <div role="group" aria-label="Sport interest" className="flex flex-wrap gap-2 mt-1">
             {SPORTS.map((s) => (
@@ -196,13 +198,10 @@ export default function FreeAgentSignup() {
             <Input data-testid="fa-position" value={form.preferred_position} onChange={(e) => set("preferred_position", e.target.value)} placeholder="e.g. Pitcher, WR…" className="bg-surface-sunken border-border" />
           </Field>
         </div>
-      </div>
+      </FormSection>
 
       {/* Emergency contact */}
-      <div className="bg-card border border-border rounded-2xl p-5 space-y-4">
-        <p className="font-display uppercase tracking-tight text-foreground text-sm">
-          Emergency Contact <span className="text-muted-foreground font-normal normal-case tracking-normal text-xs">(optional)</span>
-        </p>
+      <FormSection n={3} title="Emergency Contact" hint="(optional)">
         <div className="grid sm:grid-cols-2 gap-4">
           <Field label="Contact Name" optional>
             <Input data-testid="fa-ec-name" value={form.emergency_contact_name} onChange={(e) => set("emergency_contact_name", e.target.value)} className="bg-surface-sunken border-border" />
@@ -211,10 +210,10 @@ export default function FreeAgentSignup() {
             <Input data-testid="fa-ec-phone" value={form.emergency_contact_phone} onChange={(e) => set("emergency_contact_phone", e.target.value)} className="bg-surface-sunken border-border" />
           </Field>
         </div>
-      </div>
+      </FormSection>
 
-      {/* Notes */}
-      <div className="bg-card border border-border rounded-2xl p-5">
+      {/* Notes & consent */}
+      <FormSection n={4} title="Last Thing">
         <Field label="Notes" optional>
           <Textarea
             data-testid="fa-notes"
@@ -224,10 +223,6 @@ export default function FreeAgentSignup() {
             className="bg-surface-sunken border-border"
           />
         </Field>
-      </div>
-
-      {/* Consent */}
-      <div className="bg-card border border-border rounded-2xl p-5">
         <label className="flex items-start gap-3 min-h-[44px] cursor-pointer">
           <Checkbox data-testid="fa-consent" checked={consent_to_contact} onCheckedChange={setConsentToContact} className="mt-0.5" />
           <span className="text-sm text-muted-foreground leading-snug">
@@ -236,7 +231,8 @@ export default function FreeAgentSignup() {
           </span>
         </label>
         {errors.consent && <p className="text-xs text-destructive mt-2 ml-7">{errors.consent}</p>}
-      </div>
+      </FormSection>
+      </FormSurface>
 
       <Button
         onClick={submit}

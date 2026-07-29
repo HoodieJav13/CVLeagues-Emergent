@@ -59,6 +59,9 @@ export const StatStrip = ({ className = "", items = [], testId }) => (
         <dt className="cvf-stat-strip__label">{item.label}</dt>
         <dd className="cvf-stat-strip__value" style={item.color ? { color: item.color } : undefined}>
           {item.value}
+          {item.sub != null && (
+            <span className="cvf-stat-strip__sub" data-testid={item.subTestId}>{item.sub}</span>
+          )}
         </dd>
       </div>
     ))}

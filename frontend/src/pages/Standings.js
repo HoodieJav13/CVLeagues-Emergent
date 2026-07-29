@@ -66,7 +66,7 @@ export default function Standings() {
         testId="standings-results"
       >
         {leagues.length === 0 && (
-          <EmptyState icon={Ranking} title="No standings yet" message="Standings appear once leagues and teams are set up." />
+          <EmptyState icon={Ranking} title="The table opens with the season" message="Standings appear as soon as teams are enrolled." />
         )}
         {leagues.map((league) => {
           const rows = computeStandings(state, league.id);
@@ -83,7 +83,7 @@ export default function Standings() {
               <SeasonShape state={state} league={league} rows={rows} />
               <div className="cvf-standings-register bg-card border border-border overflow-hidden">
                 {rows.length === 0 && (
-                  <EmptyState icon={Ranking} title="No teams yet" message="Teams appear here after they join this league." density="compact" />
+                  <EmptyState icon={Ranking} title="No teams enrolled yet" message="Teams land here as they join the league." density="compact" />
                 )}
                 {rows.map(({ team, record, rank, displayRank, rankLabel }) => (
                   <StandingsRow
