@@ -252,6 +252,18 @@ per Addendum 6's no-false-time-state rule.
 Verified: 208/208 suite, production build, live captures at 375/1440 across
 night/day/final/forfeit/playoff/Home states (`mark-*.jpeg`).
 
+### Sun redraw (owner rejection, 2026-07-28, fourth iteration)
+
+The shipped stroke-built sun was rejected on owner review ("looks like a
+7-year-old drew it") — the diagnosis: four rays at uneven ad-hoc angles, a
+horizon running into the frame edge, and an outline construction sitting next
+to a solid moon. Redrawn as a **solid gold half-disc** grounded on an inset
+round-capped horizon with a **symmetric five-ray fan** (evenly spaced at 30°
+steps, alternating long-short-long-short-long in the Zia rhythm) — the same
+filled solidity as the crescent, so the pair reads as one system. Addendum 6's
+sun description updated to match; the vetoable-gold note stands. Same-day
+captures replace `mark-day-final-g17-*.jpeg`.
+
 ## Test baseline
 
 Clean branch (`d550315`, before any edit):

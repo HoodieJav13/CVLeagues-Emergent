@@ -39,16 +39,21 @@ const Moon = () => (
   </svg>
 );
 
+/* Sunrise: solid half-disc grounded on a horizon, with a symmetric five-ray
+ * fan in the Zia alternating-length rhythm (long-short-long-short-long).
+ * Built with the same solidity as the crescent so the pair reads as one
+ * system, not an outline sun next to a filled moon. */
 const Sun = () => (
   <svg width="84" height="64" viewBox="0 0 84 64" aria-hidden="true">
-    <g stroke="var(--cvf-gold)" strokeWidth="3" strokeLinecap="square" fill="none">
-      <path d="M45 24 a 13.5 13.5 0 0 1 27 0" />
-      <line x1="33" y1="24" x2="84" y2="24" />
-      <line x1="58.5" y1="1.5" x2="58.5" y2="10.5" />
-      <line x1="42" y1="6" x2="47.25" y2="14.25" />
-      <line x1="75" y1="6" x2="69.75" y2="14.25" />
-      <line x1="30" y1="15.75" x2="39" y2="19.5" />
+    <g stroke="var(--cvf-gold)" strokeWidth="3.5" strokeLinecap="round" fill="none">
+      <line x1="32" y1="42" x2="82" y2="42" />
+      <line x1="57" y1="25" x2="57" y2="13" />
+      <line x1="65.5" y1="27.3" x2="69.5" y2="20.3" />
+      <line x1="48.5" y1="27.3" x2="44.5" y2="20.3" />
+      <line x1="71.7" y1="33.5" x2="82.1" y2="27.5" />
+      <line x1="42.3" y1="33.5" x2="31.9" y2="27.5" />
     </g>
+    <path d="M44 42 a 13 13 0 0 1 26 0 Z" fill="var(--cvf-gold)" />
   </svg>
 );
 

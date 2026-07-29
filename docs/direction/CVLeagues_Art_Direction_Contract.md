@@ -159,12 +159,14 @@ replacing the state-tone coloring originally proposed above:
 
 - **Moon:** solid crescent in white (`--text-primary`), star in Zia gold
   (`--cvf-gold`). Chosen directly by the owner.
-- **Sun:** the A2 sun drawing (half-disc on a horizon line with a Zia-derived
-  ray fan) rendered in Zia gold — the gold sun is the brand's own symbol
-  color. *This color is an implementation extrapolation of the owner's
-  white-moon/gold-star direction, not an explicit owner choice; day games are
-  currently rare (no in-season game starts before 6 PM), and the owner may
-  veto or recolor it at review.*
+- **Sun:** a **solid gold half-disc rising over a grounded horizon line, with
+  a symmetric five-ray fan in the Zia alternating-length rhythm** — built with
+  the same filled solidity as the crescent so the pair reads as one system.
+  (Supersedes the stroke-built A2 sun, which the owner rejected on review as
+  amateurish.) *The gold color is an implementation extrapolation of the
+  owner's white-moon/gold-star direction — the gold sun is the brand's own
+  symbol color — and remains vetoable; day games are currently rare (no
+  in-season game starts before 6 PM).*
 - Because the mark no longer carries state tone, game state continues to read
   from the StatusBadge label and the event-frame border color — consistent
   with the three-signal rule that meaning never rides on one channel.
