@@ -300,6 +300,97 @@ export async function cancelScorekeepingSession({ lease, reason }) {
   fail(error, "cancel scorekeeping session");
 }
 
+/* --------------------- practice mode (Migration 30) ---------------------- */
+// Practice sessions are gameless rehearsals: the seven RPCs below read/write
+// only the private scorekeeping tables and never touch games, player_stats,
+// game_edit_history, or playoff tables. Finalization RETURNS the projection.
+
+export async function startPracticeSession(args) {
+  const { data, error } = await supabase.rpc("start_practice_session", {
+    p_home_team_id: args.home_team_id,
+    p_away_team_id: args.away_team_id,
+    p_rule_version: args.rule_version,
+    p_regulation_period_count: Number(args.regulation_period_count),
+    p_overtime_start_setting: args.overtime_start_setting?.trim() || null,
+    p_rules_snapshot: args.rules_snapshot || {},
+  });
+  fail(error, "start practice session");
+  return data;
+}
+
+export async function appendPracticeEvent({ lease, command }) {
+  const { data, error } = await supabase.rpc("append_practice_event", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+    p_idempotency_key: command.idempotency_key,
+    p_action: command.action,
+    p_event_type: command.event_type,
+    p_period_type: command.period_type ?? null,
+    p_period_number: command.period_number ?? null,
+    p_credited_team_id: command.credited_team_id ?? null,
+    p_points: Number(command.points || 0),
+    p_voids_event_id: command.voids_event_id ?? null,
+    p_replaces_event_id: command.replaces_event_id ?? null,
+    p_payload: command.payload || {},
+    p_attributions: command.attributions || [],
+    p_pairing_override_reason: command.pairing_override_reason?.trim() || null,
+  });
+  fail(error, "record practice event");
+  return data;
+}
+
+export async function renewPracticeSession(lease) {
+  const { data, error } = await supabase.rpc("renew_practice_session", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+  });
+  fail(error, "renew practice lease");
+  return data;
+}
+
+export async function resumePracticeSession(session_id, reason = "") {
+  const { data, error } = await supabase.rpc("resume_practice_session", {
+    p_session_id: session_id,
+    p_reason: reason.trim() || null,
+  });
+  fail(error, "resume practice session");
+  return data;
+}
+
+export async function cancelPracticeSession({ lease, reason }) {
+  const { error } = await supabase.rpc("cancel_practice_session", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+    p_reason: reason.trim(),
+  });
+  fail(error, "cancel practice session");
+}
+
+export async function finalizePracticeSession({ lease, idempotency_key, override_reason = "" }) {
+  const { data, error } = await supabase.rpc("finalize_practice_session", {
+    p_session_id: lease.session_id,
+    p_lease_token: lease.lease_token,
+    p_lease_version: lease.lease_version,
+    p_idempotency_key: idempotency_key,
+    p_override_reason: override_reason.trim() || null,
+  });
+  fail(error, "evaluate practice projection");
+  if (data?.ok === false) throw new Error(data.message || "Practice evaluation failed safely.");
+  return data;
+}
+
+export async function startPracticeCorrection(base_session_id, reason) {
+  const { data, error } = await supabase.rpc("start_practice_correction", {
+    p_base_session_id: base_session_id,
+    p_reason: reason.trim(),
+  });
+  fail(error, "start practice correction");
+  return data;
+}
+
 export async function declareLedgerForfeit({ game_id, winner_team_id, reason, idempotency_key }) {
   const { data, error } = await supabase.rpc("declare_ledger_forfeit", {
     p_game_id: game_id,

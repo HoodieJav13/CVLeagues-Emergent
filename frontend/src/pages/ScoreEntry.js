@@ -21,6 +21,21 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "..
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 import { SIGNED_STAT_KEYS, validateAggregateScore } from "../lib/scoreValidation";
 import { LedgerScorekeeper } from "../components/admin/LedgerScorekeeper";
+import { PracticeScorekeeper } from "../components/admin/PracticeScorekeeper";
+
+// A clearly separated admin-only entry into the no-consequence practice
+// rehearsal. Rendered outside the game-scoped flow (and even when no game
+// exists) because practice needs two teams, not a scheduled game.
+const PracticeEntryCard = ({ onOpen }) => (
+  <div data-testid="practice-mode-entry" className="rounded-xl border border-gold/40 bg-gold/5 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div>
+      <span className="inline-flex items-center rounded-full border border-gold/60 bg-gold/10 px-3 py-1 text-micro font-bold uppercase tracking-widest text-gold mb-1.5">PRACTICE — no consequences</span>
+      <p className="font-semibold">Practice mode</p>
+      <p className="text-sm text-muted-foreground">Rehearse the full event ledger — signed yards, overtime closes, corrections — against any two same-league-season teams. Nothing is published anywhere.</p>
+    </div>
+    <Button type="button" variant="outline" onClick={onOpen} className="shrink-0">Open practice mode</Button>
+  </div>
+);
 
 export default function ScoreEntry() {
   return (
@@ -92,6 +107,7 @@ function Entry() {
   const [saving, setSaving] = useState(false);
   const [gameSelectionRevision, setGameSelectionRevision] = useState(0);
   const [ledgerSelected, setLedgerSelected] = useState(false);
+  const [practiceSelected, setPracticeSelected] = useState(false);
   const correctionTriggerRef = useRef(null);
 
   // (Re)initialize form whenever the selected game changes.
@@ -128,8 +144,17 @@ function Entry() {
     setValidation({ hard: [], soft: [] });
   }, [game_id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  if (practiceSelected) {
+    return <PracticeScorekeeper onExit={() => setPracticeSelected(false)} />;
+  }
+
   if (!game) {
-    return <EmptyState icon={CalendarX} title="No game available" message="Schedule a game before entering a score." />;
+    return (
+      <div className="space-y-6 max-w-3xl mx-auto">
+        <EmptyState icon={CalendarX} title="No game available" message="Schedule a game before entering a score." />
+        <PracticeEntryCard onOpen={() => setPracticeSelected(true)} />
+      </div>
+    );
   }
 
   if (ledgerSelected || game.scorekeeping_mode === "ledger") {
@@ -462,6 +487,8 @@ function Entry() {
         <FloppyDisk size={18} weight="bold" /> {saving ? "Saving…" : correctionDraft ? "Save corrected final" : "Submit Score"}
       </Button>
       </FilterResultRegion>
+
+      <PracticeEntryCard onOpen={() => setPracticeSelected(true)} />
 
       <Dialog open={correctionOpen} onOpenChange={(open) => {
         setCorrectionOpen(open);

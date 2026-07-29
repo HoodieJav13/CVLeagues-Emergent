@@ -411,7 +411,29 @@ yards input parallel to the completed-pass control; one event carries
 `carries +1` and the signed `rushYards` delta. Invariant matrix row updated to
 RESOLVED LOCALLY; hosted positive proof stays with the durable pilot.
 
-## Practice mode — STOPPED at an owner gate, by design
+## Practice mode — Option B chosen by the owner, built (Migration 30)
+
+The owner chose Option B. Migration 30
+(`20260729182047_practice_mode_sessions.sql`) implements it: practice sessions
+with NULL `game_id`, structural exclusion inside the four private tables,
+seven AAL2 practice RPCs on the official lease/sentinel/idempotency pattern,
+five trigger/guard functions re-emitted with practice branches (mechanically
+diffed against their authoritative sources — every changed line is the
+practice branch), partial unique indexes for the NULL-game sequence and
+idempotency scopes, and plain FKs backing the composite keys that stop
+enforcing at NULL. Local harness: **371/371** (340 + 31) plus the concurrency
+race, run independently twice. Frontend: seven adapter methods in both modes
+with identical signatures, a dedicated `PracticeScorekeeper` (reusing the
+ledger command builder; the game-bound `LedgerScorekeeper` stays byte-
+identical), an admin-only Practice entry on ScoreEntry, and a mock-isolation
+test proving finalize leaves `state.games`/`state.playerStats` untouched by
+reference. Suite 39 suites / 216 tests; build passes. Authored via two
+focused subagents against written briefs; orchestrator verification re-ran the
+harness and suite, mechanically diffed the re-emitted functions, and re-ran
+the public-surface grep. **Hosted push of Migration 30 is NOT included** — it
+requires the literal token `approved: hosted push of migrations 30-30`.
+
+### The original gate record (superseded by the owner's Option B choice)
 
 Every candidate shape amends a load-bearing Migration 24 invariant (game-bound
 sessions, composite anti-fork keys, per-game sequencing). Three shapes with

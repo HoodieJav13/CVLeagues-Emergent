@@ -98,4 +98,90 @@ describe("mock mode visible hosted parity", () => {
     expect(audit.before_state.home_score).toBe(game.home_score);
     expect(audit.after_state.home_score).toBe(game.home_score + 1);
   });
+
+  test("[INV-30] practice rehearsal returns projections without ever touching games or playerStats", async () => {
+    const game = currentApp.state.games.find((item) => item.id === "g1");
+    const gamesBefore = currentApp.state.games;
+    const playerStatsBefore = currentApp.state.playerStats;
+
+    // Start against the two same-league teams; participants snapshot both rosters.
+    let lease;
+    await act(async () => {
+      lease = currentApp.startPracticeSession({
+        home_team_id: game.home_team_id,
+        away_team_id: game.away_team_id,
+        rule_version: "CVF-2026.1",
+        regulation_period_count: 5,
+      });
+    });
+    const session = currentApp.state.scorekeepingSessions.find((item) => item.id === lease.session_id);
+    expect(session).toMatchObject({ session_kind: "practice", game_id: null, status: "open", stage: "practice" });
+    const participants = currentApp.state.scorekeepingParticipants.filter((item) => item.session_id === session.id);
+    const homeRunner = participants.find((item) => item.team_id === game.home_team_id);
+    const awayRunner = participants.find((item) => item.team_id === game.away_team_id);
+    expect(homeRunner).toBeTruthy();
+    expect(awayRunner).toBeTruthy();
+
+    // One home run event, then finalize: the projection is RETURNED, not stored.
+    let appended;
+    await act(async () => {
+      appended = currentApp.appendPracticeEvent({
+        lease,
+        command: {
+          idempotency_key: "practice-run-1", action: "record", event_type: "run",
+          period_type: "regulation", period_number: 1,
+          credited_team_id: game.home_team_id, points: 1,
+          attributions: [{ participant_id: homeRunner.id, role: "primary", stat_key: "runs", stat_delta: 1 }],
+        },
+      });
+    });
+    expect(appended.sequence_number).toBe(1);
+
+    let finalized;
+    await act(async () => {
+      finalized = currentApp.finalizePracticeSession({ lease, idempotency_key: "practice-final-1" });
+    });
+    expect(finalized).toMatchObject({ ok: true, status: "practice_finalized", home_score: 1, away_score: 0 });
+    expect(finalized.projection.player_stats[homeRunner.profile_id]).toEqual({
+      team_id: game.home_team_id,
+      stats: { runs: 1 },
+    });
+
+    // Rehearse a correction: void the run and replace it with an away run.
+    let correction;
+    await act(async () => {
+      correction = currentApp.startPracticeCorrection(session.id, "Rehearsal: credited the wrong team");
+    });
+    expect(correction).toMatchObject({ session_kind: "practice", practice_correction: true, base_session_id: session.id });
+    const awayClone = currentApp.state.scorekeepingParticipants.find((item) =>
+      item.session_id === correction.session_id && item.profile_id === awayRunner.profile_id
+    );
+    await act(async () => {
+      currentApp.appendPracticeEvent({
+        lease: correction,
+        command: { idempotency_key: "practice-void-1", action: "void", event_type: "void", points: 0, voids_event_id: appended.event_id },
+      });
+    });
+    await act(async () => {
+      currentApp.appendPracticeEvent({
+        lease: correction,
+        command: {
+          idempotency_key: "practice-replace-1", action: "replace", event_type: "run",
+          period_type: "regulation", period_number: 1,
+          credited_team_id: game.away_team_id, points: 1, replaces_event_id: appended.event_id,
+          attributions: [{ participant_id: awayClone.id, role: "primary", stat_key: "runs", stat_delta: 1 }],
+        },
+      });
+    });
+    let corrected;
+    await act(async () => {
+      corrected = currentApp.finalizePracticeSession({ lease: correction, idempotency_key: "practice-final-2" });
+    });
+    expect(corrected).toMatchObject({ ok: true, status: "practice_finalized", home_score: 0, away_score: 1 });
+
+    // The whole rehearsal — start, events, two finalizations, a correction —
+    // left every official collection untouched (same references, not just equal).
+    expect(currentApp.state.games).toBe(gamesBefore);
+    expect(currentApp.state.playerStats).toBe(playerStatsBefore);
+  });
 });

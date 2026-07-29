@@ -5,6 +5,15 @@ import * as backend from "../lib/backend";
 import { useRole } from "./RoleContext";
 import { buildSingleElimBracket } from "../lib/brackets";
 import { enforceAggregateValidation } from "../lib/scoreValidation";
+import {
+  appendPracticeEventMock,
+  cancelPracticeSessionMock,
+  finalizePracticeSessionMock,
+  renewPracticeSessionMock,
+  resumePracticeSessionMock,
+  startPracticeCorrectionMock,
+  startPracticeSessionMock,
+} from "../lib/practiceLedger";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -723,6 +732,53 @@ export function AppStateProvider({ children }) {
     throw new Error("Live scorekeeping requires the configured Supabase backend.");
   }, []);
 
+  /* ------------------- PRACTICE MODE (Migration 30) --------------------- */
+  // Unlike official ledger scoring, practice IS emulated in mock mode: a
+  // practice session is a rehearsal with no authoritative output, so a local
+  // fixture can never masquerade as scoring evidence. Sessions live in
+  // state.scorekeepingSessions with game_id null and session_kind 'practice';
+  // finalization computes and RETURNS a projection without touching games or
+  // playerStats — the same visible outcome as the hosted RPCs.
+  // Each helper computes { next, result } from the CURRENT state, advances the
+  // live stateRef synchronously (so chained calls — e.g. a void immediately
+  // followed by its replacement — compose), applies the state, and returns the
+  // RPC-shaped result to the caller.
+  const runPracticeMock = useCallback((fn) => {
+    const outcome = fn(stateRef.current);
+    stateRef.current = outcome.next;
+    setState(outcome.next);
+    return outcome.result;
+  }, []);
+
+  const startPracticeSession = useCallback(
+    (args) => runPracticeMock((prev) => startPracticeSessionMock(prev, args, newId)),
+    [runPracticeMock]
+  );
+  const appendPracticeEvent = useCallback(
+    (args) => runPracticeMock((prev) => appendPracticeEventMock(prev, args, newId)),
+    [runPracticeMock]
+  );
+  const renewPracticeSession = useCallback(
+    (lease) => runPracticeMock((prev) => renewPracticeSessionMock(prev, lease)),
+    [runPracticeMock]
+  );
+  const resumePracticeSession = useCallback(
+    (session_id, reason = "") => runPracticeMock((prev) => resumePracticeSessionMock(prev, session_id, reason)),
+    [runPracticeMock]
+  );
+  const cancelPracticeSession = useCallback(
+    (args) => runPracticeMock((prev) => cancelPracticeSessionMock(prev, args)),
+    [runPracticeMock]
+  );
+  const finalizePracticeSession = useCallback(
+    (args) => runPracticeMock((prev) => finalizePracticeSessionMock(prev, args)),
+    [runPracticeMock]
+  );
+  const startPracticeCorrection = useCallback(
+    (base_session_id, reason) => runPracticeMock((prev) => startPracticeCorrectionMock(prev, base_session_id, reason, newId)),
+    [runPracticeMock]
+  );
+
   // Restore the original seed data (clears any demo edits).
   const resetState = useCallback(() => {
     setState(mockState.resetMockState());
@@ -785,6 +841,13 @@ export function AppStateProvider({ children }) {
     startScorekeepingCorrection: act(backend.startScorekeepingCorrection),
     cancelScorekeepingSession: act(backend.cancelScorekeepingSession),
     declareLedgerForfeit: act(backend.declareLedgerForfeit),
+    startPracticeSession: act(backend.startPracticeSession),
+    appendPracticeEvent: act(backend.appendPracticeEvent),
+    renewPracticeSession: act(backend.renewPracticeSession),
+    resumePracticeSession: act(backend.resumePracticeSession),
+    cancelPracticeSession: act(backend.cancelPracticeSession),
+    finalizePracticeSession: act(backend.finalizePracticeSession),
+    startPracticeCorrection: act(backend.startPracticeCorrection),
     resetState: () => toast.info("Demo reset is mock-mode only."),
   };
 
@@ -828,6 +891,13 @@ export function AppStateProvider({ children }) {
         startScorekeepingCorrection: ledgerBackendOnly,
         cancelScorekeepingSession: ledgerBackendOnly,
         declareLedgerForfeit: ledgerBackendOnly,
+        startPracticeSession,
+        appendPracticeEvent,
+        renewPracticeSession,
+        resumePracticeSession,
+        cancelPracticeSession,
+        finalizePracticeSession,
+        startPracticeCorrection,
         resetState,
       };
 

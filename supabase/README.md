@@ -119,7 +119,7 @@ The current Performance Advisor reports 36 findings:
 
 Hosted authorization acceptance is complete and durably evidenced at 270/270 through Migration 29 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md).
 
-Sequence 5A and Migration 29 are behaviorally accepted at their independent hosted boundaries. The remaining signed-rushing-yardage UI path and practice-mode boundary must close before the durable official pilot. Because ledger evidence is intentionally append-only, the hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up.
+Sequence 5A and Migration 29 are behaviorally accepted at their independent hosted boundaries. The signed-rushing-yardage UI path and the practice-mode boundary both closed locally on 2026-07-29 (Migration 30, 371/371 local assertions); Migration 30's hosted publication awaits its own explicit push token before the durable official pilot can rehearse hosted. Because ledger evidence is intentionally append-only, the hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up.
 
 1. Complete recovery and session-revocation checks for the already-linked AAL2 administrator; decide separately whether a break-glass administrator is warranted.
 2. Enter hosted and Turnstile public/secret values in preview/production without exposing service-role or secret keys to React, then verify fail-closed behavior.
