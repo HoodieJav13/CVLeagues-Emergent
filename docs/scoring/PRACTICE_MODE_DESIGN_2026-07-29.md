@@ -1,6 +1,17 @@
-# Practice Mode — Design Options (owner decision required)
+# Practice Mode — Design Options (Option B selected)
 
-**Date:** 2026-07-29 · **Status:** PROPOSAL — no implementing code
+**Date:** 2026-07-29 · **Status:** SELECTED — Option B. Implementation is **not**
+authorized; an unreviewed one exists on branch `practice-mode-migration30`.
+
+> **Ordering record (2026-08-03).** Two facts, recorded without asserting which
+> authorized which, because the repository cannot establish it and the owner does
+> not recall: Migration 30 and a practice rehearsal UI were committed on
+> 2026-07-29 (`a9de3ab`, `10ad297`), and the written selection of Option B was
+> committed on 2026-08-01 (`781aafd`). The 8/01 selection was authored against
+> `origin/main` and states practice mode is "unbuilt," which was already untrue
+> of the branch; the branch's own copy of this file still says "no implementing
+> code," which is untrue there. Both are superseded by `CLAUDE.md` on `main`.
+> The branch stands as an unreviewed proposal implementation.
 **Contract:** RULES_INVARIANT_MATRIX pilot row — "A full no-consequence
 scoring rehearsal with events, retry, finalization preview, and correction.
 Practice data is explicitly nonproduction, nonpublic, and excluded from
