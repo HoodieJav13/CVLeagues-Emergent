@@ -3819,21 +3819,21 @@ select cvf_test.throws_ok(
   '%different command%'
 );
 select cvf_test.throws_ok(
-  'practice 10 [INV-04][INV-30] append_practice_event rejects an ordinary game session',
+  'practice 10 [INV-04][INV-40] append_practice_event rejects an ordinary game session',
   $$select public.append_practice_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
     'practice-cross-key','record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}','[]',null)
     from cvf_test.ledger_runtime_state where key='concurrency'$$,
   '%only a practice session%'
 );
 select cvf_test.throws_ok(
-  'practice 11 [INV-04][INV-30] the official append path rejects a practice session',
+  'practice 11 [INV-04][INV-40] the official append path rejects a practice session',
   $$select public.append_scorekeeping_event((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
     'practice-cross-official','record','touchdown','regulation',1,'30000000-0000-0000-0000-000000000005',6,null,null,'{}','[]',null)
     from cvf_test.ledger_runtime_state where key='practice-flag'$$,
   '%Unknown scorekeeping session%'
 );
 select cvf_test.throws_ok(
-  'practice 12 [INV-04][INV-30] the official finalize path rejects a practice session',
+  'practice 12 [INV-04][INV-40] the official finalize path rejects a practice session',
   $$select public.finalize_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,
     'practice-cross-final',null)
     from cvf_test.ledger_runtime_state where key='practice-flag'$$,

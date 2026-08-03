@@ -767,7 +767,7 @@ begin
     raise exception '[INV-20] Unknown scorekeeping session %.', p_session_id;
   end if;
   if v_session.session_kind <> 'practice' then
-    raise exception '[INV-04][INV-30] append_practice_event may target only a practice session.';
+    raise exception '[INV-04][INV-40] append_practice_event may target only a practice session.';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('cvf-scorekeeping-practice:' || p_session_id::text, 0));
   select * into v_session from public.scorekeeping_sessions where id = p_session_id for update;
@@ -876,7 +876,7 @@ begin
   select * into v_session from public.scorekeeping_sessions where id = p_session_id;
   if not found then raise exception '[INV-20] Unknown scorekeeping session %.', p_session_id; end if;
   if v_session.session_kind <> 'practice' then
-    raise exception '[INV-04][INV-30] renew_practice_session may target only a practice session.';
+    raise exception '[INV-04][INV-40] renew_practice_session may target only a practice session.';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('cvf-scorekeeping-practice:' || p_session_id::text, 0));
   select * into v_session from public.scorekeeping_sessions where id = p_session_id for update;
@@ -905,7 +905,7 @@ begin
   select * into v_session from public.scorekeeping_sessions where id = p_session_id;
   if not found then raise exception '[INV-20] Unknown scorekeeping session %.', p_session_id; end if;
   if v_session.session_kind <> 'practice' then
-    raise exception '[INV-04][INV-30] resume_practice_session may target only a practice session.';
+    raise exception '[INV-04][INV-40] resume_practice_session may target only a practice session.';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('cvf-scorekeeping-practice:' || p_session_id::text, 0));
   select * into v_session from public.scorekeeping_sessions where id = p_session_id for update;
@@ -940,7 +940,7 @@ begin
   select * into v_session from public.scorekeeping_sessions where id = p_session_id;
   if not found then raise exception '[INV-20] Unknown scorekeeping session %.', p_session_id; end if;
   if v_session.session_kind <> 'practice' then
-    raise exception '[INV-04][INV-30] cancel_practice_session may target only a practice session.';
+    raise exception '[INV-04][INV-40] cancel_practice_session may target only a practice session.';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('cvf-scorekeeping-practice:' || p_session_id::text, 0));
   select * into v_session from public.scorekeeping_sessions where id = p_session_id for update;
@@ -983,7 +983,7 @@ begin
     raise exception '[INV-20] Unknown scorekeeping session %.', p_session_id;
   end if;
   if v_session.session_kind <> 'practice' then
-    raise exception '[INV-04][INV-30] finalize_practice_session may target only a practice session.';
+    raise exception '[INV-04][INV-40] finalize_practice_session may target only a practice session.';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('cvf-scorekeeping-practice:' || p_session_id::text, 0));
   select * into v_session from public.scorekeeping_sessions where id = p_session_id for update;
@@ -1090,7 +1090,7 @@ begin
   select * into v_base from public.scorekeeping_sessions where id = p_base_session_id;
   if not found then raise exception '[INV-20] Unknown scorekeeping session %.', p_base_session_id; end if;
   if v_base.session_kind <> 'practice' or v_base.game_id is not null then
-    raise exception '[INV-04][INV-30] start_practice_correction may target only a practice session.';
+    raise exception '[INV-04][INV-40] start_practice_correction may target only a practice session.';
   end if;
   perform pg_advisory_xact_lock(hashtextextended('cvf-scorekeeping-practice:' || p_base_session_id::text, 0));
   select * into v_base from public.scorekeeping_sessions where id = p_base_session_id for update;

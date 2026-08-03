@@ -251,6 +251,7 @@ touchdown deliberately creates both passer and receiver credit.
 | `INV-37` | `game_edit_history` is audit output only and is never projection input. Ledger correction rows record `opened`, `finalized`, `canceled`, or `failed`, plus actor, server timestamp, required reason, and session reference. Aggregate-mode saves/corrections may additionally retain non-authoritative before/after score-stat snapshots, validation warnings, and their override reason, as decided for Sequence 2 on July 19, 2026. |
 | `INV-38` | Only controlled RPCs write `game_edit_history`. Direct client insert, update, delete, truncate, trigger, and references privileges are denied, and its existing append-only database guard remains active. |
 | `INV-39` | Neither clients nor administrators manually correct `games` or `player_stats` projection rows. Rebuilding from the effective ledger is the only ledger-mode correction path. |
+| `INV-40` | Every scorekeeping RPC operates only on a session of its own kind. The practice RPCs reject an ordinary or correction session, and the official RPCs reject a practice session. Kind is matched in both directions, so a rehearsal can never be scored through the official path and a real game can never be scored through the practice path. |
 
 ### Seven-step correction flow
 
