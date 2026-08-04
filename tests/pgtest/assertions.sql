@@ -4102,6 +4102,54 @@ select cvf_test.ok(
   and (select count(*)>0 from public.scorekeeping_events where game_id is null)
 );
 
+-- Making game_id nullable stopped the composite (id, game_id) foreign keys from
+-- enforcing on practice rows, because a composite FK with any NULL column is
+-- never checked. Migration 30 replaces that with plain FKs plus these two
+-- procedural guards, so the guards themselves need direct proof: nothing else
+-- now stops a practice session from reaching into an unrelated one.
+insert into cvf_test.ledger_runtime_state
+select 'practice-chain-fork', public.start_practice_correction(
+  (s.value->>'session_id')::uuid, 'Rehearsal: prove chain isolation')
+from cvf_test.ledger_runtime_state s where s.key='practice-flag';
+
+select cvf_test.throws_ok(
+  'practice 32 [INV-11][INV-36] a practice event cannot attribute a participant from an unrelated practice session',
+  $$select public.append_practice_event((kb2.value->>'session_id')::uuid,kb2.value->>'lease_token',
+    (kb2.value->>'lease_version')::int,'practice-cross-participant','record','run','regulation',1,
+    '30000000-0000-0000-0000-000000000001',1,null,null,'{}'::jsonb,
+    jsonb_build_array(jsonb_build_object(
+      'participant_id',(select participant.id from public.scorekeeping_participants participant
+         join cvf_test.ledger_runtime_state flag on flag.key='practice-flag'
+        where participant.session_id=(flag.value->>'session_id')::uuid order by participant.id limit 1),
+      'role','scorer','stat_key','runs','stat_delta',1)),null)
+    from cvf_test.ledger_runtime_state kb2 where kb2.key='practice-kb2'$$,
+  '%outside the event session snapshot%'
+);
+
+-- A real event in an unrelated practice chain, so the next assertion fails for
+-- the intended reason rather than on a NULL target.
+insert into cvf_test.ledger_runtime_state
+select 'practice-kb2-run', public.append_practice_event(
+  (kb2.value->>'session_id')::uuid,kb2.value->>'lease_token',(kb2.value->>'lease_version')::int,
+  'practice-kb2-run','record','run','regulation',1,'30000000-0000-0000-0000-000000000001',1,null,null,'{}',
+  jsonb_build_array(jsonb_build_object(
+    'participant_id',(select participant.id from public.scorekeeping_participants participant
+      where participant.session_id=(kb2.value->>'session_id')::uuid
+        and participant.team_id='30000000-0000-0000-0000-000000000001' order by participant.id limit 1),
+    'role','scorer','stat_key','runs','stat_delta',1)),null)
+from cvf_test.ledger_runtime_state kb2 where kb2.key='practice-kb2';
+
+select cvf_test.throws_ok(
+  'practice 33 [INV-16][INV-36] a practice correction cannot void an event from an unrelated practice chain',
+  $$select public.append_practice_event((fork.value->>'session_id')::uuid,fork.value->>'lease_token',
+    (fork.value->>'lease_version')::int,'practice-cross-void','void','void',null,null,null,0,
+    (select (kbrun.value->>'event_id')::uuid from cvf_test.ledger_runtime_state kbrun
+      where kbrun.key='practice-kb2-run'),
+    null,'{}'::jsonb,'[]'::jsonb,null)
+    from cvf_test.ledger_runtime_state fork where fork.key='practice-chain-fork'$$,
+  '%same practice chain%'
+);
+
 select cvf_test.as_owner();
 
 \echo ''
