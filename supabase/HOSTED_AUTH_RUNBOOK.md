@@ -47,13 +47,27 @@ The current accepted behavioral baseline is Migration 29: 29 migrations, 28 tabl
 
 **Migration 29 (venues / `starts_at` / participation)** adds `venues` and `game_participation` (28 tables), adds `set_game_participation` (26 RPCs), and REPLACES `schedule_playoff_match`'s signature — `(uuid, date, text, text)` becomes `(uuid, timestamptz, uuid)`. It also drops `games.date`, `games.time`, and `games.location`, so it is not silently reversible once applied.
 
-**One RPC signature changes beyond the accepted Migration 28 baseline.** Migration 28's three function replacements are already inside the accepted 256/256 surface; Migration 29's `schedule_playoff_match` replacement is the remaining re-run trigger:
+**Migration 30 (practice mode)** adds no table and replaces no client-facing
+RPC signature — every accepted probe still resolves unchanged. It adds seven
+new admin RPCs (33 at the `m30` surface), makes `game_id` nullable across the
+four private ledger tables with practice-shape constraints, backfills eight
+plain foreign keys and two NULL-scope partial unique indexes, and re-emits
+five trigger functions with practice branches. Because it REPLACES live
+trigger functions that govern official scoring, its acceptance emphasis is
+structural readback rather than signature drift.
 
-| RPC | Change | From |
-|---|---|---|
-| `schedule_playoff_match` | signature replaced, old overload dropped | Migration 29 |
+**RPC-surface changes beyond the accepted Migration 28 baseline, by surface.**
+Migration 28's three function replacements are already inside the accepted
+256/256 surface; Migration 29's `schedule_playoff_match` replacement was the
+`m29` re-run trigger; Migration 30 replaces nothing but adds seven endpoints
+that only an `m30` run covers:
 
-The three Migration-28 endpoints remain in the denial loop, and their coverage carries forward from the accepted `m28` run. The typed denial model rejects "function not found" as authorization evidence, so stale signatures fail closed.
+| RPC | Change | From | First covered by |
+|---|---|---|---|
+| `schedule_playoff_match` | signature replaced, old overload dropped | Migration 29 | accepted `m29` 270/270 |
+| seven `*_practice_*` RPCs | new endpoints (26 → 33 admin RPCs) | Migration 30 | pending `--surface m30` run |
+
+The three Migration-28 endpoints remain in the denial loop, and their coverage carries forward from the accepted `m28` run. A Migration 29 result is not coverage for the seven practice endpoints — only an `m30` pass probes them. The typed denial model rejects "function not found" as authorization evidence, so stale signatures fail closed.
 
 ## Publishing Migrations 28 and 29 — ordered checkpoint record
 
@@ -153,10 +167,37 @@ the hosted backend; only the manual CLI steps below can.
 17. **OPEN — new exact approval token, Migration 30 publication, and
     structural readback.** The token names this migration alone
     (`approved: hosted push of migrations 30-30`); no earlier token, including
-    Migration 29's, carries forward. Readback confirms the hosted ledger at
-    thirty with latest version `20260729182047`, the seven practice functions
-    present with `authenticated`-only execute, no new tables, and both
-    advisors clean.
+    Migration 29's, carries forward. Grants and counts alone do not verify
+    this migration — its center of gravity is structural. Readback confirms
+    each of:
+    - hosted ledger at thirty, latest version `20260729182047`; no new table;
+    - the seven practice functions present with `authenticated`-only execute
+      (no `anon`, no `service_role`);
+    - `game_id` now **nullable** on all four private ledger tables, with the
+      practice-shape check constraints holding in both directions — an
+      ordinary session must have a game, a practice session must not
+      (`scorekeeping_sessions_practice_game_check` and its guards);
+    - all eight plain replacement foreign keys present:
+      `scorekeeping_sessions_base_fkey`,
+      `scorekeeping_participants_session_fkey`, three on
+      `scorekeeping_events` (session, voids, replaces), and three on
+      `scorekeeping_event_attributions` (session, event, participant) —
+      these are what stand in for the composite `(id, game_id)` FKs that
+      stop enforcing at NULL;
+    - the two partial unique indexes in the NULL-game scope
+      (`scorekeeping_events_practice_sequence_idx`,
+      `scorekeeping_events_practice_idempotency_idx`);
+    - the five re-emitted trigger functions
+      (`cvf_guard_scorekeeping_session`,
+      `cvf_prepare_scorekeeping_participant`,
+      `cvf_prepare_scorekeeping_event`,
+      `cvf_prepare_scorekeeping_attribution`,
+      `cvf_validate_correction_event_target`) matching the repository
+      definitions — compare `pg_get_functiondef` output against the local
+      harness database, not by eye; these govern OFFICIAL scoring, and a
+      hosted/local divergence here is a stop condition;
+    - RLS still enabled on all four private tables with the admin-only
+      policies unchanged, and both advisors clean.
 18. **OPEN — separate approval and `--surface m30` acceptance.** A distinct,
     separately approved fixture-writing matrix run — Migration 29's 270/270
     is not evidence for this surface and must never be presented as such.
