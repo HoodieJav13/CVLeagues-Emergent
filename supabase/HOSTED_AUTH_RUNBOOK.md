@@ -124,6 +124,46 @@ checkpoint below.
     checks, with cleanup and baseline restoration both PASS. See
     [`evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md).
 
+### Migration 30 publication — ordered sequence (OPEN; no step is started)
+
+Practice mode merged to `main` on 2026-08-03 after independent review, so
+unlike the Migration 29 sequence there is no branch left to advance: **the
+incompatibility window is already open.** `main` carries the practice UI, the
+seven practice RPCs' harness surface, and Migration 30 itself; hosted has none
+of them. This window is milder than Migration 29's — no existing column moved,
+so public pages are unaffected and only an admin invoking hosted practice mode
+would hit a missing function — but the same rule binds: **no production
+deployment while `main` and hosted disagree.** Verified at merge time that this
+repository has no CI workflow and no push hook, so a `git push` cannot reach
+the hosted backend; only the manual CLI steps below can.
+
+14. **OPEN — fresh off-platform logical export.** Migration 30 rewrites five
+    live trigger functions with `create or replace`; this is the backup that
+    matters if a restore is ever needed mid-sequence.
+15. **OPEN — deployment-safety confirmation.** Re-verify that no production
+    deployment can be produced from `main` — the Vercel project's Git
+    auto-deployment must still be disabled. **If automatic deployment cannot
+    be ruled out, STOP here.**
+16. **OPEN — filename-exact dry run from clean, pushed `main`.** The step-3
+    preflight block applies verbatim (fetch, clean tree, local `main`
+    byte-identical to `origin/main`). **The dry run must name
+    `20260729182047_practice_mode_sessions.sql` and nothing else.** Match the
+    filename, not the count or position. If any other filename appears, stop:
+    the wrong revision is checked out.
+17. **OPEN — new exact approval token, Migration 30 publication, and
+    structural readback.** The token names this migration alone
+    (`approved: hosted push of migrations 30-30`); no earlier token, including
+    Migration 29's, carries forward. Readback confirms the hosted ledger at
+    thirty with latest version `20260729182047`, the seven practice functions
+    present with `authenticated`-only execute, no new tables, and both
+    advisors clean.
+18. **OPEN — separate approval and `--surface m30` acceptance.** A distinct,
+    separately approved fixture-writing matrix run — Migration 29's 270/270
+    is not evidence for this surface and must never be presented as such.
+    Record the dated evidence file with its observed ledger count and exact
+    baseline restoration, then promote `DEFAULT_SURFACE` to `m30` in the same
+    change that commits the accepted evidence.
+
 ### Each pass is its own acceptance boundary
 
 Structural readback, advisors, and a full matrix run belong to **each**
@@ -165,16 +205,28 @@ CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
 # after publishing Migration 29
 CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
   supabase/evidence/hosted-auth-matrix-YYYY-MM-DD-m29.md --surface m29
+
+# after publishing Migration 30
+CVF_HOSTED_AUTH_NO_OPEN=1 ./tests/hosted-auth/run_matrix.sh \
+  supabase/evidence/hosted-auth-matrix-YYYY-MM-DD-m30.md --surface m30
 ```
 
-| | `m28` | `m29` |
-|---|---|---|
-| Tables | 26 | 28 |
-| Admin RPCs | 25 | 26 |
-| `games` fixture | `date` / `time` / `location` | `starts_at` / `venue_id` |
-| Venue seeded | no | yes |
-| `schedule_playoff_match` probe | `p_date`, `p_time`, `p_location` | `p_starts_at`, `p_venue_id` |
-| Venue / participation checks | skipped | run |
+| | `m28` | `m29` | `m30` |
+|---|---|---|---|
+| Tables | 26 | 28 | 28 |
+| Admin RPCs | 25 | 26 | 33 |
+| `games` fixture | `date` / `time` / `location` | `starts_at` / `venue_id` | `starts_at` / `venue_id` |
+| Venue seeded | no | yes | yes |
+| `schedule_playoff_match` probe | `p_date`, `p_time`, `p_location` | `p_starts_at`, `p_venue_id` | `p_starts_at`, `p_venue_id` |
+| Venue / participation checks | skipped | run | run |
+| Practice RPC denial probes | skipped | skipped | run (all seven) |
+
+`m30` adds no table — the practice boundary is rows in the four existing
+private tables, which is the structural claim of Option B, and the surface
+contract asserts the `m30` table list is byte-identical to `m29`'s. Its seven
+extra RPCs join every denial loop with real named-argument payloads, so each
+probe resolves at PostgREST and fails at the admin guard rather than at
+function lookup; a census RPC without a payload fails the contract tests.
 
 **The flag is a claim, and the runner now checks it.** Before baseline capture
 and before any fixture is created, the runner reads
@@ -192,13 +244,17 @@ evidence artifact headed "Migration 28" that proved only the previous baseline.
 On a mismatch the runner prints the observed versus expected ledger and exits
 before touching anything.
 
-`m29` is the default; the flag is mandatory only for the Migration 28 pass, but
-state it explicitly in both so the evidence file records which surface it
-covers. The generated report header carries the surface key, label, migration
-number, and expected census. The two modes and their censuses are pinned by
-`tests/hosted-auth/surface_contract.test.mjs`, and `matrix_load.test.mjs`
-executes the browser script rather than reading it, so a mode that quietly does
-less work fails the contract tests instead of reporting a hollow `PASS`.
+`m29` remains the default until the `--surface m30` acceptance is recorded —
+promoting the default is a consequence of accepted evidence, never a
+precondition for producing it. The flag is therefore mandatory for the `m28`
+and `m30` passes, but state it explicitly in every pass so the evidence file
+records which surface it covers. The generated report header carries the
+surface key, label, migration number, and expected census. The three modes and
+their censuses are pinned by `tests/hosted-auth/surface_contract.test.mjs`,
+`matrix_load.test.mjs` executes the browser script rather than reading it, and
+a payload-coverage test rejects any census RPC lacking named arguments — so a
+mode that quietly does less work fails the contract tests instead of reporting
+a hollow `PASS`.
 
 Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
@@ -308,6 +364,31 @@ Both tables are publicly readable by design: where a game is played and who play
 - The `games` column allowlist still holds over the replacement columns: `authenticated` may write `starts_at` and `venue_id` but not `home_score`, `away_score`, or `periods`. The local harness pins the exact allowlist for both INSERT and UPDATE; confirm the hosted grant matches.
 
 Participation is deliberately OUTSIDE the score lifecycle. It is not governed by the game lock and never interacts with the aggregate or ledger correction authority, so a locked game must still accept a participation write while its published result stays unchanged.
+
+### Migration 30 surface — practice mode (33 admin RPCs)
+
+The `m30` census is 28 tables and 33 admin RPCs: `m29`'s 26 plus
+`start_practice_session`, `append_practice_event`, `renew_practice_session`,
+`resume_practice_session`, `cancel_practice_session`,
+`finalize_practice_session`, and `start_practice_correction`. No relation is
+added or exposed — practice rows live in the four private tables, which remain
+admin-read-only with no client write grant and no `service_role` privilege.
+
+- Anonymous execution of each practice RPC fails at the function-execute
+  privilege boundary; authenticated non-admin and AAL1-admin execution reaches
+  and fails at `assert_admin()`. All seven appear in every denial loop.
+- Each probe carries the RPC's real named arguments with deliberately bogus
+  values, so PostgREST resolves the function and the failure is the
+  authorization guard — a "function not found" is typed as an anomaly, never
+  as denial evidence.
+- Practice evidence stays invisible to non-admin sessions: the `m30` pass
+  re-runs the private-table denial checks unchanged, because Migration 30
+  altered no policy and granted no new table privilege.
+- The positive practice flow (start → events → finalize preview → correction)
+  is local pgtest territory (382/382 plus the fork race), not matrix
+  territory: the hosted matrix proves the authorization boundary, and writing
+  practice fixtures into the hosted project belongs to the same separately
+  approved fixture decision as every other hosted write.
 
 ### Direct-write and append-only guards
 
