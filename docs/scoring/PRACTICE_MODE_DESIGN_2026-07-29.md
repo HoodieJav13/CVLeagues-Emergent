@@ -1,17 +1,23 @@
-# Practice Mode — Design Options (Option B selected)
+# Practice Mode — Design Options (Option B selected, reviewed, merged)
 
-**Date:** 2026-07-29 · **Status:** SELECTED — Option B. Implementation is **not**
-authorized; an unreviewed one exists on branch `practice-mode-migration30`.
+**Date:** 2026-07-29 · **Status:** MERGED — Option B, ratified on `main`
+2026-08-03 after independent adversarial review. Hosted push remains a
+separately approved gate; hosted is deliberately at twenty-nine migrations.
 
-> **Ordering record (2026-08-03).** Two facts, recorded without asserting which
-> authorized which, because the repository cannot establish it and the owner does
-> not recall: Migration 30 and a practice rehearsal UI were committed on
-> 2026-07-29 (`a9de3ab`, `10ad297`), and the written selection of Option B was
-> committed on 2026-08-01 (`781aafd`). The 8/01 selection was authored against
-> `origin/main` and states practice mode is "unbuilt," which was already untrue
-> of the branch; the branch's own copy of this file still says "no implementing
-> code," which is untrue there. Both are superseded by `CLAUDE.md` on `main`.
-> The branch stands as an unreviewed proposal implementation.
+> **Ordering record (2026-08-03, preserved).** Two facts, recorded without
+> asserting which authorized which, because the repository cannot establish it
+> and the owner does not recall: Migration 30 and a practice rehearsal UI were
+> committed on 2026-07-29 (`a9de3ab`, `10ad297`), and the written selection of
+> Option B was committed on 2026-08-01 (`781aafd`). The 8/01 selection was
+> authored against `origin/main` and stated practice mode was "unbuilt," which
+> was already untrue of the branch; the branch's own copy of this file said "no
+> implementing code," which was untrue there. The owner subsequently chose
+> ratification over rebuild: the branch was independently reviewed (four
+> defects found and fixed pre-merge, plus one caught by an external check —
+> see `65cf141` and the merge-day commits), locally accepted at 382/382 with a
+> two-connection fork race, and merged. The irregularity stands as recorded:
+> implementation preceded any recoverable authorization, and review recovered
+> the skipped control after the fact rather than legitimizing the ordering.
 **Contract:** RULES_INVARIANT_MATRIX pilot row — "A full no-consequence
 scoring rehearsal with events, retry, finalization preview, and correction.
 Practice data is explicitly nonproduction, nonpublic, and excluded from
