@@ -47,6 +47,38 @@ test("m28 is a strict prefix of m29 — no table or RPC is dropped between them"
   for (const rpc of m28.rpcs) assert.ok(m29.rpcs.includes(rpc), `m29 lost ${rpc}`);
 });
 
+test("m30 adds exactly seven RPCs and NO table", () => {
+  const m30 = resolveSurface("m30");
+  assert.equal(m30.tableCount, 28);
+  assert.equal(m30.rpcCount, 33);
+  // No new relation is the structural claim of Option B: practice lives in the
+  // four existing private tables. A table appearing here means practice grew a
+  // public surface, which is the thing the design exists to prevent.
+  assert.deepEqual(m30.tables, resolveSurface("m29").tables);
+  assert.deepEqual(
+    m30.rpcs.filter((rpc) => !resolveSurface("m29").rpcs.includes(rpc)),
+    [
+      "start_practice_session", "append_practice_event", "renew_practice_session",
+      "resume_practice_session", "cancel_practice_session", "finalize_practice_session",
+      "start_practice_correction",
+    ],
+  );
+});
+
+test("m29 is a strict prefix of m30 — no table or RPC is dropped between them", () => {
+  const m29 = resolveSurface("m29");
+  const m30 = resolveSurface("m30");
+  for (const table of m29.tables) assert.ok(m30.tables.includes(table), `m30 lost ${table}`);
+  for (const rpc of m29.rpcs) assert.ok(m30.rpcs.includes(rpc), `m30 lost ${rpc}`);
+});
+
+test("the default surface stays m29 while hosted is at 29", () => {
+  // Promoting the default belongs to the hosted push, not to adding the
+  // surface. Defaulting ahead of the backend fails during fixture seeding and
+  // yields no evidence rather than a partial pass.
+  assert.equal(resolveSurface(undefined).key, "m29");
+});
+
 test("no duplicates in either census", () => {
   for (const key of Object.keys(SURFACES)) {
     const surface = SURFACES[key];
@@ -121,7 +153,7 @@ test("the default surface is the current repository surface", () => {
 });
 
 test("an unknown surface fails loudly rather than defaulting", () => {
-  assert.throws(() => resolveSurface("m30"), /Unknown matrix surface "m30"/);
+  assert.throws(() => resolveSurface("m31"), /Unknown matrix surface "m31"/);
 });
 
 /* ---------------------------------------------------------------------------

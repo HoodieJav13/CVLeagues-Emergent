@@ -97,7 +97,7 @@ test("nothing dereferences the surface at module scope", () => {
 
 test("the RPC census resolves per surface once config lands", () => {
   const { context } = loadMatrix();
-  for (const [key, expected] of [["m28", 25], ["m29", 26]]) {
+  for (const [key, expected] of [["m28", 25], ["m29", 26], ["m30", 33]]) {
     const count = vm.runInContext(
       `surface = resolveSurface(${JSON.stringify(key)}); adminRpcNames().length;`,
       context,

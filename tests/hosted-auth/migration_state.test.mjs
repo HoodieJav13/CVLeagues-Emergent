@@ -9,6 +9,7 @@ const { resolveSurface } = globalThis.CVF_MATRIX_SURFACES;
 
 const M28 = resolveSurface("m28");
 const M29 = resolveSurface("m29");
+const M30 = resolveSurface("m30");
 
 // The real repository ledger, so these tests fail if a migration is added or
 // renamed without the surface censuses being updated to match.
@@ -21,10 +22,11 @@ const ok = (surface, remote) => compareMigrationState({ local: REPO_VERSIONS, re
 /* ---------------------------------------------------------------------------
  * The repository's real state. If these drift, the surface table is stale.
  * ------------------------------------------------------------------------- */
-test("the repository has 29 migrations and Migrations 28–29 remain the final ordered pair", () => {
-  assert.equal(REPO_VERSIONS.length, 29);
+test("the repository has 30 migrations and Migrations 28–30 remain the final ordered trio", () => {
+  assert.equal(REPO_VERSIONS.length, 30);
   assert.equal(REPO_VERSIONS[27], "20260723154411"); // Migration 28, Sequence 5A
   assert.equal(REPO_VERSIONS[28], "20260726120000"); // Migration 29, venues
+  assert.equal(REPO_VERSIONS[29], "20260729182047"); // Migration 30, practice mode
 });
 
 test("version extraction ignores anything that is not a migration", () => {
@@ -43,10 +45,32 @@ test("m28 accepts a hosted ledger of exactly the first 28 migrations", () => {
   assert.equal(result.observed.latest, "20260723154411");
 });
 
-test("m29 accepts a hosted ledger of all 29", () => {
-  const result = ok(M29, REPO_VERSIONS);
+// m29 is no longer "everything local" now that Migration 30 exists unhosted.
+// It is exactly the first 29, and the 30th must be absent — which is the real
+// hosted state until the practice-mode push is separately approved.
+test("m29 accepts a hosted ledger of exactly the first 29 migrations", () => {
+  const result = ok(M29, REPO_VERSIONS.slice(0, 29));
   assert.ok(result.ok, result.problems.join(" | "));
+  assert.equal(result.observed.count, 29);
   assert.equal(result.observed.latest, "20260726120000");
+});
+
+test("m30 accepts a hosted ledger of all 30", () => {
+  const result = ok(M30, REPO_VERSIONS);
+  assert.ok(result.ok, result.problems.join(" | "));
+  assert.equal(result.observed.count, 30);
+  assert.equal(result.observed.latest, "20260729182047");
+});
+
+test("UNEXPECTED LATER — m29 rejects a ledger that already has Migration 30", () => {
+  // The failure this exists to catch: practice mode gets pushed, but the matrix
+  // is still invoked at m29, so it would probe 26 RPCs against a 33-RPC backend
+  // and report a clean pass over seven never-tested admin surfaces.
+  const result = ok(M29, REPO_VERSIONS);
+  assert.equal(result.ok, false);
+  const text = result.problems.join(" ");
+  assert.match(text, /beyond surface m29: 20260729182047/);
+  assert.match(text, /understate the live schema/);
 });
 
 test("remote ordering does not matter — the comparison sorts", () => {

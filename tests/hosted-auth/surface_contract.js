@@ -51,6 +51,18 @@
   const M29_TABLES = Object.freeze(["venues", "game_participation"]);
   const M29_RPCS = Object.freeze(["set_game_participation"]);
 
+  // Migration 30 adds SEVEN client-facing admin RPCs and NO table: practice
+  // sessions are rows in the four existing private tables, distinguished by
+  // session_kind with a NULL game_id. That is the whole point of Option B —
+  // exclusion is structural, so there is no practice table to publish and no
+  // new public relation for the matrix to probe.
+  const M30_TABLES = Object.freeze([]);
+  const M30_RPCS = Object.freeze([
+    "start_practice_session", "append_practice_event", "renew_practice_session",
+    "resume_practice_session", "cancel_practice_session", "finalize_practice_session",
+    "start_practice_correction",
+  ]);
+
   const SURFACES = Object.freeze({
     // Hosted at Migration 28: Sequence 5A published, venues NOT yet published.
     m28: Object.freeze({
@@ -82,8 +94,26 @@
       seedsVenue: true,
       schedulePlayoffMatchArgs: Object.freeze(["p_match_id", "p_starts_at", "p_venue_id"]),
     }),
+    // Hosted at Migration 30: m29 plus the practice-mode RPC surface. The games
+    // and playoff shapes are untouched, because Migration 30 changes neither.
+    m30: Object.freeze({
+      key: "m30",
+      label: "Migration 30 (practice-mode boundary, sessions without games)",
+      migrations: 30,
+      tables: Object.freeze([...BASE_TABLES, ...M29_TABLES, ...M30_TABLES]),
+      rpcs: Object.freeze([...BASE_RPCS, ...M29_RPCS, ...M30_RPCS]),
+      tableCount: BASE_TABLES.length + M29_TABLES.length + M30_TABLES.length,
+      rpcCount: BASE_RPCS.length + M29_RPCS.length + M30_RPCS.length,
+      gameShape: "starts_at",
+      seedsVenue: true,
+      schedulePlayoffMatchArgs: Object.freeze(["p_match_id", "p_starts_at", "p_venue_id"]),
+    }),
   });
 
+  // Stays at m29 while hosted is at 29. Promoting the default is a consequence
+  // of the hosted push, never a precondition for it: defaulting to a surface the
+  // backend does not have would fail during fixture seeding, before any
+  // authorization check, and produce no evidence at all.
   const DEFAULT_SURFACE = "m29";
 
   /* --------------------------------------------------------------------------
@@ -132,6 +162,7 @@
 
   target.CVF_MATRIX_SURFACES = Object.freeze({
     SURFACES, DEFAULT_SURFACE, BASE_TABLES, BASE_RPCS, M29_TABLES, M29_RPCS,
+    M30_TABLES, M30_RPCS,
     resolveSurface, hasTable, hasRpc,
     gameScheduleFields, schedulePlayoffMatchArgs,
   });

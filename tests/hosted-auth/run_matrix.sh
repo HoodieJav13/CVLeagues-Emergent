@@ -16,8 +16,8 @@ while [[ $# -gt 0 ]]; do
     *) echo "Unknown argument: $1" >&2; exit 2 ;;
   esac
 done
-if [[ "$SURFACE" != "m28" && "$SURFACE" != "m29" ]]; then
-  echo "Unknown matrix surface \"$SURFACE\". Expected m28 or m29." >&2
+if [[ "$SURFACE" != "m28" && "$SURFACE" != "m29" && "$SURFACE" != "m30" ]]; then
+  echo "Unknown matrix surface \"$SURFACE\". Expected m28, m29, or m30." >&2
   exit 2
 fi
 SERVER_PID=""
