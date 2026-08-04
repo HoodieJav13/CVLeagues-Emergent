@@ -106,6 +106,29 @@ test("the RPC census resolves per surface once config lands", () => {
   }
 });
 
+test("every RPC in every surface resolves to a non-empty named-argument payload", () => {
+  // The defect this pins: the m30 census listed seven practice RPCs that had
+  // no rpcArguments() entry. .rpc(name, undefined) fails at PostgREST function
+  // lookup — the probe records a 404 without ever reaching the authorization
+  // guard, and the census test alone cannot see it. PostgREST resolves
+  // functions by name plus argument NAMES, so the payload keys are what make a
+  // denial probe reach the boundary at all; a stub config is enough because
+  // only the keys matter here, not the values.
+  const { context } = loadMatrix();
+  vm.runInContext('config = { runId: "run", ids: {} };', context);
+  for (const key of ["m28", "m29", "m30"]) {
+    const missing = vm.runInContext(
+      `surface = resolveSurface(${JSON.stringify(key)});
+       JSON.stringify(adminRpcNames().filter((rpc) => {
+         const args = rpcArguments(rpc);
+         return !args || typeof args !== "object" || Object.keys(args).length === 0;
+       }));`,
+      context,
+    );
+    assert.equal(missing, "[]", `${key} RPCs without argument payloads: ${missing}`);
+  }
+});
+
 test("set_game_participation is probed only where the RPC exists", () => {
   const { context } = loadMatrix();
   assert.equal(

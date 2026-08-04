@@ -482,6 +482,37 @@ function rpcArguments(name) {
       p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
       p_idempotency_key: config.runId, p_override_reason: null,
     },
+    // Migration 30 practice RPCs. Same denial-probe convention as the ledger
+    // entries above: real argument NAMES so PostgREST resolves the function and
+    // the call reaches the admin guard, bogus VALUES so nothing could succeed
+    // even if authorization failed open. An absent entry here is worse than a
+    // wrong one — .rpc(name, undefined) dies at function lookup and the probe
+    // records a 404 instead of exercising the authorization boundary.
+    start_practice_session: {
+      p_home_team_id: config.ids.homeTeam, p_away_team_id: config.ids.awayTeam,
+      p_rule_version: "CVF-MATRIX", p_regulation_period_count: 5,
+      p_overtime_start_setting: null, p_rules_snapshot: {},
+    },
+    append_practice_event: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_idempotency_key: config.runId, p_action: "record", p_event_type: "run",
+      p_period_type: "regulation", p_period_number: 1, p_credited_team_id: config.ids.homeTeam,
+      p_points: 1, p_voids_event_id: null, p_replaces_event_id: null,
+      p_payload: {}, p_attributions: [], p_pairing_override_reason: null,
+    },
+    renew_practice_session: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+    },
+    resume_practice_session: { p_session_id: config.ids.game, p_reason: "Denied matrix probe" },
+    cancel_practice_session: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_reason: "Denied matrix probe",
+    },
+    finalize_practice_session: {
+      p_session_id: config.ids.game, p_lease_token: "denied", p_lease_version: 1,
+      p_idempotency_key: config.runId, p_override_reason: null,
+    },
+    start_practice_correction: { p_base_session_id: config.ids.game, p_reason: "Denied matrix probe" },
   }[name];
 }
 
