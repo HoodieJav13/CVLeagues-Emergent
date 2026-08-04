@@ -173,10 +173,18 @@ the hosted backend; only the manual CLI steps below can.
     - hosted ledger at thirty, latest version `20260729182047`; no new table;
     - the seven practice functions present with `authenticated`-only execute
       (no `anon`, no `service_role`);
-    - `game_id` now **nullable** on all four private ledger tables, with the
-      practice-shape check constraints holding in both directions — an
-      ordinary session must have a game, a practice session must not
-      (`scorekeeping_sessions_practice_game_check` and its guards);
+    - `game_id` now **nullable** on all four private ledger tables;
+    - the four session-shape constraints at their **exact definitions**
+      (compare `pg_get_constraintdef`, not existence — a hosted constraint
+      with the same name but a laxer body is precisely the drift this step
+      exists to catch):
+      `scorekeeping_sessions_session_kind_check` (kinds now include
+      `practice`), `scorekeeping_sessions_stage_check` (stages now include
+      `practice`), `scorekeeping_sessions_practice_game_check` (practice is
+      exactly the NULL-game kind, both directions), and
+      `scorekeeping_sessions_kind_shape_check` (the kind/status/base/reason
+      arms, including the practice-correction arm) — and the auto-named
+      `scorekeeping_sessions_check1` it replaced must be **gone**;
     - all eight plain replacement foreign keys present:
       `scorekeeping_sessions_base_fkey`,
       `scorekeeping_participants_session_fkey`, three on
@@ -489,7 +497,8 @@ Run this matrix after any change to:
 
 - RLS policies or Data API grants
 - `admin_users`, `is_admin()`, or Auth-role resolution
-- Any of the 26 admin RPCs, or any change to an RPC's signature
+- Any admin RPC in the current surface census (26 at `m29`; 33 once `m30` is
+  hosted and accepted), or any change to an RPC's signature
 - `venues` or `game_participation` policies, grants, or the `set_game_participation` guard
 - Game lock/stage enforcement or edit history
 - Profiles or the `public_profiles` allowlist
