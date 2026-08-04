@@ -3704,6 +3704,17 @@ select cvf_test.ok(
   and not has_function_privilege('anon', 'public.start_practice_correction(uuid,text)', 'execute')
   and not has_function_privilege('service_role', 'public.start_practice_correction(uuid,text)', 'execute')
   and has_function_privilege('authenticated', 'public.start_practice_correction(uuid,text)', 'execute')
+  -- The remaining three of the seven. The grant/revoke lines are copy-paste
+  -- identical, which is exactly why a single omitted one would not be noticed.
+  and has_function_privilege('authenticated', 'public.renew_practice_session(uuid,text,integer)', 'execute')
+  and not has_function_privilege('anon', 'public.renew_practice_session(uuid,text,integer)', 'execute')
+  and not has_function_privilege('service_role', 'public.renew_practice_session(uuid,text,integer)', 'execute')
+  and has_function_privilege('authenticated', 'public.resume_practice_session(uuid,text)', 'execute')
+  and not has_function_privilege('anon', 'public.resume_practice_session(uuid,text)', 'execute')
+  and not has_function_privilege('service_role', 'public.resume_practice_session(uuid,text)', 'execute')
+  and has_function_privilege('authenticated', 'public.cancel_practice_session(uuid,text,integer,text)', 'execute')
+  and not has_function_privilege('anon', 'public.cancel_practice_session(uuid,text,integer,text)', 'execute')
+  and not has_function_privilege('service_role', 'public.cancel_practice_session(uuid,text,integer,text)', 'execute')
 );
 
 select cvf_test.as_admin_aal1('00000000-0000-0000-0000-000000000001');
@@ -4148,6 +4159,79 @@ select cvf_test.throws_ok(
     null,'{}'::jsonb,'[]'::jsonb,null)
     from cvf_test.ledger_runtime_state fork where fork.key='practice-chain-fork'$$,
   '%same practice chain%'
+);
+
+-- INV-40 was proven for only three of the eleven RPC/direction pairs, and the
+-- migration's rationale is that most of the official-side rejection is
+-- INCIDENTAL — it falls out of an existing game_id lookup rather than being
+-- engineered per RPC. That is exactly the kind of property a later unrelated
+-- edit to one of these RPCs breaks silently, so each direction is pinned.
+-- The kind guard fires before the lease check in every practice RPC, so these
+-- cannot pass on a stale-lease error instead.
+select cvf_test.throws_ok(
+  'practice 34 [INV-04][INV-40] renew_practice_session rejects an ordinary game session',
+  $$select public.renew_practice_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int)
+    from cvf_test.ledger_runtime_state where key='concurrency'$$,
+  '%renew_practice_session may target only a practice session%'
+);
+select cvf_test.throws_ok(
+  'practice 35 [INV-04][INV-40] resume_practice_session rejects an ordinary game session',
+  $$select public.resume_practice_session((value->>'session_id')::uuid, null)
+    from cvf_test.ledger_runtime_state where key='concurrency'$$,
+  '%resume_practice_session may target only a practice session%'
+);
+select cvf_test.throws_ok(
+  'practice 36 [INV-04][INV-40] cancel_practice_session rejects an ordinary game session',
+  $$select public.cancel_practice_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'Wrong kind')
+    from cvf_test.ledger_runtime_state where key='concurrency'$$,
+  '%cancel_practice_session may target only a practice session%'
+);
+select cvf_test.throws_ok(
+  'practice 37 [INV-04][INV-40] start_practice_correction rejects an ordinary game session',
+  $$select public.start_practice_correction((value->>'session_id')::uuid,'Wrong kind')
+    from cvf_test.ledger_runtime_state where key='concurrency'$$,
+  '%start_practice_correction may target only a practice session%'
+);
+
+select cvf_test.throws_ok(
+  'practice 38 [INV-04][INV-40] the official renew path rejects a practice session',
+  $$select public.renew_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%Unknown scorekeeping session%'
+);
+select cvf_test.throws_ok(
+  'practice 39 [INV-04][INV-40] the official resume path rejects a practice session',
+  $$select public.resume_scorekeeping_session((value->>'session_id')::uuid, null)
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%Unknown scorekeeping session%'
+);
+select cvf_test.throws_ok(
+  'practice 40 [INV-04][INV-40] the official cancel path rejects a practice session',
+  $$select public.cancel_scorekeeping_session((value->>'session_id')::uuid,value->>'lease_token',(value->>'lease_version')::int,'Wrong kind')
+    from cvf_test.ledger_runtime_state where key='practice-flag'$$,
+  '%Unknown scorekeeping session%'
+);
+select cvf_test.throws_ok(
+  'practice 41 [INV-04][INV-40] the official replace path rejects a practice session',
+  $$select public.replace_scorekeeping_event((state.value->>'session_id')::uuid,state.value->>'lease_token',
+    (state.value->>'lease_version')::int,'cross-void','cross-replace',(td.value->>'event_id')::uuid,
+    'touchdown','regulation',1,'30000000-0000-0000-0000-000000000005',6,'{}'::jsonb,'[]'::jsonb)
+    from cvf_test.ledger_runtime_state state cross join cvf_test.ledger_runtime_state td
+   where state.key='practice-flag' and td.key='practice-td-home'$$,
+  '%Unknown scorekeeping session%'
+);
+
+-- start_scorekeeping_correction is keyed by GAME, not session, so a practice
+-- row is unreachable through it by construction: practice has no game to name.
+select cvf_test.ok(
+  'practice 42 [INV-40] the official correction entry point is game-keyed, so practice is unreachable through it',
+  -- Compare catalog types rather than a rendered signature string, whose exact
+  -- formatting is a Postgres implementation detail and not the thing under test.
+  (select count(*)>0 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+    where n.nspname='public' and p.proname='start_scorekeeping_correction'
+      and p.pronargs=2 and p.proargtypes[0]='uuid'::regtype)
+  and (select count(*)=0 from public.scorekeeping_sessions
+        where session_kind='practice' and game_id is not null)
 );
 
 select cvf_test.as_owner();
