@@ -184,4 +184,87 @@ describe("mock mode visible hosted parity", () => {
     expect(currentApp.state.games).toBe(gamesBefore);
     expect(currentApp.state.playerStats).toBe(playerStatsBefore);
   });
+
+  // Practice exists to rehearse the real contract, so the mock has to accept and
+  // reject exactly what the hosted RPCs accept and reject. A rehearsal that is
+  // more permissive than production teaches a workflow that fails on game day.
+  test("[INV-07] practice enforces the paired-stat exception contract exactly as hosted does", async () => {
+    const game = currentApp.state.games.find((item) => item.id === "g7");
+    let lease;
+    await act(async () => {
+      lease = currentApp.startPracticeSession({
+        home_team_id: game.home_team_id,
+        away_team_id: game.away_team_id,
+        rule_version: "CVF-2026.1",
+        regulation_period_count: 4,
+      });
+    });
+    const roster = currentApp.state.scorekeepingParticipants
+      .filter((item) => item.session_id === lease.session_id && item.team_id === game.home_team_id);
+    const [passer, receiver] = roster;
+    expect(passer && receiver).toBeTruthy();
+
+    const completion = (overrides) => ({
+      idempotency_key: "practice-completion", action: "record", event_type: "completion",
+      period_type: "regulation", period_number: 1,
+      credited_team_id: game.home_team_id, points: 0,
+      ...overrides,
+    });
+    const paired = [
+      { participant_id: passer.id, role: "passer", stat_key: "completions", stat_delta: 1 },
+      { participant_id: passer.id, role: "passer", stat_key: "passYards", stat_delta: 12 },
+      { participant_id: receiver.id, role: "receiver", stat_key: "catches", stat_delta: 1 },
+      { participant_id: receiver.id, role: "receiver", stat_key: "recYards", stat_delta: 12 },
+    ];
+    const unpaired = paired.slice(0, 2);
+
+    // A reason is valid only on an unpaired event, and an unpaired event is
+    // valid only with a reason. Hosted raises INV-07 both ways.
+    expect(() => currentApp.appendPracticeEvent({
+      lease, command: completion({ attributions: paired, pairing_override_reason: "Receiver unknown" }),
+    })).toThrow(/valid only for an unpaired/);
+    expect(() => currentApp.appendPracticeEvent({
+      lease, command: completion({ attributions: unpaired }),
+    })).toThrow(/must reconcile within the same event/);
+
+    // The legal combination is accepted, and the exception then resurfaces as an
+    // INV-07 warning that makes finalization demand an override reason.
+    await act(async () => {
+      currentApp.appendPracticeEvent({
+        lease,
+        command: completion({
+          attributions: unpaired,
+          pairing_override_reason: "Receiver left before the catch was recorded",
+        }),
+      });
+    });
+    // A rushing touchdown breaks the 0-0 tie, which would otherwise return
+    // continue_overtime before finalization ever evaluates warnings.
+    await act(async () => {
+      currentApp.appendPracticeEvent({
+        lease,
+        command: {
+          idempotency_key: "practice-td", action: "record", event_type: "touchdown",
+          period_type: "regulation", period_number: 1,
+          credited_team_id: game.home_team_id, points: 6,
+          attributions: [{ participant_id: passer.id, role: "primary", stat_key: "tds", stat_delta: 1 }],
+        },
+      });
+    });
+    expect(() => currentApp.finalizePracticeSession({
+      lease, idempotency_key: "practice-final-ff",
+    })).toThrow(/override reason/);
+
+    let finalized;
+    await act(async () => {
+      finalized = currentApp.finalizePracticeSession({
+        lease,
+        idempotency_key: "practice-final-ff",
+        override_reason: "Rehearsing the reasoned exception",
+      });
+    });
+    expect(finalized.projection.warnings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ invId: "INV-07", code: "ledger_pairing_override" }),
+    ]));
+  });
 });

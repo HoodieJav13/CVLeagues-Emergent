@@ -82,6 +82,7 @@ export function buildPracticeProjection(state, session_id) {
 
   const score = { home: 0, away: 0 };
   const regulation = { home: 0, away: 0 };
+  const warnings = [];
   let latestOvertime = null;
   let latestClosedOvertime = null;
   for (const event of effective) {
@@ -95,6 +96,23 @@ export function buildPracticeProjection(state, session_id) {
     const side = event.credited_team_id === session.home_team_id ? "home" : "away";
     score[side] += Number(event.points || 0);
     if (event.period_type === "regulation") regulation[side] += Number(event.points || 0);
+
+    // INV-07 resurfaces every reasoned paired-stat exception at finalization,
+    // which is what forces an override reason there. Hosted pushes this inside
+    // the same loop, after the score accumulation and past the period_close
+    // continue, so the ordering here matches cvf_build_ledger_projection.
+    if (event.pairing_override_reason) {
+      warnings.push({
+        invId: "INV-07",
+        code: "ledger_pairing_override",
+        message: `Event ${event.sequence_number} uses a reasoned paired-stat exception.`,
+        values: {
+          event_id: event.id,
+          sequence_number: event.sequence_number,
+          reason: event.pairing_override_reason,
+        },
+      });
+    }
   }
 
   // Per-player stat aggregation keyed by profile id, same shape as hosted.
@@ -110,7 +128,6 @@ export function buildPracticeProjection(state, session_id) {
     });
 
   // INV-05/INV-06 stat-vs-score reconciliation, same SOFT semantics as hosted.
-  const warnings = [];
   for (const teamId of [session.home_team_id, session.away_team_id]) {
     const totals = {};
     Object.values(playerStats)
@@ -152,6 +169,72 @@ export function buildPracticeProjection(state, session_id) {
       ? null
       : score.home > score.away ? session.away_team_id : session.home_team_id,
   };
+}
+
+// Flag football pairs statistics that must reconcile inside a single event: the
+// same-team throw/catch pairs, and interceptions, which cross sides because the
+// offense throws what the credited defense catches. Mirrors
+// cvf_flag_pairing_mismatches — an unpaired event is legal only with a reason,
+// and a reason is legal only on an unpaired event.
+const PAIRED_STAT_KEYS = [
+  "completions", "catches", "passYards", "recYards",
+  "passTDs", "recTDs", "ints", "defInts",
+];
+const SAME_TEAM_PAIRS = [
+  ["completions", "catches"],
+  ["passYards", "recYards"],
+  ["passTDs", "recTDs"],
+];
+
+export function flagPairingMismatches(state, session, creditedTeamId, attributions) {
+  if (session.sport !== "flag_football") return [];
+  const rows = (attributions || [])
+    .filter((item) => PAIRED_STAT_KEYS.includes(item.stat_key))
+    .map((item) => ({
+      ...item,
+      participant: state.scorekeepingParticipants.find(
+        (participant) => participant.id === item.participant_id
+          && participant.session_id === session.id),
+    }));
+  if (rows.some((row) => !row.participant)) {
+    throw new Error("[INV-07][INV-11] Paired-stat participants must belong to the active session snapshot.");
+  }
+
+  const total = (teamId, key) => rows
+    .filter((row) => row.participant.team_id === teamId && row.stat_key === key)
+    .reduce((sum, row) => sum + Number(row.stat_delta || 0), 0);
+  const present = (teamId, key) => rows
+    .some((row) => row.stat_key === key && row.participant.team_id === teamId);
+
+  const mismatches = [];
+  const check = (leftKey, rightKey, leftTeamId, rightTeamId) => {
+    const leftTotal = total(leftTeamId, leftKey);
+    const rightTotal = total(rightTeamId, rightKey);
+    const leftPresent = present(leftTeamId, leftKey);
+    const rightPresent = present(rightTeamId, rightKey);
+    const wrongTeam = rows.some((row) =>
+      (row.stat_key === leftKey && row.participant.team_id !== leftTeamId)
+      || (row.stat_key === rightKey && row.participant.team_id !== rightTeamId));
+    if (leftPresent !== rightPresent || leftTotal !== rightTotal || wrongTeam) {
+      mismatches.push({
+        left_key: leftKey,
+        right_key: rightKey,
+        left_present: leftPresent,
+        right_present: rightPresent,
+        left_total: leftTotal,
+        right_total: rightTotal,
+        expected_team_id: creditedTeamId,
+        wrong_team: wrongTeam,
+      });
+    }
+  };
+
+  SAME_TEAM_PAIRS.forEach(([leftKey, rightKey]) => check(leftKey, rightKey, creditedTeamId, creditedTeamId));
+  const offenseTeamId = creditedTeamId === session.home_team_id
+    ? session.away_team_id
+    : session.home_team_id;
+  check("ints", "defInts", offenseTeamId, creditedTeamId);
+  return mismatches;
 }
 
 /* ------------------------- mock RPC equivalents --------------------------- */
@@ -251,6 +334,26 @@ export function appendPracticeEventMock(prev, { lease, command }, newId) {
   }
   if (command.action === "record" && isCorrection) {
     throw new Error("[INV-16][INV-17] Correction sessions may only void or replace existing effective events.");
+  }
+  // Same gate append_practice_event applies: record and replace are validated,
+  // void is exempt. Without this the rehearsal would accept flag-football
+  // combinations the hosted RPC rejects, and teach a workflow that fails live.
+  if (["record", "replace"].includes(command.action)) {
+    const pairingReason = command.pairing_override_reason || null;
+    if (command.event_type === "period_close") {
+      if (command.period_type !== "overtime" || command.credited_team_id) {
+        throw new Error("[INV-08] period_close requires a teamless overtime period.");
+      }
+    } else {
+      const mismatches = flagPairingMismatches(
+        prev, session, command.credited_team_id, command.attributions);
+      if (mismatches.length > 0 && !pairingReason) {
+        throw new Error("[INV-07] Paired flag-football statistics must reconcile within the same event.");
+      }
+      if (mismatches.length === 0 && pairingReason) {
+        throw new Error("[INV-07] A pairing override reason is valid only for an unpaired flag-football event.");
+      }
+    }
   }
   // Dense per-SESSION sequence — the practice parallel of the per-game index.
   const sequence = prev.scorekeepingEvents.filter((item) => item.session_id === session.id).length + 1;
