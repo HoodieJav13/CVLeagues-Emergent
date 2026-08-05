@@ -89,11 +89,28 @@ mode `0600`) diffed against the pre-push export; every hunk attributed.
   five re-emitted function bodies; every addition is a practice function,
   constraint, FK, index, or function-body line introduced by Migration 30.
 
-## Open item within step 17
+## Advisors (step 17, closed for security; performance expectation stated)
 
-**Advisors**: dashboard-only surface, not reachable from this session's CLI.
-Owner to confirm both advisors clean on the dashboard; if either flags on the
-practice objects, that finding joins this record before step 18 is approved.
+**Security Advisor — CONFIRMED AT ACCEPTED BASELINE (owner-run, 2026-08-04).**
+The owner ran the dashboard advisor post-push. ERROR-level findings: exactly
+the two intentional allowlisted definer-view ERRORs
+(`public.public_profiles`, `public.public_hof_entries`) — the same pair
+recorded as accepted baseline in
+[`service-role-hardening-2026-07-15.md`](service-role-hardening-2026-07-15.md)
+and
+[`aggregate-scoring-hosted-acceptance-2026-07-21.md`](aggregate-scoring-hosted-acceptance-2026-07-21.md),
+and the same boundary CLAUDE.md documents as deliberate with safe-field
+allowlists and forbidden-PII regression tests. **No finding names any
+practice object.** Migration 30 added no view, so no new definer-view
+surface exists to flag.
+
+**Performance Advisor — expected shape, to be confirmed at the step 18
+session.** The accepted baseline is unused-index INFOs plus the deliberately
+deferred overlapping-permissive-policy WARNs. Migration 30 adds two partial
+unique indexes on empty scope, so up to two NEW unused-index INFOs
+(`scorekeeping_events_practice_sequence_idx`,
+`scorekeeping_events_practice_idempotency_idx`) are expected and benign.
+Anything outside those classes joins this record before step 18 runs.
 
 ## Not done, deliberately
 
