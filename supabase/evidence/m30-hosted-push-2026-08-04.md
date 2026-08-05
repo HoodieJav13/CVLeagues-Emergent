@@ -92,17 +92,57 @@ mode `0600`) diffed against the pre-push export; every hunk attributed.
 ## Advisors (step 17, closed for security; performance expectation stated)
 
 **Security Advisor — CONFIRMED AT ACCEPTED BASELINE (owner-run, 2026-08-04).**
-The owner ran the dashboard advisor post-push. ERROR-level findings: exactly
-the two intentional allowlisted definer-view ERRORs
-(`public.public_profiles`, `public.public_hof_entries`) — the same pair
-recorded as accepted baseline in
+Full output reviewed at every level: **41 findings — 2 ERROR, 38 WARN,
+1 INFO.** Every class matches the accepted baseline recorded in
 [`service-role-hardening-2026-07-15.md`](service-role-hardening-2026-07-15.md)
 and
-[`aggregate-scoring-hosted-acceptance-2026-07-21.md`](aggregate-scoring-hosted-acceptance-2026-07-21.md),
-and the same boundary CLAUDE.md documents as deliberate with safe-field
-allowlists and forbidden-PII regression tests. **No finding names any
-practice object.** Migration 30 added no view, so no new definer-view
-surface exists to flag.
+[`aggregate-scoring-hosted-acceptance-2026-07-21.md`](aggregate-scoring-hosted-acceptance-2026-07-21.md);
+the only count that moved is the definer-function class, and it moved by
+exactly the RPCs that approved migrations added.
+
+- **2 ERROR — intentional allowlisted definer views** (`public_profiles`,
+  `public_hof_entries`). Unchanged pair; CLAUDE.md documents both as
+  deliberate safe-field boundaries with forbidden-PII regression tests.
+  Migration 30 added no view, so no new definer-view surface exists.
+- **2 WARN — anon-executable definer helpers** (`is_admin`,
+  `is_admin_identity`). Unchanged from baseline; both return boolean false
+  for an anonymous caller.
+- **35 WARN — authenticated-executable definer functions.** This is the
+  architecture, not a defect: mutation is RPC-only, direct table writes are
+  revoked, and each RPC calls `assert_admin()` (AAL2) internally. The linter
+  sees "authenticated may call a definer function" and cannot see the guard
+  inside it. The count reconciles exactly against the recorded baseline:
+  15 pre-Sequence-4 admin RPCs + 2 helpers = **17**, the precise figure
+  recorded on 2026-07-15; + 10 Sequence 4 ledger RPCs = 27; +
+  `set_game_participation` (M29) = 28; + the 7 practice RPCs (M30) = **35**.
+  The seven practice RPCs sit in the identical class as the 26 official
+  admin RPCs beside them.
+- **1 WARN — leaked-password protection disabled.** Unchanged from baseline.
+  See the open item below.
+- **1 INFO — `admin_users` RLS enabled with no policy.** The deliberate
+  deny-all helper table; the post-push dump confirms **zero** policies on it.
+
+Independently verified against the post-push schema dump rather than taken
+from the dashboard alone: 36 functions carry an EXECUTE grant to
+`authenticated`, of which 35 are `SECURITY DEFINER` (matching the 35 WARNs
+exactly) and one — `current_waiver_version`, `LANGUAGE sql STABLE`, no
+`SECURITY DEFINER` — is correctly unflagged. Only three functions are granted
+to `anon`: the two flagged helpers plus that same non-definer
+`current_waiver_version`.
+
+**The load-bearing negative result:** none of the internal helpers appear
+anywhere in the granted set — `assert_admin`,
+`cvf_build_ledger_projection`, `cvf_validate_ledger_event`,
+`cvf_flag_pairing_mismatches`, `cvf_ledger_token_hash`, and
+`cvf_assert_ledger_lease` all return zero. Migration 30's internals are not
+client-reachable, and no grant reaches `service_role`.
+
+**Open item, not M30-related:** leaked-password protection remains disabled.
+The 2026-07-15 record attributes this to the Free plan; the dashboard toggle
+should be re-checked, because if it is available it is a free hardening win
+for the one real password in the system. Low urgency while the single admin
+account is AAL2/TOTP-protected, but it rises the moment captain accounts
+exist, since those would be the first non-admin principals with passwords.
 
 **Performance Advisor — expected shape, to be confirmed at the step 18
 session.** The accepted baseline is unused-index INFOs plus the deliberately
