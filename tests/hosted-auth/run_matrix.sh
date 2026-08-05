@@ -9,7 +9,7 @@ shift || true
 # separately, so a run against the intermediate state must say so: the m29
 # fixture seeds a venue and a starts_at game, which fails during SETUP against
 # a database at Migration 28. Defaults to the current repository surface.
-SURFACE="m29"
+SURFACE="m30"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --surface) SURFACE="${2:?--surface requires a value}"; shift 2 ;;

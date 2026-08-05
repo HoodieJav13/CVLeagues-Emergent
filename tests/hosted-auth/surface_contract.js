@@ -110,11 +110,12 @@
     }),
   });
 
-  // Stays at m29 while hosted is at 29. Promoting the default is a consequence
-  // of the hosted push, never a precondition for it: defaulting to a surface the
-  // backend does not have would fail during fixture seeding, before any
-  // authorization check, and produce no evidence at all.
-  const DEFAULT_SURFACE = "m29";
+  // Promoted to m30 on 2026-08-05, after — never before — the accepted
+  // 291/291 m30 run. Promoting the default is a consequence of accepted
+  // evidence: defaulting to a surface the backend does not have fails during
+  // fixture seeding, before any authorization check, and produces no evidence
+  // at all. See supabase/evidence/hosted-auth-matrix-2026-08-04-m30.md.
+  const DEFAULT_SURFACE = "m30";
 
   /* --------------------------------------------------------------------------
    * Payload builders. EVERY games payload in the harness goes through these —

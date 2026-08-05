@@ -1,6 +1,6 @@
 # Hosted authorization acceptance runbook
 
-This runbook is authoritative for the repeatable hosted authorization procedure. **Migrations 28 and 29 are published and independently authorization-accepted.** The current ACCEPTED baseline is Migration 29 at 29 migrations, covering 28 tables and 26 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
+This runbook is authoritative for the repeatable hosted authorization procedure. **Migrations 28, 29, and 30 are published and independently authorization-accepted.** The current ACCEPTED baseline is Migration 30 at 30 migrations, covering 28 tables and 33 privileged RPCs, including the four private ledger relations and ten authenticated-only runtime RPCs, with real anonymous, authenticated non-admin, password-only administrator, and AAL2 administrator sessions plus privileged catalog checks.
 
 The harness creates a uniquely namespaced disposable aggregate fixture through the linked Supabase CLI, exercises authorization through browser-held user sessions, removes the fixture through the same privileged CLI channel, and compares every public-table row count and relevant singleton setting with the pre-run baseline. It deliberately does not seed ledger evidence: those rows are append-only even to the migration owner. Both accepted Sequence 4 runs include 248 browser/API checks and eight exact catalog checks, including runtime-RPC ACL coverage plus anonymous/non-admin/AAL1 denial for all ten new endpoints. A populated positive read/write proof remains a separate durable-pilot gate.
 
@@ -39,7 +39,7 @@ supabase migration list
 supabase db push --dry-run
 ```
 
-The current accepted behavioral baseline is Migration 29: 29 migrations, 28 tables, and 26 administrator RPCs.
+The current accepted behavioral baseline is Migration 30: 30 migrations, 28 tables, and 33 administrator RPCs, accepted at 291/291 on 2026-08-05.
 
 **Migrations 28 and 29 are complete at their independent acceptance boundaries.** The ordered procedure below preserves both records.
 
@@ -65,9 +65,9 @@ that only an `m30` run covers:
 | RPC | Change | From | First covered by |
 |---|---|---|---|
 | `schedule_playoff_match` | signature replaced, old overload dropped | Migration 29 | accepted `m29` 270/270 |
-| seven `*_practice_*` RPCs | new endpoints (26 → 33 admin RPCs) | Migration 30 | pending `--surface m30` run |
+| seven `*_practice_*` RPCs | new endpoints (26 → 33 admin RPCs) | Migration 30 | accepted `m30` 291/291 |
 
-The three Migration-28 endpoints remain in the denial loop, and their coverage carries forward from the accepted `m28` run. A Migration 29 result is not coverage for the seven practice endpoints — only an `m30` pass probes them. The typed denial model rejects "function not found" as authorization evidence, so stale signatures fail closed.
+The three Migration-28 endpoints remain in the denial loop, and their coverage carries forward from the accepted `m28` run. A Migration 29 result was not coverage for the seven practice endpoints; only the `m30` pass probed them, and it did. The typed denial model rejects "function not found" as authorization evidence, so stale signatures fail closed.
 
 ## Publishing Migrations 28 and 29 — ordered checkpoint record
 
@@ -206,12 +206,22 @@ the hosted backend; only the manual CLI steps below can.
       hosted/local divergence here is a stop condition;
     - RLS still enabled on all four private tables with the admin-only
       policies unchanged, and both advisors clean.
-18. **OPEN — separate approval and `--surface m30` acceptance.** A distinct,
-    separately approved fixture-writing matrix run — Migration 29's 270/270
-    is not evidence for this surface and must never be presented as such.
-    Record the dated evidence file with its observed ledger count and exact
-    baseline restoration, then promote `DEFAULT_SURFACE` to `m30` in the same
-    change that commits the accepted evidence.
+18. **COMPLETED 2026-08-05 — separate approval and `--surface m30` acceptance.**
+    283 browser/API checks plus 8 catalog checks = **291/291**, with fixture
+    residue and baseline restoration both PASS. The 21-check delta over the
+    accepted `m29` 270/270 is exactly the seven practice RPCs across
+    anonymous, authenticated non-admin, and AAL1-admin; every one reached a
+    real authorization boundary (`assert_admin()` for authenticated roles, the
+    function-execute privilege for anonymous) and none returned "function not
+    found". See
+    [`evidence/hosted-auth-matrix-2026-08-04-m30.md`](evidence/hosted-auth-matrix-2026-08-04-m30.md),
+    SHA-256 `311453b6836f9fe6e7e54b3e64c42074eebf7fd7d644c93d8bb49ddff65fa6e5`.
+    `DEFAULT_SURFACE` was promoted to `m30` in the same change.
+
+    The rule this satisfied, kept for the next surface: a distinct,
+    separately approved fixture-writing matrix run is required — an earlier
+    surface's result is never evidence for a later one — and the default is
+    promoted only in the change that commits the accepted evidence.
 
 ### Each pass is its own acceptance boundary
 
@@ -293,10 +303,10 @@ evidence artifact headed "Migration 28" that proved only the previous baseline.
 On a mismatch the runner prints the observed versus expected ledger and exits
 before touching anything.
 
-`m29` remains the default until the `--surface m30` acceptance is recorded —
-promoting the default is a consequence of accepted evidence, never a
-precondition for producing it. The flag is therefore mandatory for the `m28`
-and `m30` passes, but state it explicitly in every pass so the evidence file
+`m30` is the default as of 2026-08-05, promoted only after its acceptance was
+recorded — promoting the default is a consequence of accepted evidence, never
+a precondition for producing it. The flag is therefore mandatory for the `m28`
+and `m29` passes, but state it explicitly in every pass so the evidence file
 records which surface it covers. The generated report header carries the
 surface key, label, migration number, and expected census. The three modes and
 their censuses are pinned by `tests/hosted-auth/surface_contract.test.mjs`,
@@ -307,7 +317,7 @@ a hollow `PASS`.
 
 Preflight must show the expected hosted migrations aligned and an up-to-date dry run. Do not present the earlier 154-case Migration-23 or 225-case Migration-24 run as current-surface acceptance.
 
-Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md) records Migration 29 at 270/270, observed hosted ledger count 29 with latest version `20260726120000`, zero fixture residue, and exact baseline restoration. Its SHA-256 is `81e29cceffb24ec7ab1653bf6cfcf8d3261f508eb8f334ab4a0fc9af97a94158`. The failed invalid-TOTP [`first attempt`](evidence/hosted-auth-matrix-2026-07-28-m29.md) and the cleanup-safe 269/270 [`harness-defect run`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-01.md) remain immutable evidence; commit `f561c9a` corrected only the role-specific expectation and passed 75/75 harness contract tests before the accepted rerun. Migration 28's independent [`256/256 evidence`](evidence/hosted-auth-matrix-2026-07-28-m28.md), the prior [`2026-07-25 execution`](evidence/hosted-auth-matrix-2026-07-24.md), and independent [`2026-07-22 Migration-27 evidence`](evidence/hosted-auth-matrix-2026-07-22-m27.md) remain prior checkpoints. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding structural gate.
+Latest accepted behavioral evidence: [`evidence/hosted-auth-matrix-2026-08-04-m30.md`](evidence/hosted-auth-matrix-2026-08-04-m30.md) records Migration 30 at **291/291** (283 browser/API + 8 catalog), observed hosted ledger count 30 with latest version `20260729182047`, zero fixture residue, and exact baseline restoration. Its SHA-256 is `311453b6836f9fe6e7e54b3e64c42074eebf7fd7d644c93d8bb49ddff65fa6e5`. The prior accepted checkpoint [`evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md) records Migration 29 at 270/270, observed hosted ledger count 29 with latest version `20260726120000`, zero fixture residue, and exact baseline restoration. Its SHA-256 is `81e29cceffb24ec7ab1653bf6cfcf8d3261f508eb8f334ab4a0fc9af97a94158`. The failed invalid-TOTP [`first attempt`](evidence/hosted-auth-matrix-2026-07-28-m29.md) and the cleanup-safe 269/270 [`harness-defect run`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-01.md) remain immutable evidence; commit `f561c9a` corrected only the role-specific expectation and passed 75/75 harness contract tests before the accepted rerun. Migration 28's independent [`256/256 evidence`](evidence/hosted-auth-matrix-2026-07-28-m28.md), the prior [`2026-07-25 execution`](evidence/hosted-auth-matrix-2026-07-24.md), and independent [`2026-07-22 Migration-27 evidence`](evidence/hosted-auth-matrix-2026-07-22-m27.md) remain prior checkpoints. [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md) records the preceding structural gate.
 
 ## Run
 

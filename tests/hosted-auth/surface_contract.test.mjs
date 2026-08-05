@@ -72,13 +72,6 @@ test("m29 is a strict prefix of m30 — no table or RPC is dropped between them"
   for (const rpc of m29.rpcs) assert.ok(m30.rpcs.includes(rpc), `m30 lost ${rpc}`);
 });
 
-test("the default surface stays m29 while hosted is at 29", () => {
-  // Promoting the default belongs to the hosted push, not to adding the
-  // surface. Defaulting ahead of the backend fails during fixture seeding and
-  // yields no evidence rather than a partial pass.
-  assert.equal(resolveSurface(undefined).key, "m29");
-});
-
 test("no duplicates in either census", () => {
   for (const key of Object.keys(SURFACES)) {
     const surface = SURFACES[key];
@@ -148,8 +141,12 @@ test("the three Sequence 5A endpoints are present at both surfaces", () => {
  * Resolution behaviour.
  * ------------------------------------------------------------------------- */
 test("the default surface is the current repository surface", () => {
-  assert.equal(DEFAULT_SURFACE, "m29");
-  assert.equal(resolveSurface(undefined).key, "m29");
+  // Promoted to m30 only after the accepted 291/291 m30 run, never ahead of
+  // it: defaulting past the backend fails during fixture seeding and yields no
+  // evidence rather than a partial pass. This is the tripwire if a future
+  // surface is added and the default advances before its evidence exists.
+  assert.equal(DEFAULT_SURFACE, "m30");
+  assert.equal(resolveSurface(undefined).key, "m30");
 });
 
 test("an unknown surface fails loudly rather than defaulting", () => {
