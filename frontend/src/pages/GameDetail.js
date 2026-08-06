@@ -141,6 +141,20 @@ export default function GameDetail() {
           })()}
         </div>
 
+        {/* Field guidance — the address for anyone navigating by name, and the
+            venue's own notes (parking, which entrance, field quirks) whenever
+            the admin has written any. A venue without notes adds no row. */}
+        {(() => {
+          const venue = getVenue(state, game.venue_id);
+          if (!venue?.address && !venue?.notes) return null;
+          return (
+            <div data-testid="game-venue-guidance" className="mt-2 text-xs text-muted-foreground space-y-0.5">
+              {venue.address ? <p>{venue.address}</p> : null}
+              {venue.notes ? <p>{venue.notes}</p> : null}
+            </div>
+          );
+        })()}
+
         {/* Add to calendar — available to everyone, and the reason migration 29
             made the start time a real timestamp. */}
         {!completed && (

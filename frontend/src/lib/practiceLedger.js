@@ -171,6 +171,64 @@ export function buildPracticeProjection(state, session_id) {
   };
 }
 
+// Mirrors cvf_validate_ledger_event (5A authoritative form, period_close arm
+// included): exact point values per event type, per-sport stat-key allowlists,
+// and negative deltas only on the signed yardage keys. The UI cannot normally
+// produce these violations — buildLedgerEventCommand assembles the values —
+// which is precisely why the mock must hold the line independently: the day
+// the entry surface changes, this contract keeps rehearsal and hosted
+// identical.
+const SIGNED_STAT_KEYS = ["passYards", "rushYards", "recYards"];
+const ALLOWED_STAT_KEYS = {
+  kickball: ["kicks", "singles", "doubles", "triples", "homeRuns", "rbis", "runs", "walks", "strikeouts", "outs", "assists", "errors"],
+  flag_football: [
+    "completions", "attempts", "passYards", "passTDs", "ints", "carries", "rushYards", "rushTDs", "rushFirstDowns",
+    "catches", "recYards", "recTDs", "recFirstDowns", "flagPulls", "sacks", "defInts", "safeties",
+    "tds", "onePoint", "twoPoint", "threePoint",
+  ],
+};
+const ALLOWED_EVENT_TYPES = {
+  kickball: ["run", "out", "kick", "single", "double", "triple", "home_run", "walk", "strikeout", "assist", "error"],
+  flag_football: ["touchdown", "one_point", "two_point", "three_point", "safety", "completion", "carry", "reception", "flag_pull", "sack", "interception"],
+};
+const FLAG_POINTS = { touchdown: 6, one_point: 1, two_point: 2, three_point: 3, safety: 2 };
+
+export function validateLedgerEvent(session, event_type, points, attributions) {
+  const type = String(event_type || "").trim().toLowerCase();
+  const items = attributions || [];
+  if (!Array.isArray(items)) throw new Error("[INV-03] Event attributions must be a JSON array.");
+
+  if (type === "period_close") {
+    if (Number(points) !== 0 || items.length !== 0) {
+      throw new Error("[INV-02][INV-08] A period_close event is zero-point and has no player attribution.");
+    }
+    return;
+  }
+
+  const sport = session.sport === "kickball" ? "kickball" : "flag_football";
+  if (!ALLOWED_EVENT_TYPES[sport].includes(type)) {
+    throw new Error(`[INV-04] Event type ${type} is not valid for ${sport === "kickball" ? "kickball" : "flag football"}.`);
+  }
+  const expectedPoints = sport === "kickball" ? (type === "run" ? 1 : 0) : (FLAG_POINTS[type] ?? 0);
+  if (Number(points) !== expectedPoints) {
+    throw new Error(`[INV-02] ${sport === "kickball" ? "Kickball" : "Flag-football"} event ${type} requires ${expectedPoints} points.`);
+  }
+
+  for (const item of items) {
+    const delta = item?.stat_delta;
+    if (!item || typeof item !== "object" || !item.participant_id || !item.role || !item.stat_key
+        || !Number.isInteger(Number(delta)) || String(delta).trim() === "") {
+      throw new Error("[INV-03] Each attribution requires participant_id, role, stat_key, and integer stat_delta.");
+    }
+    if (!ALLOWED_STAT_KEYS[sport].includes(item.stat_key)) {
+      throw new Error(`[INV-04] Stat key ${item.stat_key} is not valid for ${session.sport}.`);
+    }
+    if (Number(delta) < 0 && !SIGNED_STAT_KEYS.includes(item.stat_key)) {
+      throw new Error(`[INV-03] Stat ${item.stat_key} cannot have a negative delta.`);
+    }
+  }
+}
+
 // Flag football pairs statistics that must reconcile inside a single event: the
 // same-team throw/catch pairs, and interceptions, which cross sides because the
 // offense throws what the credited defense catches. Mirrors
@@ -339,6 +397,9 @@ export function appendPracticeEventMock(prev, { lease, command }, newId) {
   // void is exempt. Without this the rehearsal would accept flag-football
   // combinations the hosted RPC rejects, and teach a workflow that fails live.
   if (["record", "replace"].includes(command.action)) {
+    // Same order as append_practice_event: full event validation first, then
+    // the period_close arm, then pairing.
+    validateLedgerEvent(session, command.event_type, command.points, command.attributions);
     const pairingReason = command.pairing_override_reason || null;
     if (command.event_type === "period_close") {
       if (command.period_type !== "overtime" || command.credited_team_id) {

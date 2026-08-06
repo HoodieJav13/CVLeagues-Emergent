@@ -22,6 +22,7 @@ import AdminSecurity from "./pages/AdminSecurity";
 import ScoreEntry from "./pages/ScoreEntry";
 import NotFound from "./pages/NotFound";
 import { CONFIG_ERROR } from "./lib/supabase";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
 
 function App() {
   if (CONFIG_ERROR) {
@@ -36,6 +37,7 @@ function App() {
     );
   }
   return (
+    <ErrorBoundary>
     <RoleProvider>
       <AppStateProvider>
         <BrowserRouter>
@@ -64,6 +66,7 @@ function App() {
         <Toaster theme="dark" position="top-center" richColors />
       </AppStateProvider>
     </RoleProvider>
+    </ErrorBoundary>
   );
 }
 
