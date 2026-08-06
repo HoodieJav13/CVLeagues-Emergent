@@ -2,7 +2,15 @@
 
 This file is authoritative for CVF Leagues schema, migration ledger, backend invariants, and hosted verification state. Current product status, roadmap, and owner actions live in [`../CLAUDE.md`](../CLAUDE.md). This dedicated Supabase project must remain separate from ZonAthletica or any unrelated project.
 
-## Verified status — 2026-07-28
+## Verified status — 2026-08-05
+
+- Thirty migration files are present in filename order. A clean isolated reset applies all thirty, and the independent pgtest run passes 382/382 plus two real two-connection races: the ledger append race and the practice correction-fork race, whose loser must fail on `scorekeeping_events_one_void_idx` specifically.
+- **Migration 30 (practice mode, Option B) is published and independently authorization-accepted.** Published 2026-08-04 under its own `30-30` token after runbook steps 14–17 with a full structural readback — nullable `game_id` with both-direction practice-shape constraints, eight replacement FKs, two NULL-scope partial unique indexes, and five re-emitted trigger functions verified byte-identical to the repository source ([`evidence/m30-hosted-push-2026-08-04.md`](evidence/m30-hosted-push-2026-08-04.md)). Accepted 2026-08-05 at **291/291** with zero fixture residue and exact baseline restoration ([`evidence/hosted-auth-matrix-2026-08-04-m30.md`](evidence/hosted-auth-matrix-2026-08-04-m30.md)); the 21-check delta over m29's 270/270 is exactly the seven practice RPCs across three denial roles, every probe reaching a real authorization boundary.
+- Migration 30 adds no table and no view: practice sessions are rows in the four existing private ledger tables with `session_kind='practice'` and `game_id NULL`. The harness contract is three-surface (`m28`/`m29`/`m30`) and `DEFAULT_SURFACE` is `m30`, promoted in the same change that committed the accepted evidence.
+- The post-push security advisor matched the accepted baseline at every level — 41 findings, with the definer-function count reconciling exactly (17 recorded + 10 ledger + 1 M29 + 7 practice = 35) and no internal helper client-executable.
+- The durable populated-ledger pilot is specified and deliberately deferred until real Season 1 rosters exist hosted, because a practice session pins the teams/profiles/roster rows it snapshots via `on delete restrict` and hosted is an empty scaffold — see [`../docs/scoring/DURABLE_LEDGER_PILOT_2026-08-04.md`](../docs/scoring/DURABLE_LEDGER_PILOT_2026-08-04.md).
+
+## Verified status — 2026-07-28 (superseded checkpoint, preserved)
 
 - Twenty-nine migration files are present in filename order. A clean isolated reset applies all twenty-nine, and the independent pgtest run passes 340/340 plus a real two-connection idempotency race. Migrations 28 and 29 are both published and independently authorization-accepted. Hosted and `main` now present the same 29-migration surface.
 - **Migration 29 dropped three `games` columns (`date`, `time`, `location`) and is therefore not silently reversible.** Its fresh pre-publication off-platform export and no-auto-deployment gate were completed before `main` advanced. It adds two tables (`venues`, `game_participation`), adds one RPC (`set_game_participation`), and replaces `schedule_playoff_match`'s signature.
@@ -35,9 +43,9 @@ Owner-confirmed on 2026-07-10:
 - Dashboard access: owner only
 - Scope: dedicated to CVF Leagues; no unrelated CVF or ZonAthletica resources
 - Database password: owner confirmed it is stored securely; its value and storage details are not recorded here
-- Backup capability: Free-plan project; regular off-platform logical exports remain required before launch
+- Backup capability: Free-plan project today; owner decided 2026-08-05 to move to the Pro tier at launch (no idle pause, daily automatic backups). Until then, off-platform logical exports before every hosted procedure remain required; the latest is the 2026-08-04 pre-M30 pair recorded in [`evidence/m30-hosted-push-2026-08-04.md`](evidence/m30-hosted-push-2026-08-04.md)
 
-The project is linked and all twenty-nine hosted migrations are applied with migration history, structural catalog checks, the operational row/settings baseline, and both advisors read back. Behavioral authorization acceptance is current through Migration 29's 270/270 surface. See the accepted [`Migration 29 execution`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md), the independent [`Migration 28 execution`](evidence/hosted-auth-matrix-2026-07-28-m28.md), the prior [`2026-07-25 execution`](evidence/hosted-auth-matrix-2026-07-24.md), the independent [`2026-07-22 execution`](evidence/hosted-auth-matrix-2026-07-22-m27.md), [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md), and the immutable earlier checkpoints.
+The project is linked and all thirty hosted migrations are applied with migration history, structural catalog checks, the operational row/settings baseline, and both advisors read back. Behavioral authorization acceptance is current through Migration 30's 291/291 surface — see the accepted [`Migration 30 execution`](evidence/hosted-auth-matrix-2026-08-04-m30.md) and [`push record`](evidence/m30-hosted-push-2026-08-04.md). See the accepted [`Migration 29 execution`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md), the independent [`Migration 28 execution`](evidence/hosted-auth-matrix-2026-07-28-m28.md), the prior [`2026-07-25 execution`](evidence/hosted-auth-matrix-2026-07-24.md), the independent [`2026-07-22 execution`](evidence/hosted-auth-matrix-2026-07-22-m27.md), [`evidence/sequence-4-hosted-push-2026-07-22.md`](evidence/sequence-4-hosted-push-2026-07-22.md), and the immutable earlier checkpoints.
 
 ## Migration inventory
 
@@ -72,6 +80,7 @@ The project is linked and all twenty-nine hosted migrations are applied with mig
 | `20260722052352_ledger_correction_authority.sql` | Adds the single ledger correction authority, atomic void-and-replace, immutable snapshot chaining, and bracket-safe refinalization |
 | `20260723154411_sequence_5a_overtime_pairing_rules.sql` | **Migration 28. Hosted and authorization-accepted.** Sequence 5A: explicit overtime-period close/continuation, paired-stat entry enforcement with append-only reasoned exceptions, and overtime-aware projection/finalization |
 | `20260726120000_venues_game_start_times_participation.sql` | **Migration 29. Hosted and authorization-accepted.** Adds `venues`; replaces game date/display-time/free-text location with an authoritative `starts_at` timestamptz and `venue_id`; adds `game_participation` and `set_game_participation` outside the score lock; reissues Migration 23's games column allowlist over the replacement columns; replaces `schedule_playoff_match` with the new signature |
+| `20260729182047_practice_mode_sessions.sql` | **Migration 30. Hosted and authorization-accepted.** Practice mode (Option B): `session_kind='practice'` with `game_id` nullable only for practice, both-direction shape constraints, per-session sequencing and idempotency via NULL-scope partial unique indexes, eight plain FKs replacing the composite keys that stop enforcing at NULL, seven AAL2 practice RPCs, and five trigger functions re-emitted with practice branches at zero drift |
 
 ## Completed database hardening
 
@@ -117,9 +126,9 @@ The current Performance Advisor reports 36 findings:
 
 ## Remaining backend launch gates
 
-Hosted authorization acceptance is complete and durably evidenced at 270/270 through Migration 29 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md`](evidence/hosted-auth-matrix-2026-07-28-m29-rerun-02.md).
+Hosted authorization acceptance is complete and durably evidenced at 291/291 through Migration 30 — see [`HOSTED_AUTH_RUNBOOK.md`](HOSTED_AUTH_RUNBOOK.md) and [`evidence/hosted-auth-matrix-2026-08-04-m30.md`](evidence/hosted-auth-matrix-2026-08-04-m30.md).
 
-Sequence 5A and Migration 29 are behaviorally accepted at their independent hosted boundaries. The signed-rushing-yardage UI path and the practice-mode boundary both closed locally on 2026-07-29 (Migration 30, 371/371 local assertions); Migration 30's hosted publication awaits its own explicit push token before the durable official pilot can rehearse hosted. Because ledger evidence is intentionally append-only, the hosted positive-row proof must use an explicitly owner-approved durable pilot fixture rather than pretending it can be automatically cleaned up.
+Sequence 5A, Migration 29, and Migration 30 are behaviorally accepted at their independent hosted boundaries. The durable populated-ledger pilot is specified and deferred until real Season 1 rosters exist hosted ([`../docs/scoring/DURABLE_LEDGER_PILOT_2026-08-04.md`](../docs/scoring/DURABLE_LEDGER_PILOT_2026-08-04.md)): ledger evidence is intentionally append-only and a practice session pins the roster rows it snapshots, so the hosted positive-row proof waits for rows worth pinning rather than pretending fixtures can be cleaned up.
 
 1. Complete recovery and session-revocation checks for the already-linked AAL2 administrator; decide separately whether a break-glass administrator is warranted.
 2. Enter hosted and Turnstile public/secret values in preview/production without exposing service-role or secret keys to React, then verify fail-closed behavior.

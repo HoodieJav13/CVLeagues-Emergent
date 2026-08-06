@@ -460,3 +460,17 @@ computed-style assertion and four forced-reduce captures
 
 ## Out-of-scope observations for later batches
 
+
+
+## 2026-08-05 — Migration 30 hosted sequence complete
+
+The "Migration 30 waits for the owner's separate 'approved: hosted push of
+migrations 30-30' token" state above is closed: the token was issued
+2026-08-04, steps 14–17 ran with a full structural readback
+(`supabase/evidence/m30-hosted-push-2026-08-04.md`), and the separately
+approved `--surface m30` matrix was accepted 2026-08-05 at 291/291
+(`supabase/evidence/hosted-auth-matrix-2026-08-04-m30.md`). `DEFAULT_SURFACE`
+is `m30`. Local acceptance at the merged head: 382/382 pgtest plus the append
+and fork races, 81/81 harness contracts, 217/217 frontend tests, clean build.
+The durable pilot is specified and deferred until real Season 1 rosters exist
+hosted (`docs/scoring/DURABLE_LEDGER_PILOT_2026-08-04.md`).

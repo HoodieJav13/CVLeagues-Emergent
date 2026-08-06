@@ -14,8 +14,11 @@ Sequence 3 established the hosted database boundary required for event-level
 scorekeeping without creating a second working score-entry system. Sequence 4
 now publishes the controlled runtime behind that same authority boundary. The
 client is not deployed and no hosted ledger session/event exists. The
-real-session authorization matrix is accepted; positive populated-ledger
-behavior still requires the later durable pilot.
+real-session authorization matrix is accepted through Migration 30's m30
+surface (291/291, 2026-08-05); positive populated-ledger behavior still
+requires the durable pilot, now specified and deferred until real Season 1
+rosters exist hosted — see
+[`DURABLE_LEDGER_PILOT_2026-08-04.md`](DURABLE_LEDGER_PILOT_2026-08-04.md).
 
 The binding rules remain
 [`RULES_INVARIANT_MATRIX.md`](RULES_INVARIANT_MATRIX.md). Sequence 4 must build
