@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import handler, { readQuery, readConfig, feedName, loadFeedData, _test } from "./calendar.mjs";
+import handler, { readQuery, readConfig, feedName, loadFeedData, readLimiterConfig, clientAddress, _test } from "./calendar.mjs";
 
 /* ============================================================================
  * Public calendar feed.
@@ -129,4 +129,83 @@ test("handler fails closed and says nothing specific when misconfigured", async 
 
 test("the cache window is long enough that a popular feed is not re-queried per client", () => {
   assert.ok(_test.CACHE_SECONDS >= 600, "subscriptions poll often; cache must absorb that");
+});
+
+/* ============================================================================
+ * Per-IP rate limit — the abuse-protection gate (owner decision 2026-08-06).
+ * ========================================================================== */
+
+const LIMITER = { url: "https://kv.example.upstash.io", token: "kv-token" };
+
+function fetchReturningCount(count) {
+  return async (url, options) => {
+    fetchReturningCount.lastCall = { url, options };
+    return { ok: true, json: async () => [{ result: count }, { result: 1 }] };
+  };
+}
+
+test("readLimiterConfig fails closed on a deployed platform with no store", () => {
+  assert.throws(
+    () => readLimiterConfig({ VERCEL: "1" }),
+    /temporarily unavailable/i,
+    "a missing limiter on the deployed platform is a deployment mistake, not a pass"
+  );
+});
+
+test("readLimiterConfig skips limiting only where the feed is unreachable anyway", () => {
+  assert.equal(readLimiterConfig({}), null);
+  const viaKv = readLimiterConfig({ KV_REST_API_URL: LIMITER.url, KV_REST_API_TOKEN: LIMITER.token });
+  assert.deepEqual(viaKv, { url: LIMITER.url, token: LIMITER.token });
+  const viaUpstash = readLimiterConfig({ UPSTASH_REDIS_REST_URL: LIMITER.url, UPSTASH_REDIS_REST_TOKEN: LIMITER.token });
+  assert.deepEqual(viaUpstash, { url: LIMITER.url, token: LIMITER.token });
+});
+
+test("clientAddress prefers the first forwarded hop", () => {
+  assert.equal(clientAddress({ headers: { "x-forwarded-for": "203.0.113.9, 10.0.0.1" } }), "203.0.113.9");
+  assert.equal(clientAddress({ headers: { "x-real-ip": "203.0.113.7" } }), "203.0.113.7");
+  assert.equal(clientAddress({ headers: {} }), "unknown");
+});
+
+test("requests under the limit pass and over the limit are limited", async () => {
+  const under = await _test.enforceRateLimit(LIMITER, "203.0.113.9", fetchReturningCount(_test.RATE_LIMIT_MAX), 0);
+  assert.equal(under.limited, false);
+  assert.equal(under.skipped, false);
+  const over = await _test.enforceRateLimit(LIMITER, "203.0.113.9", fetchReturningCount(_test.RATE_LIMIT_MAX + 1), 0);
+  assert.equal(over.limited, true);
+});
+
+test("the store sees a per-IP, per-window key and never the raw token in the URL", async () => {
+  await _test.enforceRateLimit(LIMITER, "203.0.113.9", fetchReturningCount(1), 42_000_000);
+  const { url, options } = fetchReturningCount.lastCall;
+  assert.equal(url, `${LIMITER.url}/pipeline`);
+  assert.ok(!url.includes(LIMITER.token), "token travels in the Authorization header only");
+  const [incr] = JSON.parse(options.body);
+  assert.equal(incr[0], "INCR");
+  assert.match(incr[1], /^cvf-cal:203\.0\.113\.9:\d+$/);
+});
+
+test("a transient store failure serves unthrottled rather than taking the feed down", async () => {
+  const failing = async () => { throw new Error("redis unreachable"); };
+  const result = await _test.enforceRateLimit(LIMITER, "203.0.113.9", failing);
+  assert.equal(result.limited, false);
+  assert.equal(result.skipped, true);
+});
+
+test("a limited caller gets 429 with Retry-After and no calendar body", async () => {
+  const saved = { ...process.env };
+  process.env.KV_REST_API_URL = LIMITER.url;
+  process.env.KV_REST_API_TOKEN = LIMITER.token;
+  process.env.VERCEL = "1";
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = fetchReturningCount(_test.RATE_LIMIT_MAX + 5);
+  try {
+    const res = mockResponse();
+    await handler({ method: "GET", query: { team: TEAM_ID }, headers: { "x-forwarded-for": "203.0.113.9" } }, res);
+    assert.equal(res.statusCode, 429);
+    assert.equal(res.headers["retry-after"], String(_test.RATE_LIMIT_WINDOW_SECONDS));
+    assert.match(res.body.error, /too many requests/i);
+  } finally {
+    globalThis.fetch = realFetch;
+    process.env = saved;
+  }
 });

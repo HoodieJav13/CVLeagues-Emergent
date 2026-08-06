@@ -36,6 +36,69 @@ class FeedError extends Error {
   }
 }
 
+/* ----------------------------------------------------------------------------
+ * PER-IP RATE LIMIT — the abuse-protection gate for this anonymous surface.
+ * Owner decision 2026-08-06. The cache above limits repeat cost; it does not
+ * limit a determined caller, and AGENTS.md requires abuse protection on
+ * anonymous surfaces before public launch. Fixed window per IP, counted in a
+ * Vercel KV / Upstash Redis store over its REST API — plain fetch, no client
+ * library.
+ *
+ * Failure semantics are deliberately split, matching the repo's fail-closed
+ * configuration discipline:
+ *  - Store env vars ABSENT on a deployed platform: 503. A missing limiter is
+ *    a deployment mistake, and failing open would silently void the launch
+ *    gate this code exists to close.
+ *  - Store env vars present but the store call FAILS at runtime: fail open
+ *    and serve. A transient Redis error should not take a read-only public
+ *    schedule down; the event is logged for the operator.
+ *  - Not on a deployed platform (local dev/tests, where the feed is
+ *    unreachable anyway): skipped.
+ * -------------------------------------------------------------------------- */
+
+const RATE_LIMIT_MAX = 30;          // requests per window per IP
+const RATE_LIMIT_WINDOW_SECONDS = 600;
+
+export function readLimiterConfig(env = process.env) {
+  // Vercel KV's names first; plain Upstash names as the fallback.
+  const url = env.KV_REST_API_URL || env.UPSTASH_REDIS_REST_URL || null;
+  const token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN || null;
+  const deployed = Boolean(env.VERCEL) || env.NODE_ENV === "production";
+  if (!url || !token) {
+    if (deployed) throw new FeedError(503, "Calendar feed is temporarily unavailable.");
+    return null; // local dev and unit tests: nothing to limit against
+  }
+  return { url, token };
+}
+
+export function clientAddress(req) {
+  const forwarded = req.headers?.["x-forwarded-for"];
+  if (typeof forwarded === "string" && forwarded.length) return forwarded.split(",")[0].trim();
+  return req.headers?.["x-real-ip"] || req.socket?.remoteAddress || "unknown";
+}
+
+export async function enforceRateLimit(limiter, ip, fetchImpl = fetch, now = Date.now()) {
+  if (!limiter) return { limited: false, skipped: true };
+  const windowBucket = Math.floor(now / 1000 / RATE_LIMIT_WINDOW_SECONDS);
+  const key = `cvf-cal:${ip}:${windowBucket}`;
+  try {
+    const response = await fetchImpl(`${limiter.url}/pipeline`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${limiter.token}`, "Content-Type": "application/json" },
+      body: JSON.stringify([["INCR", key], ["EXPIRE", key, String(RATE_LIMIT_WINDOW_SECONDS), "NX"]]),
+    });
+    if (!response.ok) throw new Error(`limiter store returned ${response.status}`);
+    const results = await response.json();
+    const count = Number(results?.[0]?.result);
+    if (!Number.isFinite(count)) throw new Error("limiter store returned a non-numeric count");
+    return { limited: count > RATE_LIMIT_MAX, skipped: false };
+  } catch (error) {
+    // Availability over strictness for a transient store failure — but say so.
+    console.error("Calendar rate limiter unavailable; serving unthrottled.", error?.message || error);
+    return { limited: false, skipped: true };
+  }
+}
+
 export function readConfig(env = process.env) {
   const required = ["SUPABASE_URL", "SUPABASE_ANON_KEY"];
   const missing = required.filter((name) => !env[name]);
@@ -94,6 +157,11 @@ export default async function handler(req, res) {
 
   try {
     const selector = readQuery(req.query || {});
+    const limit = await enforceRateLimit(readLimiterConfig(), clientAddress(req));
+    if (limit.limited) {
+      res.setHeader("Retry-After", String(RATE_LIMIT_WINDOW_SECONDS));
+      return res.status(429).json({ error: "Too many requests. Calendar clients refresh at most a few times per hour." });
+    }
     const config = readConfig();
     const client = serverClient(config);
     const { games, teams, venues } = await loadFeedData(client, selector);
@@ -118,4 +186,7 @@ export default async function handler(req, res) {
   }
 }
 
-export const _test = { FeedError, readConfig, readQuery, loadFeedData, feedName, CACHE_SECONDS };
+export const _test = {
+  FeedError, readConfig, readQuery, loadFeedData, feedName, CACHE_SECONDS,
+  readLimiterConfig, clientAddress, enforceRateLimit, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS,
+};
