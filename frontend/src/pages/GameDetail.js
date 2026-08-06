@@ -3,7 +3,7 @@ import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, CalendarPlus, Penci
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
-import { formatGameLongDate, formatGameShortDate, formatGameTime, venueLabel, gameDateKey } from "../lib/gameTime";
+import { formatGameLongDate, formatGameShortDate, formatGameTime, venueLabel, getVenue, gameDateKey } from "../lib/gameTime";
 import { buildCalendar, downloadCalendar } from "../lib/calendar";
 import { SportBadge, StatusBadge } from "../components/common/Badges";
 import { StageBanner, isSpecialStage } from "../components/game/StageBanner";
@@ -116,6 +116,29 @@ export default function GameDetail() {
             </>
           )}
           <span className="flex items-center gap-1.5"><MapPin size={15} weight="bold" /> {venueLabel(state, game)}</span>
+          {/* Migration 29 gave venues real coordinates; this is the first UI
+              that spends them. The universal Google Maps URL resolves to the
+              native maps app on both platforms; the address is the fallback
+              when a venue predates coordinate entry. */}
+          {(() => {
+            const venue = getVenue(state, game.venue_id);
+            if (!venue) return null;
+            const query = venue.latitude != null && venue.longitude != null
+              ? `${venue.latitude},${venue.longitude}`
+              : venue.address;
+            if (!query) return null;
+            return (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-testid="game-directions"
+                className="flex items-center gap-1.5 text-primary hover:underline underline-offset-4 font-medium"
+              >
+                Directions
+              </a>
+            );
+          })()}
         </div>
 
         {/* Add to calendar — available to everyone, and the reason migration 29
