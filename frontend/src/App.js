@@ -4,6 +4,8 @@ import { AppStateProvider } from "./context/AppStateContext";
 import { RoleProvider } from "./context/RoleContext";
 import { AppLayout } from "./components/layout/AppLayout";
 
+import { lazy, Suspense } from "react";
+
 import Home from "./pages/Home";
 import Schedule from "./pages/Schedule";
 import Standings from "./pages/Standings";
@@ -15,14 +17,28 @@ import AthleteProfile from "./pages/AthleteProfile";
 import TeamRegistration from "./pages/TeamRegistration";
 import FreeAgentSignup from "./pages/FreeAgentSignup";
 import FreeAgentPool from "./pages/FreeAgentPool";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminRecovery from "./pages/AdminRecovery";
-import AdminResetPassword from "./pages/AdminResetPassword";
-import AdminSecurity from "./pages/AdminSecurity";
-import ScoreEntry from "./pages/ScoreEntry";
 import NotFound from "./pages/NotFound";
 import { CONFIG_ERROR } from "./lib/supabase";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
+
+// The admin surfaces load on demand. A spectator checking a score on field
+// wifi has no reason to download the dashboard, scorekeepers, bracket engine,
+// payments ledger, and Hall of Fame curation — which together are most of the
+// bundle. Public pages stay eager: they are the product and must not flash a
+// loading state on first paint.
+const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminRecovery = lazy(() => import("./pages/AdminRecovery"));
+const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
+const AdminSecurity = lazy(() => import("./pages/AdminSecurity"));
+const ScoreEntry = lazy(() => import("./pages/ScoreEntry"));
+
+// Route-level fallback for the lazy admin chunk while it fetches. Sized to
+// hold the page area so the layout does not jump.
+const RouteLoading = () => (
+  <div className="min-h-[50vh] flex items-center justify-center" aria-busy="true">
+    <p className="text-micro uppercase tracking-widest text-muted-foreground font-semibold">Loading…</p>
+  </div>
+);
 
 function App() {
   if (CONFIG_ERROR) {
@@ -41,6 +57,7 @@ function App() {
     <RoleProvider>
       <AppStateProvider>
         <BrowserRouter>
+          <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route element={<AppLayout />}>
               <Route path="/" element={<Home />} />
@@ -62,6 +79,7 @@ function App() {
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>
+          </Suspense>
         </BrowserRouter>
         <Toaster theme="dark" position="top-center" richColors />
       </AppStateProvider>
