@@ -30,6 +30,7 @@ export function LedgerScorekeeper({ game, onExit }) {
   const [ruleVersion, setRuleVersion] = useState("CVF-2026.1");
   const [periodCount, setPeriodCount] = useState(game.sport === "flag_football" ? 4 : 5);
   const [overtimeSetting, setOvertimeSetting] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [teamId, setTeamId] = useState(game.home_team_id);
   const [eventType, setEventType] = useState(LEDGER_EVENT_OPTIONS[game.sport][0].id);
   const [periodType, setPeriodType] = useState("regulation");
@@ -253,8 +254,21 @@ export function LedgerScorekeeper({ game, onExit }) {
       <Card><CardHeader><div className="flex items-center gap-3"><Flag size={24} className="text-primary" /><div><h1 className="text-2xl font-display font-bold">Live event ledger</h1><p className="text-sm text-muted-foreground">{away.name} at {home.name}</p></div></div></CardHeader>
         <CardContent className="space-y-5">
           {activeSession ? <div className="rounded-xl border border-primary/30 bg-primary/10 p-4"><p className="font-semibold">An active session is waiting.</p><p className="text-sm text-muted-foreground mb-3">Restore a fresh lease after a reload or device handoff.</p><Button type="button" disabled={busy} onClick={resume} className="gap-2"><ArrowsClockwise /> Resume session</Button></div> : <>
-            <div className="grid sm:grid-cols-2 gap-4"><div><Label htmlFor="ledger-rule-version">Rule version</Label><Input id="ledger-rule-version" value={ruleVersion} onChange={(event) => setRuleVersion(event.target.value)} /></div><div><Label htmlFor="ledger-period-count">Regulation {game.sport === "kickball" ? "innings" : "quarters"}</Label><Input id="ledger-period-count" type="number" min="1" value={periodCount} disabled={game.sport === "flag_football"} onChange={(event) => setPeriodCount(Number(event.target.value))} /></div></div>
-            <div><Label htmlFor="ledger-overtime-setting">Overtime setting (competition snapshot)</Label><Input id="ledger-overtime-setting" value={overtimeSetting} onChange={(event) => setOvertimeSetting(event.target.value)} placeholder="Optional configured starting state" /></div>
+            {/* One tap for the common case: the defaults ARE the snapshot for
+                a normal game. The fields stay editable under Advanced because
+                the backend contract still records exactly what was chosen. */}
+            <button
+              type="button"
+              data-testid="ledger-advanced-toggle"
+              onClick={() => setShowAdvanced((value) => !value)}
+              className="text-xs uppercase tracking-widest font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            >
+              {showAdvanced ? "Hide advanced settings" : `Advanced settings · ${ruleVersion} · ${periodCount} ${game.sport === "kickball" ? "innings" : "quarters"}`}
+            </button>
+            {showAdvanced ? <>
+              <div className="grid sm:grid-cols-2 gap-4"><div><Label htmlFor="ledger-rule-version">Rule version</Label><Input id="ledger-rule-version" value={ruleVersion} onChange={(event) => setRuleVersion(event.target.value)} /></div><div><Label htmlFor="ledger-period-count">Regulation {game.sport === "kickball" ? "innings" : "quarters"}</Label><Input id="ledger-period-count" type="number" min="1" value={periodCount} disabled={game.sport === "flag_football"} onChange={(event) => setPeriodCount(Number(event.target.value))} /></div></div>
+              <div><Label htmlFor="ledger-overtime-setting">Overtime setting (competition snapshot)</Label><Input id="ledger-overtime-setting" value={overtimeSetting} onChange={(event) => setOvertimeSetting(event.target.value)} placeholder="Optional configured starting state" /></div>
+            </> : null}
             <Button type="button" disabled={busy} onClick={start} className="gap-2"><Plus /> Start live scorekeeping</Button>
           </>}
           {!activeSession && <div className="border-t pt-5 space-y-3"><h2 className="font-semibold">Record a forfeit</h2><div className="grid sm:grid-cols-2 gap-3"><Select value={forfeitWinner} onValueChange={setForfeitWinner}><SelectTrigger aria-label="Forfeit winner"><SelectValue /></SelectTrigger><SelectContent><SelectItem value={game.home_team_id}>{home.name}</SelectItem><SelectItem value={game.away_team_id}>{away.name}</SelectItem></SelectContent></Select><Input value={forfeitReason} onChange={(event) => setForfeitReason(event.target.value)} placeholder="Required reason" /></div><Button type="button" variant="outline" disabled={busy} onClick={forfeit}>Declare forfeit</Button></div>}
@@ -341,7 +355,13 @@ export function LedgerScorekeeper({ game, onExit }) {
           </div>
           {pairedEvent ? <div>
             <Label>{option.mode === "interception" ? "Opposing passer" : "Receiver"}</Label>
-            <Select value={counterpartParticipantId} onValueChange={setCounterpartParticipantId}>
+            <Select value={counterpartParticipantId} onValueChange={(value) => {
+              setCounterpartParticipantId(value);
+              // INV-07 rejects a reason on a PAIRED event, so choosing the
+              // counterpart clears any drafted reason rather than leaving a
+              // hidden value that would fail at the guard.
+              if (value) setPairingOverrideReason("");
+            }}>
               <SelectTrigger aria-label="Paired player"><SelectValue placeholder="Select paired player" /></SelectTrigger>
               <SelectContent>{counterpartParticipants.map((player) =>
                 <SelectItem key={player.id} value={player.id}>{player.display_name}</SelectItem>
@@ -360,7 +380,10 @@ export function LedgerScorekeeper({ game, onExit }) {
           </p>
         </div> : null}
 
-        {pairedEvent ? <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
+        {/* A reason is valid ONLY for an unpaired event — INV-07 rejects the
+            reason+counterpart combination — so the box exists only while the
+            counterpart is missing: guidance instead of a post-hoc rejection. */}
+        {pairedEvent && !counterpartParticipantId ? <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
           <Label htmlFor="ledger-pairing-override">Paired-stat exception reason</Label>
           <Textarea
             id="ledger-pairing-override"

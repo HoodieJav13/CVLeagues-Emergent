@@ -46,6 +46,7 @@ export function PracticeScorekeeper({ onExit }) {
   const [ruleVersion, setRuleVersion] = useState("CVF-2026.1");
   const [periodCount, setPeriodCount] = useState(5);
   const [overtimeSetting, setOvertimeSetting] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [lease, setLease] = useState(null);
   const leaseRef = useRef(null);
   const heartbeatBusy = useRef(false);
@@ -346,11 +347,24 @@ export function PracticeScorekeeper({ onExit }) {
                 </Select>
               </div>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div><Label htmlFor="practice-rule-version">Rule version</Label><Input id="practice-rule-version" value={ruleVersion} onChange={(event) => setRuleVersion(event.target.value)} /></div>
-              <div><Label htmlFor="practice-period-count">Regulation {sport === "kickball" ? "innings" : "quarters"}</Label><Input id="practice-period-count" type="number" min="1" value={sport === "flag_football" ? 4 : periodCount} disabled={sport === "flag_football"} onChange={(event) => setPeriodCount(Number(event.target.value))} /></div>
-            </div>
-            <div><Label htmlFor="practice-overtime-setting">Overtime setting (competition snapshot)</Label><Input id="practice-overtime-setting" value={overtimeSetting} onChange={(event) => setOvertimeSetting(event.target.value)} placeholder="Optional configured starting state" /></div>
+            {/* The snapshot fields keep their backend contract, but the common
+                case is the defaults: current rule version, the sport's own
+                period count. Pick two teams, tap start. */}
+            <button
+              type="button"
+              data-testid="practice-advanced-toggle"
+              onClick={() => setShowAdvanced((value) => !value)}
+              className="text-xs uppercase tracking-widest font-semibold text-muted-foreground hover:text-foreground transition-colors self-start"
+            >
+              {showAdvanced ? "Hide advanced settings" : `Advanced settings · ${ruleVersion} · ${sport === "flag_football" ? 4 : periodCount} ${sport === "kickball" ? "innings" : "quarters"}`}
+            </button>
+            {showAdvanced ? <>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div><Label htmlFor="practice-rule-version">Rule version</Label><Input id="practice-rule-version" value={ruleVersion} onChange={(event) => setRuleVersion(event.target.value)} /></div>
+                <div><Label htmlFor="practice-period-count">Regulation {sport === "kickball" ? "innings" : "quarters"}</Label><Input id="practice-period-count" type="number" min="1" value={sport === "flag_football" ? 4 : periodCount} disabled={sport === "flag_football"} onChange={(event) => setPeriodCount(Number(event.target.value))} /></div>
+              </div>
+              <div><Label htmlFor="practice-overtime-setting">Overtime setting (competition snapshot)</Label><Input id="practice-overtime-setting" value={overtimeSetting} onChange={(event) => setOvertimeSetting(event.target.value)} placeholder="Optional configured starting state" /></div>
+            </> : null}
             <Button type="button" disabled={busy} onClick={start} className="gap-2"><Plus /> Start practice session</Button>
           </>}
         </CardContent>
@@ -443,7 +457,13 @@ export function PracticeScorekeeper({ onExit }) {
           </div>
           {pairedEvent ? <div>
             <Label>{option.mode === "interception" ? "Opposing passer" : "Receiver"}</Label>
-            <Select value={counterpartParticipantId} onValueChange={setCounterpartParticipantId}>
+            <Select value={counterpartParticipantId} onValueChange={(value) => {
+              setCounterpartParticipantId(value);
+              // Hosted rejects a reason on a PAIRED event, so selecting the
+              // counterpart clears any drafted reason instead of leaving a
+              // hidden value that would fail at the guard.
+              if (value) setPairingOverrideReason("");
+            }}>
               <SelectTrigger aria-label="Paired player"><SelectValue placeholder="Select paired player" /></SelectTrigger>
               <SelectContent>{counterpartParticipants.map((player) =>
                 <SelectItem key={player.id} value={player.id}>{player.display_name}</SelectItem>
@@ -462,7 +482,11 @@ export function PracticeScorekeeper({ onExit }) {
           </p>
         </div> : null}
 
-        {pairedEvent ? <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
+        {/* A reason is valid ONLY for an unpaired event — hosted rejects the
+            reason+counterpart combination outright — so the box exists only
+            while the counterpart is missing, turning the contract into
+            guidance instead of a post-hoc rejection. */}
+        {pairedEvent && !counterpartParticipantId ? <div className="rounded-xl border border-border/70 bg-muted/25 p-4 space-y-2">
           <Label htmlFor="practice-pairing-override">Paired-stat exception reason</Label>
           <Textarea
             id="practice-pairing-override"
