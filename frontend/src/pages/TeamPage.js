@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { UsersThree, CalendarPlus, LinkSimple } from "@phosphor-icons/react";
+import { UsersThree, CalendarPlus, LinkSimple, ChartLine, CaretDown } from "@phosphor-icons/react";
 import { useApp } from "../context/AppStateContext";
-import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, teamRoster, teamGames, teamStatLeaders, identityEnrollments, identityCareerRecord } from "../lib/selectors";
+import { getLeague, getProfile, computeTeamRecord, isFinalOutcome, isForfeitOutcome, teamRoster, teamGames, teamStatLeaders, identityEnrollments, identityCareerRecord } from "../lib/selectors";
 import { HIGHLIGHT_STATS, statLabel } from "../lib/statsConfig";
 import { SportBadge } from "../components/common/Badges";
 import { PlayerCard } from "../components/player/PlayerCard";
@@ -13,6 +14,80 @@ import { Button } from "../components/ui/button";
 import { buildCalendar, downloadCalendar } from "../lib/calendar";
 import { BACKEND_ENABLED } from "../lib/supabase";
 import { toast } from "sonner";
+
+/* ----------------------------------------------------------------------------
+ * Team-form sparkline — the Addendum 7 follow-on the Standings batch approved.
+ * Same contract as the Season shape worm it descends from: behind an explicit
+ * labeled toggle, never open by default; hand-drawn SVG from the app's own
+ * selectors; team color plus existing palette only; aria-hidden reinforcement
+ * of information the page already states textually (record, differential, and
+ * per-game results). One team's cumulative point differential, with a dot per
+ * game: filled in team color for a win, hollow for a loss, neutral for a tie.
+ * Forfeits carry no margin, so the line holds flat and only the dot speaks.
+ * -------------------------------------------------------------------------- */
+const TeamForm = ({ team, games }) => {
+  const [open, setOpen] = useState(false);
+  const finals = games.filter(isFinalOutcome);
+  if (finals.length < 2) return null;
+
+  let running = 0;
+  const points = [{ x: 0, y: 0, result: null }];
+  finals.forEach((g, i) => {
+    const home = g.home_team_id === team.id;
+    const margin = isForfeitOutcome(g) ? 0 : (home ? g.home_score - g.away_score : g.away_score - g.home_score);
+    running += margin;
+    const won = isForfeitOutcome(g) ? g.winner_team_id === team.id : margin > 0;
+    const tied = !isForfeitOutcome(g) && margin === 0;
+    points.push({ x: i + 1, y: running, result: tied ? "tie" : won ? "win" : "loss" });
+  });
+
+  const width = 360;
+  const height = 96;
+  const pad = 8;
+  const maxAbs = Math.max(1, ...points.map((p) => Math.abs(p.y)));
+  const px = (x) => pad + (x / finals.length) * (width - pad * 2);
+  const py = (y) => height / 2 - (y / maxAbs) * (height / 2 - pad);
+  const path = points.map((p) => `${px(p.x)},${py(p.y)}`).join(" ");
+  const color = team.logo_color || "var(--cvf-teal)";
+
+  return (
+    <div className="mt-4">
+      <button
+        type="button"
+        data-testid="team-form-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-micro font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:border-border-strong transition-colors"
+      >
+        <ChartLine size={14} weight="bold" aria-hidden="true" />
+        Form
+        <CaretDown size={12} weight="bold" aria-hidden="true" className={`transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <figure data-testid="team-form-graph" className="mt-2 mb-0 rounded-xl border border-border bg-card p-3">
+          <figcaption className="text-micro uppercase tracking-widest text-muted-foreground mb-2">
+            Point differential, game by game · {finals.length} games
+          </figcaption>
+          <svg viewBox={`0 0 ${width} ${height}`} className="block w-full h-auto" aria-hidden="true">
+            <line x1={pad} y1={height / 2} x2={width - pad} y2={height / 2} stroke="var(--border-strong)" strokeWidth="1" strokeDasharray="3 5" />
+            <polyline points={path} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+            {points.slice(1).map((p) => (
+              <circle
+                key={p.x}
+                cx={px(p.x)}
+                cy={py(p.y)}
+                r="3.5"
+                fill={p.result === "win" ? color : "var(--card)"}
+                stroke={p.result === "tie" ? "var(--border-strong)" : color}
+                strokeWidth="1.5"
+              />
+            ))}
+          </svg>
+        </figure>
+      )}
+    </div>
+  );
+};
 
 export default function TeamPage() {
   const { id } = useParams();
@@ -56,6 +131,7 @@ export default function TeamPage() {
             { key: "diff", label: "Diff", value: `${record.diff > 0 ? "+" : ""}${record.diff}`, color: record.diff > 0 ? "var(--cvf-teal)" : undefined },
           ]}
         />
+        <TeamForm team={team} games={games} />
         {captain && (
           <p className="text-xs text-muted-foreground mt-4">
             Captain: <Link to={`/profile/${captain.id}`} className="text-primary font-semibold">{captain.name}</Link>
