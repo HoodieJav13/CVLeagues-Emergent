@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CVF — five directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: "Inter", system-ui, sans-serif; }
+  .disp { font-family: "Oswald", sans-serif; }
+  button { font: inherit; border: 0; background: none; cursor: pointer; }
+  .v { display: none; min-height: 100vh; }
+  .v.on { display: block; }
+
+  /* switcher — belongs to the review, not the designs */
+  .switch { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 4px; background: #000c; backdrop-filter: blur(12px);
+    padding: 5px; border-radius: 999px; z-index: 99; }
+  .switch button { color: #999; font-size: 12px; font-weight: 600; padding: 8px 16px;
+    border-radius: 999px; letter-spacing: .02em; white-space: nowrap; }
+  .switch button.on { background: #fff; color: #000; }
+
+  /* ============ A — HIGH DESERT DAYLIGHT (owner favorite; light-mode half) ============ */
+  .vA { background: #EFE7D6; color: #221B12;
+    background-image: radial-gradient(#221b1207 1px, transparent 1px); background-size: 22px 22px; }
+  .vA .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
+  .vA .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; }
+  .vA .mark em { color: #0F8A80; font-style: normal; }
+  .vA .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: #221b1299; }
+  .vA .hero { padding: 26px 20px 0; }
+  .vA .kicker { font-size: 11px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: #B23A2B; }
+  .vA h1 { font-family: "Oswald"; font-weight: 700; text-transform: uppercase;
+    font-size: clamp(52px, 15vw, 110px); line-height: .92; letter-spacing: .01em; }
+  .vA h1 .thin { color: #0F8A80; }
+  .vA .horizon { position: relative; margin: 20px 20px 26px; border-bottom: 3px solid #221B12; height: 34px; }
+  .vA .sun { position: absolute; right: 12%; bottom: -14px; width: 28px; height: 28px;
+    background: #C08A1E; border-radius: 50%; border: 3px solid #221B12; }
+  .vA .sun::after { content: ""; position: absolute; inset: -9px; border-radius: 50%;
+    border: 2px dashed #c08a1e88; }
+  .vA .horizon .when { position: absolute; right: calc(12% + 42px); bottom: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #221b1299; }
+  .vA .panelrow { padding: 0 20px 20px; display: grid; gap: 18px; }
+  @media (min-width: 720px) { .vA .panelrow { grid-template-columns: 1fr 1fr; } }
+  .vA .panel { background: #FBF8F1; border: 3px solid #221B12; box-shadow: 7px 7px 0 #221B12;
+    padding: 18px; }
+  .vA .panel .tag { display: inline-block; font-size: 10px; font-weight: 800;
+    letter-spacing: .18em; text-transform: uppercase; padding: 4px 9px; border: 2px solid #221B12; }
+  .vA .panel .tag.kb { background: #0F8A80; color: #FBF8F1; }
+  .vA .panel .tag.ff { background: #B23A2B; color: #FBF8F1; }
+  .vA .team { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 24px; line-height: 1.1; }
+  .vA .score { font-family: "Oswald"; font-weight: 700; font-size: 46px; }
+  .vA .score.win { color: #0F8A80; }
+  .vA .rrow { display: flex; justify-content: space-between; align-items: center; }
+  .vA .side { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #221b1266; }
+  .vA .meta { margin-top: 12px; padding-top: 12px; border-top: 2px dashed #221b1233;
+    font-size: 12.5px; font-weight: 600; color: #221b12b3; display: flex; gap: 14px; flex-wrap: wrap; }
+  .vA .cta { margin: 6px 20px 90px; padding: 20px; background: #221B12; color: #EFE7D6; }
+  .vA .cta h2 { font-family: "Oswald"; text-transform: uppercase; font-size: 26px; font-weight: 600; }
+  .vA .cta p { font-size: 13.5px; margin-top: 6px; color: #efe7d6cc; max-width: 42ch; }
+  .vA .cta .btn { display: inline-block; margin-top: 14px; margin-right: 10px; background: #C08A1E;
+    color: #221B12; font-weight: 800; font-size: 13px; padding: 12px 18px;
+    letter-spacing: .04em; box-shadow: 4px 4px 0 #EFE7D6; }
+  .vA .cta .btn.alt { background: transparent; color: #EFE7D6; box-shadow: none;
+    border: 2px solid #efe7d666; }
+
+  /* ============ B — FRIDAY LIGHTS (broadcast) ============ */
+  .vB { background: #131110; color: #F7F4EE; position: relative; overflow: hidden; }
+  .vB::before { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(38% 24% at 18% 0%, #ffefc924, transparent 70%),
+      radial-gradient(42% 26% at 85% 4%, #ffefc91e, transparent 70%); }
+  .vB .bar { display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 20px; position: relative; }
+  .vB .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; }
+  .vB .mark em { color: #2ED9CB; font-style: normal; }
+  .vB .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: #f7f4ee73; }
+  .vB .lower3 { margin: 26px 0 0; padding: 0 20px; position: relative; }
+  .vB .kick { display: flex; align-items: center; gap: 10px; }
+  .vB .kick::before { content: ""; width: 34px; height: 5px; background: #E9B23A; }
+  .vB .kick span { font-size: 11px; font-weight: 800; letter-spacing: .26em;
+    text-transform: uppercase; color: #E9B23A; }
+  .vB .board { margin-top: 10px; }
+  .vB .row { display: grid; grid-template-columns: 1fr auto; align-items: center;
+    border-bottom: 1px solid #3a342c; padding: 6px 0; }
+  .vB .row .name { font-family: "Oswald"; font-weight: 600; text-transform: uppercase;
+    font-size: clamp(30px, 8.5vw, 58px); line-height: 1.05; }
+  .vB .row .pts { font-family: "Oswald"; font-weight: 700;
+    font-size: clamp(56px, 16vw, 110px); line-height: .9; }
+  .vB .row.winner .pts { color: #E9B23A; }
+  .vB .row.loser { color: #f7f4ee80; }
+  .vB .status { display: flex; gap: 14px; padding: 12px 20px 0; font-size: 11.5px;
+    font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #f7f4ee80; }
+  .vB .status .final { color: #2ED9CB; }
+  .vB .next { margin: 34px 20px 0; border-top: 1px solid #3a342c; padding-top: 8px; }
+  .vB .nextrow { display: flex; justify-content: space-between; align-items: center;
+    padding: 13px 0; border-bottom: 1px solid #3a342c; }
+  .vB .nextrow .who { font-family: "Oswald"; text-transform: uppercase; font-weight: 500; font-size: 19px; }
+  .vB .nextrow .who b { font-weight: 700; }
+  .vB .nextrow .at { color: #f7f4ee73; font-size: 12px; font-weight: 600; text-align: right;
+    line-height: 1.5; flex-shrink: 0; margin-left: 12px; }
+  .vB .nextrow .at .t { color: #2ED9CB; font-weight: 800; letter-spacing: .06em; white-space: nowrap; }
+  .vB .tick { margin: 30px 0 0; background: #E9B23A; color: #131110; padding: 10px 20px 90px; }
+  .vB .tick .lbl { font-size: 10px; font-weight: 800; letter-spacing: .26em; text-transform: uppercase; }
+  .vB .tick .line { font-family: "Oswald"; text-transform: uppercase; font-weight: 600;
+    font-size: 17px; margin-top: 4px; }
+
+  /* ============ C — NIGHT GAME (sunset the owner loves) ============ */
+  .vC { background: #1B1410; color: #F4EDE2; }
+  .vC .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
+  .vC .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; }
+  .vC .mark em { color: #D9A63C; font-style: normal; }
+  .vC .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: #f4ede273; }
+  .vC .heroC { position: relative; min-height: 340px; display: flex;
+    flex-direction: column; justify-content: flex-end; padding: 0 20px 10px; overflow: hidden; }
+  .vC .sandia { position: absolute; left: 0; right: 0; top: 0; height: 100%; z-index: 0;
+    background: linear-gradient(100deg, #6E2B47, #C14E33 55%, #E09A33);
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 45%, #00000088 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 45%, #00000088 78%, transparent 100%);
+    opacity: .75; }
+  /* :not(.sandia) — the glow must keep its own positioning; see mockup notes */
+  .vC .heroC > *:not(.sandia) { position: relative; z-index: 1; }
+  .vC .kicker { font-size: 11px; font-weight: 800; letter-spacing: .22em;
+    text-transform: uppercase; color: #D9A63C; }
+  .vC h1 { font-family: "Oswald"; font-weight: 700; text-transform: uppercase;
+    font-size: clamp(40px, 11vw, 84px); line-height: .96; margin-top: 6px;
+    text-shadow: 0 2px 24px #1b1410; }
+  .vC .sub { margin-top: 18px; font-size: 13.5px; color: #f4ede2b3; max-width: 46ch; }
+  .vC .cardsC { padding: 20px; display: grid; gap: 14px; }
+  @media (min-width: 720px) { .vC .cardsC { grid-template-columns: 1fr 1fr; } }
+  .vC .cardC { background: #27201A; border-radius: 14px; padding: 18px;
+    border: 1px solid #ffffff12; box-shadow: 0 14px 30px #00000059; }
+  .vC .cardC .lbl { display: flex; justify-content: space-between; font-size: 10.5px;
+    font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: #f4ede273; }
+  .vC .cardC .lbl .live { color: #27B3A6; }
+  .vC .duo { margin-top: 14px; display: grid; gap: 8px; }
+  .vC .duo .t { display: flex; justify-content: space-between; align-items: center; }
+  .vC .duo .t .n { font-family: "Oswald"; text-transform: uppercase; font-weight: 600; font-size: 22px; }
+  .vC .duo .t .s { font-family: "Oswald"; font-weight: 700; font-size: 34px; }
+  .vC .duo .t.w .s { color: #D9A63C; }
+  .vC .duo .t.l { color: #f4ede280; }
+  .vC .cardC .whenC { margin-top: 12px; padding-top: 12px; border-top: 1px solid #ffffff14;
+    font-size: 12.5px; color: #f4ede299; display: flex; gap: 12px; flex-wrap: wrap; }
+  .vC .join { margin: 8px 20px 92px; padding: 18px; border-radius: 14px;
+    background: linear-gradient(120deg, #6E2B4722, #C14E3322 55%, #E09A3322);
+    border: 1px solid #c14e3344; }
+  .vC .join h2 { font-family: "Oswald"; text-transform: uppercase; font-size: 22px; font-weight: 600; }
+  .vC .join p { font-size: 13px; color: #f4ede2b3; margin-top: 4px; }
+  .vC .join .btn { display: inline-block; margin-top: 12px; margin-right: 10px;
+    background: #D9A63C; color: #1B1410; border-radius: 10px; font-weight: 800;
+    font-size: 13px; padding: 12px 18px; }
+  .vC .join .btn.alt { background: #ffffff14; color: #F4EDE2; }
+
+  /* ============ D — A-NIGHT (dark twin of A; C's sunset as dusk) ============ */
+  .vD { background: #201914; color: #EFE7D6;
+    background-image: radial-gradient(#efe7d608 1px, transparent 1px); background-size: 22px 22px; }
+  .vD .dusk { height: 110px; background: linear-gradient(100deg, #6E2B47, #C14E33 55%, #E09A33);
+    -webkit-mask-image: linear-gradient(180deg, #000 0%, #00000066 60%, transparent 100%);
+    mask-image: linear-gradient(180deg, #000 0%, #00000066 60%, transparent 100%);
+    opacity: .55; margin-bottom: -78px; }
+  .vD .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; position: relative; }
+  .vD .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; }
+  .vD .mark em { color: #3FBFB2; font-style: normal; }
+  .vD .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: #efe7d699; }
+  .vD .hero { padding: 26px 20px 0; }
+  .vD .kicker { font-size: 11px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: #E09A33; }
+  .vD h1 { font-family: "Oswald"; font-weight: 700; text-transform: uppercase;
+    font-size: clamp(52px, 15vw, 110px); line-height: .92; }
+  .vD h1 .thin { color: #3FBFB2; }
+  .vD .horizon { position: relative; margin: 20px 20px 26px; border-bottom: 3px solid #EFE7D6; height: 34px; }
+  .vD .moon { position: absolute; right: 12%; bottom: 4px; width: 26px; height: 26px; border-radius: 50%;
+    box-shadow: inset 7px -2px 0 0 #EFE7D6; transform: rotate(-35deg); }
+  .vD .moon::after { content: ""; position: absolute; right: -14px; top: -6px; width: 7px; height: 7px;
+    background: #E09A33; clip-path: polygon(50% 0, 63% 38%, 100% 50%, 63% 62%, 50% 100%, 37% 62%, 0 50%, 37% 38%); }
+  .vD .horizon .when { position: absolute; right: calc(12% + 46px); bottom: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #efe7d699; }
+  .vD .panelrow { padding: 0 20px 20px; display: grid; gap: 18px; }
+  @media (min-width: 720px) { .vD .panelrow { grid-template-columns: 1fr 1fr; } }
+  .vD .panel { background: #2B231C; border: 3px solid #EFE7D6; box-shadow: 7px 7px 0 #0C0906; padding: 18px; }
+  .vD .panel .tag { display: inline-block; font-size: 10px; font-weight: 800;
+    letter-spacing: .18em; text-transform: uppercase; padding: 4px 9px; border: 2px solid #EFE7D6; }
+  .vD .panel .tag.kb { background: #1E9C90; color: #201914; }
+  .vD .panel .tag.ff { background: #C6462F; color: #EFE7D6; }
+  .vD .team { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 24px; line-height: 1.1; }
+  .vD .score { font-family: "Oswald"; font-weight: 700; font-size: 46px; }
+  .vD .score.win { color: #E09A33; }
+  .vD .rrow { display: flex; justify-content: space-between; align-items: center; }
+  .vD .side { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #efe7d666; }
+  .vD .meta { margin-top: 12px; padding-top: 12px; border-top: 2px dashed #efe7d633;
+    font-size: 12.5px; font-weight: 600; color: #efe7d6b3; display: flex; gap: 14px; flex-wrap: wrap; }
+  .vD .meta .lnk { color: #3FBFB2; }
+  .vD .cta { margin: 6px 20px 90px; padding: 20px; background: #EFE7D6; color: #201914; }
+  .vD .cta h2 { font-family: "Oswald"; text-transform: uppercase; font-size: 26px; font-weight: 600; }
+  .vD .cta p { font-size: 13.5px; margin-top: 6px; color: #201914cc; max-width: 42ch; }
+  .vD .cta .btn { display: inline-block; margin-top: 14px; margin-right: 10px; background: #C6462F;
+    color: #EFE7D6; font-weight: 800; font-size: 13px; padding: 12px 18px; box-shadow: 4px 4px 0 #201914; }
+  .vD .cta .btn.alt { background: transparent; color: #201914; box-shadow: none; border: 2px solid #20191466; }
+
+  /* ============ E — TUNED CLASSIC (partner's track: same identity, better craft) ============ */
+  .vE { background: #0C1113; color: #E9EEF0; }
+  .vE .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
+  .vE .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; color: #fff; }
+  .vE .mark em { color: #52C4D6; font-style: normal; }
+  .vE .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: #e9eef080; }
+  .vE .band { margin: 10px 20px 18px; padding: 22px 20px; border-radius: 16px;
+    background: linear-gradient(160deg, #152126, #0E171A 70%);
+    box-shadow: 0 1px 0 #ffffff14 inset, 0 18px 40px #00000066; }
+  .vE .band h1 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase;
+    font-size: 32px; letter-spacing: .015em; }
+  .vE .band p { margin-top: 4px; font-size: 12px; color: #e9eef08c; letter-spacing: .08em;
+    text-transform: uppercase; font-weight: 700; }
+  .vE .cards { padding: 0 20px 20px; display: grid; gap: 16px; }
+  @media (min-width: 720px) { .vE .cards { grid-template-columns: 1fr 1fr; } }
+  .vE .cardE { border-radius: 16px; padding: 18px; background: linear-gradient(170deg, #141D21, #10181B);
+    box-shadow: 0 1px 0 #ffffff12 inset, 0 12px 28px #00000059; }
+  .vE .lblrow { display: flex; justify-content: space-between; align-items: center; }
+  .vE .lbl { font-size: 10.5px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: #e9eef073; }
+  .vE .lbl.live { color: #52C4D6; }
+  .vE .moonE { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 6px -2px 0 0 #E9EEF0; transform: rotate(-35deg); }
+  .vE .trow { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .vE .idhex { width: 40px; height: 36px; display: grid; place-items: center;
+    background: #1B262B; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    font-weight: 800; font-size: 13px; }
+  .vE .idhex.a { color: #52C4D6; } .vE .idhex.b { color: #E8A33D; }
+  .vE .tname { flex: 1; margin-left: 12px; font-family: "Oswald"; font-weight: 500;
+    text-transform: uppercase; font-size: 19px; letter-spacing: .02em; }
+  .vE .tscore { font-family: "Oswald"; font-weight: 700; font-size: 40px; }
+  .vE .tscore.win { color: #52C4D6; }
+  .vE .tscore.dim { color: #e9eef059; }
+  .vE .metaE { margin-top: 14px; padding-top: 12px; border-top: 1px solid #ffffff0f;
+    font-size: 12px; color: #e9eef08c; display: flex; gap: 12px; flex-wrap: wrap; }
+  .vE .metaE .lnk { color: #52C4D6; font-weight: 600; }
+  .vE .note { margin: 4px 20px 92px; font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; font-weight: 700; color: #e9eef04d; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ==================== A ==================== -->
+<section class="v vA on" id="A">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><span>Schedule</span><span>Standings</span><span>Leaders</span></nav>
+  </header>
+  <div class="hero">
+    <p class="kicker">Sunday · June 30 · Albuquerque</p>
+    <h1>Game<br><span class="thin">Day</span></h1>
+  </div>
+  <div class="horizon"><span class="when">First pitch 6:30 PM</span><span class="sun"></span></div>
+  <div class="panelrow">
+    <article class="panel">
+      <span class="tag kb">Kickball · Up next</span>
+      <div style="margin-top:14px;display:grid;gap:6px">
+        <div class="rrow"><span class="team">Sandia Sluggers</span><span class="side">away</span></div>
+        <div class="rrow"><span class="team">Rio Grande Rollers</span><span class="side">home</span></div>
+      </div>
+      <div class="meta"><span>Tue 6:30 PM</span><span>Los Altos Park · Field 1</span><span style="color:#0F8A80">Directions →</span></div>
+    </article>
+    <article class="panel">
+      <span class="tag ff">Flag football · Final</span>
+      <div style="margin-top:14px;display:grid;gap:6px">
+        <div class="rrow"><span class="team">Bosque Blitz</span><span class="score win">28</span></div>
+        <div class="rrow" style="color:#221b1280"><span class="team">Mesa Mavericks</span><span class="score" style="color:#221b1280">20</span></div>
+      </div>
+      <div class="meta"><span>Fri Jun 26</span><span>West Mesa Fields · Field B</span><span style="color:#0F8A80">Box score →</span></div>
+    </article>
+  </div>
+  <div class="cta">
+    <h2>New to CVF?</h2>
+    <p>Adult kickball and flag football, Sunday afternoons across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <span class="btn">Submit team interest</span><span class="btn alt">Join free agent pool</span>
+  </div>
+</section>
+
+<!-- ==================== B ==================== -->
+<section class="v vB" id="B">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><span>Schedule</span><span>Standings</span><span>Leaders</span></nav>
+  </header>
+  <div class="lower3">
+    <div class="kick"><span>Flag football · Week 3</span></div>
+    <div class="board">
+      <div class="row winner"><div class="name">Bosque Blitz</div><div class="pts">28</div></div>
+      <div class="row loser"><div class="name">Mesa Mavericks</div><div class="pts">20</div></div>
+    </div>
+  </div>
+  <div class="status"><span class="final">Final</span><span>Fri Jun 26</span><span>West Mesa Fields · B</span></div>
+  <div class="next">
+    <div class="kick" style="padding:14px 0 6px"><span style="color:#f7f4ee80">Up next</span></div>
+    <div class="nextrow">
+      <div class="who">Sandia Sluggers <b>at</b> Rio Grande Rollers</div>
+      <div class="at"><span class="t">Tue 6:30 PM</span><br>Los Altos Park · 1</div>
+    </div>
+    <div class="nextrow">
+      <div class="who">Route 66 Rush <b>at</b> Frontier Force</div>
+      <div class="at"><span class="t">Sun 8:00 PM</span><br>West Mesa · A</div>
+    </div>
+  </div>
+  <div class="tick">
+    <div class="lbl">Standings · Duke City Kickball</div>
+    <div class="line">1 Sandia Sluggers 3–0 &nbsp;·&nbsp; 2 Rio Grande Rollers 2–1 &nbsp;·&nbsp; 3 Nob Hill Nomads 1–2</div>
+  </div>
+</section>
+
+<!-- ==================== C ==================== -->
+<section class="v vC" id="C">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><span>Schedule</span><span>Standings</span><span>Leaders</span></nav>
+  </header>
+  <div class="heroC">
+    <div class="sandia"></div>
+    <p class="kicker">Albuquerque · Summer 2026</p>
+    <h1>Sunday,<br>under the lights</h1>
+    <p class="sub">Two sports, five parks, and standings that matter more than they should. This is CVF.</p>
+  </div>
+  <div class="cardsC">
+    <article class="cardC">
+      <div class="lbl"><span>Kickball · Up next</span><span class="live">Tue 6:30 PM</span></div>
+      <div class="duo">
+        <div class="t"><span class="n">Sandia Sluggers</span><span class="s" style="font-size:15px;opacity:.5">away</span></div>
+        <div class="t"><span class="n">Rio Grande Rollers</span><span class="s" style="font-size:15px;opacity:.5">home</span></div>
+      </div>
+      <div class="whenC"><span>Los Altos Park · Field 1</span><span style="color:#27B3A6">Directions →</span></div>
+    </article>
+    <article class="cardC">
+      <div class="lbl"><span>Flag football</span><span>Final · Fri</span></div>
+      <div class="duo">
+        <div class="t w"><span class="n">Bosque Blitz</span><span class="s">28</span></div>
+        <div class="t l"><span class="n">Mesa Mavericks</span><span class="s">20</span></div>
+      </div>
+      <div class="whenC"><span>West Mesa Fields · Field B</span><span style="color:#27B3A6">Box score →</span></div>
+    </article>
+  </div>
+  <div class="join">
+    <h2>Get in before Season 1 fills</h2>
+    <p>Bring a team or come solo — captains are already claiming Sunday slots.</p>
+    <span class="btn">Submit team interest</span><span class="btn alt">Join free agent pool</span>
+  </div>
+</section>
+
+<!-- ==================== D: A-NIGHT ==================== -->
+<section class="v vD" id="D">
+  <div class="dusk"></div>
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><span>Schedule</span><span>Standings</span><span>Leaders</span></nav>
+  </header>
+  <div class="hero">
+    <p class="kicker">Sunday · June 30 · Albuquerque</p>
+    <h1>Game<br><span class="thin">Night</span></h1>
+  </div>
+  <div class="horizon"><span class="when">First pitch 6:30 PM</span><span class="moon"></span></div>
+  <div class="panelrow">
+    <article class="panel">
+      <span class="tag kb">Kickball · Up next</span>
+      <div style="margin-top:14px;display:grid;gap:6px">
+        <div class="rrow"><span class="team">Sandia Sluggers</span><span class="side">away</span></div>
+        <div class="rrow"><span class="team">Rio Grande Rollers</span><span class="side">home</span></div>
+      </div>
+      <div class="meta"><span>Tue 6:30 PM</span><span>Los Altos Park · Field 1</span><span class="lnk">Directions →</span></div>
+    </article>
+    <article class="panel">
+      <span class="tag ff">Flag football · Final</span>
+      <div style="margin-top:14px;display:grid;gap:6px">
+        <div class="rrow"><span class="team">Bosque Blitz</span><span class="score win">28</span></div>
+        <div class="rrow" style="color:#efe7d680"><span class="team">Mesa Mavericks</span><span class="score" style="color:#efe7d680">20</span></div>
+      </div>
+      <div class="meta"><span>Fri Jun 26</span><span>West Mesa Fields · Field B</span><span class="lnk">Box score →</span></div>
+    </article>
+  </div>
+  <div class="cta">
+    <h2>New to CVF?</h2>
+    <p>Adult kickball and flag football, Sunday evenings across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <span class="btn">Submit team interest</span><span class="btn alt">Join free agent pool</span>
+  </div>
+</section>
+
+<!-- ==================== E: TUNED CLASSIC ==================== -->
+<section class="v vE" id="E">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><span>Schedule</span><span>Standings</span><span>Leaders</span></nav>
+  </header>
+  <div class="band">
+    <h1>Current Leagues</h1>
+    <p>Albuquerque, NM</p>
+  </div>
+  <div class="cards">
+    <article class="cardE">
+      <div class="lblrow"><span class="lbl">Latest final · Flag football</span><span class="moonE"></span></div>
+      <div class="trow"><span class="idhex a">BB</span><span class="tname">Bosque Blitz</span><span class="tscore win">28</span></div>
+      <div class="trow" style="margin-top:8px;opacity:.75"><span class="idhex b">MM</span><span class="tname">Mesa Mavericks</span><span class="tscore dim">20</span></div>
+      <div class="metaE"><span>Fri Jun 26 · 7:00 PM</span><span>West Mesa Fields · B</span><span class="lnk">Box score →</span></div>
+    </article>
+    <article class="cardE">
+      <div class="lblrow"><span class="lbl live">Up next · Kickball</span><span class="moonE"></span></div>
+      <div class="trow"><span class="idhex a">SS</span><span class="tname">Sandia Sluggers</span><span class="tscore" style="font-size:15px;color:#e9eef059">away</span></div>
+      <div class="trow" style="margin-top:8px"><span class="idhex b">RG</span><span class="tname">Rio Grande Rollers</span><span class="tscore" style="font-size:15px;color:#e9eef059">home</span></div>
+      <div class="metaE"><span>Tue Jun 30 · 6:30 PM</span><span>Los Altos Park · 1</span><span class="lnk">Directions →</span></div>
+    </article>
+  </div>
+  <p class="note">Same identity · deeper ink · depth from light, not borders · type that commits</p>
+</section>
+
+<div class="switch" role="tablist">
+  <button class="on" data-v="A">A</button>
+  <button data-v="B">B</button>
+  <button data-v="C">C</button>
+  <button data-v="D">D</button>
+  <button data-v="E">E</button>
+</div>
+
+<script>
+  document.querySelectorAll(".switch button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".switch button").forEach((x) => x.classList.toggle("on", x === b));
+      document.querySelectorAll(".v").forEach((s) => s.classList.toggle("on", s.id === b.dataset.v));
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+</body>
+</html>
