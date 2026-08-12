@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CVF — v2, with instruments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================================
+     v2 — the retry with the toolbox actually applied.
+     - Palette: OKLCH-derived day/night twins (same hue+chroma per role,
+       lightness flipped) — see docs/direction/DESIGN_TOOLBOX.md
+     - Motion: named easing tokens, staggered entrances, reduced-motion safe
+     - Depth (Tuned Classic): 3-layer shadows + inset light, zero borders
+     - States: every interactive element has :hover and :focus-visible
+     - Layout: container queries — cards respond to their space, not viewport
+     ========================================================================= */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: "Inter", system-ui, sans-serif; }
+  button { font: inherit; border: 0; background: none; cursor: pointer; }
+  a { text-decoration: none; color: inherit; }
+  :root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .v { display: none; min-height: 100vh; }
+  .v.on { display: block; }
+
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .v.on .anim { animation: rise .6s var(--ease-out-expo) both; }
+  .v.on .anim:nth-of-type(2) { animation-delay: .07s; }
+  .v.on .anim:nth-of-type(3) { animation-delay: .14s; }
+  @media (prefers-reduced-motion: reduce) { .v.on .anim { animation: none; } }
+
+  .switch { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 4px; background: #000c; backdrop-filter: blur(12px);
+    padding: 5px; border-radius: 999px; z-index: 99; }
+  .switch button { color: #999; font-size: 12px; font-weight: 600; padding: 8px 16px;
+    border-radius: 999px; white-space: nowrap; }
+  .switch button.on { background: #fff; color: #000; }
+  .switch button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  /* ============ HD — HIGH DESERT, one layout, two OKLCH token sets ========= */
+  .vHD {
+    /* day tokens (OKLCH: field L.925 panel L.965 ink L.255 — H/C shared with night) */
+    --field: #EEE5D6; --panel: #F8F3E9; --ink: #292218; --muted: #635D52;
+    --turquoise: #227F75; --chile: #A53E2D; --gold: #BE902C;
+    --line: var(--ink); --panel-shadow: var(--ink); --cta-bg: var(--ink); --cta-fg: var(--field);
+    background: var(--field); color: var(--ink);
+    background-image: radial-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px);
+    background-size: 22px 22px;
+    transition: background-color .5s var(--ease-out-expo), color .5s var(--ease-out-expo);
+  }
+  .vHD[data-mode="night"] {
+    /* night tokens (same hues/chroma, L flipped: field L.235 panel L.290 text L.925) */
+    --field: #241D12; --panel: #2F2B24; --ink: #EEE5D8; --muted: #9E978C;
+    --turquoise: #61B6AB; --chile: #C95E4B; --gold: #DCAC4D;
+    --line: var(--ink); --panel-shadow: #0B0805; --cta-bg: #EEE5D8; --cta-fg: #241D12;
+  }
+  .vHD .dusk { height: 0; overflow: hidden; transition: height .5s var(--ease-out-expo); }
+  .vHD[data-mode="night"] .dusk { height: 96px; margin-bottom: -64px;
+    background: linear-gradient(100deg, #6E2B47, #C95E4B 55%, #DCAC4D);
+    -webkit-mask-image: linear-gradient(180deg, #000, transparent);
+    mask-image: linear-gradient(180deg, #000, transparent); opacity: .5; }
+  .vHD .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; position: relative; }
+  .vHD .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; }
+  .vHD .mark em { color: var(--turquoise); font-style: normal; }
+  .vHD .bar nav { display: flex; gap: 14px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted); align-items: center; }
+  .vHD .bar nav a:hover { color: var(--ink); }
+  .vHD .bar nav a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
+  .vHD .modeflip { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    border: 2px solid var(--line); font-size: 15px; transition: transform .5s var(--ease-out-back); }
+  .vHD .modeflip:hover { transform: rotate(40deg); }
+  .vHD .modeflip:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 2px; }
+  .vHD .hero { padding: 26px 20px 0; }
+  .vHD .kicker { font-size: 11px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--chile); }
+  .vHD h1 { font-family: "Oswald"; font-weight: 700; text-transform: uppercase;
+    font-size: clamp(52px, 15vw, 110px); line-height: .92; }
+  .vHD h1 .thin { color: var(--turquoise); }
+  .vHD .horizon { position: relative; margin: 20px 20px 26px; border-bottom: 3px solid var(--line); height: 34px; }
+  .vHD .celestial { position: absolute; right: 12%; bottom: -14px; width: 28px; height: 28px;
+    background: var(--gold); border-radius: 50%; border: 3px solid var(--line);
+    transition: transform .5s var(--ease-out-back); }
+  .vHD .celestial::after { content: ""; position: absolute; inset: -9px; border-radius: 50%;
+    border: 2px dashed color-mix(in srgb, var(--gold) 55%, transparent); }
+  .vHD[data-mode="night"] .celestial { background: transparent; border-color: transparent;
+    box-shadow: inset 8px -2px 0 0 var(--ink); transform: rotate(-30deg) translateY(-10px); }
+  .vHD[data-mode="night"] .celestial::after { border-color: transparent; }
+  .vHD .horizon .when { position: absolute; right: calc(12% + 44px); bottom: 6px;
+    font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+  /* container queries: the row asks its own width, not the viewport's */
+  .vHD .panelwrap { container-type: inline-size; padding: 0 20px 20px; }
+  .vHD .panelrow { display: grid; gap: 18px; }
+  @container (min-width: 640px) { .vHD .panelrow { grid-template-columns: 1fr 1fr; } }
+  .vHD .panel { background: var(--panel); border: 3px solid var(--line);
+    box-shadow: 7px 7px 0 var(--panel-shadow); padding: 18px;
+    transition: background-color .5s var(--ease-out-expo); }
+  .vHD .tag { display: inline-block; font-size: 10px; font-weight: 800;
+    letter-spacing: .18em; text-transform: uppercase; padding: 4px 9px; border: 2px solid var(--line); }
+  .vHD .tag.kb { background: var(--turquoise); color: var(--panel); }
+  .vHD .tag.ff { background: var(--chile); color: var(--panel); }
+  .vHD .rrow { display: flex; justify-content: space-between; align-items: center; }
+  .vHD .team { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 24px; line-height: 1.1; }
+  .vHD .side { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .vHD .score { font-family: "Oswald"; font-weight: 700; font-size: 46px; }
+  .vHD .score.win { color: var(--gold); }
+  .vHD .dimmed { opacity: .55; }
+  .vHD .meta { margin-top: 12px; padding-top: 12px;
+    border-top: 2px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+    font-size: 12.5px; font-weight: 600; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
+  .vHD .meta a { color: var(--turquoise); font-weight: 700; }
+  .vHD .meta a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .vHD .meta a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
+  .vHD .cta { margin: 6px 20px 90px; padding: 20px; background: var(--cta-bg); color: var(--cta-fg);
+    transition: background-color .5s var(--ease-out-expo); }
+  .vHD .cta h2 { font-family: "Oswald"; text-transform: uppercase; font-size: 26px; font-weight: 600; }
+  .vHD .cta p { font-size: 13.5px; margin-top: 6px; opacity: .85; max-width: 42ch; }
+  .vHD .btn { display: inline-block; margin-top: 14px; margin-right: 10px; background: var(--chile);
+    color: #F8F3E9; font-weight: 800; font-size: 13px; padding: 12px 18px;
+    box-shadow: 4px 4px 0 var(--cta-fg); transition: transform .25s var(--ease-out-expo), box-shadow .25s var(--ease-out-expo); }
+  .vHD .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--cta-fg); }
+  .vHD .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--cta-fg); }
+  .vHD .btn:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 3px; }
+  .vHD .btn.alt { background: transparent; color: var(--cta-fg); box-shadow: none;
+    border: 2px solid color-mix(in srgb, var(--cta-fg) 45%, transparent); }
+  .vHD .btn.alt:hover { border-color: var(--cta-fg); transform: none; }
+
+  /* ============ E2 — TUNED CLASSIC (3-layer depth, states, containers) ===== */
+  .vE2 { --bgE: #0C1113; --cardHi: #152126; --cardLo: #0E171A; --txt: #E9EEF0;
+    --mutedE: #94A1A6; --tealE: #52C4D6; --goldE: #E8A33D;
+    --depth: 0 1px 0 #ffffff14 inset, 0 2px 4px #0000004d, 0 10px 20px #00000040, 0 24px 48px #00000038;
+    background: var(--bgE); color: var(--txt); }
+  .vE2 .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
+  .vE2 .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; color: #fff; }
+  .vE2 .mark em { color: var(--tealE); font-style: normal; }
+  .vE2 .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--mutedE); }
+  .vE2 .bar nav a:hover { color: var(--txt); }
+  .vE2 .bar nav a:focus-visible { outline: 2px solid var(--tealE); outline-offset: 3px; }
+  .vE2 .band { margin: 10px 20px 18px; padding: 22px 20px; border-radius: 16px;
+    background: linear-gradient(160deg, var(--cardHi), var(--cardLo) 70%); box-shadow: var(--depth); }
+  .vE2 .band h1 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 32px; }
+  .vE2 .band p { margin-top: 4px; font-size: 12px; color: var(--mutedE); letter-spacing: .08em;
+    text-transform: uppercase; font-weight: 700; }
+  .vE2 .cardwrap { container-type: inline-size; padding: 0 20px 20px; }
+  .vE2 .cards { display: grid; gap: 16px; }
+  @container (min-width: 640px) { .vE2 .cards { grid-template-columns: 1fr 1fr; } }
+  .vE2 .cardE { border-radius: 16px; padding: 18px;
+    background: linear-gradient(170deg, var(--cardHi), var(--cardLo)); box-shadow: var(--depth);
+    transition: transform .35s var(--ease-out-expo), box-shadow .35s var(--ease-out-expo); }
+  .vE2 .cardE:hover { transform: translateY(-3px);
+    box-shadow: 0 1px 0 #ffffff1c inset, 0 4px 8px #00000059, 0 16px 28px #00000047, 0 32px 60px #00000040; }
+  .vE2 .lblrow { display: flex; justify-content: space-between; align-items: center; }
+  .vE2 .lbl { font-size: 10.5px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--mutedE); }
+  .vE2 .lbl.live { color: var(--tealE); }
+  .vE2 .moonE { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 6px -2px 0 0 var(--txt); transform: rotate(-35deg); }
+  .vE2 .trow { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .vE2 .idhex { width: 40px; height: 36px; display: grid; place-items: center;
+    background: #1B262B; clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    font-weight: 800; font-size: 13px; }
+  .vE2 .idhex.a { color: var(--tealE); } .vE2 .idhex.b { color: var(--goldE); }
+  .vE2 .tname { flex: 1; margin-left: 12px; font-family: "Oswald"; font-weight: 500;
+    text-transform: uppercase; font-size: 19px; }
+  .vE2 .tscore { font-family: "Oswald"; font-weight: 700; font-size: 40px; }
+  .vE2 .tscore.win { color: var(--tealE); }
+  .vE2 .tscore.dim { color: #e9eef059; }
+  .vE2 .side2 { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #e9eef059; }
+  .vE2 .metaE { margin-top: 14px; padding-top: 12px; border-top: 1px solid #ffffff0f;
+    font-size: 12px; color: var(--mutedE); display: flex; gap: 12px; flex-wrap: wrap; }
+  .vE2 .metaE a { color: var(--tealE); font-weight: 600; }
+  .vE2 .metaE a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .vE2 .metaE a:focus-visible { outline: 2px solid var(--tealE); outline-offset: 3px; }
+  .vE2 .note { margin: 4px 20px 92px; font-size: 11px; letter-spacing: .14em;
+    text-transform: uppercase; font-weight: 700; color: #e9eef04d; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ============ HIGH DESERT — one layout, live day/night switch ============ -->
+<section class="v vHD on" id="HD" data-mode="day">
+  <div class="dusk"></div>
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav>
+      <a href="#">Schedule</a><a href="#">Standings</a><a href="#">Leaders</a>
+      <button class="modeflip" id="modeflip" aria-label="Switch between day and night mode">☀️</button>
+    </nav>
+  </header>
+
+  <div class="hero anim">
+    <p class="kicker">Sunday · June 30 · Albuquerque</p>
+    <h1>Game<br><span class="thin" id="dayword">Day</span></h1>
+  </div>
+  <div class="horizon anim"><span class="when">First pitch 6:30 PM</span><span class="celestial"></span></div>
+
+  <div class="panelwrap anim">
+    <div class="panelrow">
+      <article class="panel">
+        <span class="tag kb">Kickball · Up next</span>
+        <div style="margin-top:14px;display:grid;gap:6px">
+          <div class="rrow"><span class="team">Sandia Sluggers</span><span class="side">away</span></div>
+          <div class="rrow"><span class="team">Rio Grande Rollers</span><span class="side">home</span></div>
+        </div>
+        <div class="meta"><span>Tue 6:30 PM</span><span>Los Altos Park · Field 1</span><a href="#">Directions →</a></div>
+      </article>
+      <article class="panel">
+        <span class="tag ff">Flag football · Final</span>
+        <div style="margin-top:14px;display:grid;gap:6px">
+          <div class="rrow"><span class="team">Bosque Blitz</span><span class="score win">28</span></div>
+          <div class="rrow dimmed"><span class="team">Mesa Mavericks</span><span class="score">20</span></div>
+        </div>
+        <div class="meta"><span>Fri Jun 26</span><span>West Mesa Fields · Field B</span><a href="#">Box score →</a></div>
+      </article>
+    </div>
+  </div>
+
+  <div class="cta">
+    <h2>New to CVF?</h2>
+    <p>Adult kickball and flag football, Sundays across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <a class="btn" href="#">Submit team interest</a><a class="btn alt" href="#">Join free agent pool</a>
+  </div>
+</section>
+
+<!-- ============ E2 — TUNED CLASSIC ============ -->
+<section class="v vE2" id="E2">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><a href="#">Schedule</a><a href="#">Standings</a><a href="#">Leaders</a></nav>
+  </header>
+  <div class="band anim">
+    <h1>Current Leagues</h1>
+    <p>Albuquerque, NM</p>
+  </div>
+  <div class="cardwrap anim">
+    <div class="cards">
+      <article class="cardE">
+        <div class="lblrow"><span class="lbl">Latest final · Flag football</span><span class="moonE"></span></div>
+        <div class="trow"><span class="idhex a">BB</span><span class="tname">Bosque Blitz</span><span class="tscore win">28</span></div>
+        <div class="trow" style="margin-top:8px;opacity:.75"><span class="idhex b">MM</span><span class="tname">Mesa Mavericks</span><span class="tscore dim">20</span></div>
+        <div class="metaE"><span>Fri Jun 26 · 7:00 PM</span><span>West Mesa Fields · B</span><a href="#">Box score →</a></div>
+      </article>
+      <article class="cardE">
+        <div class="lblrow"><span class="lbl live">Up next · Kickball</span><span class="moonE"></span></div>
+        <div class="trow"><span class="idhex a">SS</span><span class="tname">Sandia Sluggers</span><span class="side2">away</span></div>
+        <div class="trow" style="margin-top:8px"><span class="idhex b">RG</span><span class="tname">Rio Grande Rollers</span><span class="side2">home</span></div>
+        <div class="metaE"><span>Tue Jun 30 · 6:30 PM</span><span>Los Altos Park · 1</span><a href="#">Directions →</a></div>
+      </article>
+    </div>
+  </div>
+  <p class="note">Same identity · OKLCH-deepened ink · three-layer depth · full state coverage</p>
+</section>
+
+<div class="switch" role="tablist">
+  <button class="on" data-v="HD">High Desert ☀︎/☾</button>
+  <button data-v="E2">Tuned Classic</button>
+</div>
+
+<script>
+  document.querySelectorAll(".switch button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".switch button").forEach((x) => x.classList.toggle("on", x === b));
+      document.querySelectorAll(".v").forEach((s) => s.classList.toggle("on", s.id === b.dataset.v));
+      window.scrollTo(0, 0);
+    });
+  });
+  const hd = document.getElementById("HD");
+  const flip = document.getElementById("modeflip");
+  flip.addEventListener("click", () => {
+    const night = hd.dataset.mode !== "night";
+    hd.dataset.mode = night ? "night" : "day";
+    flip.textContent = night ? "☾" : "☀️";
+    document.getElementById("dayword").textContent = night ? "Night" : "Day";
+  });
+</script>
+</body>
+</html>

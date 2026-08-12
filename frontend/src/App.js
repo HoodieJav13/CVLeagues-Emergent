@@ -32,6 +32,14 @@ const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
 const AdminSecurity = lazy(() => import("./pages/AdminSecurity"));
 const ScoreEntry = lazy(() => import("./pages/ScoreEntry"));
 
+// Agentation: click-to-annotate for design feedback (owner + partner mark up
+// the live UI; the output pastes straight to a coding agent). Development
+// only — the lazy import sits behind a NODE_ENV check, so production builds
+// never load the chunk and the devDependency never reaches a visitor.
+const Annotator = process.env.NODE_ENV === "development"
+  ? lazy(() => import("agentation").then((m) => ({ default: m.Agentation })))
+  : () => null;
+
 // Route-level fallback for the lazy admin chunk while it fetches. Sized to
 // hold the page area so the layout does not jump.
 const RouteLoading = () => (
@@ -82,6 +90,7 @@ function App() {
           </Suspense>
         </BrowserRouter>
         <Toaster theme="dark" position="top-center" richColors />
+        <Suspense fallback={null}><Annotator /></Suspense>
       </AppStateProvider>
     </RoleProvider>
     </ErrorBoundary>
