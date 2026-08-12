@@ -45,9 +45,14 @@
 
   /* ============ HD — HIGH DESERT, one layout, two OKLCH token sets ========= */
   .vHD {
-    /* day tokens (OKLCH: field L.925 panel L.965 ink L.255 — H/C shared with night) */
-    --field: #EEE5D6; --panel: #F8F3E9; --ink: #292218; --muted: #635D52;
-    --turquoise: #227F75; --chile: #A53E2D; --gold: #BE902C;
+    /* DAY IS THE MASTER: v1-A's exact pigments, verbatim. Night derives from
+       these and is tuned by eye toward v1-D — OKLCH runs one direction only.
+       (v3 fix for "day paid the night tax".) */
+    --field: #EFE7D6; --panel: #FBF8F1; --ink: #221B12; --muted: #221B1299;
+    --turquoise: #0F8A80; --chile: #B23A2B; --gold: #C08A1E;
+    --win: var(--turquoise);            /* victory speaks in brand color */
+    --link: #0C7066;                    /* text-role teal: >=4.5:1 on panel */
+    --btn-bg: var(--gold); --btn-fg: var(--ink); --btn-shadow: var(--field);
     --line: var(--ink); --panel-shadow: var(--ink); --cta-bg: var(--ink); --cta-fg: var(--field);
     background: var(--field); color: var(--ink);
     background-image: radial-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px);
@@ -55,16 +60,20 @@
     transition: background-color .5s var(--ease-out-expo), color .5s var(--ease-out-expo);
   }
   .vHD[data-mode="night"] {
-    /* night tokens (same hues/chroma, L flipped: field L.235 panel L.290 text L.925) */
-    --field: #241D12; --panel: #2F2B24; --ink: #EEE5D8; --muted: #9E978C;
-    --turquoise: #61B6AB; --chile: #C95E4B; --gold: #DCAC4D;
-    --line: var(--ink); --panel-shadow: #0B0805; --cta-bg: #EEE5D8; --cta-fg: #241D12;
+    /* night: derived from day, then hand-tuned toward v1-D's warmth —
+       chocolate panels, deep chile, burning dusk. Not a chroma-parity twin. */
+    --field: #201914; --panel: #2B231C; --ink: #EFE7D6; --muted: #EFE7D699;
+    --turquoise: #3FBFB2; --chile: #C6462F; --gold: #E09A33;
+    --win: var(--gold);
+    --link: var(--turquoise);
+    --btn-bg: #B23A2B; --btn-fg: #EFE7D6; --btn-shadow: #201914; /* day-chile value: 4.83:1 with cream; night's lighter chile fails at 13px */
+    --line: var(--ink); --panel-shadow: #0C0906; --cta-bg: #EFE7D6; --cta-fg: #201914;
   }
   .vHD .dusk { height: 0; overflow: hidden; transition: height .5s var(--ease-out-expo); }
-  .vHD[data-mode="night"] .dusk { height: 96px; margin-bottom: -64px;
-    background: linear-gradient(100deg, #6E2B47, #C95E4B 55%, #DCAC4D);
+  .vHD[data-mode="night"] .dusk { height: 110px; margin-bottom: -78px;
+    background: linear-gradient(100deg, #6E2B47, #C14E33 55%, #E09A33);
     -webkit-mask-image: linear-gradient(180deg, #000, transparent);
-    mask-image: linear-gradient(180deg, #000, transparent); opacity: .5; }
+    mask-image: linear-gradient(180deg, #000, transparent); opacity: .55; }
   .vHD .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; position: relative; }
   .vHD .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; }
   .vHD .mark em { color: var(--turquoise); font-style: normal; }
@@ -72,14 +81,18 @@
     letter-spacing: .14em; text-transform: uppercase; color: var(--muted); align-items: center; }
   .vHD .bar nav a:hover { color: var(--ink); }
   .vHD .bar nav a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
-  .vHD .modeflip { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
-    border: 2px solid var(--line); font-size: 15px; transition: transform .5s var(--ease-out-back); }
-  .vHD .modeflip:hover { transform: rotate(40deg); }
-  .vHD .modeflip:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 2px; }
+  /* The mode flip is a REVIEW instrument, not part of the identity: it lives
+     with the variant switcher, drawn in the switcher's neutral chrome. In the
+     product, mode binds to 6 PM league time per Addendum 6 — weather, not a
+     preference. */
+  .demoflip { position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%); z-index: 99;
+    background: #000c; backdrop-filter: blur(12px); color: #ccc;
+    font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 999px; white-space: nowrap; }
+  .demoflip:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
   .vHD .hero { padding: 26px 20px 0; }
   .vHD .kicker { font-size: 11px; font-weight: 800; letter-spacing: .22em; text-transform: uppercase; color: var(--chile); }
   .vHD h1 { font-family: "Oswald"; font-weight: 700; text-transform: uppercase;
-    font-size: clamp(52px, 15vw, 110px); line-height: .92; }
+    font-size: clamp(52px, 15vw, 110px); line-height: .92; letter-spacing: .01em; }
   .vHD h1 .thin { color: var(--turquoise); }
   .vHD .horizon { position: relative; margin: 20px 20px 26px; border-bottom: 3px solid var(--line); height: 34px; }
   .vHD .celestial { position: absolute; right: 12%; bottom: -14px; width: 28px; height: 28px;
@@ -89,8 +102,10 @@
     border: 2px dashed color-mix(in srgb, var(--gold) 55%, transparent); }
   .vHD[data-mode="night"] .celestial { background: transparent; border-color: transparent;
     box-shadow: inset 8px -2px 0 0 var(--ink); transform: rotate(-30deg) translateY(-10px); }
-  .vHD[data-mode="night"] .celestial::after { border-color: transparent; }
-  .vHD .horizon .when { position: absolute; right: calc(12% + 44px); bottom: 6px;
+  .vHD[data-mode="night"] .celestial::after { border: 0; inset: auto; right: -14px; top: -6px;
+    width: 7px; height: 7px; background: var(--gold); border-radius: 0;
+    clip-path: polygon(50% 0, 63% 38%, 100% 50%, 63% 62%, 50% 100%, 37% 62%, 0 50%, 37% 38%); }
+  .vHD .horizon .when { position: absolute; right: calc(12% + 42px); bottom: 6px;
     font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
   /* container queries: the row asks its own width, not the viewport's */
   .vHD .panelwrap { container-type: inline-size; padding: 0 20px 20px; }
@@ -99,7 +114,7 @@
   .vHD .panel { background: var(--panel); border: 3px solid var(--line);
     box-shadow: 7px 7px 0 var(--panel-shadow); padding: 18px;
     transition: background-color .5s var(--ease-out-expo); }
-  .vHD .tag { display: inline-block; font-size: 10px; font-weight: 800;
+  .vHD .tag { display: inline-block; font-size: 11px; font-weight: 800;
     letter-spacing: .18em; text-transform: uppercase; padding: 4px 9px; border: 2px solid var(--line); }
   .vHD .tag.kb { background: var(--turquoise); color: var(--panel); }
   .vHD .tag.ff { background: var(--chile); color: var(--panel); }
@@ -107,23 +122,23 @@
   .vHD .team { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 24px; line-height: 1.1; }
   .vHD .side { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
   .vHD .score { font-family: "Oswald"; font-weight: 700; font-size: 46px; }
-  .vHD .score.win { color: var(--gold); }
+  .vHD .score.win { color: var(--win); }
   .vHD .dimmed { opacity: .55; }
   .vHD .meta { margin-top: 12px; padding-top: 12px;
     border-top: 2px dashed color-mix(in srgb, var(--ink) 25%, transparent);
     font-size: 12.5px; font-weight: 600; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; }
-  .vHD .meta a { color: var(--turquoise); font-weight: 700; }
+  .vHD .meta a { color: var(--link); font-weight: 700; }
   .vHD .meta a:hover { text-decoration: underline; text-underline-offset: 4px; }
   .vHD .meta a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
   .vHD .cta { margin: 6px 20px 90px; padding: 20px; background: var(--cta-bg); color: var(--cta-fg);
     transition: background-color .5s var(--ease-out-expo); }
   .vHD .cta h2 { font-family: "Oswald"; text-transform: uppercase; font-size: 26px; font-weight: 600; }
   .vHD .cta p { font-size: 13.5px; margin-top: 6px; opacity: .85; max-width: 42ch; }
-  .vHD .btn { display: inline-block; margin-top: 14px; margin-right: 10px; background: var(--chile);
-    color: #F8F3E9; font-weight: 800; font-size: 13px; padding: 12px 18px;
-    box-shadow: 4px 4px 0 var(--cta-fg); transition: transform .25s var(--ease-out-expo), box-shadow .25s var(--ease-out-expo); }
-  .vHD .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--cta-fg); }
-  .vHD .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--cta-fg); }
+  .vHD .btn { display: inline-block; margin-top: 14px; margin-right: 10px; background: var(--btn-bg);
+    color: var(--btn-fg); font-weight: 800; font-size: 13px; padding: 12px 18px; letter-spacing: .04em;
+    box-shadow: 4px 4px 0 var(--btn-shadow); transition: transform .25s var(--ease-out-expo), box-shadow .25s var(--ease-out-expo); }
+  .vHD .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--btn-shadow); }
+  .vHD .btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--btn-shadow); }
   .vHD .btn:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 3px; }
   .vHD .btn.alt { background: transparent; color: var(--cta-fg); box-shadow: none;
     border: 2px solid color-mix(in srgb, var(--cta-fg) 45%, transparent); }
@@ -155,7 +170,7 @@
   .vE2 .cardE:hover { transform: translateY(-3px);
     box-shadow: 0 1px 0 #ffffff1c inset, 0 4px 8px #00000059, 0 16px 28px #00000047, 0 32px 60px #00000040; }
   .vE2 .lblrow { display: flex; justify-content: space-between; align-items: center; }
-  .vE2 .lbl { font-size: 10.5px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--mutedE); }
+  .vE2 .lbl { font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--mutedE); }
   .vE2 .lbl.live { color: var(--tealE); }
   .vE2 .moonE { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 6px -2px 0 0 var(--txt); transform: rotate(-35deg); }
   .vE2 .trow { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
@@ -168,14 +183,22 @@
   .vE2 .tscore { font-family: "Oswald"; font-weight: 700; font-size: 40px; }
   .vE2 .tscore.win { color: var(--tealE); }
   .vE2 .tscore.dim { color: #e9eef059; }
-  .vE2 .side2 { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #e9eef059; }
+  .vE2 .side2 { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--mutedE); }
   .vE2 .metaE { margin-top: 14px; padding-top: 12px; border-top: 1px solid #ffffff0f;
     font-size: 12px; color: var(--mutedE); display: flex; gap: 12px; flex-wrap: wrap; }
   .vE2 .metaE a { color: var(--tealE); font-weight: 600; }
   .vE2 .metaE a:hover { text-decoration: underline; text-underline-offset: 4px; }
   .vE2 .metaE a:focus-visible { outline: 2px solid var(--tealE); outline-offset: 3px; }
-  .vE2 .note { margin: 4px 20px 92px; font-size: 11px; letter-spacing: .14em;
-    text-transform: uppercase; font-weight: 700; color: #e9eef04d; text-align: center; }
+  .vE2 .join { margin: 0 20px 92px; border-radius: 16px; padding: 18px;
+    background: linear-gradient(170deg, var(--cardHi), var(--cardLo)); box-shadow: var(--depth); }
+  .vE2 .join h2 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 22px; }
+  .vE2 .join p { margin-top: 4px; font-size: 13px; color: var(--mutedE); max-width: 44ch; }
+  .vE2 .btnE { display: inline-block; margin-top: 14px; margin-right: 10px; border-radius: 10px;
+    background: var(--tealE); color: #0C1113; font-weight: 800; font-size: 13px; padding: 12px 18px;
+    transition: transform .25s var(--ease-out-expo); }
+  .vE2 .btnE:hover { transform: translateY(-2px); }
+  .vE2 .btnE:focus-visible { outline: 3px solid var(--tealE); outline-offset: 3px; }
+  .vE2 .btnE.alt { background: #ffffff14; color: var(--txt); }
 </style>
 </head>
 <body>
@@ -187,7 +210,6 @@
     <div class="mark">CVF <em>SPORTS</em></div>
     <nav>
       <a href="#">Schedule</a><a href="#">Standings</a><a href="#">Leaders</a>
-      <button class="modeflip" id="modeflip" aria-label="Switch between day and night mode">☀️</button>
     </nav>
   </header>
 
@@ -238,7 +260,7 @@
   <div class="cardwrap anim">
     <div class="cards">
       <article class="cardE">
-        <div class="lblrow"><span class="lbl">Latest final · Flag football</span><span class="moonE"></span></div>
+        <div class="lblrow"><span class="lbl">Latest final · Flag football</span></div>
         <div class="trow"><span class="idhex a">BB</span><span class="tname">Bosque Blitz</span><span class="tscore win">28</span></div>
         <div class="trow" style="margin-top:8px;opacity:.75"><span class="idhex b">MM</span><span class="tname">Mesa Mavericks</span><span class="tscore dim">20</span></div>
         <div class="metaE"><span>Fri Jun 26 · 7:00 PM</span><span>West Mesa Fields · B</span><a href="#">Box score →</a></div>
@@ -251,11 +273,17 @@
       </article>
     </div>
   </div>
-  <p class="note">Same identity · OKLCH-deepened ink · three-layer depth · full state coverage</p>
+  <div class="join anim">
+    <h2>New to CVF?</h2>
+    <p>Adult kickball and flag football, Sundays across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <a class="btnE" href="#">Submit team interest</a><a class="btnE alt" href="#">Join free agent pool</a>
+  </div>
 </section>
 
+<button class="demoflip" id="modeflip" aria-label="Demo: flip High Desert between day and night">Demo: Day ◐ Night</button>
+
 <div class="switch" role="tablist">
-  <button class="on" data-v="HD">High Desert ☀︎/☾</button>
+  <button class="on" data-v="HD">High Desert</button>
   <button data-v="E2">Tuned Classic</button>
 </div>
 
@@ -272,7 +300,7 @@
   flip.addEventListener("click", () => {
     const night = hd.dataset.mode !== "night";
     hd.dataset.mode = night ? "night" : "day";
-    flip.textContent = night ? "☾" : "☀️";
+    flip.textContent = night ? "Demo: Night ◐ Day" : "Demo: Day ◐ Night";
     document.getElementById("dayword").textContent = night ? "Night" : "Day";
   });
 </script>
