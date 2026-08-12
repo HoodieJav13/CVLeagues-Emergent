@@ -89,3 +89,7 @@ credentials.json
 *.key
 .credentials
 frontend/node_modules/.cache/default-development/3.pack
+
+# Third-party design tooling — reinstall via `npx impeccable install`
+# (documented in docs/direction/DESIGN_TOOLBOX.md); not vendored.
+.claude/skills/impeccable/
