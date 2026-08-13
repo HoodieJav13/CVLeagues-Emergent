@@ -48,7 +48,14 @@ account).
   one is consumed/expired; they are single-use). Copy the email link rather
   than clicking, to dodge mail-client prefetch. Acceptance hinges on the
   AAL1 check: after the reset and before TOTP, an admin action must refuse.
-- **Phase 3 — leaked-password toggle** (before Phase 4).
+- **Phase 3 — leaked-password protection: RESOLVED as Pro-gated (2026-08-06).**
+  The dashboard presents the toggle but save fails: "Configuring leaked
+  password protection via HaveIBeenPwned.org is available on Pro Plans and
+  up." The 2026-07-15 note was right. Folds into the already-decided Pro
+  upgrade at deployment — and note the toggle only checks passwords set
+  AFTER enabling, so flip it immediately at upgrade time. Consequence for
+  Phase 4: use the dashboard's GENERATED password for the break-glass
+  account (a random 20+ char string is not in any breach corpus).
 - **Phase 4 — break-glass administrator** (create → link → enroll → paper).
 - **Phase 5 — primary re-check; finalize this record.**
 
