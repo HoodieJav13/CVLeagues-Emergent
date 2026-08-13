@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CVF — next: Inlay + Classic warmed</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================================
+     NEXT — two dark-default directions per the owner's 2026-08-12 palette
+     spec: surfaces neutral-to-warm graphite (hue 75, chroma <=0.012 — cannot
+     read navy or green), turquoise as SET ACCENT only, gold hairlines, red
+     as a single subtle thread. OKLCH-derived values in DESIGN_TOOLBOX terms.
+       I — INLAY: NM silverwork. Scores and identity bezel-set like stones.
+       W — TUNED CLASSIC, WARMED: E2's liked craft, surface hues corrected.
+     ========================================================================= */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { font-family: "Inter", system-ui, sans-serif; }
+  button { font: inherit; border: 0; background: none; cursor: pointer; }
+  a { text-decoration: none; color: inherit; }
+  :root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    /* shared warm-graphite metal */
+    --bg: #100E0B; --card-hi: #1F1B17; --card-lo: #16130F; --well: #090705;
+    --hairline: #3C3731; --silver: #6C6863; --text: #ECE7DF; --muted: #9A948C;
+    --turquoise: #3FBFB2; --turquoise-deep: #14776D; --gold: #E09A33; --red-thread: #A93B26;
+  }
+  .v { display: none; min-height: 100vh; background: var(--bg); color: var(--text); }
+  .v.on { display: block; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .v.on .anim { animation: rise .6s var(--ease-out-expo) both; }
+  .v.on .anim:nth-of-type(2) { animation-delay: .07s; }
+  .v.on .anim:nth-of-type(3) { animation-delay: .14s; }
+  @media (prefers-reduced-motion: reduce) { .v.on .anim { animation: none; } }
+
+  .switch { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 4px; background: #000c; backdrop-filter: blur(12px);
+    padding: 5px; border-radius: 999px; z-index: 99; }
+  .switch button { color: #999; font-size: 12px; font-weight: 600; padding: 8px 16px;
+    border-radius: 999px; white-space: nowrap; }
+  .switch button.on { background: #fff; color: #000; }
+  .switch button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+  /* shared chrome */
+  .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
+  .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; color: #fff; }
+  .mark em { color: var(--turquoise); font-style: normal; }
+  .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
+    letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .bar nav a:hover { color: var(--text); }
+  .bar nav a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
+
+  /* ================= I — INLAY (NM silverwork at night) =================== */
+  /* Signature: the BEZEL CHIP — identity and scores set like stones. A chip
+     is a hexagon recessed into the metal: a well, a silver rim, a stone. */
+  .vI .hero { padding: 26px 20px 10px; }
+  .vI .kicker { font-size: 11px; font-weight: 800; letter-spacing: .26em;
+    text-transform: uppercase; color: var(--gold); }
+  .vI h1 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase;
+    font-size: clamp(34px, 9.6vw, 72px); line-height: 1.02; margin-top: 8px; }
+  .vI .inlayrule { margin: 16px 0 0; height: 4px; width: 120px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--turquoise-deep), var(--turquoise));
+    box-shadow: 0 1px 0 #ffffff1c, inset 0 1px 2px #00000080; }
+  .vI .sub { margin-top: 14px; font-size: 13.5px; color: var(--muted); max-width: 46ch; }
+  .vI .platewrap { container-type: inline-size; padding: 16px 20px 8px; }
+  .vI .plates { display: grid; gap: 16px; }
+  @container (min-width: 640px) { .vI .plates { grid-template-columns: 1fr 1fr; } }
+  .vI .plate { border-radius: 14px; padding: 18px;
+    background: linear-gradient(170deg, var(--card-hi), var(--card-lo));
+    box-shadow: 0 1px 0 #ffffff12 inset, 0 2px 4px #0000004d, 0 12px 26px #00000045; }
+  .vI .plate .lbl { display: flex; justify-content: space-between; align-items: center;
+    font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .vI .plate .lbl .t { color: var(--turquoise); }
+  /* the single red thread: a stamped keyline under FINAL, nothing louder */
+  .vI .plate .lbl .final { color: var(--muted); border-bottom: 2px solid var(--red-thread); padding-bottom: 2px; }
+  .vI .setrow { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+  .vI .bezel { width: 46px; height: 42px; flex-shrink: 0; display: grid; place-items: center;
+    background: var(--well);
+    clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    box-shadow: inset 0 2px 5px #000000cc; position: relative; }
+  .vI .bezel::before { content: ""; position: absolute; inset: 0;
+    clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%,
+      25% 0, 26.5% 6%, 6% 50%, 26.5% 94%, 73.5% 94%, 94% 50%, 73.5% 6%, 26.5% 6%);
+    background: linear-gradient(160deg, var(--silver), #3C3731); }
+  .vI .bezel span { position: relative; font-weight: 800; font-size: 12px; color: var(--muted); }
+  .vI .bezel.stone { background: linear-gradient(160deg, var(--turquoise), var(--turquoise-deep)); }
+  .vI .bezel.stone span { color: #08312C; }
+  .vI .bezel.gold { background: linear-gradient(160deg, #F0B45C, #B87B1F); }
+  .vI .bezel.gold span { color: #3A2604; }
+  .vI .setname { flex: 1; font-family: "Oswald"; font-weight: 500; text-transform: uppercase;
+    font-size: 20px; letter-spacing: .02em; }
+  .vI .setpts { font-family: "Oswald"; font-weight: 700; font-size: 38px; }
+  .vI .setpts.win { color: var(--turquoise); }
+  .vI .setrow.dim .setname, .vI .setrow.dim .setpts { color: var(--muted); }
+  .vI .plate .meta { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hairline);
+    font-size: 12.5px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  .vI .plate .meta a { color: var(--turquoise); font-weight: 700; }
+  .vI .plate .meta a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .vI .plate .meta a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
+  /* gold engraving: hairline section rules with a stamped label */
+  .vI .engrave { display: flex; align-items: center; gap: 12px; margin: 22px 20px 0; }
+  .vI .engrave::after { content: ""; flex: 1; height: 1px;
+    background: linear-gradient(90deg, var(--gold), transparent 85%); opacity: .5; }
+  .vI .engrave span { font-size: 11px; font-weight: 800; letter-spacing: .26em;
+    text-transform: uppercase; color: var(--gold); }
+  .vI .join { margin: 22px 20px 96px; border-radius: 14px; padding: 18px;
+    background: linear-gradient(170deg, var(--card-hi), var(--card-lo));
+    box-shadow: 0 1px 0 #ffffff12 inset, 0 12px 26px #00000045; }
+  .vI .join h2 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 22px; }
+  .vI .join p { margin-top: 4px; font-size: 13px; color: var(--muted); max-width: 44ch; }
+  .vI .btn { display: inline-block; margin-top: 14px; margin-right: 10px; border-radius: 10px;
+    background: linear-gradient(160deg, var(--turquoise), var(--turquoise-deep)); color: #06312C;
+    font-weight: 800; font-size: 13px; padding: 12px 18px;
+    box-shadow: 0 1px 0 #ffffff30 inset, 0 4px 10px #00000059;
+    transition: transform .25s var(--ease-out-expo); }
+  .vI .btn:hover { transform: translateY(-2px); }
+  .vI .btn:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 3px; }
+  .vI .btn.alt { background: transparent; color: var(--text); box-shadow: none;
+    border: 1px solid var(--hairline); }
+  .vI .btn.alt:hover { border-color: var(--silver); }
+
+  /* ============ W — TUNED CLASSIC, WARMED (E2 craft, corrected hues) ====== */
+  .vW .band { margin: 10px 20px 18px; padding: 22px 20px; border-radius: 16px;
+    background: linear-gradient(160deg, var(--card-hi), var(--card-lo) 70%);
+    box-shadow: 0 1px 0 #ffffff14 inset, 0 18px 40px #00000066; }
+  .vW .band h1 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 32px; }
+  .vW .band p { margin-top: 4px; font-size: 12px; color: var(--muted); letter-spacing: .08em;
+    text-transform: uppercase; font-weight: 700; }
+  .vW .cardwrap { container-type: inline-size; padding: 0 20px 20px; }
+  .vW .cards { display: grid; gap: 16px; }
+  @container (min-width: 640px) { .vW .cards { grid-template-columns: 1fr 1fr; } }
+  .vW .cardE { border-radius: 16px; padding: 18px;
+    background: linear-gradient(170deg, var(--card-hi), var(--card-lo));
+    box-shadow: 0 1px 0 #ffffff12 inset, 0 2px 4px #0000004d, 0 10px 20px #00000040, 0 24px 48px #00000038;
+    transition: transform .35s var(--ease-out-expo), box-shadow .35s var(--ease-out-expo); }
+  .vW .cardE:hover { transform: translateY(-3px); }
+  .vW .lblrow { display: flex; justify-content: space-between; align-items: center; }
+  .vW .lbl { font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+  .vW .lbl.live { color: var(--turquoise); }
+  .vW .moonE { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 6px -2px 0 0 var(--text); transform: rotate(-35deg); }
+  .vW .trow { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
+  .vW .idhex { width: 40px; height: 36px; display: grid; place-items: center;
+    background: var(--well); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    font-weight: 800; font-size: 13px; }
+  .vW .idhex.a { color: var(--turquoise); } .vW .idhex.b { color: var(--gold); }
+  .vW .tname { flex: 1; margin-left: 12px; font-family: "Oswald"; font-weight: 500;
+    text-transform: uppercase; font-size: 19px; }
+  .vW .tscore { font-family: "Oswald"; font-weight: 700; font-size: 40px; }
+  .vW .tscore.win { color: var(--turquoise); }
+  .vW .tscore.dim { color: var(--muted); }
+  .vW .side2 { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .vW .metaE { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hairline);
+    font-size: 12px; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  .vW .metaE a { color: var(--turquoise); font-weight: 600; }
+  .vW .metaE a:hover { text-decoration: underline; text-underline-offset: 4px; }
+  .vW .metaE a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
+  .vW .join { margin: 0 20px 96px; border-radius: 16px; padding: 18px;
+    background: linear-gradient(170deg, var(--card-hi), var(--card-lo));
+    box-shadow: 0 1px 0 #ffffff12 inset, 0 12px 26px #00000045; }
+  .vW .join h2 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 22px; }
+  .vW .join p { margin-top: 4px; font-size: 13px; color: var(--muted); max-width: 44ch; }
+  .vW .btnE { display: inline-block; margin-top: 14px; margin-right: 10px; border-radius: 10px;
+    background: var(--turquoise); color: #06312C; font-weight: 800; font-size: 13px; padding: 12px 18px;
+    transition: transform .25s var(--ease-out-expo); }
+  .vW .btnE:hover { transform: translateY(-2px); }
+  .vW .btnE:focus-visible { outline: 3px solid var(--turquoise); outline-offset: 3px; }
+  .vW .btnE.alt { background: #ffffff12; color: var(--text); }
+</style>
+</head>
+<body>
+
+<!-- ================= I — INLAY ================= -->
+<section class="v vI on" id="I">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><a href="#">Schedule</a><a href="#">Standings</a><a href="#">Leaders</a></nav>
+  </header>
+
+  <div class="hero anim">
+    <p class="kicker">Albuquerque · Summer 2026</p>
+    <h1>Sunday is<br>set in stone</h1>
+    <div class="inlayrule" aria-hidden="true"></div>
+    <p class="sub">Two sports, five parks, standings that matter more than they should. This is CVF.</p>
+  </div>
+
+  <div class="engrave anim"><span>This week</span></div>
+
+  <div class="platewrap anim">
+    <div class="plates">
+      <article class="plate">
+        <div class="lbl"><span>Kickball · Up next</span><span class="t">Tue 6:30 PM</span></div>
+        <div class="setrow">
+          <span class="bezel"><span>SS</span></span>
+          <span class="setname">Sandia Sluggers</span>
+          <span class="side2" style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">away</span>
+        </div>
+        <div class="setrow">
+          <span class="bezel"><span>RG</span></span>
+          <span class="setname">Rio Grande Rollers</span>
+          <span class="side2" style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">home</span>
+        </div>
+        <div class="meta"><span>Los Altos Park · Field 1</span><a href="#">Directions →</a></div>
+      </article>
+
+      <article class="plate">
+        <div class="lbl"><span>Flag football</span><span class="final">Final · Fri</span></div>
+        <div class="setrow">
+          <span class="bezel stone"><span>BB</span></span>
+          <span class="setname">Bosque Blitz</span>
+          <span class="setpts win">28</span>
+        </div>
+        <div class="setrow dim">
+          <span class="bezel"><span>MM</span></span>
+          <span class="setname">Mesa Mavericks</span>
+          <span class="setpts">20</span>
+        </div>
+        <div class="meta"><span>West Mesa Fields · Field B</span><a href="#">Box score →</a></div>
+      </article>
+    </div>
+  </div>
+
+  <div class="engrave"><span>Standings · Duke City Kickball</span></div>
+  <div class="platewrap" style="padding-top:12px">
+    <article class="plate">
+      <div class="setrow" style="margin-top:2px">
+        <span class="bezel gold"><span>1</span></span>
+        <span class="setname">Sandia Sluggers</span>
+        <span class="setpts" style="font-size:22px">3–0</span>
+      </div>
+      <div class="setrow">
+        <span class="bezel"><span>2</span></span>
+        <span class="setname">Rio Grande Rollers</span>
+        <span class="setpts" style="font-size:22px">2–1</span>
+      </div>
+      <div class="setrow">
+        <span class="bezel"><span>3</span></span>
+        <span class="setname">Nob Hill Nomads</span>
+        <span class="setpts" style="font-size:22px">1–2</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="join">
+    <h2>New to CVF?</h2>
+    <p>Adult kickball and flag football, Sundays across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <a class="btn" href="#">Submit team interest</a><a class="btn alt" href="#">Join free agent pool</a>
+  </div>
+</section>
+
+<!-- ================= W — TUNED CLASSIC, WARMED ================= -->
+<section class="v vW" id="W">
+  <header class="bar">
+    <div class="mark">CVF <em>SPORTS</em></div>
+    <nav><a href="#">Schedule</a><a href="#">Standings</a><a href="#">Leaders</a></nav>
+  </header>
+  <div class="band anim">
+    <h1>Current Leagues</h1>
+    <p>Albuquerque, NM</p>
+  </div>
+  <div class="cardwrap anim">
+    <div class="cards">
+      <article class="cardE">
+        <div class="lblrow"><span class="lbl">Latest final · Flag football</span></div>
+        <div class="trow"><span class="idhex a">BB</span><span class="tname">Bosque Blitz</span><span class="tscore win">28</span></div>
+        <div class="trow" style="margin-top:8px;opacity:.8"><span class="idhex b">MM</span><span class="tname">Mesa Mavericks</span><span class="tscore dim">20</span></div>
+        <div class="metaE"><span>Fri Jun 26 · 7:00 PM</span><span>West Mesa Fields · B</span><a href="#">Box score →</a></div>
+      </article>
+      <article class="cardE">
+        <div class="lblrow"><span class="lbl live">Up next · Kickball</span><span class="moonE"></span></div>
+        <div class="trow"><span class="idhex a">SS</span><span class="tname">Sandia Sluggers</span><span class="side2">away</span></div>
+        <div class="trow" style="margin-top:8px"><span class="idhex b">RG</span><span class="tname">Rio Grande Rollers</span><span class="side2">home</span></div>
+        <div class="metaE"><span>Tue Jun 30 · 6:30 PM</span><span>Los Altos Park · 1</span><a href="#">Directions →</a></div>
+      </article>
+    </div>
+  </div>
+  <div class="join anim">
+    <h2>New to CVF?</h2>
+    <p>Adult kickball and flag football, Sundays across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <a class="btnE" href="#">Submit team interest</a><a class="btnE alt" href="#">Join free agent pool</a>
+  </div>
+</section>
+
+<div class="switch" role="tablist">
+  <button class="on" data-v="I">Inlay</button>
+  <button data-v="W">Classic, warmed</button>
+</div>
+
+<script>
+  document.querySelectorAll(".switch button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll(".switch button").forEach((x) => x.classList.toggle("on", x === b));
+      document.querySelectorAll(".v").forEach((s) => s.classList.toggle("on", s.id === b.dataset.v));
+      window.scrollTo(0, 0);
+    });
+  });
+</script>
+</body>
+</html>
