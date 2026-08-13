@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "inter",
+        "createdAt": "2026-08-13T03:47:15.140Z",
+        "reason": "Oswald/Inter is the repository's owner-ratified typography token (CLAUDE.md visual foundation, owner-accepted passes); the direction mockups deliberately retain the type grammar - direction change != rebrand. Open question surfaced to owner 2026-08-13: whether the NEW direction should revisit the body face."
+      }
+    ]
+  }
+}
