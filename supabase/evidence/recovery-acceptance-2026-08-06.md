@@ -1,7 +1,8 @@
 # Recovery, revocation, and break-glass acceptance — session record
 
-**Status: IN PROGRESS — paused at a safe checkpoint (2026-08-06).**
-Phase 1 complete; Phase 2 not begun; nothing in a degraded state. Procedure:
+**Status: IN PROGRESS — Phases 1–2 PASS, Phase 3 resolved (Pro-gated);
+Phases 4–5 remain.** Nothing in a degraded state; Phase 4 (break-glass
+creation) must not be stopped midway once begun. Procedure:
 [`../../docs/operations/RECOVERY_SESSION_RUNBOOK_2026-08-06.md`](../../docs/operations/RECOVERY_SESSION_RUNBOOK_2026-08-06.md).
 
 ## Baseline (2026-08-06, pre-session)
@@ -42,12 +43,27 @@ account).
    `http://localhost:3000/**` (2 entries). At Phase 10 the production domain
    joins this list — already on the config-session checklist.
 
-## Remaining phases (resume point)
+## Phase 2 — Recovery: **PASS** (completed at the resume sitting)
 
-- **Phase 2 — Recovery.** Request a FRESH link at resume time (the failed
-  one is consumed/expired; they are single-use). Copy the email link rather
-  than clicking, to dodge mail-client prefetch. Acceptance hinges on the
-  AAL1 check: after the reset and before TOTP, an admin action must refuse.
+- The fresh link (post-redirect-allowlist fix, copied not clicked) delivered
+  a recovery session — which exposed **Finding 3, the session's most
+  important**: Supabase refuses password changes on MFA-enrolled accounts
+  below AAL2, so the app's reset form was NEVER completable for the only
+  kind of administrator this app has. It failed closed — the right way to
+  be broken — but recovery would have dead-ended on game day.
+- Fixed live during the session and committed as `5c24d89`: the reset page
+  now runs the login gate's TOTP challenge first (verify code → AAL2 → then
+  the password form). The security property preserved is the point: email
+  compromise alone cannot rotate the admin password.
+- Owner proved the full corrected flow end to end: reset link → TOTP code →
+  new password → global sign-out of all sessions → fresh login held at the
+  challenge screen (AAL1 structurally gated; DB-level denial separately
+  proven 33-ways by the 291/291 matrix) → TOTP → admin restored.
+- Server-side verification: exactly 1 admin session (global sign-out swept
+  the rest), newest session at **aal2**, TOTP factor survived the reset
+  (still exactly 1 verified factor).
+
+## Remaining phases (resume point)
 - **Phase 3 — leaked-password protection: RESOLVED as Pro-gated (2026-08-06).**
   The dashboard presents the toggle but save fails: "Configuring leaked
   password protection via HaveIBeenPwned.org is available on Pro Plans and
