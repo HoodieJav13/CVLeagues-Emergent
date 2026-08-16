@@ -269,6 +269,61 @@ Motion tokens are defined (not just referenced) from this pass:
 `prefers-reduced-motion` always receives the complete final state instantly —
 every beat is enhancement on top of an already-correct static rendering.
 
+## Inlay visual world — ratified direction (ADDENDUM 11)
+
+**World amendment (owner-ratified 2026-08-16, from the `next.html` direction
+poster after a dual-assessor critique — 18/24 (75%), zero P0, against the v2
+baseline 23/32 (71.9%) with two P0s. Snapshot:
+`.impeccable/critique/2026-08-16T21-28-33Z__docs-direction-mockups-2026-08-next-html.md`.
+Reference artifact: `docs/direction/mockups-2026-08/next.html`, "Inlay".)**
+
+"Inlay" — New Mexico silverwork as UI structure — is the app's visual world
+for the staged retheme (token layer first). Its grammar, now binding:
+
+1. **Surfaces are warm graphite metal.** `#100E0B` page, `#1F1B17→#16130F`
+   card gradient, `#090705` wells, `#3C3731` hairlines, `#6C6863` silver —
+   neutral-to-warm (OKLCH hue ~75, chroma ≤0.012); can never read navy or
+   green. Turquoise `#3FBFB2` is the set accent; deep turquoise `#14776D`
+   exists for hairline/graphic use but **never as a text background** (see 6).
+2. **The bezel chip is the identity device.** A flat-top hexagon rendered as
+   a recessed well + silver rim + stone. **Supersedes Addendum 5's 3px
+   team-color offset outline** (the hexagon shape and one-device-for-every-
+   entity rule stand). Stones carry meaning: gold = rank 1, turquoise =
+   game winner, team-color initials/sliver = identity. Team hues live only
+   inside stones and 4px slivers — a team's color never tints a surface.
+3. **First place is set in gold — the GILDED treatment (owner-picked over
+   the weight-only tier).** Winner and rank-1 rows: name steps up one weight
+   (Oswald 500→600) **and** the bezel rim re-sets in gold-chrome
+   (`#F2C275→#9A6516`). The score/record stays turquoise or neutral —
+   victory keeps speaking in brand color; the metal does the celebrating.
+4. **Gold's roles are exactly: kicker, rank-1 stone, the FINAL stamp
+   keyline, and gilded winner rims.** The FINAL stamp is a 2px gold keyline
+   under the state label (owner-picked over silver, which dulled into the
+   rims). **The 2026-08-12 "single red thread" idea is REJECTED** — tried on
+   the poster, removed at critique: Zia red remains live/alert only, no
+   ceremonial exceptions.
+5. **The Addendum 6 sun/moon mark survives as a stone.** On Inlay game
+   plates the decided drawing (solid white crescent + gold four-point star;
+   gold sunrise by day; 6:00 PM America/Denver cutoff) renders inside a
+   small bezel well in the plate's label row. Addendum 6's drawing, cutoff,
+   and three-signal rules are unchanged; only the placement adapts to the
+   plate grammar (label row, not frame corner).
+6. **Contrast floor for gradient fills:** any text-bearing gradient must
+   pass 4.5:1 at **both** stops (the CTA's turquoise gradient is
+   `#49C7BA→#38B0A4` for `#06312C` text — 6.8:1/5.3:1). Worst-case endpoint
+   math is the test, not the midpoint.
+7. **Named open items (not decided by this addendum):** the day-mode
+   answer for an all-dark world (sunlight legibility at the field);
+   winner-emphasis semantics on dense surfaces where the turquoise
+   five-role overload the critique flagged must be resolved (reserve
+   turquoise text for action; the stone + gild already mark the winner);
+   the LIVE state has not been demonstrated in this world and must be
+   designed before the retheme touches live surfaces; Addendum 4 T-rank
+   rendering in bezel grammar.
+
+Where this addendum conflicts with earlier surface-treatment text, this
+addendum governs; every non-conflicting clause of Addenda 1–10 stands.
+
 ## Change control
 
 Any addition to this contract (new motif, new state, new motion pattern) gets recorded here before implementation — Pass 3/4/5 execute this document, they don't extend it silently.

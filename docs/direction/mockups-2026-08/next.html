@@ -11,8 +11,12 @@
   /* =========================================================================
      NEXT — two dark-default directions per the owner's 2026-08-12 palette
      spec: surfaces neutral-to-warm graphite (hue 75, chroma <=0.012 — cannot
-     read navy or green), turquoise as SET ACCENT only, gold hairlines, red
-     as a single subtle thread. OKLCH-derived values in DESIGN_TOOLBOX terms.
+     read navy or green), turquoise as SET ACCENT only, gold hairlines.
+     The 2026-08-12 "red as a single subtle thread" idea was tried here and
+     REJECTED at the 2026-08-16 critique: the contract reserves Zia red for
+     live/alert, and a red keyline under FINAL invites a live/final misread.
+     The FINAL stamp is gold (silver dulled into the bezel rims — owner call,
+     2026-08-16). OKLCH-derived values in DESIGN_TOOLBOX terms.
        I — INLAY: NM silverwork. Scores and identity bezel-set like stones.
        W — TUNED CLASSIC, WARMED: E2's liked craft, surface hues corrected.
      ========================================================================= */
@@ -26,7 +30,7 @@
     /* shared warm-graphite metal */
     --bg: #100E0B; --card-hi: #1F1B17; --card-lo: #16130F; --well: #090705;
     --hairline: #3C3731; --silver: #6C6863; --text: #ECE7DF; --muted: #9A948C;
-    --turquoise: #3FBFB2; --turquoise-deep: #14776D; --gold: #E09A33; --red-thread: #A93B26;
+    --turquoise: #3FBFB2; --turquoise-deep: #14776D; --gold: #E09A33;
   }
   .v { display: none; min-height: 100vh; background: var(--bg); color: var(--text); }
   .v.on { display: block; }
@@ -40,16 +44,18 @@
     display: flex; gap: 4px; background: #000c; backdrop-filter: blur(12px);
     padding: 5px; border-radius: 999px; z-index: 99; }
   .switch button { color: #999; font-size: 12px; font-weight: 600; padding: 8px 16px;
-    border-radius: 999px; white-space: nowrap; }
+    border-radius: 999px; white-space: nowrap; user-select: none; -webkit-user-select: none; }
   .switch button.on { background: #fff; color: #000; }
   .switch button:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 
   /* shared chrome */
-  .bar { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; }
-  .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; color: #fff; }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 20px; }
+  .mark { font-weight: 800; letter-spacing: .06em; font-size: 15px; color: #fff; white-space: nowrap; }
   .mark em { color: var(--turquoise); font-style: normal; }
   .bar nav { display: flex; gap: 16px; font-size: 11px; font-weight: 700;
     letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  /* 375px is the guaranteed width: the mark and nav must share one line there */
+  @media (max-width: 430px) { .bar { padding: 18px 16px; } .bar nav { gap: 10px; letter-spacing: .08em; } }
   .bar nav a:hover { color: var(--text); }
   .bar nav a:focus-visible { outline: 2px solid var(--turquoise); outline-offset: 3px; }
 
@@ -78,8 +84,20 @@
   .vI .plate .lbl { display: flex; justify-content: space-between; align-items: center;
     font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
   .vI .plate .lbl .t { color: var(--turquoise); }
-  /* the single red thread: a stamped keyline under FINAL, nothing louder */
-  .vI .plate .lbl .final { color: var(--muted); border-bottom: 2px solid var(--red-thread); padding-bottom: 2px; }
+  .vI .lblr { display: flex; align-items: center; gap: 8px; }
+  /* the decided sun/moon state mark (Addendum 6), set like everything else in
+     this direction: a small stone in a bezel well. Night = solid white
+     crescent + gold four-point star; fixed 6 PM league-time cutoff. */
+  .vI .stonemark { width: 26px; height: 24px; flex-shrink: 0; display: grid; place-items: center;
+    background: var(--well); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    box-shadow: inset 0 2px 4px #000000cc; }
+  .vI .stonemark svg { display: block; }
+  .vI .side2 { font-size: 12px; font-weight: 700; letter-spacing: .14em;
+    text-transform: uppercase; color: var(--muted); }
+  /* the FINAL stamp: a gold keyline (owner-picked over silver, which dulled
+     into the bezel rims) — red stays live-only. Gold's roles are now kicker,
+     rank stone, and the FINAL stamp. */
+  .vI .plate .lbl .final { color: var(--muted); border-bottom: 2px solid var(--gold); padding-bottom: 2px; }
   .vI .setrow { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
   .vI .bezel { width: 46px; height: 42px; flex-shrink: 0; display: grid; place-items: center;
     filter: drop-shadow(0 2px 3px #00000066);
@@ -110,6 +128,12 @@
   .vI .bezel.gold span { color: #3A2604; }
   .vI .setname { flex: 1; font-family: "Oswald"; font-weight: 500; text-transform: uppercase;
     font-size: 20px; letter-spacing: .02em; }
+  /* winner/rank-1 emphasis — GILDED, owner-locked 2026-08-16 over the
+     measured weight-only tier: the name steps up one weight (500 -> 600) AND
+     the stone's silver rim is re-set in gold-chrome. First place is literally
+     set in gold; the score stays turquoise (victory speaks in brand color). */
+  .vI .winrow .setname { font-weight: 600; }
+  .vI .winrow .bezel::before { background: linear-gradient(160deg, #F2C275, #9A6516); }
   .vI .setpts { font-family: "Oswald"; font-weight: 700; font-size: 38px; }
   .vI .setpts.win { color: var(--turquoise); }
   .vI .setrow.dim .setname, .vI .setrow.dim .setpts { color: var(--muted); }
@@ -131,8 +155,10 @@
     box-shadow: 0 1px 0 #ffffff12 inset, 0 12px 26px #00000045; }
   .vI .join h2 { font-family: "Oswald"; font-weight: 600; text-transform: uppercase; font-size: 22px; }
   .vI .join p { margin-top: 4px; font-size: 13px; color: var(--muted); max-width: 44ch; }
+  /* CTA gradient stays above 4.5:1 at BOTH stops for the #06312C label
+     (light 6.8:1, dark 5.3:1) — the old --turquoise-deep stop bottomed at 2.6:1 */
   .vI .btn { display: inline-block; margin-top: 14px; margin-right: 10px; border-radius: 10px;
-    background: linear-gradient(160deg, var(--turquoise), var(--turquoise-deep)); color: #06312C;
+    background: linear-gradient(160deg, #49C7BA, #38B0A4); color: #06312C;
     font-weight: 800; font-size: 13px; padding: 12px 18px;
     box-shadow: 0 1px 0 #ffffff30 inset, 0 4px 10px #00000059;
     transition: transform .25s var(--ease-out-expo); }
@@ -160,7 +186,8 @@
   .vW .lblrow { display: flex; justify-content: space-between; align-items: center; }
   .vW .lbl { font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
   .vW .lbl.live { color: var(--turquoise); }
-  .vW .moonE { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 6px -2px 0 0 var(--text); transform: rotate(-35deg); }
+  /* decided Addendum 6 night mark (white crescent + gold star), not a CSS approximation */
+  .vW .moonE { display: grid; place-items: center; }
   .vW .trow { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; }
   .vW .idhex { width: 40px; height: 36px; display: grid; place-items: center;
     background: var(--well); clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
@@ -210,23 +237,23 @@
   <div class="platewrap anim">
     <div class="plates">
       <article class="plate">
-        <div class="lbl"><span>Kickball · Up next</span><span class="t">Tue 6:30 PM</span></div>
+        <div class="lbl"><span>Kickball · Up next</span><span class="lblr"><span class="stonemark" role="img" aria-label="Night game"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.8 3.6a8.6 8.6 0 1 0 5.6 12.6 7 7 0 0 1-5.6-12.6Z" fill="#fff"/><path d="M18.4 4.2l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z" fill="var(--gold)"/></svg></span><span class="t">Sun 6:30 PM</span></span></div>
         <div class="setrow">
           <span class="bezel"><span data-team style="--team:#22d3ee">SS</span></span>
           <span class="setname">Sandia Sluggers</span>
-          <span class="side2" style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">away</span>
+          <span class="side2">away</span>
         </div>
         <div class="setrow">
           <span class="bezel"><span data-team style="--team:#f97316">RG</span></span>
           <span class="setname">Rio Grande Rollers</span>
-          <span class="side2" style="font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">home</span>
+          <span class="side2">home</span>
         </div>
         <div class="meta"><span>Los Altos Park · Field 1</span><a href="#">Directions →</a></div>
       </article>
 
       <article class="plate">
-        <div class="lbl"><span>Flag football</span><span class="final">Final · Fri</span></div>
-        <div class="setrow">
+        <div class="lbl"><span>Flag football</span><span class="final">Final · Mon</span></div>
+        <div class="setrow winrow">
           <span class="bezel stone" style="--team:#10b981"><span>BB</span></span>
           <span class="setname">Bosque Blitz</span>
           <span class="setpts win">28</span>
@@ -244,7 +271,7 @@
   <div class="engrave"><span>Standings · Duke City Kickball</span></div>
   <div class="platewrap" style="padding-top:12px">
     <article class="plate">
-      <div class="setrow" style="margin-top:2px">
+      <div class="setrow winrow" style="margin-top:2px">
         <span class="bezel gold"><span>1</span></span>
         <span class="sliver" style="--team:#22d3ee" aria-hidden="true"></span>
         <span class="setname">Sandia Sluggers</span>
@@ -266,8 +293,8 @@
   </div>
 
   <div class="join">
-    <h2>Sundays are set in stone</h2>
-    <p>Adult kickball and flag football across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <h2>Game day, set in stone</h2>
+    <p>Adult kickball and flag football across Albuquerque — Sundays and Monday nights. Bring a team or come solo — we'll find you one.</p>
     <a class="btn" href="#">Submit team interest</a><a class="btn alt" href="#">Join free agent pool</a>
   </div>
 </section>
@@ -288,19 +315,19 @@
         <div class="lblrow"><span class="lbl">Latest final · Flag football</span></div>
         <div class="trow"><span class="idhex" style="color:#10b981">BB</span><span class="tname">Bosque Blitz</span><span class="tscore win">28</span></div>
         <div class="trow" style="margin-top:8px;opacity:.8"><span class="idhex" style="color:#ef4444">MM</span><span class="tname">Mesa Mavericks</span><span class="tscore dim">20</span></div>
-        <div class="metaE"><span>Fri Jun 26 · 7:00 PM</span><span>West Mesa Fields · B</span><a href="#">Box score →</a></div>
+        <div class="metaE"><span>Mon Jun 22 · 7:00 PM</span><span>West Mesa Fields · B</span><a href="#">Box score →</a></div>
       </article>
       <article class="cardE">
-        <div class="lblrow"><span class="lbl live">Up next · Kickball</span><span class="moonE"></span></div>
+        <div class="lblrow"><span class="lbl live">Up next · Kickball</span><span class="moonE" role="img" aria-label="Night game"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14.8 3.6a8.6 8.6 0 1 0 5.6 12.6 7 7 0 0 1-5.6-12.6Z" fill="#fff"/><path d="M18.4 4.2l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z" fill="var(--gold)"/></svg></span></div>
         <div class="trow"><span class="idhex" style="color:#22d3ee">SS</span><span class="tname">Sandia Sluggers</span><span class="side2">away</span></div>
         <div class="trow" style="margin-top:8px"><span class="idhex" style="color:#f97316">RG</span><span class="tname">Rio Grande Rollers</span><span class="side2">home</span></div>
-        <div class="metaE"><span>Tue Jun 30 · 6:30 PM</span><span>Los Altos Park · 1</span><a href="#">Directions →</a></div>
+        <div class="metaE"><span>Sun Jun 28 · 6:30 PM</span><span>Los Altos Park · 1</span><a href="#">Directions →</a></div>
       </article>
     </div>
   </div>
   <div class="join anim">
     <h2>New to CVF?</h2>
-    <p>Adult kickball and flag football, Sundays across Albuquerque. Bring a team or come solo — we'll find you one.</p>
+    <p>Adult kickball and flag football across Albuquerque — Sundays and Monday nights. Bring a team or come solo — we'll find you one.</p>
     <a class="btnE" href="#">Submit team interest</a><a class="btnE alt" href="#">Join free agent pool</a>
   </div>
 </section>
