@@ -10,7 +10,7 @@ import { StageBanner, isSpecialStage } from "./StageBanner";
 const TeamIdentity = ({ align, isLoser, isWinner, team }) => (
   <div className={`cvf-competition-row__team cvf-competition-row__team--${align}`}>
     <StructuralIdentityBadge
-      className="cvf-identity-badge--register"
+      className={`cvf-identity-badge--register${isWinner ? " cvf-gild" : ""}`}
       team={team}
       testId={`competition-identity-${team?.id || align}`}
     />
@@ -34,7 +34,7 @@ const TeamIdentity = ({ align, isLoser, isWinner, team }) => (
  * (list-order convention, stated once in the Schedule page copy). */
 const StackedLine = ({ team, value, isWinner, isLoser, valueClass = "" }) => (
   <div className="cvf-competition-row__stacked-line">
-    <StructuralIdentityBadge className="cvf-identity-badge--sm" team={team} />
+    <StructuralIdentityBadge className={`cvf-identity-badge--sm${isWinner ? " cvf-gild" : ""}`} team={team} />
     <span
       className={`cvf-competition-row__stacked-name ${
         isWinner

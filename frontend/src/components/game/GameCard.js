@@ -30,7 +30,7 @@ const TeamLine = ({ team, score, isWinner, isLoser, completed }) => {
       }`}
     >
       <div className="flex items-center gap-2.5 min-w-0">
-        <StructuralIdentityBadge className="cvf-identity-badge--sm shrink-0" team={team} />
+        <StructuralIdentityBadge className={`cvf-identity-badge--sm shrink-0${isWinner ? " cvf-gild" : ""}`} team={team} />
         <span className={`font-sans normal-case tracking-normal text-base sm:text-sm leading-snug whitespace-normal break-words ${nameEmphasis}`}>
           {team?.name || "TBD"}
         </span>

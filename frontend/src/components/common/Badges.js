@@ -33,11 +33,17 @@ const GOLD = { fg: "var(--cvf-gold)", bg: "var(--cvf-gold-tint)" };
 const ALERT = { fg: "var(--status-live)", bg: "var(--status-live-bg)" };
 const SLATE = { fg: "var(--status-final)", bg: "var(--status-final-bg)" };
 
+// Stamp keylines (Addendum 11 §4 + the LIVE design it required): decided game
+// states are SEALED with a 2px keyline under the pill in the state's own
+// ceremonial color — gold for FINAL (one of gold's four contract roles), Zia
+// red for LIVE (red's only home). Upcoming stays unsealed: nothing has
+// happened yet. The keyline is a fourth reinforcement on top of the
+// three-signal dot+label+tone system, never a replacement for it.
 const STATUS_STYLES = {
   // game status
-  live: { ...ALERT, label: "Live", pulse: true }, // dormant: no existing data emits "live"
+  live: { ...ALERT, label: "Live", pulse: true, stamp: "var(--status-live)" }, // dormant: no existing data emits "live"
   upcoming: { ...TEAL, label: "Upcoming" },
-  completed: { ...SLATE, label: "Final" },
+  completed: { ...SLATE, label: "Final", stamp: "var(--cvf-gold)" },
   postponed: { ...GOLD, label: "Postponed" },
   canceled: { ...ALERT, label: "Canceled" },
   // game score_status (pending/submitted/approved/disputed/final)
@@ -45,7 +51,7 @@ const STATUS_STYLES = {
   submitted: { ...TEAL, label: "Submitted" },
   approved: { ...TEAL, label: "Approved" },
   disputed: { ...ALERT, label: "Disputed" },
-  final: { ...SLATE, label: "Final" },
+  final: { ...SLATE, label: "Final", stamp: "var(--cvf-gold)" },
   // intake triage (registrations & free agents)
   new: { ...TEAL, label: "New" },
   contacted: { ...GOLD, label: "Contacted" },
@@ -70,7 +76,7 @@ export const StatusBadge = ({ status, className = "" }) => {
   return (
     <span
       className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-cvf-sm text-label uppercase ${className}`}
-      style={{ backgroundColor: s.bg, color: s.fg }}
+      style={{ backgroundColor: s.bg, color: s.fg, borderBottom: s.stamp ? `2px solid ${s.stamp}` : undefined }}
     >
       <span
         className={`w-1.5 h-1.5 rounded-full shrink-0${s.pulse ? " cvf-status-pulse" : ""}`}

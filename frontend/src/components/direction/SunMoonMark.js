@@ -27,7 +27,7 @@ export const isNightGame = (game) => {
 };
 
 const Moon = () => (
-  <svg width="84" height="64" viewBox="0 0 84 64" aria-hidden="true">
+  <svg width="27" height="22" viewBox="28 2 58 46" aria-hidden="true">
     <path
       d="M63 4.5 a 21 21 0 1 0 14.25 37.5 a 16.5 16.5 0 0 1 -14.25 -37.5 Z"
       fill="var(--text-primary)"
@@ -44,7 +44,7 @@ const Moon = () => (
  * Built with the same solidity as the crescent so the pair reads as one
  * system, not an outline sun next to a filled moon. */
 const Sun = () => (
-  <svg width="84" height="64" viewBox="0 0 84 64" aria-hidden="true">
+  <svg width="27" height="17" viewBox="29 10 56 34" aria-hidden="true">
     <g stroke="var(--cvf-gold)" strokeWidth="3.5" strokeLinecap="round" fill="none">
       <line x1="32" y1="42" x2="82" y2="42" />
       <line x1="57" y1="25" x2="57" y2="13" />
@@ -57,8 +57,11 @@ const Sun = () => (
   </svg>
 );
 
+/* Addendum 11 §5: the mark is set like everything else in the Inlay world —
+ * a stone in a small recessed bezel well. The Addendum 6 drawing, cutoff, and
+ * corner placement are unchanged; only the setting adapts. */
 export const SunMoonMark = ({ game, className = "" }) => (
   <span aria-hidden="true" className={`cvf-sunmoon ${className}`.trim()}>
-    {isNightGame(game) ? <Moon /> : <Sun />}
+    <span className="cvf-sunmoon__well">{isNightGame(game) ? <Moon /> : <Sun />}</span>
   </span>
 );

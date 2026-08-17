@@ -250,6 +250,30 @@
     text-transform: uppercase;
     color: var(--text-primary);
 }
+/* Section-header variant B for the owner A/B (Addendum 11's open
+   surface-lines-vs-engraved-rules question): the Inlay treatment — a bare
+   display title over a short recessed inlay bar, no band, no leading edge.
+   Activated by data-cvf-header="inlay" on <html>; the losing variant is
+   removed once the owner picks. */
+[data-cvf-header="inlay"] .cvf-band {
+    display: block;
+    background: transparent;
+    border: 0;
+    padding: 0;
+}
+[data-cvf-header="inlay"] .cvf-band::after {
+    content: "";
+    display: block;
+    width: 92px;
+    height: 4px;
+    margin-top: 0.625rem;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--cvf-teal-deep), var(--cvf-teal));
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.11), inset 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+[data-cvf-header="inlay"] .cvf-band--gold::after {
+    background: linear-gradient(90deg, var(--cvf-gold-deep), var(--cvf-gold));
+}
 /* Stage surfaces (Playoffs) carry the gold stage vocabulary on the band. */
 .cvf-band--gold { border-left-color: var(--cvf-gold); }
 
@@ -316,7 +340,7 @@
    score-state — identity desaturates and recedes, label stays muted, no red.
    Static by design; elimination is a fact, not a performance. */
 .cvf-eliminated { opacity: 0.55; }
-.cvf-eliminated .cvf-identity-badge { filter: saturate(0.25); }
+.cvf-eliminated .cvf-identity-badge { filter: saturate(0.25) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45)); }
 .cvf-eliminated-label {
     color: var(--text-secondary);
     font-size: 0.625rem;
@@ -382,7 +406,7 @@
 .cvf-structural-corner--compact > span:nth-child(3) { top: 1.4rem; width: 1rem; }
 
 .cvf-identity-badge {
-    --cvf-identity-color: var(--border-strong);
+    --cvf-identity-color: var(--text-secondary);
     position: relative;
     display: inline-flex;
     width: 4rem;
@@ -396,14 +420,16 @@
     font-size: 1.25rem;
     font-weight: 700;
     line-height: 1;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.45));
 }
-/* Addendum 5: flat-top hexagon (flat edge up, vertices left/right) is the one
-   identity device for teams AND players, at every size, on every surface. The
-   3px team-color offset outline is retained unchanged from Addendum 4. */
+/* Addendum 5's flat-top hexagon (flat edge up, vertices left/right) remains the
+   one identity device for teams AND players. Addendum 11 §2 supersedes the 3px
+   team-color offset outline with the Inlay BEZEL CHIP: a recessed well, a
+   silver rim, and the team's color set inside as the stone (the initials). The
+   team hue lives only inside the well, so no team can tint a surface. */
 .cvf-identity-badge::before,
 .cvf-identity-badge__field,
-.cvf-identity-badge__offset,
-.cvf-identity-badge__offset::after {
+.cvf-identity-badge__offset {
     position: absolute;
     inset: 0;
     clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
@@ -411,30 +437,22 @@
 .cvf-identity-badge::before {
     content: "";
     z-index: 1;
-    background: var(--cvf-identity-color);
+    background: linear-gradient(160deg, var(--cvf-silver), #3C3731);
 }
-.cvf-identity-badge__offset {
-    z-index: 0;
-    background: color-mix(in srgb, var(--cvf-identity-color) 82%, white);
-    transform: translate(3px, 3px);
-}
-.cvf-identity-badge__offset::after {
-    content: "";
-    inset: 2px;
-    background: var(--surface-sunken);
-}
+/* the offset-outline layer is retired (Addendum 11 §2); the element remains in
+   the DOM so existing markup and tests are untouched */
+.cvf-identity-badge__offset { display: none; }
 .cvf-identity-badge__field {
     inset: 2px;
     z-index: 2;
-    background: var(--surface-raised);
+    background: var(--surface-well);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
 }
-.cvf-identity-badge__field::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(145deg, color-mix(in srgb, var(--cvf-identity-color) 22%, transparent), transparent 58%);
+.cvf-identity-badge__initials {
+    position: relative;
+    z-index: 3;
+    color: var(--cvf-identity-color);
 }
-.cvf-identity-badge__initials { position: relative; z-index: 3; }
 /* Badge size ladder (E0 evidence sizes): base 4rem, --md 2.75rem for roster/
    person rows, --sm 1.75rem for inline register marks. Context variants
    (--register, --leaderboard, --leaderboard-hero) keep their proven sizes. */
@@ -452,17 +470,41 @@
 }
 .cvf-identity-badge--sm .cvf-identity-badge__offset { transform: translate(2px, 2px); }
 
+/* GILDED winner treatment (Addendum 11 §3, owner-locked): the winner's and
+   rank-1's bezel rim is re-set in gold-chrome — first place is literally set
+   in gold. Applied by context (standings leader row, leaderboard rank 1 and
+   category hero) or explicitly via .cvf-gild (game-card winner side). The
+   score/record keeps its own color: the metal celebrates, not the number. */
+.cvf-identity-badge.cvf-gild::before,
+.cvf-standings-row--leader .cvf-identity-badge::before,
+.cvf-ranked-row[data-rank="1"] .cvf-identity-badge::before,
+.cvf-leaderboard-hero .cvf-identity-badge::before {
+    background: linear-gradient(160deg, #F2C275, #9A6516);
+}
+.cvf-standings-row--leader .cvf-standings-row__name { font-weight: 600; }
+
 /* Addendum 6 sun/moon mark. Owns the frame's top-right corner (the StatusBadge
    is clustered left so nothing occludes it); on banner-topped playoff frames
    it drops below the StageBanner instead of colliding with it. */
 .cvf-sunmoon {
     position: absolute;
-    top: 0.375rem;
-    right: 0.375rem;
+    top: 0.5rem;
+    right: 0.5rem;
     z-index: 3;
     pointer-events: none;
 }
 .cvf-sunmoon--below-banner { top: 2.75rem; }
+/* Addendum 11 §5: the celestial mark sits in its own small bezel well — the
+   same recessed-stone grammar as the identity chips. */
+.cvf-sunmoon__well {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.25rem;
+    background: var(--surface-well);
+    clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.85);
+}
 
 .cvf-stat-strip {
     display: grid;

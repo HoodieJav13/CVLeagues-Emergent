@@ -35,7 +35,7 @@ export const StructuralCorner = ({
 
 export const StructuralIdentityBadge = ({ className = "", color, name, team, testId }) => {
   const displayName = team?.name || name || "Team";
-  const identityColor = team?.logo_color || color || "var(--border-strong)";
+  const identityColor = team?.logo_color || color || "var(--text-secondary)";
 
   return (
     <span
