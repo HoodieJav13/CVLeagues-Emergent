@@ -615,6 +615,9 @@
     transform: translateX(-50%);
     padding: 0.2rem 0.65rem;
     border: 1px solid var(--border-strong);
+    /* the stamp system (Addendum 11 §4): a decided game's chip seals with the
+       gold FINAL keyline, same grammar as the StatusBadge pills */
+    border-bottom: 2px solid var(--cvf-gold);
     border-radius: 6px;
     background: var(--surface-sunken);
     color: var(--text-secondary);
@@ -1088,20 +1091,27 @@
     border-bottom: 1px solid hsl(var(--border));
     background: linear-gradient(135deg, var(--cvf-gold-tint), hsl(var(--card)) 62%);
 }
-.cvf-leaderboard-hero::before {
-    content: "";
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: var(--cvf-gold);
-}
-.cvf-leaderboard-hero__heading { grid-area: heading; min-width: 0; padding-right: 4rem; }
-.cvf-leaderboard-hero__heading > span {
+/* Leaderboards-hero vocabulary (Addendum 11 open item, resolved 2026-08-16):
+   the Pass 3 corner rays and 4px gold edge are retired here. The heading's
+   kicker is a gold ENGRAVED rule — caps label with a fading hairline cut into
+   the metal — and the category value floats free (owner picked engraved over
+   the value-in-stone-well variant in a side-by-side A/B). */
+.cvf-leaderboard-hero__heading { grid-area: heading; min-width: 0; }
+.cvf-leaderboard-hero__kicker {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     color: var(--cvf-gold);
     font-size: var(--text-micro);
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
+}
+.cvf-leaderboard-hero__kicker::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--hairline), transparent 90%);
 }
 .cvf-leaderboard-hero__heading h2 {
     margin-top: 0.15rem;

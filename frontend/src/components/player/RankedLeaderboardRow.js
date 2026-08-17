@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { StructuralCorner, StructuralIdentityBadge } from "../direction/StructuralIdentity";
+import { StructuralIdentityBadge } from "../direction/StructuralIdentity";
 import { AthleteHoverCard } from "./AthleteHoverCard";
 
 export const RankedLeaderboardRow = ({ row, statLabel }) => {
@@ -46,9 +46,11 @@ export const FeaturedLeaderboardHero = ({ row, statLabel, titleId }) => {
       data-tied={row.tied ? "true" : "false"}
       data-testid={`leaderboard-hero-${row.profile.id}`}
     >
-      <StructuralCorner tone="gold" position="top-right" size="feature" />
+      {/* The Pass 3 corner rays are retired on this surface (Addendum 11 open
+          item, resolved by this batch); the heading carries the engraved rule
+          that replaces them. */}
       <div className="cvf-leaderboard-hero__heading">
-        <span>Category leader</span>
+        <span className="cvf-leaderboard-hero__kicker">Category leader</span>
         <h2 id={titleId}>{statLabel}</h2>
       </div>
 

@@ -227,11 +227,16 @@ export default function GameDetail() {
             const rows = gameStats.filter((s) => s.team_id === t.id);
             if (!rows.length) return null;
             const cols = BOX[game.sport];
+            const teamWon = forfeit
+              ? game.winner_team_id === t.id
+              : t.id === home?.id
+                ? game.home_score > game.away_score
+                : game.away_score > game.home_score;
             return (
               <Card key={t.id} density="compact" className="rounded-2xl overflow-hidden">
                 <CardHeader className="border-b border-border py-2.5">
                 <p className="font-display uppercase tracking-tight text-foreground flex items-center gap-2">
-                  <StructuralIdentityBadge className="cvf-identity-badge--sm" team={t} /> {t.name}
+                  <StructuralIdentityBadge className={`cvf-identity-badge--sm${teamWon ? " cvf-gild" : ""}`} team={t} /> {t.name}
                 </p>
                 </CardHeader>
                 <div className="overflow-x-auto">
@@ -290,8 +295,8 @@ const TeamHead = ({ team, score, completed, win, home }) => (
     className="cvf-gd-field flex min-w-0 flex-col items-center text-center group"
     style={fieldBackground(team, home)}
   >
-    <StructuralIdentityBadge team={team} className="mb-2" />
-    <span className="font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors">{team.name}</span>
+    <StructuralIdentityBadge team={team} className={`mb-2${win ? " cvf-gild" : ""}`} />
+    <span className={`font-display uppercase tracking-tight text-foreground text-sm leading-tight group-hover:text-primary transition-colors${win ? " font-semibold" : ""}`}>{team.name}</span>
     <span className="text-micro text-muted-foreground uppercase">{home ? "Home" : "Away"}</span>
     {completed && (
       <span className={`cvf-game-score mt-1 font-mono-score tabular-nums font-bold ${win ? "text-primary" : "text-muted-foreground"}`}>{score}</span>

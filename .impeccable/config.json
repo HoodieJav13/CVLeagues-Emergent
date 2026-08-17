@@ -8,6 +8,15 @@
         "value": "inter",
         "createdAt": "2026-08-13T03:47:15.140Z",
         "reason": "Oswald/Inter is the repository's owner-ratified typography token (CLAUDE.md visual foundation, owner-accepted passes); the direction mockups deliberately retain the type grammar - direction change != rebrand. Open question surfaced to owner 2026-08-13: whether the NEW direction should revisit the body face."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/index.css"
+        ],
+        "createdAt": "2026-08-17T21:29:50.686Z",
+        "reason": "Playoff-stage rail on Schedule competition rows: semantic marker (playoff game), owner-ratified and re-affirmed in the 2026-08-16 header-B decision (rails that carry meaning stay); StageBanner label is the second signal, never color-alone. Owner approved this whitelist 2026-08-16."
       }
     ]
   }
