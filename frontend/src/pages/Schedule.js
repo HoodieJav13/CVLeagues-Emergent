@@ -56,6 +56,14 @@ export default function Schedule() {
   const [team_id, setTeamId] = usePersistedPreference("scheduleTeam", "all");
   const [status, setStatus] = useState("all");
   const [filterRevision, setFilterRevision] = useState(0);
+  // Sport and Team are the two filters a player actually reaches for on a
+  // phone ("when do WE play") and both are persisted; Season/League/Status
+  // are refinements and live behind one disclosure so the screen carries two
+  // selects, not five. The count keeps a collapsed-but-active refinement from
+  // ever silently shaping the list.
+  const [moreFiltersOpen, setMoreFiltersOpen] = useState(false);
+  const refinementsActive =
+    (season !== "current" ? 1 : 0) + (league_id !== "all" ? 1 : 0) + (status !== "all" ? 1 : 0);
 
   const leagues = useMemo(
     () => state.leagues.filter((league) => {
@@ -121,29 +129,50 @@ export default function Schedule() {
           decision 8 — the rows themselves never label away/home. */}
       <SectionHeading as="h1" band title="Schedule" subtitle="Away team listed first · current seasons by default · league and tournament schedules stay distinct" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-2.5">
-        <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setSeason("current"); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-sport">
-          <SelectItem value="all">All Sports</SelectItem>
-          {SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-        </Filter>
-        <Filter label="Season" value={season} onChange={(v) => { setSeason(v); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-season">
-          <SelectItem value="current">Current by Sport</SelectItem>
-          <SelectItem value="all">All Seasons</SelectItem>
-          {state.seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
-        </Filter>
-        <Filter label="League" value={league_id} onChange={(v) => { setLeagueId(v); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-league">
-          <SelectItem value="all">All Leagues</SelectItem>
-          {leagues.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}{l.kind === "tournament" ? " · Tournament" : ""}</SelectItem>)}
-        </Filter>
-        <Filter label="Team" value={team_id} onChange={(v) => { setTeamId(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-team">
-          <SelectItem value="all">All Teams</SelectItem>
-          {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
-        </Filter>
-        <Filter label="Status" value={status} onChange={(v) => { setStatus(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-status">
-          <SelectItem value="all">All</SelectItem>
-          <SelectItem value="upcoming">Upcoming</SelectItem>
-          <SelectItem value="completed">Completed</SelectItem>
-        </Filter>
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+          <Filter label="Sport" value={sport} onChange={(v) => { setSport(v); setSeason("current"); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-sport">
+            <SelectItem value="all">All Sports</SelectItem>
+            {SPORTS.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+          </Filter>
+          <Filter label="Team" value={team_id} onChange={(v) => { setTeamId(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-team">
+            <SelectItem value="all">All Teams</SelectItem>
+            {teams.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+          </Filter>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMoreFiltersOpen((open) => !open)}
+          aria-expanded={moreFiltersOpen}
+          aria-controls="schedule-more-filters"
+          data-testid="schedule-filter-more"
+          className="inline-flex items-center gap-1.5 text-micro uppercase tracking-widest font-semibold text-[var(--cvf-teal)]"
+        >
+          <span aria-hidden="true" className={`inline-block transition-transform ${moreFiltersOpen ? "rotate-90" : ""}`}>›</span>
+          More filters
+          {refinementsActive > 0 && (
+            <span className="text-muted-foreground normal-case tracking-normal">· {refinementsActive} active</span>
+          )}
+        </button>
+        <div
+          id="schedule-more-filters"
+          className={`grid grid-cols-2 lg:grid-cols-3 gap-2.5 ${moreFiltersOpen ? "" : "hidden"}`}
+        >
+          <Filter label="Season" value={season} onChange={(v) => { setSeason(v); setLeagueId("all"); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-season">
+            <SelectItem value="current">Current by Sport</SelectItem>
+            <SelectItem value="all">All Seasons</SelectItem>
+            {state.seasons.map((item) => <SelectItem key={item.name} value={item.name}>{item.name}</SelectItem>)}
+          </Filter>
+          <Filter label="League" value={league_id} onChange={(v) => { setLeagueId(v); setTeamId("all"); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-league">
+            <SelectItem value="all">All Leagues</SelectItem>
+            {leagues.map((l) => <SelectItem key={l.id} value={l.id}>{l.name}{l.kind === "tournament" ? " · Tournament" : ""}</SelectItem>)}
+          </Filter>
+          <Filter label="Status" value={status} onChange={(v) => { setStatus(v); setFilterRevision((revision) => revision + 1); }} testid="schedule-filter-status">
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="upcoming">Upcoming</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+          </Filter>
+        </div>
       </div>
 
       <FilterResultRegion
