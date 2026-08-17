@@ -1,5 +1,5 @@
 // Initials avatar with brand color ring. Placeholder for Phase 2 photo upload.
-export const Avatar = ({ name = "?", color = "#5BB8CC", size = 44, className = "" }) => {
+export const Avatar = ({ name = "?", color = "#3FBFB2", size = 44, className = "" }) => {
   const initials = name
     .split(" ")
     .map((n) => n[0])

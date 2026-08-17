@@ -471,7 +471,7 @@ function TeamsTab({ app }) {
   const [confirm, setConfirm] = useState(null);
   const rosterTeam = rosterFor && getTeam(state, rosterFor);
 
-  const openNew = () => setModal({ mode: "new", name: "", logo_color: "#5BB8CC", founded: "2026", league_id: "", captain_id: "", division: "" });
+  const openNew = () => setModal({ mode: "new", name: "", logo_color: "#3FBFB2", founded: "2026", league_id: "", captain_id: "", division: "" });
   const openIdentity = (identity) => setModal({ mode: "identity", id: identity.id, name: identity.name, logo_color: identity.logo_color, founded: identity.founded || "", status: identity.status });
   const openEnroll = (identity) => setModal({ mode: "enroll", identity_id: identity.id, name: identity.name, league_id: "", captain_id: "", division: "" });
   const openEnrollment = (team) => setModal({
@@ -1158,7 +1158,7 @@ function AgentsTab({ app }) {
       {state.freeAgents.map((a) => (
         <div key={a.id} data-testid={`admin-agent-${a.id}`} className="bg-card border border-border rounded-xl p-3.5">
           <div className="flex items-center gap-2 flex-wrap">
-            <Avatar name={freeAgentName(a)} color="#5BB8CC" size={36} />
+            <Avatar name={freeAgentName(a)} color="#3FBFB2" size={36} />
             <div className="flex-1 min-w-0">
               <p className="font-medium text-foreground truncate">{freeAgentName(a)}</p>
               <p className="text-xs text-muted-foreground truncate">

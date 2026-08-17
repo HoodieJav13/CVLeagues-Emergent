@@ -27,52 +27,59 @@
         --ease-out: ease-out;
         --ease-settle: cubic-bezier(0.16, 1, 0.3, 1);
 
-        /* ---- Brand core ---- */
-        --cvf-teal: #5BB8CC;        /* primary brand + primary action */
-        --cvf-teal-deep: #3A8A9E;   /* hover/pressed for teal */
-        --cvf-teal-tint: #10282E;   /* deep teal wash background */
-        --cvf-ink: #0F1416;         /* darkest ink — text on accent fills */
+        /* ---- Brand core (Inlay world — Art Direction Contract Addendum 11,
+           token retheme 2026-08-16. Surfaces are warm graphite, hue ~33-36,
+           chroma low enough that nothing can read navy or green. Turquoise
+           is the NM-silverwork set accent; deep turquoise is hairline/graphic
+           only, NEVER a text background. Red family deliberately unchanged:
+           Zia red stays live/alert-only in every world.) ---- */
+        --cvf-teal: #3FBFB2;        /* turquoise — primary brand + primary action */
+        --cvf-teal-deep: #2FA396;   /* hover/pressed for turquoise (6.2:1 with ink) */
+        --cvf-teal-tint: #0E2522;   /* deep turquoise wash background */
+        --cvf-ink: #12100D;         /* darkest ink — text on accent fills */
         --cvf-zia: #FF5A6E;         /* Zia red — live/alert ONLY (brightened) */
         --cvf-zia-deep: #C8102E;    /* destructive resting fill */
         --cvf-zia-down: #A50D26;    /* hover/pressed for destructive fills (darkens — light text stays AA) */
-        --cvf-gold: #F5B82E;        /* Zia gold — achievement/emphasis ONLY */
-        --cvf-gold-deep: #D49613;   /* hover/pressed for gold */
+        --cvf-gold: #E09A33;        /* Zia gold — achievement/emphasis ONLY (kicker, rank-1, FINAL stamp, gilded rims) */
+        --cvf-gold-deep: #C98A2A;   /* hover/pressed for gold (6.5:1 with ink) */
         --cvf-gold-tint: #2E2410;   /* deep amber wash background */
 
         /* ---- Sport accents (v2) — sport identity gets its own tokens so
-           gold stays achievement-only. Kickball aliases brand teal. ---- */
-        --sport-kickball: #5BB8CC;      /* alias of --cvf-teal */
-        --sport-kickball-tint: #10282E; /* alias of --cvf-teal-tint */
+           gold stays achievement-only. Kickball aliases brand turquoise. ---- */
+        --sport-kickball: #3FBFB2;      /* alias of --cvf-teal */
+        --sport-kickball-tint: #0E2522; /* alias of --cvf-teal-tint */
         --sport-flag: #FB923C;          /* flag football — orange, dark-tuned */
         --sport-flag-tint: #2E1B0C;     /* deep burnt-orange wash */
         --sport-flag-deep: #F97316;     /* hover/pressed for flag-orange */
 
         /* ---- Rank accents (leaderboard medals; 1st place uses --leader) ---- */
-        --rank-silver: #A9B0B6;
+        --rank-silver: #ABA49B;     /* warmed to the graphite hue */
         --cvf-copper: #C9825F;      /* rank-3 only; browner/less saturated than flag orange */
 
-        /* ---- Surfaces & neutrals (dark — canonical) ---- */
-        --surface: #0F1416;         /* page background */
-        --surface-raised: #171D20;  /* cards, modals, raised panels */
-        --surface-sunken: #0A0E10;  /* section bg, table header rows */
-        /* hairline --border (#2A3236) lives below as HSL channels for the
+        /* ---- Surfaces & neutrals (dark — canonical, Inlay warm graphite) ---- */
+        --surface: #100E0B;         /* page background */
+        --surface-raised: #1F1B17;  /* cards, modals, raised panels */
+        --surface-sunken: #0B0907;  /* section bg, table header rows */
+        --surface-well: #090705;    /* recessed bezel wells (Inlay chip interiors) */
+        /* hairline --border (#3C3731) lives below as HSL channels for the
            shadcn `border-border` utility; use that utility, not var(--border). */
-        --border-strong: #3C464B;   /* emphasized borders */
-        --text-primary: #F4F6F5;    /* body + heading text (off-white) */
-        --text-secondary: #A8B0AD;  /* labels, metadata, captions */
-        --text-muted: #7E8883;      /* de-emphasized / placeholder (v2: brightened — 4.65:1 on raised, AA) */
-        --text-on-brand: #0F1416;   /* ink text on teal/gold fills */
+        --border-strong: #49443C;   /* emphasized borders */
+        --cvf-silver: #6C6863;      /* bezel rim metal (Inlay chip rims) */
+        --text-primary: #ECE7DF;    /* body + heading text (warm off-white) */
+        --text-secondary: #9A948C;  /* labels, metadata, captions (5.7:1 on raised) */
+        --text-muted: #8A847B;      /* de-emphasized / placeholder (4.6:1 on raised, AA) */
+        --text-on-brand: #12100D;   /* ink text on turquoise/gold fills */
 
         /* ---- Functional / status (Batch B/C own application) ---- */
         --status-live: #FF5A6E;
         --status-live-bg: #3A1419;
-        --status-upcoming: #6FCFE3;
-        --status-upcoming-bg: #10282E;
-        --status-final: #A8B0AD;
-        --status-final-bg: #1C2327;
-        --win: #F4F6F5;
-        --loss-text: #7E8883;       /* alias of --text-muted (v2 contrast fix) */
-        --leader: #F5B82E;
+        --status-upcoming: #62CFC3;
+        --status-upcoming-bg: #0E2522;
+        --status-final: #9A948C;
+        --status-final-bg: #1E1A16;
+        --win: #ECE7DF;
+        --loss-text: #8A847B;       /* alias of --text-muted (v2 contrast fix) */
+        --leader: #E09A33;
         --leader-bg: #2E2410;
 
         /* ---- Typography: families ---- */
@@ -118,25 +125,25 @@
            bg-card / text-foreground / border-border / bg-primary
            utility reskins to the CVF palette from one place.
            ============================================================ */
-        --background: 197 19% 7%;          /* --surface */
-        --foreground: 150 10% 96%;         /* --text-primary */
-        --card: 200 16% 11%;               /* --surface-raised */
-        --card-foreground: 150 10% 96%;
-        --popover: 200 16% 11%;
-        --popover-foreground: 150 10% 96%;
-        --primary: 191 53% 58%;            /* --cvf-teal */
-        --primary-foreground: 197 19% 7%;  /* --text-on-brand */
-        --secondary: 200 14% 14%;
-        --secondary-foreground: 150 10% 96%;
-        --muted: 200 13% 14%;
-        --muted-foreground: 155 5% 67%;    /* --text-secondary */
-        --accent: 200 14% 16%;
-        --accent-foreground: 150 10% 96%;
-        --destructive: 350 85% 42%;        /* --cvf-zia-deep */
-        --destructive-foreground: 150 10% 96%;
-        --border: 200 13% 19%;             /* #2A3236 — HSL for shadcn border util */
-        --input: 200 13% 19%;
-        --ring: 191 53% 58%;               /* --cvf-teal */
+        --background: 36 19% 5%;           /* --surface #100E0B */
+        --foreground: 37 26% 90%;          /* --text-primary #ECE7DF */
+        --card: 30 15% 11%;                /* --surface-raised #1F1B17 */
+        --card-foreground: 37 26% 90%;
+        --popover: 30 15% 11%;
+        --popover-foreground: 37 26% 90%;
+        --primary: 174 50% 50%;            /* --cvf-teal (turquoise #3FBFB2) */
+        --primary-foreground: 36 16% 6%;   /* --text-on-brand */
+        --secondary: 33 15% 12%;
+        --secondary-foreground: 37 26% 90%;
+        --muted: 33 13% 12%;
+        --muted-foreground: 34 6% 58%;     /* --text-secondary #9A948C */
+        --accent: 33 14% 14%;
+        --accent-foreground: 37 26% 90%;
+        --destructive: 350 85% 42%;        /* --cvf-zia-deep (red unchanged) */
+        --destructive-foreground: 37 26% 90%;
+        --border: 33 10% 21%;              /* #3C3731 — HSL for shadcn border util */
+        --input: 33 10% 21%;
+        --ring: 174 50% 50%;               /* --cvf-teal (turquoise) */
         --radius: 0.625rem;                /* 10px — matches --radius-md */
     }
 }

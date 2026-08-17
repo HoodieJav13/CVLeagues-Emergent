@@ -165,9 +165,9 @@ module.exports = {
                         'md': 'var(--shadow-md)',
                         'lg': 'var(--shadow-lg)',
                         'floating': 'var(--shadow-floating)',
-                        // Teal glow (re-tinted from the old cyan) for accent emphasis
-                        'glow-cyan': '0 0 20px rgba(91,184,204,0.22), 0 4px 20px rgba(91,184,204,0.12)',
-                        'glow-cyan-sm': '0 0 12px rgba(91,184,204,0.16)',
+                        // Turquoise glow (Inlay retheme — tracks --cvf-teal #3FBFB2)
+                        'glow-cyan': '0 0 20px rgba(63,191,178,0.22), 0 4px 20px rgba(63,191,178,0.12)',
+                        'glow-cyan-sm': '0 0 12px rgba(63,191,178,0.16)',
                         'card-hover': 'var(--shadow-md)',
                         'card': 'var(--shadow-sm)',
                 },
