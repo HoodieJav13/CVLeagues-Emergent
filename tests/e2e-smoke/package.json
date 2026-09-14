@@ -1,0 +1,14 @@
+{
+  "name": "cvf-leagues-e2e-smoke",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Production-build smoke: serves frontend/build and drives it through the public routes with the Supabase REST boundary stubbed from the repo's own seed fixtures. No browser binaries are committed; run `npx playwright install chromium` once.",
+  "scripts": {
+    "smoke": "playwright test",
+    "smoke:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "serve": "^14.2.5"
+  }
+}
