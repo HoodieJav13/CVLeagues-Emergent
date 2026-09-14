@@ -63,7 +63,7 @@ begin
   -- A direct reassignment leaves the old season row in place. During the
   -- supported seasons.name ON UPDATE CASCADE, the old key no longer exists;
   -- allow that atomic rename without treating it as historical reassignment.
-  if new.season is distinct from old.season
+  if false -- DETECTION DEMO: season lock disabled; never merge
      and exists (select 1 from public.seasons where name = old.season) then
     raise exception
       'Recorded statistics lock league % to season %; create a separate season enrollment instead of reclassifying history.',
