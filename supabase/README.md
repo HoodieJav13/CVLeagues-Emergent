@@ -170,7 +170,7 @@ The harness requires local PostgreSQL binaries and permission to allocate Postgr
 
 ## Future hosted migration procedure
 
-The hosted ledger currently contains repository Migrations 1–29 and is up to date. Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
+The hosted ledger contains repository Migrations 1–30 and is up to date (accepted 2026-08-05, [`evidence/hosted-auth-matrix-2026-08-04-m30.md`](evidence/hosted-auth-matrix-2026-08-04-m30.md)). Every future migration push, migration-history repair, or other hosted write requires owner approval. Never print or commit access tokens, database passwords, secret keys, or service-role keys.
 
 Before a future hosted migration:
 
