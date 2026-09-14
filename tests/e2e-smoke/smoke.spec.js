@@ -1,9 +1,14 @@
 const { test, expect } = require("@playwright/test");
-const { TABLES, LEAGUE_SETTINGS_ROW, SEEDED_GAME_ID, SEEDED_GAME_TEAM } = require("./seed.cjs");
+const { TABLES, LEAGUE_SETTINGS_ROW, SEEDED_GAME_ID, SEEDED_GAME_TEAM, ADMIN_ONLY_TABLES, SEEDED_PII } = require("./seed.cjs");
 
 const SUPABASE_HOST = "ci-placeholder.supabase.co";
 const PUBLIC_ROUTES = ["/", "/schedule", "/standings", `/game/${SEEDED_GAME_ID}`, "/leaderboards", "/playoffs"];
-const ADMIN_ROUTES = ["/admin", "/admin/security"];
+// Routes gated by RoleGate (login card in place) ...
+const ADMIN_ROUTES = ["/admin", "/admin/security", "/score-entry"];
+// ... plus the two admin auth-flow pages that render their own forms. All five
+// must show an unauthenticated visitor zero seeded PII and never request an
+// admin-only table.
+const ADMIN_SURFACE_ROUTES = [...ADMIN_ROUTES, "/admin/recover", "/admin/reset-password"];
 
 // Answer the production bundle's Supabase REST calls from the seed fixtures.
 async function stubBackend(page) {
@@ -87,6 +92,23 @@ for (const route of ADMIN_ROUTES) {
     await expect(page.getByTestId("admin-login")).toBeVisible();
     await expect(page.getByTestId("admin-sign-out")).toHaveCount(0);
     await expect(page.getByTestId("admin-security")).toHaveCount(0);
+    expect(errors, `console errors on ${route}`).toEqual([]);
+  });
+}
+
+for (const route of ADMIN_SURFACE_ROUTES) {
+  test(`admin surface ${route} shows an unauthenticated visitor no seeded PII and requests no admin-only table`, async ({ page }) => {
+    const { served } = await stubBackend(page);
+    const errors = collectErrors(page);
+    await page.goto(route);
+    await settled(page);
+    // (a) no seeded email / phone string anywhere in the rendered text
+    const text = await page.evaluate(() => document.body.innerText);
+    const leaked = SEEDED_PII.filter((value) => text.includes(value));
+    expect(leaked, `seeded PII rendered on ${route}`).toEqual([]);
+    // (b) the bundle never asked for an admin-only table
+    const requestedAdminTables = served.filter((table) => ADMIN_ONLY_TABLES.includes(table));
+    expect(requestedAdminTables, `admin-only tables requested on ${route}`).toEqual([]);
     expect(errors, `console errors on ${route}`).toEqual([]);
   });
 }

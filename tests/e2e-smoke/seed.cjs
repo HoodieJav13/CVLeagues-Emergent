@@ -30,8 +30,26 @@ const careerBaselineRows = Object.entries(seed.careerBaselines || {}).flatMap(([
   Object.entries(bySport).map(([sport, stats]) => ({ profile_id, sport, stats })),
 );
 
-// PostgREST table name -> rows. Anonymous readers never receive the intake /
-// PII / private-ledger tables (RLS returns zero rows hosted), so those stay [].
+// Tables an anonymous session must never request. Hosted RLS would return
+// zero rows for most of them anyway; the smoke asserts the frontend does not
+// even ask (backend.js gates these reads on isAdmin).
+const ADMIN_ONLY_TABLES = [
+  "profiles", "free_agents", "team_registrations", "waivers", "charges", "payment_entries", "hof_entries",
+  "scorekeeping_sessions", "scorekeeping_participants", "scorekeeping_events", "scorekeeping_event_attributions",
+];
+
+// Every seeded email / phone string. If any of these reaches
+// document.body.innerText for an unauthenticated visitor, PII leaked.
+const SEEDED_PII = [
+  ...seed.profiles.flatMap((p) => [p.email, p.phone]),
+  ...(seed.freeAgents || []).flatMap((f) => [f.email, f.phone]),
+  ...(seed.registrations || []).flatMap((r) => [r.captain_email, r.captain_phone]),
+].filter((v) => typeof v === "string" && v.trim().length > 0);
+
+// PostgREST table name -> rows. `public_profiles` is DELIBERATELY served with
+// the full profile rows (email/phone included) even though the hosted view
+// strips them: the stub is stricter than production so the UI's own restraint
+// is what the PII assertion tests, not the view definition.
 const TABLES = {
   games: seed.games,
   leagues: seed.leagues,
@@ -63,4 +81,4 @@ const seededGame = seed.games.find((g) => g.status === "completed") || seed.game
 const SEEDED_GAME_ID = seededGame.id;
 const SEEDED_GAME_TEAM = seed.teams.find((t) => t.id === seededGame.home_team_id)?.name;
 
-module.exports = { TABLES, LEAGUE_SETTINGS_ROW, SEEDED_GAME_ID, SEEDED_GAME_TEAM };
+module.exports = { TABLES, LEAGUE_SETTINGS_ROW, SEEDED_GAME_ID, SEEDED_GAME_TEAM, ADMIN_ONLY_TABLES, SEEDED_PII };
