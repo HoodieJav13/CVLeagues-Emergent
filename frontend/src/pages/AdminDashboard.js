@@ -38,6 +38,7 @@ import { signOutAdmin } from "../lib/backend";
 import VenuesTab from "../components/admin/VenuesTab";
 import PaymentsTab from "../components/admin/PaymentsTab";
 import HallOfFameTab from "../components/admin/HallOfFameTab";
+import NewGameDialog from "../components/admin/NewGameDialog";
 
 // FINAL DRAFT — Season 1 is admin-only (CLAUDE.md): players are profile
 // records, NOT user accounts. Deferred duplicate-detection and temp-admin
@@ -928,6 +929,7 @@ function GamesTab({ app }) {
   const { state, assignTempAdmin, updateEntity, lockGame, setGameStatus } = app;
   const [modal, setModal] = useState(null); // {id, starts_at, venue_id}
   const [rescheduleFor, setRescheduleFor] = useState(null); // game_id
+  const [creating, setCreating] = useState(false);
 
   const save = async () => {
     if (!modal.starts_at || !modal.venue_id) return toast.error("Start time and venue required");
@@ -946,7 +948,8 @@ function GamesTab({ app }) {
 
   return (
     <div className="space-y-3">
-      <SectionTitle title="Schedule / Games" count={state.games.length} />
+      <SectionTitle title="Schedule / Games" count={state.games.length} action={<AddBtn onClick={() => setCreating(true)} label="New Game" testid="admin-add-game" />} />
+      <NewGameDialog app={app} open={creating} onOpenChange={setCreating} />
       <AdminTable testid="admin-games-table" head={["Date / Time", "Sport", "League", "Matchup", "Location", "Status", "Score", "Actions"]}>
         {state.games.length === 0 ? (
           <EmptyRow colSpan={8}>No games scheduled yet.</EmptyRow>

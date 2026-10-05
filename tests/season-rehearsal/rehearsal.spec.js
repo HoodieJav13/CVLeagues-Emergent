@@ -275,7 +275,10 @@ test("Season 1 rehearsal: intake → approval → rosters → schedule → score
     await shot(page, "04-players");
   });
 
-  await test.step("5. schedule (fixture write — no admin create-game UI, finding F1)", async () => {
+  // Games are written with fixed rh-* ids because boundaries.spec.js seeds from this
+  // run's final state; creating games through the New Game form is proven by
+  // new-game-season.spec.js.
+  await test.step("5. schedule (fixture write with fixed ids; New Game form proven separately)", async () => {
     const state = await readState(page);
     const venue = byName(state, "venues", F.VENUE.name);
     const games = F.GAMES.map((g) => {

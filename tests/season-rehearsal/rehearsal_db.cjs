@@ -147,6 +147,8 @@ select rh.who('authenticated', '${ADMIN}', 'aal2');
 
 // ---- 5. schedule ------------------------------------------------------------
 const isoUtc = (s) => new Date(s).toISOString();
+const NEWGAME_INSERT = `insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+    values ('${LEAGUE_ID.kickball}', 'kickball', ${tid("Arroyo Alley Cats")}, ${tid("Petroglyph Punters")}, '2027-04-28T01:45:00Z', '${VENUE_ID}', 'regular')`;
 sql(`${F.GAMES.map((g) => `insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
   values ('${GAME_ID[g.id]}', '${LEAGUE_ID[g.sport]}', '${g.sport}', ${tid(g.home)}, ${tid(g.away)}, '${isoUtc(g.starts_at)}', '${VENUE_ID}', 'regular');`).join("\n")}
 select rh.throws('perm 09 the admin cannot write a score column directly (RPC-only)',
@@ -154,6 +156,37 @@ select rh.throws('perm 09 the admin cannot write a score column directly (RPC-on
 select rh.ok('schedule 01 KG5 is stored as a 10:00 AM league-time day game',
   (select to_char(starts_at at time zone 'America/Denver', 'HH24:MI') from public.games where id = '${GAME_ID["rh-kg5"]}') = '10:00');
 select public.set_game_status('${GAME_ID["rh-kg7"]}', 'postponed');
+
+-- New Game (admin form) rights: exactly the schedule-only INSERT the form
+-- sends, by every identity. Refusals must leave no row behind.
+select rh.who('anon');
+select rh.throws('newgame 01 anon cannot create a game', $$${NEWGAME_INSERT}$$, '%permission denied%');
+select rh.who('authenticated', '${USER}', 'aal1');
+select rh.throws('newgame 02 authenticated non-admin cannot create a game', $$${NEWGAME_INSERT}$$, '%row-level security%');
+select rh.who('authenticated', '${ADMIN}', 'aal1');
+select rh.throws('newgame 03 admin without MFA (AAL1) cannot create a game', $$${NEWGAME_INSERT}$$, '%row-level security%');
+select rh.who('authenticated', '${ADMIN}', 'aal2');
+select rh.lives('newgame 04 AAL2 admin creates a game with the schedule-only payload', $$${NEWGAME_INSERT}$$);
+select rh.ok('newgame 05 the created game takes database defaults: upcoming, pending, unlocked, unscored, aggregate',
+  (select status = 'upcoming' and score_status = 'pending' and not locked and home_score is null and away_score is null
+     and scorekeeping_mode = 'aggregate' and stage = 'regular' from public.games where starts_at = '2027-04-28T01:45:00Z'));
+select rh.ok('newgame 06 creating a game writes no stats, participation or history',
+  not exists (select 1 from public.player_stats ps join public.games g on g.id = ps.game_id where g.starts_at = '2027-04-28T01:45:00Z')
+  and not exists (select 1 from public.game_participation gp join public.games g on g.id = gp.game_id where g.starts_at = '2027-04-28T01:45:00Z')
+  and not exists (select 1 from public.game_edit_history h join public.games g on g.id = h.game_id where g.starts_at = '2027-04-28T01:45:00Z'));
+select rh.throws('newgame 07 the client cannot set status or scores on create',
+  $$insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage, status, home_score)
+    values ('${LEAGUE_ID.kickball}', 'kickball', ${tid("Juniper Jacks")}, ${tid("Arroyo Alley Cats")}, '2027-05-04T00:30:00Z', '${VENUE_ID}', 'regular', 'completed', 9)$$, '%permission denied%');
+select rh.throws('newgame 08 a team cannot play itself',
+  $$insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+    values ('${LEAGUE_ID.kickball}', 'kickball', ${tid("Juniper Jacks")}, ${tid("Juniper Jacks")}, '2027-05-04T00:30:00Z', '${VENUE_ID}', 'regular')$$, '%check constraint%');
+select rh.throws('newgame 09 a team from another league is refused',
+  $$insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+    values ('${LEAGUE_ID.kickball}', 'kickball', ${tid("Juniper Jacks")}, ${tid("Bluebird Blitz")}, '2027-05-04T00:30:00Z', '${VENUE_ID}', 'regular')$$, '%Away team is not in this league%');
+select rh.throws('newgame 10 the sport must match the league',
+  $$insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+    values ('${LEAGUE_ID.kickball}', 'flag_football', ${tid("Juniper Jacks")}, ${tid("Arroyo Alley Cats")}, '2027-05-04T00:30:00Z', '${VENUE_ID}', 'regular')$$, '%must match league sport%');
+select rh.ok('newgame 11 refused attempts left exactly one new game', (select count(*) from public.games where starts_at >= '2027-01-01') = 1);
 `);
 
 // ---- 6. aggregate scores ----------------------------------------------------

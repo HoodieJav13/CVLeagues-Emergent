@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
-import { fetchAppState, replaceScorekeepingEvent, submitScore, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
+import { createEntity, fetchAppState, replaceScorekeepingEvent, submitScore, updateEntity, updateTeamIdentity, verifyWaiver } from "./backend";
+import { buildNewGamePayload } from "./newGame";
 
 jest.mock("./supabase", () => ({
   supabase: {
@@ -191,5 +192,32 @@ describe("RPC-only team mutations", () => {
     });
 
     await expect(fetchAppState(true)).rejects.toThrow("fetch free_agents: intake unavailable");
+  });
+});
+
+describe("admin New Game insert", () => {
+  test("inserts schedule columns only; status, scores, lock and audit stay database defaults", async () => {
+    const insert = jest.fn().mockResolvedValue({ error: null });
+    supabase.from.mockReturnValue({ insert });
+    const state = {
+      leagues: [{ id: "l1", name: "League", sport: "kickball", season: "Spring 2027", kind: "league" }],
+      teams: [{ id: "t1", name: "A", league_id: "l1" }, { id: "t2", name: "B", league_id: "l1" }],
+      venues: [{ id: "v1", name: "Park", status: "active" }],
+    };
+    const payload = buildNewGamePayload(state, { league_id: "l1", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-13T19:00", venue_id: "v1" });
+
+    await createEntity("games", payload);
+
+    expect(supabase.from).toHaveBeenCalledWith("games");
+    expect(insert).toHaveBeenCalledTimes(1);
+    const row = insert.mock.calls[0][0];
+    // Exactly Migration 29's authenticated INSERT column grant, minus id/temp_admin_id (database defaults).
+    expect(Object.keys(row).sort()).toEqual(["away_team_id", "home_team_id", "league_id", "sport", "stage", "starts_at", "venue_id"]);
+    expect(row).toEqual({ league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" });
+  });
+
+  test("a rejected insert surfaces through the adapter so the dialog can stay open", async () => {
+    supabase.from.mockReturnValue({ insert: jest.fn().mockResolvedValue({ error: { message: "new row violates row-level security policy" } }) });
+    await expect(createEntity("games", { league_id: "l1" })).rejects.toThrow("create games: new row violates row-level security policy");
   });
 });

@@ -67,6 +67,13 @@ const refuse = (message) => {
   throw new Error(message);
 };
 
+// Mock games get the lifecycle defaults the database applies to a schedule-
+// only INSERT, so a game created in the admin form renders as it would hosted.
+const MOCK_GAME_DEFAULTS = {
+  status: "upcoming", score_status: "pending", home_score: null, away_score: null,
+  periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [],
+};
+
 // Brand avatar palette (mirrors seed.js) for newly created profiles.
 const PLAYER_COLORS = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
 
@@ -482,9 +489,10 @@ export function AppStateProvider({ children }) {
 
   /* ------------------------- ADMIN: GENERIC CRUD ------------------------ */
   const createEntity = useCallback((collection, entity, prefix) => {
+    const row = collection === "games" ? { ...MOCK_GAME_DEFAULTS, ...entity } : entity;
     setState((prev) => ({
       ...prev,
-      [collection]: [...prev[collection], { id: newId(prefix), ...entity }],
+      [collection]: [...prev[collection], { id: newId(prefix), ...row }],
     }));
   }, []);
 

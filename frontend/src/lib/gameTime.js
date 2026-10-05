@@ -136,3 +136,20 @@ export function fromDateTimeLocalValue(value, existingStartsAt = null) {
   }
   return new Date(guess).toISOString();
 }
+
+// True when a league wall time happens twice (the fall-back hour), so the
+// clock face alone cannot say which kickoff instant is meant. Which occurrence
+// a newly entered time should use is an open league decision; callers that
+// cannot ask must refuse rather than pick one silently.
+export function isAmbiguousLeagueTime(value) {
+  let instant;
+  try {
+    instant = fromDateTimeLocalValue(value);
+  } catch {
+    return false; // nonexistent (spring-forward) times are not ambiguous
+  }
+  if (!instant) return false;
+  const ms = new Date(instant).getTime();
+  const HOUR = 60 * 60 * 1000;
+  return toDateTimeLocalValue(ms + HOUR) === value || toDateTimeLocalValue(ms - HOUR) === value;
+}

@@ -121,6 +121,22 @@ describe("mock mode visible hosted parity", () => {
     expect(currentApp.state).toBe(before);
   });
 
+  test("a game created from the admin form starts pending, unlocked, unscored and visible to every surface", async () => {
+    const before = currentApp.state;
+    const payload = { league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2027-04-06T00:30:00.000Z", venue_id: before.venues[0].id, stage: "regular" };
+
+    await act(async () => currentApp.createEntity("games", payload, "g"));
+
+    const created = currentApp.state.games.filter((game) => !before.games.some((old) => old.id === game.id));
+    expect(created).toHaveLength(1);
+    expect(created[0]).toMatchObject({
+      ...payload, status: "upcoming", score_status: "pending", home_score: null, away_score: null,
+      periods: { home: [], away: [] }, locked: false, edit_history: [],
+    });
+    expect(currentApp.state.playerStats).toEqual(before.playerStats);
+    expect(currentApp.state.gameParticipation).toEqual(before.gameParticipation);
+  });
+
   test("free-agent assignment creates or links a player and adds the roster row", async () => {
     const agent = currentApp.state.freeAgents.find((item) => item.id === "fa1");
     const team = currentApp.state.teams.find((item) => item.sport === "kickball");

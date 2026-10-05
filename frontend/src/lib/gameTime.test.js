@@ -1,4 +1,4 @@
-import { fromDateTimeLocalValue, toDateTimeLocalValue, formatGameDateTime } from "./gameTime";
+import { fromDateTimeLocalValue, toDateTimeLocalValue, formatGameDateTime, isAmbiguousLeagueTime } from "./gameTime";
 
 // The admin game editor and playoff scheduler type league-local wall time
 // (America/Denver) into a datetime-local input. The stored instant must not
@@ -37,5 +37,18 @@ describe("fromDateTimeLocalValue", () => {
 
   test("rejects nonexistent spring-forward wall time with actionable validation", () => {
     expect(() => fromDateTimeLocalValue("2026-03-08T02:30")).toThrow(/does not exist.*choose another time/i);
+  });
+});
+
+describe("isAmbiguousLeagueTime", () => {
+  test("flags only the fall-back hour that happens twice", () => {
+    expect(isAmbiguousLeagueTime("2026-11-01T01:30")).toBe(true);
+    expect(isAmbiguousLeagueTime("2026-11-01T01:00")).toBe(true);
+    expect(isAmbiguousLeagueTime("2026-11-01T00:59")).toBe(false);
+    expect(isAmbiguousLeagueTime("2026-11-01T02:00")).toBe(false);
+    expect(isAmbiguousLeagueTime("2026-10-13T19:00")).toBe(false);
+    // A skipped spring-forward time is nonexistent, not ambiguous.
+    expect(isAmbiguousLeagueTime("2026-03-08T02:30")).toBe(false);
+    expect(isAmbiguousLeagueTime("")).toBe(false);
   });
 });
