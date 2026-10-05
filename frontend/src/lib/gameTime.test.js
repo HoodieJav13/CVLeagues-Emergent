@@ -1,0 +1,27 @@
+import { fromDateTimeLocalValue, toDateTimeLocalValue, formatGameDateTime } from "./gameTime";
+
+// The admin game editor and playoff scheduler type league-local wall time
+// (America/Denver) into a datetime-local input. The stored instant must not
+// depend on the zone the admin's browser happens to be set to. Jest cannot
+// switch the process zone mid-run, so run this file under several TZ values
+// (e.g. `TZ=America/Denver CI=true npm test -- gameTime`) to cover that axis.
+describe("fromDateTimeLocalValue", () => {
+  test("resolves league wall time to the right instant", () => {
+    // Daylight time (MDT, UTC-6) and standard time (MST, UTC-7).
+    expect(fromDateTimeLocalValue("2026-10-13T19:00")).toBe("2026-10-14T01:00:00.000Z");
+    expect(fromDateTimeLocalValue("2026-01-13T19:00")).toBe("2026-01-14T02:00:00.000Z");
+    expect(fromDateTimeLocalValue("2026-06-14T10:00")).toBe("2026-06-14T16:00:00.000Z");
+  });
+
+  test("opening and saving the editor unchanged keeps the kickoff", () => {
+    const stored = "2026-09-01T00:30:00.000Z"; // Aug 31, 6:30 PM MDT
+    const edited = fromDateTimeLocalValue(toDateTimeLocalValue(stored));
+    expect(edited).toBe(stored);
+    expect(formatGameDateTime({ starts_at: edited })).toBe("Aug 31 · 6:30 PM");
+  });
+
+  test("rejects incomplete values", () => {
+    expect(fromDateTimeLocalValue("")).toBeNull();
+    expect(fromDateTimeLocalValue("2026-10-13")).toBeNull();
+  });
+});

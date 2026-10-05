@@ -116,13 +116,15 @@ export function fromDateTimeLocalValue(value) {
   if (!datePart || !timePart) return null;
   const [year, month, day] = datePart.split("-").map(Number);
   const [hour, minute] = timePart.split(":").map(Number);
-  // Start from the UTC interpretation, then correct by the zone's offset at
-  // that moment. Two passes settle daylight-saving boundaries correctly.
-  let guess = Date.UTC(year, month - 1, day, hour, minute);
+  // Start from the UTC interpretation, then move by however far the league
+  // clock face at that instant is from the requested one. Two passes settle
+  // daylight-saving boundaries. Wall times are compared as UTC numbers so the
+  // browser's own zone never enters the arithmetic.
+  const target = Date.UTC(year, month - 1, day, hour, minute);
+  let guess = target;
   for (let i = 0; i < 2; i += 1) {
-    const asZoned = new Date(guess).toLocaleString("en-US", { timeZone: LEAGUE_TIME_ZONE });
-    const drift = new Date(asZoned).getTime() - guess;
-    guess -= drift;
+    const [y, m, d, h, min] = toDateTimeLocalValue(guess).split(/[-T:]/).map(Number);
+    guess += target - Date.UTC(y, m - 1, d, h, min);
   }
   return new Date(guess).toISOString();
 }
