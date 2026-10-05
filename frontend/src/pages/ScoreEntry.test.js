@@ -201,6 +201,21 @@ describe("ScoreEntry locked-game UX", () => {
     }));
   });
 
+  test("each side's live total is addressable and the period grid keeps table semantics when regridded on phones", async () => {
+    await act(async () => root.render(<ScoreEntry />));
+    // Phones regrid the table with CSS; explicit roles keep row/column meaning.
+    const table = container.querySelector('[data-testid="score-period-table"]');
+    expect(table?.getAttribute("role")).toBe("table");
+    expect([...table.querySelectorAll("tr")].every((row) => row.getAttribute("role") === "row")).toBe(true);
+    expect(table.querySelector("tbody th")?.getAttribute("role")).toBe("rowheader");
+    // Totals sit beside each team name on phones, so each needs its own hook.
+    expect(container.querySelector('[data-testid="score-away-total"]')?.textContent).toContain("4");
+    expect(container.querySelector('[data-testid="score-home-total"]')?.textContent).toContain("7");
+    // Every period input keeps its unique id and descriptive label.
+    const inputs = [...container.querySelectorAll('[data-testid^="score-away-period-"]')];
+    expect(inputs.map((input) => input.getAttribute("aria-label"))).toEqual(["Away Inning 1", "Away Inning 2", "Away Inning 3", "Away Inning 4", "Away Inning 5"]);
+  });
+
   test("a double-clicked save submits the score once", async () => {
     let finishSave;
     mockSubmitScore.mockImplementation(() => new Promise((resolve) => { finishSave = resolve; }));

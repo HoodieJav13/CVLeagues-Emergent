@@ -369,21 +369,36 @@ function Entry() {
             <Button variant="ghost" onClick={addInning} disabled={!editable} data-testid="score-add-inning" className="h-auto min-h-[44px] -my-1 p-0 gap-1 normal-case tracking-normal text-sm font-semibold text-primary hover:text-primary hover:bg-transparent"><Plus size={14} weight="bold" /> Extra inning</Button>
           )}
         </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="text-muted-foreground text-micro uppercase tracking-widest">
-                <th scope="col" className="text-left font-semibold pb-2"><span className="sr-only">Team</span></th>
-                {periods.home.map((_, i) => <th scope="col" key={i} className="font-semibold pb-2 px-1 text-center min-w-[44px]">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</th>)}
-                <th scope="col" className="font-semibold pb-2 px-2 text-center text-primary">Total</th>
+        {/* Below md the same table regrids per team: name + live Total on top,
+            then period inputs five to a row (extra innings wrap), so every
+            44px input and both totals fit a 320px phone without sideways
+            scrolling. Explicit roles keep the table semantics through the
+            CSS display change; desktop keeps the compact one-row table. */}
+        <CardContent className="overflow-x-auto max-md:overflow-x-visible">
+          <table
+            role="table"
+            data-testid="score-period-table"
+            className="w-full max-md:block"
+            style={{ "--score-cols": Math.min(periods.home.length, periodCount(game.sport)) }}
+          >
+            <thead role="rowgroup" className="max-md:sr-only">
+              <tr role="row" className="text-muted-foreground text-micro uppercase tracking-widest">
+                <th role="columnheader" scope="col" className="text-left font-semibold pb-2"><span className="sr-only">Team</span></th>
+                {periods.home.map((_, i) => <th role="columnheader" scope="col" key={i} className="font-semibold pb-2 px-1 text-center min-w-[44px]">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</th>)}
+                <th role="columnheader" scope="col" className="font-semibold pb-2 px-2 text-center text-primary">Total</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody role="rowgroup" className="max-md:block">
               {[{ side: "away", team: away, total: awayTotal }, { side: "home", team: home, total: homeTotal }].map((r) => (
-                <tr key={r.side} className="border-t border-border">
-                  <th scope="row" className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm">{r.team.name}</th>
+                <tr
+                  key={r.side}
+                  role="row"
+                  className="border-t border-border max-md:grid max-md:grid-cols-[repeat(var(--score-cols),minmax(0,1fr))] max-md:gap-1 max-md:py-3"
+                >
+                  <th role="rowheader" scope="row" className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm text-left max-md:row-start-1 max-md:[grid-column:1/-2] max-md:whitespace-normal max-md:self-center max-md:p-0">{r.team.name}</th>
                   {periods[r.side].map((v, i) => (
-                    <td key={i} className="px-1 py-2">
+                    <td key={i} role="cell" className="px-1 py-2 max-md:flex max-md:flex-col max-md:items-center max-md:p-0">
+                      <span aria-hidden="true" className="md:hidden text-micro uppercase tracking-widest text-muted-foreground mb-0.5">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</span>
                       <input
                         type="number" min="0" value={v}
                         disabled={!editable} readOnly={!editable} aria-readonly={!editable}
@@ -394,7 +409,10 @@ function Entry() {
                       />
                     </td>
                   ))}
-                  <td className="px-2 text-center font-mono-score text-xl font-bold text-primary">{r.total}</td>
+                  <td role="cell" data-testid={`score-${r.side}-total`} className="px-2 text-center font-mono-score text-xl font-bold text-primary max-md:row-start-1 max-md:[grid-column:-2/-1] max-md:self-center max-md:px-0 max-md:flex max-md:flex-col max-md:items-center">
+                    <span aria-hidden="true" className="md:hidden text-micro font-sans font-semibold uppercase tracking-widest text-primary">Total</span>
+                    {r.total}
+                  </td>
                 </tr>
               ))}
             </tbody>
