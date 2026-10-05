@@ -7,6 +7,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 jest.mock("../lib/supabase", () => ({ BACKEND_ENABLED: false }));
 jest.mock("./RoleContext", () => ({ useRole: () => ({ role: "admin" }) }));
 jest.mock("sonner", () => ({ toast: { error: jest.fn(), info: jest.fn() } }));
+const { toast } = require("sonner");
 
 let currentApp;
 function Probe() {
@@ -47,6 +48,57 @@ describe("mock mode visible hosted parity", () => {
     expect(currentApp.state.teamPlayers).toEqual(expect.arrayContaining([
       expect.objectContaining({ team_id: team.id, profile_id: captain.id, season: registration.preferred_season }),
     ]));
+  });
+
+  test("re-approving an archived registration is refused like hosted, without crashing the app", async () => {
+    const registration = currentApp.state.registrations.find((record) => record.id === "reg1");
+    await act(async () => currentApp.updateRegistrationStatus(registration.id, "archived"));
+    const teamsBefore = currentApp.state.teams.length;
+    toast.error.mockClear();
+
+    let refusal;
+    await act(async () => {
+      try { await currentApp.updateRegistrationStatus(registration.id, "approved"); } catch (error) { refusal = error; }
+    });
+
+    expect(refusal?.message).toBe("Registration is already archived.");
+    expect(toast.error).toHaveBeenCalledWith("Registration is already archived.");
+    expect(container.isConnected && currentApp).toBeTruthy(); // provider still mounted
+    expect(currentApp.state.teams).toHaveLength(teamsBefore);
+    expect(currentApp.state.registrations.find((record) => record.id === registration.id).status).toBe("archived");
+  });
+
+  test("re-assigning an already assigned free agent is refused like hosted, without crashing the app", async () => {
+    const team = currentApp.state.teams.find((item) => item.sport === "kickball");
+    await act(async () => currentApp.updateEntity("freeAgents", "fa1", { assigned_team_id: team.id, status: "assigned" }));
+    const rosterBefore = currentApp.state.teamPlayers.length;
+    toast.error.mockClear();
+
+    let refusal;
+    await act(async () => {
+      try { await currentApp.updateEntity("freeAgents", "fa1", { assigned_team_id: team.id, status: "assigned" }); } catch (error) { refusal = error; }
+    });
+
+    expect(refusal?.message).toBe("Free agent is already assigned.");
+    expect(toast.error).toHaveBeenCalledWith("Free agent is already assigned.");
+    expect(currentApp.state.teamPlayers).toHaveLength(rosterBefore);
+  });
+
+  test("assigning a just-submitted free agent gives the new player a visible name", async () => {
+    // Intake rows from the public form carry first/last/display name but no
+    // derived `name`; the created profile must still render as a person.
+    await act(async () => currentApp.addFreeAgent({
+      first_name: "Fiona", last_name: "Freeagent", display_name: null,
+      email: "fiona.freeagent@example.test", phone: "505-555-0151", sports: ["kickball"], consent_to_contact: true,
+    }));
+    const agent = currentApp.state.freeAgents.find((item) => item.email === "fiona.freeagent@example.test");
+    const team = currentApp.state.teams.find((item) => item.sport === "kickball");
+
+    await act(async () => currentApp.updateEntity("freeAgents", agent.id, { assigned_team_id: team.id, status: "assigned" }));
+
+    const profileId = currentApp.state.freeAgents.find((item) => item.id === agent.id).profile_id;
+    const profile = currentApp.state.profiles.find((item) => item.id === profileId);
+    expect(profile).toMatchObject({ first_name: "Fiona", last_name: "Freeagent", name: "Fiona Freeagent" });
   });
 
   test("free-agent assignment creates or links a player and adds the roster row", async () => {

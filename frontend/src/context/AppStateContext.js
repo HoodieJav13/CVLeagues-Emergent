@@ -5,6 +5,7 @@ import * as backend from "../lib/backend";
 import { useRole } from "./RoleContext";
 import { buildSingleElimBracket } from "../lib/brackets";
 import { enforceAggregateValidation } from "../lib/scoreValidation";
+import { freeAgentName } from "../lib/utils";
 import {
   appendPracticeEventMock,
   cancelPracticeSessionMock,
@@ -57,6 +58,14 @@ const scoreSnapshot = (game, playerStats) => ({
       .map((row) => [row.profile_id, { team_id: row.team_id, stats: row.stats }])
   ),
 });
+
+// A mock refusal must reach the caller the way a rejected hosted RPC does:
+// toast plus rejection. Thrown inside a state updater instead, it escapes into
+// the render phase and the error boundary replaces the whole app.
+const refuse = (message) => {
+  toast.error(message);
+  throw new Error(message);
+};
 
 // Brand avatar palette (mirrors seed.js) for newly created profiles.
 const PLAYER_COLORS = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
@@ -241,6 +250,13 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const updateRegistrationStatus = useCallback((id, status) => {
+    const pending = status === "approved" && stateRef.current.registrations.find((record) => record.id === id);
+    if (pending) {
+      const hasLeague = stateRef.current.leagues.some((item) =>
+        item.kind !== "tournament" && item.sport === pending.sport && item.season === pending.preferred_season && item.status !== "archived");
+      if (!hasLeague) refuse("No active league matches this registration's sport and season.");
+      if (!["new", "contacted"].includes(pending.status)) refuse(`Registration is already ${pending.status}.`);
+    }
     setState((prev) => ({
       ...prev,
       ...(() => {
@@ -473,6 +489,10 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const updateEntity = useCallback((collection, id, patch) => {
+    if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
+      const agent = stateRef.current.freeAgents.find((item) => item.id === id);
+      if (["assigned", "archived"].includes(agent?.status)) refuse(`Free agent is already ${agent.status}.`);
+    }
     setState((prev) => {
       if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
         const agent = prev.freeAgents.find((item) => item.id === id);
@@ -502,7 +522,7 @@ export function AppStateProvider({ children }) {
               first_name: agent.first_name || agent.name?.split(" ")[0] || "Player",
               last_name: agent.last_name || agent.name?.split(" ").slice(1).join(" ") || "",
               display_name: agent.display_name || null,
-              name: agent.display_name || agent.name,
+              name: freeAgentName(agent),
               email: agent.email || null,
               phone: agent.phone || null,
               sports: agent.sports || [],
