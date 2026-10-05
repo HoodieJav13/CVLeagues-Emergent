@@ -72,12 +72,14 @@ function Dashboard() {
 
   return (
     <div className="space-y-4 animate-fade-up">
-      <header className="flex items-end justify-between gap-3">
+      {/* Wraps on narrow phones: the badge and hosted Security / Sign Out links
+          drop below the title instead of widening the page. */}
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-micro uppercase tracking-[0.25em] text-primary font-bold">CVF Operations</p>
           <h1 className="font-display uppercase text-display-lg text-foreground mt-1">Admin Console</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-micro uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">
             {BACKEND_ENABLED ? "Season 1 · Live Data" : "Season 1 · Demo Data"}
           </span>
@@ -518,7 +520,9 @@ function TeamsTab({ app }) {
       <p className="text-xs text-muted-foreground">
         A team identity is the permanent name and brand. Enroll it into any season, sport, league, or standalone tournament without copying rosters, payments, games, or stats.
       </p>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="admin-team-identities">
+      {/* grid-cols-1 gives phones a minmax(0,1fr) track: an implicit auto track
+          grows to the longest unbroken name and widens the whole page. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="admin-team-identities">
         {state.teamIdentities.map((identity) => {
           const enrollments = state.teams.filter((team) => team.identity_id === identity.id);
           return (
@@ -528,11 +532,11 @@ function TeamsTab({ app }) {
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: identity.logo_color }} />
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground truncate">{identity.name}</p>
+                      <p className="font-medium text-foreground break-words">{identity.name}</p>
                       <p className="text-micro uppercase tracking-wide text-muted-foreground">Founded {identity.founded || "—"} · {identity.status}</p>
                     </div>
                   </div>
-                  <div className="flex">
+                  <div className="flex shrink-0">
                     <IconBtn onClick={() => openIdentity(identity)} icon={PencilSimple} title="Edit permanent identity" testid={`admin-edit-identity-${identity.id}`} />
                     {identity.status === "active" && <IconBtn onClick={() => openEnroll(identity)} icon={Plus} title="Enroll in another container" testid={`admin-enroll-identity-${identity.id}`} />}
                   </div>

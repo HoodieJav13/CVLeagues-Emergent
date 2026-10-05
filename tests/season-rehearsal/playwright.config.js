@@ -5,7 +5,7 @@ const { defineConfig, devices } = require("@playwright/test");
 
 module.exports = defineConfig({
   testDir: __dirname,
-  testMatch: /(rehearsal|boundaries|ux-capture)\.spec\.js/,
+  testMatch: /(rehearsal|boundaries|ux-capture|score-entry-layout|admin-teams-layout|new-game-season)\.spec\.js/,
   fullyParallel: false,
   retries: 0,
   reporter: [["list"]],
