@@ -109,6 +109,9 @@ function Entry() {
   const [ledgerSelected, setLedgerSelected] = useState(false);
   const [practiceSelected, setPracticeSelected] = useState(false);
   const correctionTriggerRef = useRef(null);
+  // `saving` disables the buttons only after a re-render, and a fast save can
+  // finish between the two clicks of a double-click, so the guard is a ref.
+  const saveInFlightRef = useRef(false);
 
   // (Re)initialize form whenever the selected game changes.
   useEffect(() => {
@@ -202,6 +205,8 @@ function Entry() {
       .map(([profile_id, entry]) => ({ profile_id, team_id: entry.team_id, status: "played" }));
 
   const performSave = async (softOverride = "") => {
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
     setSaving(true);
     try {
       await submitScore({
@@ -226,6 +231,9 @@ function Entry() {
       navigate(`/game/${game.id}`);
     } catch {
       // Backend mode already reports the failure; keep the form open for correction.
+      // Only a failure re-arms saving: success navigates away, and the second
+      // click of a double-click can still land on this page before it does.
+      saveInFlightRef.current = false;
     } finally {
       setSaving(false);
     }

@@ -201,6 +201,50 @@ describe("ScoreEntry locked-game UX", () => {
     }));
   });
 
+  test("a double-clicked save submits the score once", async () => {
+    let finishSave;
+    mockSubmitScore.mockImplementation(() => new Promise((resolve) => { finishSave = resolve; }));
+    await act(async () => root.render(<ScoreEntry />));
+
+    await click(container.querySelector('[data-testid="score-correction-start"]'));
+    await setTextareaValue(document.querySelector('[data-testid="score-correction-reason"]'), "Correcting the final score");
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
+    await click(container.querySelector('[data-testid="score-save"]'));
+    await setTextareaValue(document.querySelector('[data-testid="score-override-reason"]'), "Official book has team-only totals");
+    const confirm = document.querySelector('[data-testid="score-override-confirm"]');
+    await act(async () => {
+      // Both clicks of a double-click land before React re-renders.
+      confirm.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      confirm.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+    await act(async () => finishSave());
+    // A fast save can complete before the second click lands.
+    await act(async () => {
+      confirm.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(mockSubmitScore).toHaveBeenCalledTimes(1);
+  });
+
+  test("a failed save can be retried", async () => {
+    mockSubmitScore.mockRejectedValueOnce(new Error("network down"));
+    await act(async () => root.render(<ScoreEntry />));
+    await click(container.querySelector('[data-testid="score-correction-start"]'));
+    await setTextareaValue(document.querySelector('[data-testid="score-correction-reason"]'), "Correcting the final score");
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await click(container.querySelector('[data-testid="score-save"]'));
+      await setTextareaValue(document.querySelector('[data-testid="score-override-reason"]'), "Official book has team-only totals");
+      await act(async () => {
+        document.querySelector('[data-testid="score-override-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await Promise.resolve();
+      });
+    }
+    expect(mockSubmitScore).toHaveBeenCalledTimes(2);
+  });
+
   test("bridges only the selector-owned game form after a game change", async () => {
     await act(async () => root.render(<ScoreEntry />));
 
