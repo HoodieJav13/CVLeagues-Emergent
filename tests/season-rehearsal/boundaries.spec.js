@@ -20,6 +20,9 @@ async function nav(page, route) {
 async function becomeRole(page, role) {
   await page.getByTestId("role-switcher").click();
   await page.getByTestId(`role-option-${role}`).click();
+  // Wait for the previous menu's exit animation/focus restoration before
+  // opening it again; URL changes alone do not establish that settlement.
+  await expect(page.getByTestId("role-switcher-menu")).toHaveCount(0);
 }
 async function pickOption(page, trigger, name) {
   await trigger.click();
@@ -44,6 +47,9 @@ test.beforeEach(async ({ page }) => {
     });
   }, [STORAGE_KEY, seed]);
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (message) => {
+    if (message.type() === "error" && message.text().startsWith("Render failure reached the boundary.")) errors.push(message.text());
+  });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("role-switcher")).toBeVisible();
 });
@@ -83,13 +89,14 @@ test("duplicate: archived registration re-approval and free-agent re-assignment 
   await page.getByTestId(`admin-reg-approve-${reg.id}`).click();
   await page.waitForTimeout(500);
   await shot(page, "b-reapprove-archived");
-  const crashed1 = await page.getByText(/something went wrong/i).count();
+  await expect(page.getByTestId("app-error-boundary")).toHaveCount(0);
+  await expect(page.getByTestId("role-switcher")).toBeVisible();
+  expect(errors).toEqual([]);
   state = await readState(page);
-  test.info().annotations.push({ type: "reapprove-archived", description: JSON.stringify({ crashed: crashed1 > 0, errors: [...errors], teamsDelta: state.teams.length - teamsBefore }) });
+  test.info().annotations.push({ type: "reapprove-archived", description: JSON.stringify({ errors: [...errors], teamsDelta: state.teams.length - teamsBefore }) });
   expect(state.teams.length, "no duplicate team").toBe(teamsBefore);
 
   // Re-assigning an already assigned free agent.
-  if (crashed1) await page.reload({ waitUntil: "domcontentloaded" }), await becomeRole(page, "admin"), await nav(page, "/admin");
   errors.length = 0;
   state = await readState(page);
   const fa = state.freeAgents.find((a) => a.email === F.FREE_AGENTS[0].email);
@@ -99,11 +106,63 @@ test("duplicate: archived registration re-approval and free-agent re-assignment 
   await page.getByTestId("admin-modal-save").click();
   await page.waitForTimeout(500);
   await shot(page, "b-reassign-free-agent");
-  const crashed2 = await page.getByText(/something went wrong/i).count();
+  await expect(page.getByTestId("app-error-boundary")).toHaveCount(0);
+  await expect(page.getByTestId("role-switcher")).toBeVisible();
+  expect(errors).toEqual([]);
   state = await readState(page);
-  test.info().annotations.push({ type: "reassign-free-agent", description: JSON.stringify({ crashed: crashed2 > 0, errors: [...errors], rosterDelta: state.teamPlayers.length - rosterBefore }) });
+  test.info().annotations.push({ type: "reassign-free-agent", description: JSON.stringify({ errors: [...errors], rosterDelta: state.teamPlayers.length - rosterBefore }) });
   expect(state.teamPlayers.length, "no duplicate roster row").toBe(rosterBefore);
-  expect(crashed1 + crashed2, "app keeps running and reports the refusal").toBe(0);
+});
+
+test("duplicate: Mark contacted cannot make same-team reassignment crash", async ({ page }) => {
+  await becomeRole(page, "admin");
+  await page.getByTestId("admin-tab-agents").click();
+  const before = await readState(page);
+  const fa = before.freeAgents.find((a) => a.email === F.FREE_AGENTS[0].email);
+  expect(fa.status).toBe("assigned"); // assigned by the rehearsal journey
+  await page.getByTestId(`admin-agent-contact-${fa.id}`).click();
+  await expect.poll(async () => (await readState(page)).freeAgents.find((a) => a.id === fa.id).status).toBe("contacted");
+  await page.getByTestId(`admin-agent-assign-${fa.id}`).click();
+  await page.getByTestId("admin-modal-save").click();
+  await expect(page.getByTestId("app-error-boundary")).toHaveCount(0);
+  await expect(page.getByText(/Player is already on this roster/)).toBeVisible();
+  await expect(page.getByTestId("role-switcher")).toBeVisible();
+  await expect(page.getByTestId("admin-modal")).toBeVisible();
+  expect(errors).toEqual([]);
+  const after = await readState(page);
+  expect(after.teamPlayers).toEqual(before.teamPlayers);
+  expect(after.profiles).toEqual(before.profiles);
+  expect(after.freeAgents.find((a) => a.id === fa.id).status).toBe("contacted");
+  await shot(page, "b-contacted-reassignment-refused");
+});
+
+test("kickoff: unchanged later fall-back time keeps its instant", async ({ page }) => {
+  const state = await readState(page);
+  const game = state.games.find((g) => g.id === "rh-fg3");
+  game.starts_at = "2026-11-01T08:30:42.000Z";
+  await page.evaluate(([key, s]) => localStorage.setItem(key, JSON.stringify({ version: 11, state: s })), [STORAGE_KEY, state]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await becomeRole(page, "admin");
+  await page.getByTestId("admin-tab-games").click();
+  await page.getByTestId("admin-edit-game-rh-fg3").click();
+  await expect(page.getByTestId("admin-game-start")).toHaveValue("2026-11-01T01:30");
+  await page.getByTestId("admin-modal-save").click();
+  await expect(page.getByTestId("admin-modal")).toHaveCount(0);
+  expect((await readState(page)).games.find((g) => g.id === game.id).starts_at).toBe(game.starts_at);
+});
+
+test("kickoff: nonexistent spring-forward time keeps the editor open with validation", async ({ page }) => {
+  await becomeRole(page, "admin");
+  await page.getByTestId("admin-tab-games").click();
+  const before = (await readState(page)).games.find((g) => g.id === "rh-fg3");
+  await page.getByTestId("admin-edit-game-rh-fg3").click();
+  await page.getByTestId("admin-game-start").fill("2026-03-08T02:30");
+  await page.getByTestId("admin-modal-save").click();
+  await expect(page.getByText(/does not exist.*choose another time/i)).toBeVisible();
+  await expect(page.getByTestId("admin-modal")).toBeVisible();
+  await expect(page.getByTestId("admin-game-start")).toHaveValue("2026-03-08T02:30");
+  expect((await readState(page)).games.find((g) => g.id === before.id)).toEqual(before);
+  await shot(page, "b-nonexistent-kickoff-refused");
 });
 
 test("duplicate: double-clicking Save on a score records one save", async ({ page }) => {

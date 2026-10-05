@@ -490,24 +490,25 @@ export function AppStateProvider({ children }) {
 
   const updateEntity = useCallback((collection, id, patch) => {
     if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
-      const agent = stateRef.current.freeAgents.find((item) => item.id === id);
-      if (["assigned", "archived"].includes(agent?.status)) refuse(`Free agent is already ${agent.status}.`);
-    }
-    setState((prev) => {
-      if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
+      // Resolve/refuse against the live snapshot before asking React to render.
+      // In particular, Mark contacted does not remove an existing roster row.
+      // Generate stable IDs outside the updater, which React may replay.
+      const newProfileId = newId("p");
+      const rosterId = newId("tp");
+      const planAssignment = (prev) => {
         const agent = prev.freeAgents.find((item) => item.id === id);
         const team = prev.teams.find((item) => item.id === patch.assigned_team_id);
         const league = prev.leagues.find((item) => item.id === team?.league_id);
-        if (!agent || !team || !league) throw new Error("Free agent assignment is missing its player, team, or league.");
-        if (["assigned", "archived"].includes(agent.status)) throw new Error(`Free agent is already ${agent.status}.`);
+        if (!agent || !team || !league) return { error: "Free agent assignment is missing its player, team, or league." };
+        if (["assigned", "archived"].includes(agent.status)) return { error: `Free agent is already ${agent.status}.` };
 
         const emailMatches = agent.email
           ? prev.profiles.filter((profile) => profile.email?.toLowerCase() === agent.email.toLowerCase())
           : [];
         const existing = emailMatches.length === 1 ? emailMatches[0] : null;
-        const profileId = agent.profile_id || existing?.id || newId("p");
+        const profileId = agent.profile_id || existing?.id || newProfileId;
         if (prev.teamPlayers.some((assignment) => assignment.team_id === team.id && assignment.profile_id === profileId && assignment.season === league.season)) {
-          throw new Error(`Player is already on this roster for ${league.season}.`);
+          return { error: `Player is already on this roster for ${league.season}.` };
         }
         const waivers = prev.waivers.map((waiver) =>
           !waiver.profile_id && agent.email && waiver.email?.toLowerCase() === agent.email.toLowerCase()
@@ -530,12 +531,12 @@ export function AppStateProvider({ children }) {
               avatar_color: PLAYER_COLORS[prev.profiles.length % PLAYER_COLORS.length],
               eligibility_status: eligible ? "verified" : "not_verified",
             }];
-        return {
+        return { next: {
           ...prev,
           profiles,
           waivers,
           teamPlayers: [...prev.teamPlayers, {
-            id: newId("tp"),
+            id: rosterId,
             team_id: team.id,
             profile_id: profileId,
             season: league.season,
@@ -548,9 +549,19 @@ export function AppStateProvider({ children }) {
             ...patch,
             profile_id: profileId,
           } : item),
-        };
-      }
-
+        } };
+      };
+      const plan = planAssignment(stateRef.current);
+      if (plan.error) refuse(plan.error);
+      // Match the mock practice actions: reserve the new snapshot immediately
+      // so another assignment in the same turn cannot race the render/effect.
+      stateRef.current = plan.next;
+      // Apply against React's queued state so earlier edits survive. Recheck
+      // without side effects if another queued action has invalidated the plan.
+      setState((prev) => planAssignment(prev).next || prev);
+      return;
+    }
+    setState((prev) => {
       return {
         ...prev,
         [collection]: prev[collection].map((entity) => entity.id === id ? { ...entity, ...patch } : entity),

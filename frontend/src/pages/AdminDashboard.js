@@ -929,12 +929,13 @@ function GamesTab({ app }) {
     if (!modal.starts_at || !modal.venue_id) return toast.error("Start time and venue required");
     try {
       await updateEntity("games", modal.id, {
-        starts_at: fromDateTimeLocalValue(modal.starts_at),
+        starts_at: fromDateTimeLocalValue(modal.starts_at, modal.original_starts_at),
         venue_id: modal.venue_id,
       });
       toast.success("Game updated");
       setModal(null);
-    } catch {
+    } catch (error) {
+      if (error.code === "NONEXISTENT_LEAGUE_TIME") toast.error(error.message);
       // Backend errors are surfaced centrally; keep the form open.
     }
   };
@@ -964,7 +965,7 @@ function GamesTab({ app }) {
               <TableCell><StatusBadge status={g.score_status || "pending"} /></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-0.5 whitespace-nowrap">
-                  <IconBtn onClick={() => setModal({ id: g.id, starts_at: toDateTimeLocalValue(g.starts_at), venue_id: g.venue_id })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
+                  <IconBtn onClick={() => setModal({ id: g.id, starts_at: toDateTimeLocalValue(g.starts_at), original_starts_at: g.starts_at, venue_id: g.venue_id })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
                   <Link to="/score-entry" state={{ game_id: g.id }} title={g.locked ? "Correct final result" : "Enter score"} data-testid={`admin-game-enter-score-${g.id}`} className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 p-2 rounded-lg text-primary hover:bg-white/10 active:bg-white/15 active:scale-[0.92] transition-all inline-flex items-center justify-center">
                     <PencilSimpleLine size={16} weight="bold" />
                   </Link>

@@ -110,8 +110,11 @@ export const toDateTimeLocalValue = (starts_at) => {
 
 // Inverse of the above: a datetime-local string is league-local wall time, so
 // resolve it against the league zone rather than the browser's.
-export function fromDateTimeLocalValue(value) {
+export function fromDateTimeLocalValue(value, existingStartsAt = null) {
   if (!value) return null;
+  // A minute-only editor cannot identify which fall-back occurrence (or which
+  // seconds) the stored instant used. An unchanged clock face is not a reschedule.
+  if (existingStartsAt && value === toDateTimeLocalValue(existingStartsAt)) return existingStartsAt;
   const [datePart, timePart] = value.split("T");
   if (!datePart || !timePart) return null;
   const [year, month, day] = datePart.split("-").map(Number);
@@ -125,6 +128,11 @@ export function fromDateTimeLocalValue(value) {
   for (let i = 0; i < 2; i += 1) {
     const [y, m, d, h, min] = toDateTimeLocalValue(guess).split(/[-T:]/).map(Number);
     guess += target - Date.UTC(y, m - 1, d, h, min);
+  }
+  if (toDateTimeLocalValue(guess) !== value) {
+    const error = new Error("This league time does not exist because the clocks move forward. Choose another time before or after the clock change.");
+    error.code = "NONEXISTENT_LEAGUE_TIME";
+    throw error;
   }
   return new Date(guess).toISOString();
 }

@@ -24,4 +24,18 @@ describe("fromDateTimeLocalValue", () => {
     expect(fromDateTimeLocalValue("")).toBeNull();
     expect(fromDateTimeLocalValue("2026-10-13")).toBeNull();
   });
+
+  test("keeps the later fall-back instant when its wall time is unchanged", () => {
+    const stored = "2026-11-01T08:30:42.000Z";
+    expect(fromDateTimeLocalValue(toDateTimeLocalValue(stored), stored)).toBe(stored);
+  });
+
+  test("converts an edited ordinary time instead of retaining the old kickoff", () => {
+    expect(fromDateTimeLocalValue("2026-11-02T01:30", "2026-11-01T08:30:00.000Z"))
+      .toBe("2026-11-02T08:30:00.000Z");
+  });
+
+  test("rejects nonexistent spring-forward wall time with actionable validation", () => {
+    expect(() => fromDateTimeLocalValue("2026-03-08T02:30")).toThrow(/does not exist.*choose another time/i);
+  });
 });

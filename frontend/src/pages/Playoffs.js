@@ -207,7 +207,10 @@ const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) =
       else await app.schedulePlayoffMatch({ match_id: match.id, starts_at: fromDateTimeLocalValue(form.starts_at), venue_id: form.venue_id });
       toast.success(form.game_id ? "Existing game linked" : "Playoff game scheduled");
       setOpen(false);
-    } catch { /* surfaced centrally */ }
+    } catch (error) {
+      if (error.code === "NONEXISTENT_LEAGUE_TIME") toast.error(error.message);
+      // Backend failures are surfaced centrally; keep the schedule form open.
+    }
   };
   return (
     <Dialog open={open} onOpenChange={setOpen}>
