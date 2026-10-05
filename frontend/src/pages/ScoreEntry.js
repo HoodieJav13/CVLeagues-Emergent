@@ -395,7 +395,7 @@ function Entry() {
                   role="row"
                   className="border-t border-border max-md:grid max-md:grid-cols-[repeat(var(--score-cols),minmax(0,1fr))] max-md:gap-1 max-md:py-3"
                 >
-                  <th role="rowheader" scope="row" className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm text-left max-md:row-start-1 max-md:[grid-column:1/-2] max-md:whitespace-normal max-md:self-center max-md:p-0">{r.team.name}</th>
+                  <th role="rowheader" scope="row" className="py-2 pr-2 font-display uppercase tracking-tight text-foreground whitespace-nowrap text-sm max-md:text-left max-md:row-start-1 max-md:[grid-column:1/-2] max-md:whitespace-normal max-md:self-center max-md:p-0">{r.team.name}</th>
                   {periods[r.side].map((v, i) => (
                     <td key={i} role="cell" className="px-1 py-2 max-md:flex max-md:flex-col max-md:items-center max-md:p-0">
                       <span aria-hidden="true" className="md:hidden text-micro uppercase tracking-widest text-muted-foreground mb-0.5">{game.sport === "kickball" ? i + 1 : `Q${i + 1}`}</span>

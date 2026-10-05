@@ -155,7 +155,7 @@ describe("New Game dialog", () => {
     await fill();
     await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
     expect(app.createEntity).toHaveBeenCalledTimes(1);
-    expect(app.createEntity).toHaveBeenCalledWith("games", validateNewGame(state, ordinary).payload, "g");
+    expect(app.createEntity).toHaveBeenCalledWith("games", { id: expect.any(String), ...validateNewGame(state, ordinary).payload }, "g");
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(toast.success).toHaveBeenCalled();
   });
@@ -208,6 +208,49 @@ describe("New Game dialog", () => {
     await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
     expect(createEntity).toHaveBeenCalledTimes(2);
     expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  test("a retry after an insert that committed but failed to refresh reuses the same game id (no duplicate game)", async () => {
+    // Hosted createEntity = INSERT then full refetch; a refetch failure rejects
+    // even though the row exists. The retry must collide, not insert twice.
+    const createEntity = jest.fn()
+      .mockRejectedValueOnce(new Error("fetch games: network down"))
+      .mockResolvedValueOnce(undefined);
+    await render(createEntity);
+    await fill();
+    await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
+    await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
+    expect(createEntity).toHaveBeenCalledTimes(2);
+    const [first, second] = createEntity.mock.calls.map((call) => call[1]);
+    expect(first.id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(second.id).toBe(first.id);
+    expect({ ...second, id: undefined }).toEqual({ ...validateNewGame(state, ordinary).payload, id: undefined });
+  });
+
+  test("each newly opened form gets a fresh game id", async () => {
+    await render();
+    await fill();
+    await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
+    await act(async () => root.render(<NewGameDialog app={app} open={false} onOpenChange={onOpenChange} />));
+    await act(async () => root.render(<NewGameDialog app={app} open onOpenChange={onOpenChange} />));
+    await fill();
+    await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
+    const ids = app.createEntity.mock.calls.map((call) => call[1].id);
+    expect(ids).toHaveLength(2);
+    expect(ids[0]).not.toBe(ids[1]);
+  });
+
+  test("two refusals with the same wording render without key collisions", async () => {
+    const spy = jest.spyOn(console, "error").mockImplementation(() => {});
+    await render();
+    await fill();
+    // A refresh removes both selected teams: home and away get identical wording.
+    const refreshed = { ...state, teams: state.teams.filter((team) => !["t1", "t2"].includes(team.id)) };
+    await act(async () => root.render(<NewGameDialog app={{ ...app, state: refreshed }} open onOpenChange={onOpenChange} />));
+    await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
+    expect(document.querySelector('[data-testid="new-game-errors"]').textContent).toContain("That team is not an active team");
+    expect(spy.mock.calls.filter((call) => String(call[0]).includes("same key"))).toEqual([]);
+    spy.mockRestore();
   });
 
   test("Cancel writes nothing", async () => {

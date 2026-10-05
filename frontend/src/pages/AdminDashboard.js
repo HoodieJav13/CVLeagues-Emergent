@@ -522,7 +522,8 @@ function TeamsTab({ app }) {
         A team identity is the permanent name and brand. Enroll it into any season, sport, league, or standalone tournament without copying rosters, payments, games, or stats.
       </p>
       {/* grid-cols-1 gives phones a minmax(0,1fr) track: an implicit auto track
-          grows to the longest unbroken name and widens the whole page. */}
+          grows to the longest unbroken name and widens the whole page. Names
+          wrap on phones and keep the original single-line truncation above. */}
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="admin-team-identities">
         {state.teamIdentities.map((identity) => {
           const enrollments = state.teams.filter((team) => team.identity_id === identity.id);
@@ -533,7 +534,7 @@ function TeamsTab({ app }) {
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: identity.logo_color }} />
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground break-words">{identity.name}</p>
+                      <p className="font-medium text-foreground break-words sm:truncate" title={identity.name}>{identity.name}</p>
                       <p className="text-micro uppercase tracking-wide text-muted-foreground">Founded {identity.founded || "—"} · {identity.status}</p>
                     </div>
                   </div>

@@ -204,16 +204,17 @@ describe("admin New Game insert", () => {
       teams: [{ id: "t1", name: "A", league_id: "l1" }, { id: "t2", name: "B", league_id: "l1" }],
       venues: [{ id: "v1", name: "Park", status: "active" }],
     };
-    const payload = buildNewGamePayload(state, { league_id: "l1", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-13T19:00", venue_id: "v1" });
+    // The dialog adds a client id (in the grant) so a retried save is idempotent.
+    const payload = { id: "6f1c1f9e-6c0b-4d5e-9a51-6f3f9a1b2c3d", ...buildNewGamePayload(state, { league_id: "l1", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-13T19:00", venue_id: "v1" }) };
 
     await createEntity("games", payload);
 
     expect(supabase.from).toHaveBeenCalledWith("games");
     expect(insert).toHaveBeenCalledTimes(1);
     const row = insert.mock.calls[0][0];
-    // Exactly Migration 29's authenticated INSERT column grant, minus id/temp_admin_id (database defaults).
-    expect(Object.keys(row).sort()).toEqual(["away_team_id", "home_team_id", "league_id", "sport", "stage", "starts_at", "venue_id"]);
-    expect(row).toEqual({ league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" });
+    // Migration 29's authenticated INSERT column grant, minus temp_admin_id.
+    expect(Object.keys(row).sort()).toEqual(["away_team_id", "home_team_id", "id", "league_id", "sport", "stage", "starts_at", "venue_id"]);
+    expect(row).toEqual({ id: "6f1c1f9e-6c0b-4d5e-9a51-6f3f9a1b2c3d", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" });
   });
 
   test("a rejected insert surfaces through the adapter so the dialog can stay open", async () => {

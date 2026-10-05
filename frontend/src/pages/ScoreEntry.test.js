@@ -209,8 +209,9 @@ describe("ScoreEntry locked-game UX", () => {
     expect([...table.querySelectorAll("tr")].every((row) => row.getAttribute("role") === "row")).toBe(true);
     expect(table.querySelector("tbody th")?.getAttribute("role")).toBe("rowheader");
     // Totals sit beside each team name on phones, so each needs its own hook.
-    expect(container.querySelector('[data-testid="score-away-total"]')?.textContent).toContain("4");
-    expect(container.querySelector('[data-testid="score-home-total"]')?.textContent).toContain("7");
+    const total = (side) => container.querySelector(`[data-testid="score-${side}-total"]`)?.textContent.match(/(\d+)\s*$/)?.[1];
+    expect(total("away")).toBe("4");
+    expect(total("home")).toBe("7");
     // Every period input keeps its unique id and descriptive label.
     const inputs = [...container.querySelectorAll('[data-testid^="score-away-period-"]')];
     expect(inputs.map((input) => input.getAttribute("aria-label"))).toEqual(["Away Inning 1", "Away Inning 2", "Away Inning 3", "Away Inning 4", "Away Inning 5"]);

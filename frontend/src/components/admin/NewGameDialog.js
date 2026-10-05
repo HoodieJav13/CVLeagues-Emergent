@@ -4,7 +4,7 @@ import { Button } from "../ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { BLANK_NEW_GAME as blank, newGameLeagues, newGameTeams, newGameVenues, validateNewGame } from "../../lib/newGame";
+import { BLANK_NEW_GAME as blank, newGameId, newGameLeagues, newGameTeams, newGameVenues, validateNewGame } from "../../lib/newGame";
 import { sportName } from "../../lib/statsConfig";
 
 /* ============================================================================
@@ -39,12 +39,15 @@ export default function NewGameDialog({ app, open, onOpenChange }) {
   // so the guard is a ref that stays latched after success. Reopening (or a
   // failed save) re-arms it.
   const inFlight = useRef(false);
+  // One id per opened form, reused by every retry of that form.
+  const gameId = useRef(null);
 
   useEffect(() => {
     if (open) {
       setForm(blank);
       setErrors({});
       inFlight.current = false;
+      gameId.current = newGameId();
     }
   }, [open]);
 
@@ -67,7 +70,7 @@ export default function NewGameDialog({ app, open, onOpenChange }) {
     inFlight.current = true;
     setSaving(true);
     try {
-      await createEntity("games", result.payload, "g");
+      await createEntity("games", { id: gameId.current, ...result.payload }, "g");
       toast.success("Game scheduled");
       onOpenChange(false);
     } catch (error) {
@@ -79,7 +82,7 @@ export default function NewGameDialog({ app, open, onOpenChange }) {
     }
   };
 
-  const errorList = Object.values(errors);
+  const errorList = Object.entries(errors);
   const invalid = (key) => (errors[key] ? "true" : "false");
   const describedBy = (key) => (errors[key] ? `new-game-${FIELD_IDS[key]}-error` : undefined);
 
@@ -129,7 +132,7 @@ export default function NewGameDialog({ app, open, onOpenChange }) {
           </Field>
           {errorList.length > 0 && (
             <div role="alert" data-testid="new-game-errors" className="rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-xs text-foreground space-y-1">
-              {errorList.map((message) => <p key={message}>{message}</p>)}
+              {errorList.map(([key, message]) => <p key={key}>{message}</p>)}
             </div>
           )}
         </div>

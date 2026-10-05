@@ -147,8 +147,8 @@ select rh.who('authenticated', '${ADMIN}', 'aal2');
 
 // ---- 5. schedule ------------------------------------------------------------
 const isoUtc = (s) => new Date(s).toISOString();
-const NEWGAME_INSERT = `insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
-    values ('${LEAGUE_ID.kickball}', 'kickball', ${tid("Arroyo Alley Cats")}, ${tid("Petroglyph Punters")}, '2027-04-28T01:45:00Z', '${VENUE_ID}', 'regular')`;
+const NEWGAME_INSERT = `insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
+    values ('eeeeeeee-0000-4000-8000-000000000001', '${LEAGUE_ID.kickball}', 'kickball', ${tid("Arroyo Alley Cats")}, ${tid("Petroglyph Punters")}, '2027-04-28T01:45:00Z', '${VENUE_ID}', 'regular')`;
 sql(`${F.GAMES.map((g) => `insert into public.games (id, league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
   values ('${GAME_ID[g.id]}', '${LEAGUE_ID[g.sport]}', '${g.sport}', ${tid(g.home)}, ${tid(g.away)}, '${isoUtc(g.starts_at)}', '${VENUE_ID}', 'regular');`).join("\n")}
 select rh.throws('perm 09 the admin cannot write a score column directly (RPC-only)',
@@ -186,6 +186,7 @@ select rh.throws('newgame 09 a team from another league is refused',
 select rh.throws('newgame 10 the sport must match the league',
   $$insert into public.games (league_id, sport, home_team_id, away_team_id, starts_at, venue_id, stage)
     values ('${LEAGUE_ID.kickball}', 'flag_football', ${tid("Juniper Jacks")}, ${tid("Arroyo Alley Cats")}, '2027-05-04T00:30:00Z', '${VENUE_ID}', 'regular')$$, '%must match league sport%');
+select rh.throws('newgame 12 a retried save with the same client id cannot create a second game', $$${NEWGAME_INSERT}$$, '%duplicate key%');
 select rh.ok('newgame 11 refused attempts left exactly one new game', (select count(*) from public.games where starts_at >= '2027-01-01') = 1);
 `);
 
