@@ -322,6 +322,10 @@ test("Season 1 rehearsal: intake → approval → rosters → schedule → score
     expect(state.games.find((x) => x.id === tie.id)).toMatchObject({ status: "upcoming", score_status: "pending" });
     const kg3 = state.games.find((x) => x.id === "rh-kg3");
     expect(kg3.edit_history.some((e) => e.override_reason)).toBe(true);
+    // A hovered Sonner toast pauses its own dismissal. Move outside it before
+    // the next form scrolls a player control under the fixed notification.
+    await page.mouse.move(0, 0);
+    await expect(page.locator('[data-sonner-toast][data-type="error"]')).toHaveCount(0);
   });
 
   await test.step("7. justified correction of KG2 (winner changes)", async () => {
@@ -335,6 +339,7 @@ test("Season 1 rehearsal: intake → approval → rosters → schedule → score
     await expect(page.getByTestId("score-correction-dialog")).toContainText("correction reason is required");
     await page.getByTestId("score-correction-reason").fill(g.correction_reason);
     await page.getByTestId("score-correction-confirm").click();
+    await expect(page.getByTestId("score-correction-dialog")).toHaveCount(0);
     await page.getByTestId("score-away-period-4").fill(String(g.away_innings[4]));
     const state = await readState(page);
     for (const [name, line] of F.KICKBALL_STATS[g.id].slice(0, 2)) {
