@@ -1,4 +1,4 @@
-import { fromDateTimeLocalValue, isAmbiguousLeagueTime } from "./gameTime";
+import { fromDateTimeLocalValue } from "./gameTime";
 
 /* ============================================================================
  * New regular-season game: options and validation (pure; UI-free so the
@@ -38,17 +38,9 @@ export function validateNewGame(state, form) {
   if (form.home_team_id && form.home_team_id === form.away_team_id) {
     errors.away_team_id = "Home and away must be different teams.";
   }
-  const home = team(form.home_team_id);
-  const away = team(form.away_team_id);
-  if (!errors.home_team_id && !errors.away_team_id && home?.division && away?.division && home.division !== away.division) {
-    errors.away_team_id = `${home.name} plays in division ${home.division} and ${away.name} in division ${away.division}. Choose teams from the same division.`;
-  }
-
   let starts_at = null;
   if (!form.starts_at) errors.starts_at = "Choose the kickoff date and time.";
-  else if (isAmbiguousLeagueTime(form.starts_at)) {
-    errors.starts_at = "That time happens twice the night clocks fall back, and the league has not decided which one counts. Choose a time outside 1:00–1:59 AM that night.";
-  } else {
+  else {
     try {
       starts_at = fromDateTimeLocalValue(form.starts_at);
       if (!starts_at) errors.starts_at = "Choose the kickoff date and time.";

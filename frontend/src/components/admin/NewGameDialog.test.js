@@ -77,8 +77,10 @@ describe("validateNewGame", () => {
     expect(validateNewGame(state, { ...ordinary, venue_id: "v2" }).errors.venue_id).toMatch(/active venue/);
   });
 
-  test("teams in different named divisions cannot be paired", () => {
-    expect(validateNewGame(state, { ...ordinary, away_team_id: "t3" }).errors.away_team_id).toMatch(/division North.*division South/);
+  test("distinct teams in different divisions of the same league can be paired", () => {
+    const result = validateNewGame(state, { ...ordinary, away_team_id: "t3" });
+    expect(result.errors).toEqual({});
+    expect(result.payload).toMatchObject({ league_id: "l1", home_team_id: "t1", away_team_id: "t3" });
   });
 
   test("a kickoff the clocks skip is refused with the converter's guidance", () => {
@@ -87,7 +89,7 @@ describe("validateNewGame", () => {
     expect(errors.starts_at).toMatch(/does not exist/);
   });
 
-  test("a fall-back kickoff that happens twice is refused until the league decides which one counts", () => {
+  test("a fall-back kickoff that happens twice is refused under the approved scheduling policy", () => {
     const { errors, payload } = validateNewGame(state, { ...ordinary, starts_at: "2026-11-01T01:30" });
     expect(payload).toBeNull();
     expect(errors.starts_at).toMatch(/happens twice/);
@@ -158,6 +160,15 @@ describe("New Game dialog", () => {
     expect(app.createEntity).toHaveBeenCalledWith("games", { id: expect.any(String), ...validateNewGame(state, ordinary).payload }, "g");
     expect(onOpenChange).toHaveBeenCalledWith(false);
     expect(toast.success).toHaveBeenCalled();
+  });
+
+  test("cross-division save within one league writes once and closes", async () => {
+    await render();
+    await fill({ ...ordinary, away_team_id: "t3" });
+    await act(async () => document.querySelector('[data-testid="new-game-save"]').click());
+    expect(app.createEntity).toHaveBeenCalledTimes(1);
+    expect(app.createEntity.mock.calls[0][1]).toMatchObject({ league_id: "l1", home_team_id: "t1", away_team_id: "t3" });
+    expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   test("invalid input writes nothing and says what to fix", async () => {

@@ -134,22 +134,22 @@ export function fromDateTimeLocalValue(value, existingStartsAt = null) {
     error.code = "NONEXISTENT_LEAGUE_TIME";
     throw error;
   }
+  const hourMs = 60 * 60 * 1000;
+  if (toDateTimeLocalValue(guess + hourMs) === value || toDateTimeLocalValue(guess - hourMs) === value) {
+    const error = new Error("That league time happens twice when the clocks fall back. Choose a time outside 1:00–1:59 AM that night.");
+    error.code = "AMBIGUOUS_LEAGUE_TIME";
+    throw error;
+  }
   return new Date(guess).toISOString();
 }
 
-// True when a league wall time happens twice (the fall-back hour), so the
-// clock face alone cannot say which kickoff instant is meant. Which occurrence
-// a newly entered time should use is an open league decision; callers that
-// cannot ask must refuse rather than pick one silently.
+// The approved policy refuses newly selected fall-back times. The converter
+// preserves an existing instant only for an unchanged edit, before this check.
 export function isAmbiguousLeagueTime(value) {
-  let instant;
   try {
-    instant = fromDateTimeLocalValue(value);
-  } catch {
-    return false; // nonexistent (spring-forward) times are not ambiguous
+    fromDateTimeLocalValue(value);
+    return false;
+  } catch (error) {
+    return error.code === "AMBIGUOUS_LEAGUE_TIME";
   }
-  if (!instant) return false;
-  const ms = new Date(instant).getTime();
-  const HOUR = 60 * 60 * 1000;
-  return toDateTimeLocalValue(ms + HOUR) === value || toDateTimeLocalValue(ms - HOUR) === value;
 }

@@ -125,7 +125,7 @@ test("fictional season: games created in the New Game form, scored, corrected", 
       leagues: [...base.leagues, LEAGUE],
       venues: [...base.venues, VENUE],
       teamIdentities: [...base.teamIdentities, ...TEAMS.map((t) => ({ id: `${t.id}-i`, name: t.name, logo_color: t.color, founded: "2027", status: "active" }))],
-      teams: [...base.teams, ...TEAMS.map((t) => ({ id: t.id, identity_id: `${t.id}-i`, name: t.name, sport: "kickball", league_id: LEAGUE.id, captain_id: null, logo_color: t.color, founded: "2027", status: "active" }))],
+      teams: [...base.teams, ...TEAMS.map((t) => ({ id: t.id, identity_id: `${t.id}-i`, name: t.name, sport: "kickball", league_id: LEAGUE.id, captain_id: null, division: t.id === "ng-t1" ? "North" : "South", logo_color: t.color, founded: "2027", status: "active" }))],
       profiles: [...base.profiles, ...TEAMS.map((t, i) => ({ id: playerId(t.id), first_name: t.player[0], last_name: t.player[1], name: t.player.join(" "), email: `${t.player.join(".").toLowerCase()}@example.test`, sports: ["kickball"], avatar_color: t.color, eligibility_status: i === 0 ? "verified" : "not_verified" }))],
       teamPlayers: [...base.teamPlayers, ...TEAMS.map((t, i) => ({ id: `ng-tp-${i}`, team_id: t.id, profile_id: playerId(t.id), season: SEASON, jersey_number: 10 + i, position: "", roster_status: "pending_waiver" }))],
     };
@@ -146,7 +146,7 @@ test("fictional season: games created in the New Game form, scored, corrected", 
     await page.getByTestId("new-game-start").fill("2027-03-14T02:30");
     await page.getByTestId("new-game-save").click();
     await expect(page.getByTestId("new-game-errors")).toContainText("does not exist");
-    // A fall-back kickoff that happens twice (2027-11-07): unresolved policy, refused.
+    // A fall-back kickoff that happens twice (2027-11-07): approved policy, refused.
     await page.getByTestId("new-game-start").fill("2027-11-07T01:30");
     await page.getByTestId("new-game-save").click();
     await expect(page.getByTestId("new-game-errors")).toContainText("happens twice");

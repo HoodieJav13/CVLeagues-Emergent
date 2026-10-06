@@ -942,7 +942,7 @@ function GamesTab({ app }) {
       toast.success("Game updated");
       setModal(null);
     } catch (error) {
-      if (error.code === "NONEXISTENT_LEAGUE_TIME") toast.error(error.message);
+      if (["NONEXISTENT_LEAGUE_TIME", "AMBIGUOUS_LEAGUE_TIME"].includes(error.code)) toast.error(error.message);
       // Backend errors are surfaced centrally; keep the form open.
     }
   };
@@ -1013,7 +1013,7 @@ function GamesTab({ app }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title="Edit Game" onSave={save}>
         {modal && (
           <>
-            <ModalField label="Start (league time)"><Input type="datetime-local" data-testid="admin-game-start" value={modal.starts_at} onChange={(e) => setModal({ ...modal, starts_at: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            <ModalField label="Start (league time)"><Input type="datetime-local" data-testid="admin-game-start" value={modal.starts_at} onChange={(e) => setModal({ ...modal, starts_at: e.target.value, original_starts_at: null })} className="bg-surface-sunken border-border" /></ModalField>
             <ModalField label="Venue">
               <select
                 data-testid="admin-game-venue"

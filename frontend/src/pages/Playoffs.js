@@ -208,7 +208,7 @@ const ScheduleDialog = ({ open, setOpen, match, app, compatible, triggerRef }) =
       toast.success(form.game_id ? "Existing game linked" : "Playoff game scheduled");
       setOpen(false);
     } catch (error) {
-      if (error.code === "NONEXISTENT_LEAGUE_TIME") toast.error(error.message);
+      if (["NONEXISTENT_LEAGUE_TIME", "AMBIGUOUS_LEAGUE_TIME"].includes(error.code)) toast.error(error.message);
       // Backend failures are surfaced centrally; keep the schedule form open.
     }
   };

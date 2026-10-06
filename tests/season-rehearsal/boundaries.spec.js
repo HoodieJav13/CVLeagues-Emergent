@@ -151,6 +151,40 @@ test("kickoff: unchanged later fall-back time keeps its instant", async ({ page 
   expect((await readState(page)).games.find((g) => g.id === game.id).starts_at).toBe(game.starts_at);
 });
 
+test("kickoff: ambiguous reschedule refuses a write, then cancellation preserves the game", async ({ page }) => {
+  await becomeRole(page, "admin");
+  await page.getByTestId("admin-tab-games").click();
+  const before = (await readState(page)).games.find((g) => g.id === "rh-fg3");
+  await page.getByTestId("admin-edit-game-rh-fg3").click();
+  await page.getByTestId("admin-game-start").fill("2026-11-01T01:30");
+  await page.getByTestId("admin-modal-save").click();
+  await expect(page.getByText(/happens twice.*choose.*outside/i)).toBeVisible();
+  await expect(page.getByTestId("admin-modal")).toBeVisible();
+  expect((await readState(page)).games.find((g) => g.id === before.id)).toEqual(before);
+  await page.getByTestId("admin-modal").getByRole("button", { name: "Cancel", exact: true }).click();
+  await expect(page.getByTestId("admin-modal")).toHaveCount(0);
+  expect((await readState(page)).games.find((g) => g.id === before.id)).toEqual(before);
+  await shot(page, "b-ambiguous-edit-canceled");
+});
+
+test("kickoff: deliberately reselecting a stored fold time refuses it rather than guessing", async ({ page }) => {
+  const state = await readState(page);
+  const game = state.games.find((g) => g.id === "rh-fg3");
+  game.starts_at = "2026-11-01T08:30:42.000Z";
+  await page.evaluate(([key, s]) => localStorage.setItem(key, JSON.stringify({ version: 11, state: s })), [STORAGE_KEY, state]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await becomeRole(page, "admin");
+  await page.getByTestId("admin-tab-games").click();
+  await page.getByTestId("admin-edit-game-rh-fg3").click();
+  await page.getByTestId("admin-game-start").fill("2026-11-01T03:00");
+  await page.getByTestId("admin-game-start").fill("2026-11-01T01:30");
+  await page.getByTestId("admin-modal-save").click();
+  await expect(page.getByText(/happens twice.*choose.*outside/i)).toBeVisible();
+  await expect(page.getByTestId("admin-modal")).toBeVisible();
+  expect((await readState(page)).games.find((g) => g.id === game.id)).toEqual(game);
+  await shot(page, "b-explicit-fold-selection-refused");
+});
+
 test("kickoff: nonexistent spring-forward time keeps the editor open with validation", async ({ page }) => {
   await becomeRole(page, "admin");
   await page.getByTestId("admin-tab-games").click();

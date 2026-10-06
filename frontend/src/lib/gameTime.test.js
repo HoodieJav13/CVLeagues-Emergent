@@ -30,6 +30,28 @@ describe("fromDateTimeLocalValue", () => {
     expect(fromDateTimeLocalValue(toDateTimeLocalValue(stored), stored)).toBe(stored);
   });
 
+  test.each(["2026-11-01T01:00", "2026-11-01T01:30", "2026-11-01T01:59"]) (
+    "rejects newly selected ambiguous wall time %s with actionable validation", (value) => {
+      expect(() => fromDateTimeLocalValue(value)).toThrow(/happens twice.*choose.*outside/i);
+      try { fromDateTimeLocalValue(value); } catch (error) { expect(error.code).toBe("AMBIGUOUS_LEAGUE_TIME"); }
+    },
+  );
+
+  test("rejects an ambiguous reschedule of an ordinary stored kickoff", () => {
+    expect(() => fromDateTimeLocalValue("2026-11-01T01:30", "2026-10-14T01:00:00.000Z"))
+      .toThrow(/happens twice/i);
+  });
+
+  test.each(["2026-11-01T07:30:12.000Z", "2026-11-01T08:30:42.000Z"]) (
+    "unchanged fold kickoff %s preserves exact instant and seconds", (stored) => {
+      expect(fromDateTimeLocalValue(toDateTimeLocalValue(stored), stored)).toBe(stored);
+    },
+  );
+
+  test("explicit selection without the unchanged-edit anchor rejects a historical fold clock face", () => {
+    expect(() => fromDateTimeLocalValue("2026-11-01T01:30", null)).toThrow(/happens twice/i);
+  });
+
   test("converts an edited ordinary time instead of retaining the old kickoff", () => {
     expect(fromDateTimeLocalValue("2026-11-02T01:30", "2026-11-01T08:30:00.000Z"))
       .toBe("2026-11-02T08:30:00.000Z");
