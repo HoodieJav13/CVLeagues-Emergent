@@ -7,6 +7,7 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 let mockUseApp;
 const mockGeneratePlayoffBracket = jest.fn();
 const mockToastSuccess = jest.fn();
+const mockToastError = jest.fn();
 
 jest.mock("@/lib/utils", () => ({
   cn: (...classes) => classes.filter(Boolean).join(" "),
@@ -32,7 +33,7 @@ jest.mock("react-router-dom", () => ({
 }), { virtual: true });
 
 jest.mock("sonner", () => ({
-  toast: { success: (...args) => mockToastSuccess(...args) },
+  toast: { success: (...args) => mockToastSuccess(...args), error: (...args) => mockToastError(...args) },
 }));
 
 jest.mock("../components/ui/select", () => ({
@@ -130,6 +131,7 @@ describe("Playoffs bracket reveal", () => {
   beforeEach(() => {
     mockGeneratePlayoffBracket.mockClear();
     mockToastSuccess.mockClear();
+    mockToastError.mockClear();
     mockUseApp = useBracketGenerationApp;
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -214,6 +216,48 @@ describe("Playoffs bracket reveal", () => {
     // is that focus DOES return to the trigger, not how many frames it takes.
     await waitForCondition(() => document.activeElement === dialogTrigger);
     expect(document.activeElement).toBe(dialogTrigger);
+  });
+
+  test("nonexistent playoff kickoff reports validation without scheduling a game", async () => {
+    const app = useReadyMatchApp();
+    mockUseApp = () => app;
+    await act(async () => root.render(<Playoffs />));
+    await act(async () => container.querySelector('[data-testid="schedule-match-match-1"]').click());
+    await act(async () => {
+      const input = document.getElementById("playoff-match-start");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, "2026-03-08T02:30");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      const venue = document.getElementById("playoff-match-venue");
+      venue.value = "tv1";
+      venue.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => [...document.querySelectorAll('[role="dialog"] button')].find((button) => button.textContent === "Save").click());
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/does not exist.*choose another time/i));
+    expect(app.schedulePlayoffMatch).not.toHaveBeenCalled();
+    expect(document.getElementById("playoff-match-start")?.value).toBe("2026-03-08T02:30");
+  });
+
+  test("ambiguous playoff kickoff reports validation without scheduling a game", async () => {
+    const app = useReadyMatchApp();
+    mockUseApp = () => app;
+    await act(async () => root.render(<Playoffs />));
+    await act(async () => container.querySelector('[data-testid="schedule-match-match-1"]').click());
+    await act(async () => {
+      const input = document.getElementById("playoff-match-start");
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(input, "2026-11-01T01:30");
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => {
+      const venue = document.getElementById("playoff-match-venue");
+      venue.value = "tv1";
+      venue.dispatchEvent(new Event("change", { bubbles: true }));
+    });
+    await act(async () => [...document.querySelectorAll('[role="dialog"] button')].find((button) => button.textContent === "Save").click());
+    expect(mockToastError).toHaveBeenCalledWith(expect.stringMatching(/happens twice.*choose.*outside/i));
+    expect(app.schedulePlayoffMatch).not.toHaveBeenCalled();
+    expect(document.getElementById("playoff-match-start")?.value).toBe("2026-11-01T01:30");
   });
 });
 

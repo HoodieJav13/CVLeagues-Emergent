@@ -1,0 +1,643 @@
+sh: locale: not found
+2026-10-06 02:46:08.252 UTC [13] WARNING:  no usable system locales were found
+initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+psql:/repo/supabase/migrations/20260702000100_extensions_and_admin.sql:12: NOTICE:  extension "moddatetime" already exists, skipping
+ who 
+-----
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+                                                                           approve_registration                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"team_id": "1f840a4f-831b-4fe6-8950-bce7da0279ba", "identity_id": "4e610677-0fe9-4871-95e9-de37626d0cf0", "captain_profile_id": "cc865777-ebaf-4cf1-9c30-c8944f31ce51"}
+(1 row)
+
+                                                                           approve_registration                                                                           
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"team_id": "dc768aeb-8c62-4892-ab55-f61935e3c801", "identity_id": "378c6f82-7af2-4d04-9e35-28a963e03c87", "captain_profile_id": "8a87d37b-4a06-4bab-8068-c0e839103b4d"}
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+                                      create_team_identity_and_enroll                                       
+------------------------------------------------------------------------------------------------------------
+ {"team_id": "77d0f01d-d35d-4002-b2ed-980af639d481", "identity_id": "87bca9f5-b142-4752-a1ac-1a15ba386840"}
+(1 row)
+
+                                      create_team_identity_and_enroll                                       
+------------------------------------------------------------------------------------------------------------
+ {"team_id": "8c8c5d32-8e4b-4054-a0ae-b6bb6132f8e9", "identity_id": "8ff0bf1c-43e2-4082-ad0c-c4f03ec175eb"}
+(1 row)
+
+                                      create_team_identity_and_enroll                                       
+------------------------------------------------------------------------------------------------------------
+ {"team_id": "b4388c7a-8232-4c0a-9150-a6911a59ab4a", "identity_id": "4214b123-3ed9-4533-9286-fe8c9aeb8930"}
+(1 row)
+
+                                      create_team_identity_and_enroll                                       
+------------------------------------------------------------------------------------------------------------
+ {"team_id": "fd0e6742-d11e-49fa-a663-ff12b3166461", "identity_id": "5030edec-517c-4f67-bf8f-fb6e49e3e204"}
+(1 row)
+
+                                      create_team_identity_and_enroll                                       
+------------------------------------------------------------------------------------------------------------
+ {"team_id": "9f6975cd-cb36-4663-a77b-4e33c71f6953", "identity_id": "70430d90-83ae-4d5f-a828-30f3da038bcd"}
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+                                                                                   assign_free_agent                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"profile_id": "829a79a7-2c0a-44f2-8f27-6b3a0ba9d61e", "roster_status": "pending_waiver", "team_player_id": "0c0c3445-45fc-4e78-b2b9-01be05e037b5", "linked_existing_profile": false}
+(1 row)
+
+                                                                                   assign_free_agent                                                                                   
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"profile_id": "cb440f56-1da6-47be-b312-df1e8e3dcbbe", "roster_status": "pending_waiver", "team_player_id": "413b36a1-e173-4645-bcb0-a50a24be85b0", "linked_existing_profile": false}
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ verify_waiver 
+---------------
+ 
+ 
+ 
+ 
+ 
+ 
+(6 rows)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ set_game_status 
+-----------------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ lives 
+-------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+             submit_score              
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+             submit_score              
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+                                                                                                                                 submit_score                                                                                                                                 
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"warnings": [{"code": "kickball_runs_score", "invId": "INV-05", "values": {"runs": 4, "score": 6, "team_id": "1f840a4f-831b-4fe6-8950-bce7da0279ba"}, "message": "[INV-05] Petroglyph Punters has 4 recorded player runs but an entered score of 6."}], "overridden": true}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+             submit_score              
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+             submit_score              
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+             submit_score              
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+             submit_score              
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+          correct_final_score          
+---------------------------------------
+ {"warnings": [], "overridden": false}
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+                                                                                                                           replace_scorekeeping_event                                                                                                                            
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ {"void": {"event_id": "9d4325f7-af9a-42fe-b3c7-7e328df685ee", "replayed": false, "sequence_number": 4, "pairing_overridden": false}, "replacement": {"event_id": "a3bdf5aa-461c-4635-a611-7251a284bf03", "replayed": false, "sequence_number": 5, "pairing_overridden": false}}
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ throws 
+--------
+ 
+(1 row)
+
+ who 
+-----
+ 
+(1 row)
+
+ n  | result |                                                  name                                                  |                                                     detail                                                     
+----+--------+--------------------------------------------------------------------------------------------------------+----------------------------------------------------------------------------------------------------------------
+  1 | ok     | setup 01 season, two leagues, venue written by the AAL2 admin                                          | 
+  2 | ok     | perm 01 anon cannot create a league                                                                    | permission denied for table leagues
+  3 | ok     | perm 02 anon cannot insert a registration directly (Turnstile endpoint only)                           | permission denied for table team_registrations
+  4 | ok     | perm 03 authenticated non-admin cannot create a league                                                 | new row violates row-level security policy for table "leagues"
+  5 | ok     | perm 04 admin at AAL1 (no MFA) cannot create a league                                                  | new row violates row-level security policy for table "leagues"
+  6 | ok     | perm 05 service_role can insert intake but cannot read it back                                         | permission denied for table team_registrations
+  7 | ok     | perm 06 non-admin cannot approve a registration                                                        | Admin only
+  8 | ok     | perm 07 AAL1 admin cannot approve a registration                                                       | Admin only
+  9 | ok     | dup 01 approving the same registration twice is refused                                                | Registration is already approved — only new/contacted submissions can be approved.
+ 10 | ok     | intake 01 each approval created identity, enrollment, captain profile, and roster row                  | 
+ 11 | ok     | perm 08 team rows are RPC-only even for the AAL2 admin                                                 | permission denied for table teams
+ 12 | ok     | dup 02 assigning the same free agent twice is refused                                                  | Free agent is already assigned.
+ 13 | ok     | dup 03 the same player cannot be rostered twice for a season                                           | duplicate key value violates unique constraint "team_players_team_id_profile_id_season_key"
+ 14 | ok     | roster 01 every rehearsal team carries exactly three players for Rehearsal 2027                        | 
+ 15 | ok     | waiver 01 verification flips exactly those roster rows to eligible                                     | 
+ 16 | ok     | waiver 02 the admin has no grant to edit a signed waiver                                               | permission denied for table waivers
+ 17 | ok     | waiver 03 even the table owner cannot rewrite a signature (append-only trigger)                        | Waivers are append-only: signature fields never change. Re-signing creates a new row.
+ 18 | ok     | perm 09 the admin cannot write a score column directly (RPC-only)                                      | permission denied for table games
+ 19 | ok     | schedule 01 KG5 is stored as a 10:00 AM league-time day game                                           | 
+ 20 | ok     | newgame 01 anon cannot create a game                                                                   | permission denied for table games
+ 21 | ok     | newgame 02 authenticated non-admin cannot create a game                                                | new row violates row-level security policy for table "games"
+ 22 | ok     | newgame 03 admin without MFA (AAL1) cannot create a game                                               | new row violates row-level security policy for table "games"
+ 23 | ok     | newgame 04 AAL2 admin creates a game with the schedule-only payload                                    | 
+ 24 | ok     | newgame 05 the created game takes database defaults: upcoming, pending, unlocked, unscored, aggregate  | 
+ 25 | ok     | newgame 06 creating a game writes no stats, participation or history                                   | 
+ 26 | ok     | newgame 07 the client cannot set status or scores on create                                            | permission denied for table games
+ 27 | ok     | newgame 08 a team cannot play itself                                                                   | new row for relation "games" violates check constraint "games_check"
+ 28 | ok     | newgame 09 a team from another league is refused                                                       | Away team is not in this league
+ 29 | ok     | newgame 10 the sport must match the league                                                             | Game sport (flag_football) must match league sport (kickball)
+ 30 | ok     | newgame 12 a retried save with the same client id cannot create a second game                          | duplicate key value violates unique constraint "games_pkey"
+ 31 | ok     | newgame 11 refused attempts left exactly one new game                                                  | 
+ 32 | ok     | soft 01 rh-kg3 SOFT warning without a reason is refused                                                | SOFT validation requires an override reason: [INV-05] Petroglyph Punters has 4 recorded player runs but an ent
+ 33 | ok     | hard 01 a kickball tie is a HARD block                                                                 | [INV-08] Season 1 final scores cannot be tied; received 3-3
+ 34 | ok     | hard 02 flag football needs exactly four quarters                                                      | [INV-10] Flag football requires four quarters; received 3.
+ 35 | ok     | hard 03 a stat line for a player outside the game is refused                                           | [INV-11] Player 974ee5d2-896f-40b0-a2e1-272bb956c128 team fd0e6742-d11e-49fa-a663-ff12b3166461 is not in game 
+ 36 | ok     | lock 01 a final game cannot be re-scored through submit_score                                          | [INV-24] Game dddddddd-0000-4000-8000-000000000001 is final and locked; use correct_final_score with a reason.
+ 37 | ok     | lock 02 every played rehearsal game is completed, final, and locked                                    | 
+ 38 | ok     | soft 02 KG3 history keeps the override reason and its warning                                          | 
+ 39 | ok     | perm 10 AAL1 admin cannot correct a final score                                                        | Admin only
+ 40 | ok     | corr 01 a correction without a reason is refused                                                       | [INV-24] Correcting a final game requires a reason.
+ 41 | ok     | corr 02 KG2 is 5-4 Jacks, still final and locked                                                       | 
+ 42 | ok     | corr 03 audit trail is Score saved → Marked final → Final score corrected with reason and before/after | 
+ 43 | ok     | corr 04 corrected stat lines replaced the originals (Juno Juniper KG2 runs = 3)                        | 
+ 44 | ok     | corr 05 edit history is append-only                                                                    | permission denied for table game_edit_history
+ 45 | ok     | record kickball Petroglyph Punters is 2-1                                                              | 
+ 46 | ok     | record kickball Juniper Jacks is 2-1                                                                   | 
+ 47 | ok     | record kickball Volcano Vista Kicks is 1-1                                                             | 
+ 48 | ok     | record kickball Arroyo Alley Cats is 0-2                                                               | 
+ 49 | ok     | record flag_football Sandstone Sprinters is 2-0                                                        | 
+ 50 | ok     | record flag_football Turquoise Trail Flaggers is 0-1                                                   | 
+ 51 | ok     | record flag_football Bluebird Blitz is 0-1                                                             | 
+ 52 | ok     | public 01 anon reads the corrected scoreboard                                                          | 
+ 53 | ok     | public 02 anon cannot read profile PII                                                                 | permission denied for table profiles
+ 54 | ok     | public 03 the public profile view exposes names without contact fields                                 | 
+ 55 | ok     | ledger 01 AAL1 admin cannot start a scorekeeping session                                               | Admin only
+ 56 | ok     | ledger 02 a second open session for the same game is refused                                           | [INV-20] Game dddddddd-0000-4000-8000-000000000010 already has active session 79dbb8bf-877b-4737-914f-7dbe3ec6
+ 57 | ok     | ledger 03 aggregate submit_score cannot touch a ledger game                                            | [INV-30][INV-39] Ledger projections may change only through ledger finalization.
+ 58 | ok     | dup 04 an identical retried event is replayed, not duplicated                                          | 
+ 59 | ok     | ledger 04 finalization projects 12-6 Flaggers, final and locked                                        | 
+ 60 | ok     | ledger 05 projected player_stats carry the attributed touchdowns                                       | 
+ 61 | ok     | ledger 06 correction moves the TD to Uri: Uri 2 tds, Tess none, score unchanged and locked             | 
+ 62 | ok     | ledger 07 history is system output: finalized then corrected                                           | 
+ 63 | ok     | ledger 08 aggregate correct_final_score is refused for a ledger game                                   | [INV-30][INV-39] Ledger projections may change only through ledger finalization.
+ 64 | ok     | ledger 09 ledger events are append-only                                                                | permission denied for table scorekeeping_events
+(64 rows)
+
+ total | passed | failed 
+-------+--------+--------
+    64 |     64 |      0
+(1 row)
+

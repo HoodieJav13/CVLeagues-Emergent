@@ -557,6 +557,21 @@ export async function createEntity(collection, entity) {
     row = { ...entity, created_by: data.user?.id || null };
   }
   const { error } = await supabase.from(TABLES[collection]).insert(row);
+  // New Game keeps one client id per opened form. If INSERT committed but the
+  // provider's subsequent refresh failed, retry can confirm that exact schedule
+  // without another row or any update to an existing (possibly historical) game.
+  const scheduleColumns = ["id", "league_id", "sport", "home_team_id", "away_team_id", "starts_at", "venue_id", "stage"];
+  if (collection === "games" && error?.code === "23505"
+      && Object.keys(row).length === scheduleColumns.length
+      && scheduleColumns.every((key) => row[key] != null)) {
+    const { data, error: readError } = await supabase.from("games")
+      .select(scheduleColumns.join(",")).eq("id", row.id).maybeSingle();
+    fail(readError, "confirm saved game");
+    const matches = data && scheduleColumns.every((key) => key === "starts_at"
+      ? new Date(data[key]).getTime() === new Date(row[key]).getTime()
+      : data[key] === row[key]);
+    if (matches) return;
+  }
   fail(error, `create ${collection}`);
 }
 

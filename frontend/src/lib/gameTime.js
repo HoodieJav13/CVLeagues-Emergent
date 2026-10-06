@@ -110,19 +110,46 @@ export const toDateTimeLocalValue = (starts_at) => {
 
 // Inverse of the above: a datetime-local string is league-local wall time, so
 // resolve it against the league zone rather than the browser's.
-export function fromDateTimeLocalValue(value) {
+export function fromDateTimeLocalValue(value, existingStartsAt = null) {
   if (!value) return null;
+  // A minute-only editor cannot identify which fall-back occurrence (or which
+  // seconds) the stored instant used. An unchanged clock face is not a reschedule.
+  if (existingStartsAt && value === toDateTimeLocalValue(existingStartsAt)) return existingStartsAt;
   const [datePart, timePart] = value.split("T");
   if (!datePart || !timePart) return null;
   const [year, month, day] = datePart.split("-").map(Number);
   const [hour, minute] = timePart.split(":").map(Number);
-  // Start from the UTC interpretation, then correct by the zone's offset at
-  // that moment. Two passes settle daylight-saving boundaries correctly.
-  let guess = Date.UTC(year, month - 1, day, hour, minute);
+  // Start from the UTC interpretation, then move by however far the league
+  // clock face at that instant is from the requested one. Two passes settle
+  // daylight-saving boundaries. Wall times are compared as UTC numbers so the
+  // browser's own zone never enters the arithmetic.
+  const target = Date.UTC(year, month - 1, day, hour, minute);
+  let guess = target;
   for (let i = 0; i < 2; i += 1) {
-    const asZoned = new Date(guess).toLocaleString("en-US", { timeZone: LEAGUE_TIME_ZONE });
-    const drift = new Date(asZoned).getTime() - guess;
-    guess -= drift;
+    const [y, m, d, h, min] = toDateTimeLocalValue(guess).split(/[-T:]/).map(Number);
+    guess += target - Date.UTC(y, m - 1, d, h, min);
+  }
+  if (toDateTimeLocalValue(guess) !== value) {
+    const error = new Error("This league time does not exist because the clocks move forward. Choose another time before or after the clock change.");
+    error.code = "NONEXISTENT_LEAGUE_TIME";
+    throw error;
+  }
+  const hourMs = 60 * 60 * 1000;
+  if (toDateTimeLocalValue(guess + hourMs) === value || toDateTimeLocalValue(guess - hourMs) === value) {
+    const error = new Error("That league time happens twice when the clocks fall back. Choose a time outside 1:00–1:59 AM that night.");
+    error.code = "AMBIGUOUS_LEAGUE_TIME";
+    throw error;
   }
   return new Date(guess).toISOString();
+}
+
+// The approved policy refuses newly selected fall-back times. The converter
+// preserves an existing instant only for an unchanged edit, before this check.
+export function isAmbiguousLeagueTime(value) {
+  try {
+    fromDateTimeLocalValue(value);
+    return false;
+  } catch (error) {
+    return error.code === "AMBIGUOUS_LEAGUE_TIME";
+  }
 }

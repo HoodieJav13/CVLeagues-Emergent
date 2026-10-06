@@ -201,6 +201,66 @@ describe("ScoreEntry locked-game UX", () => {
     }));
   });
 
+  test("each side's live total is addressable and the period grid keeps table semantics when regridded on phones", async () => {
+    await act(async () => root.render(<ScoreEntry />));
+    // Phones regrid the table with CSS; explicit roles keep row/column meaning.
+    const table = container.querySelector('[data-testid="score-period-table"]');
+    expect(table?.getAttribute("role")).toBe("table");
+    expect([...table.querySelectorAll("tr")].every((row) => row.getAttribute("role") === "row")).toBe(true);
+    expect(table.querySelector("tbody th")?.getAttribute("role")).toBe("rowheader");
+    // Totals sit beside each team name on phones, so each needs its own hook.
+    const total = (side) => container.querySelector(`[data-testid="score-${side}-total"]`)?.textContent.match(/(\d+)\s*$/)?.[1];
+    expect(total("away")).toBe("4");
+    expect(total("home")).toBe("7");
+    // Every period input keeps its unique id and descriptive label.
+    const inputs = [...container.querySelectorAll('[data-testid^="score-away-period-"]')];
+    expect(inputs.map((input) => input.getAttribute("aria-label"))).toEqual(["Away Inning 1", "Away Inning 2", "Away Inning 3", "Away Inning 4", "Away Inning 5"]);
+  });
+
+  test("a double-clicked save submits the score once", async () => {
+    let finishSave;
+    mockSubmitScore.mockImplementation(() => new Promise((resolve) => { finishSave = resolve; }));
+    await act(async () => root.render(<ScoreEntry />));
+
+    await click(container.querySelector('[data-testid="score-correction-start"]'));
+    await setTextareaValue(document.querySelector('[data-testid="score-correction-reason"]'), "Correcting the final score");
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
+    await click(container.querySelector('[data-testid="score-save"]'));
+    await setTextareaValue(document.querySelector('[data-testid="score-override-reason"]'), "Official book has team-only totals");
+    const confirm = document.querySelector('[data-testid="score-override-confirm"]');
+    await act(async () => {
+      // Both clicks of a double-click land before React re-renders.
+      confirm.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      confirm.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+    await act(async () => finishSave());
+    // A fast save can complete before the second click lands.
+    await act(async () => {
+      confirm.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      await Promise.resolve();
+    });
+
+    expect(mockSubmitScore).toHaveBeenCalledTimes(1);
+  });
+
+  test("a failed save can be retried", async () => {
+    mockSubmitScore.mockRejectedValueOnce(new Error("network down"));
+    await act(async () => root.render(<ScoreEntry />));
+    await click(container.querySelector('[data-testid="score-correction-start"]'));
+    await setTextareaValue(document.querySelector('[data-testid="score-correction-reason"]'), "Correcting the final score");
+    await click(document.querySelector('[data-testid="score-correction-confirm"]'));
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      await click(container.querySelector('[data-testid="score-save"]'));
+      await setTextareaValue(document.querySelector('[data-testid="score-override-reason"]'), "Official book has team-only totals");
+      await act(async () => {
+        document.querySelector('[data-testid="score-override-confirm"]').dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        await Promise.resolve();
+      });
+    }
+    expect(mockSubmitScore).toHaveBeenCalledTimes(2);
+  });
+
   test("bridges only the selector-owned game form after a game change", async () => {
     await act(async () => root.render(<ScoreEntry />));
 

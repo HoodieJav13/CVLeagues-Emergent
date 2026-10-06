@@ -38,6 +38,7 @@ import { signOutAdmin } from "../lib/backend";
 import VenuesTab from "../components/admin/VenuesTab";
 import PaymentsTab from "../components/admin/PaymentsTab";
 import HallOfFameTab from "../components/admin/HallOfFameTab";
+import NewGameDialog from "../components/admin/NewGameDialog";
 
 // FINAL DRAFT — Season 1 is admin-only (CLAUDE.md): players are profile
 // records, NOT user accounts. Deferred duplicate-detection and temp-admin
@@ -72,12 +73,14 @@ function Dashboard() {
 
   return (
     <div className="space-y-4 animate-fade-up">
-      <header className="flex items-end justify-between gap-3">
+      {/* Wraps on narrow phones: the badge and hosted Security / Sign Out links
+          drop below the title instead of widening the page. */}
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="text-micro uppercase tracking-[0.25em] text-primary font-bold">CVF Operations</p>
           <h1 className="font-display uppercase text-display-lg text-foreground mt-1">Admin Console</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-micro uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">
             {BACKEND_ENABLED ? "Season 1 · Live Data" : "Season 1 · Demo Data"}
           </span>
@@ -518,7 +521,10 @@ function TeamsTab({ app }) {
       <p className="text-xs text-muted-foreground">
         A team identity is the permanent name and brand. Enroll it into any season, sport, league, or standalone tournament without copying rosters, payments, games, or stats.
       </p>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="admin-team-identities">
+      {/* grid-cols-1 gives phones a minmax(0,1fr) track: an implicit auto track
+          grows to the longest unbroken name and widens the whole page. Names
+          wrap on phones and keep the original single-line truncation above. */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3" data-testid="admin-team-identities">
         {state.teamIdentities.map((identity) => {
           const enrollments = state.teams.filter((team) => team.identity_id === identity.id);
           return (
@@ -528,11 +534,11 @@ function TeamsTab({ app }) {
                   <div className="flex items-center gap-2 min-w-0">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: identity.logo_color }} />
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground truncate">{identity.name}</p>
+                      <p className="font-medium text-foreground break-words sm:truncate" title={identity.name}>{identity.name}</p>
                       <p className="text-micro uppercase tracking-wide text-muted-foreground">Founded {identity.founded || "—"} · {identity.status}</p>
                     </div>
                   </div>
-                  <div className="flex">
+                  <div className="flex shrink-0">
                     <IconBtn onClick={() => openIdentity(identity)} icon={PencilSimple} title="Edit permanent identity" testid={`admin-edit-identity-${identity.id}`} />
                     {identity.status === "active" && <IconBtn onClick={() => openEnroll(identity)} icon={Plus} title="Enroll in another container" testid={`admin-enroll-identity-${identity.id}`} />}
                   </div>
@@ -924,24 +930,27 @@ function GamesTab({ app }) {
   const { state, assignTempAdmin, updateEntity, lockGame, setGameStatus } = app;
   const [modal, setModal] = useState(null); // {id, starts_at, venue_id}
   const [rescheduleFor, setRescheduleFor] = useState(null); // game_id
+  const [creating, setCreating] = useState(false);
 
   const save = async () => {
     if (!modal.starts_at || !modal.venue_id) return toast.error("Start time and venue required");
     try {
       await updateEntity("games", modal.id, {
-        starts_at: fromDateTimeLocalValue(modal.starts_at),
+        starts_at: fromDateTimeLocalValue(modal.starts_at, modal.original_starts_at),
         venue_id: modal.venue_id,
       });
       toast.success("Game updated");
       setModal(null);
-    } catch {
+    } catch (error) {
+      if (["NONEXISTENT_LEAGUE_TIME", "AMBIGUOUS_LEAGUE_TIME"].includes(error.code)) toast.error(error.message);
       // Backend errors are surfaced centrally; keep the form open.
     }
   };
 
   return (
     <div className="space-y-3">
-      <SectionTitle title="Schedule / Games" count={state.games.length} />
+      <SectionTitle title="Schedule / Games" count={state.games.length} action={<AddBtn onClick={() => setCreating(true)} label="New Game" testid="admin-add-game" />} />
+      <NewGameDialog app={app} open={creating} onOpenChange={setCreating} />
       <AdminTable testid="admin-games-table" head={["Date / Time", "Sport", "League", "Matchup", "Location", "Status", "Score", "Actions"]}>
         {state.games.length === 0 ? (
           <EmptyRow colSpan={8}>No games scheduled yet.</EmptyRow>
@@ -964,7 +973,7 @@ function GamesTab({ app }) {
               <TableCell><StatusBadge status={g.score_status || "pending"} /></TableCell>
               <TableCell>
                 <div className="flex items-center justify-end gap-0.5 whitespace-nowrap">
-                  <IconBtn onClick={() => setModal({ id: g.id, starts_at: toDateTimeLocalValue(g.starts_at), venue_id: g.venue_id })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
+                  <IconBtn onClick={() => setModal({ id: g.id, starts_at: toDateTimeLocalValue(g.starts_at), original_starts_at: g.starts_at, venue_id: g.venue_id })} icon={PencilSimple} title={g.locked ? "Final game — schedule editing is locked" : "Edit game"} testid={`admin-edit-game-${g.id}`} disabled={g.locked} />
                   <Link to="/score-entry" state={{ game_id: g.id }} title={g.locked ? "Correct final result" : "Enter score"} data-testid={`admin-game-enter-score-${g.id}`} className="min-h-11 min-w-11 md:min-h-9 md:min-w-9 p-2 rounded-lg text-primary hover:bg-white/10 active:bg-white/15 active:scale-[0.92] transition-all inline-flex items-center justify-center">
                     <PencilSimpleLine size={16} weight="bold" />
                   </Link>
@@ -1004,7 +1013,7 @@ function GamesTab({ app }) {
       <Modal open={!!modal} onClose={() => setModal(null)} title="Edit Game" onSave={save}>
         {modal && (
           <>
-            <ModalField label="Start (league time)"><Input type="datetime-local" data-testid="admin-game-start" value={modal.starts_at} onChange={(e) => setModal({ ...modal, starts_at: e.target.value })} className="bg-surface-sunken border-border" /></ModalField>
+            <ModalField label="Start (league time)"><Input type="datetime-local" data-testid="admin-game-start" value={modal.starts_at} onChange={(e) => setModal({ ...modal, starts_at: e.target.value, original_starts_at: null })} className="bg-surface-sunken border-border" /></ModalField>
             <ModalField label="Venue">
               <select
                 data-testid="admin-game-venue"

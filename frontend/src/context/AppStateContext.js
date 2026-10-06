@@ -5,6 +5,7 @@ import * as backend from "../lib/backend";
 import { useRole } from "./RoleContext";
 import { buildSingleElimBracket } from "../lib/brackets";
 import { enforceAggregateValidation } from "../lib/scoreValidation";
+import { freeAgentName } from "../lib/utils";
 import {
   appendPracticeEventMock,
   cancelPracticeSessionMock,
@@ -57,6 +58,21 @@ const scoreSnapshot = (game, playerStats) => ({
       .map((row) => [row.profile_id, { team_id: row.team_id, stats: row.stats }])
   ),
 });
+
+// A mock refusal must reach the caller the way a rejected hosted RPC does:
+// toast plus rejection. Thrown inside a state updater instead, it escapes into
+// the render phase and the error boundary replaces the whole app.
+const refuse = (message) => {
+  toast.error(message);
+  throw new Error(message);
+};
+
+// Mock games get the lifecycle defaults the database applies to a schedule-
+// only INSERT, so a game created in the admin form renders as it would hosted.
+const MOCK_GAME_DEFAULTS = {
+  status: "upcoming", score_status: "pending", home_score: null, away_score: null,
+  periods: { home: [], away: [] }, temp_admin_id: null, locked: false, edit_history: [],
+};
 
 // Brand avatar palette (mirrors seed.js) for newly created profiles.
 const PLAYER_COLORS = ["#22d3ee", "#f97316", "#a855f7", "#10b981", "#ef4444", "#facc15", "#3b82f6", "#ec4899", "#14b8a6", "#f59e0b"];
@@ -241,6 +257,13 @@ export function AppStateProvider({ children }) {
   }, []);
 
   const updateRegistrationStatus = useCallback((id, status) => {
+    const pending = status === "approved" && stateRef.current.registrations.find((record) => record.id === id);
+    if (pending) {
+      const hasLeague = stateRef.current.leagues.some((item) =>
+        item.kind !== "tournament" && item.sport === pending.sport && item.season === pending.preferred_season && item.status !== "archived");
+      if (!hasLeague) refuse("No active league matches this registration's sport and season.");
+      if (!["new", "contacted"].includes(pending.status)) refuse(`Registration is already ${pending.status}.`);
+    }
     setState((prev) => ({
       ...prev,
       ...(() => {
@@ -466,28 +489,34 @@ export function AppStateProvider({ children }) {
 
   /* ------------------------- ADMIN: GENERIC CRUD ------------------------ */
   const createEntity = useCallback((collection, entity, prefix) => {
+    const row = collection === "games" ? { ...MOCK_GAME_DEFAULTS, ...entity } : entity;
     setState((prev) => ({
       ...prev,
-      [collection]: [...prev[collection], { id: newId(prefix), ...entity }],
+      [collection]: [...prev[collection], { id: newId(prefix), ...row }],
     }));
   }, []);
 
   const updateEntity = useCallback((collection, id, patch) => {
-    setState((prev) => {
-      if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
+    if (collection === "freeAgents" && patch.assigned_team_id && patch.status === "assigned") {
+      // Resolve/refuse against the live snapshot before asking React to render.
+      // In particular, Mark contacted does not remove an existing roster row.
+      // Generate stable IDs outside the updater, which React may replay.
+      const newProfileId = newId("p");
+      const rosterId = newId("tp");
+      const planAssignment = (prev) => {
         const agent = prev.freeAgents.find((item) => item.id === id);
         const team = prev.teams.find((item) => item.id === patch.assigned_team_id);
         const league = prev.leagues.find((item) => item.id === team?.league_id);
-        if (!agent || !team || !league) throw new Error("Free agent assignment is missing its player, team, or league.");
-        if (["assigned", "archived"].includes(agent.status)) throw new Error(`Free agent is already ${agent.status}.`);
+        if (!agent || !team || !league) return { error: "Free agent assignment is missing its player, team, or league." };
+        if (["assigned", "archived"].includes(agent.status)) return { error: `Free agent is already ${agent.status}.` };
 
         const emailMatches = agent.email
           ? prev.profiles.filter((profile) => profile.email?.toLowerCase() === agent.email.toLowerCase())
           : [];
         const existing = emailMatches.length === 1 ? emailMatches[0] : null;
-        const profileId = agent.profile_id || existing?.id || newId("p");
+        const profileId = agent.profile_id || existing?.id || newProfileId;
         if (prev.teamPlayers.some((assignment) => assignment.team_id === team.id && assignment.profile_id === profileId && assignment.season === league.season)) {
-          throw new Error(`Player is already on this roster for ${league.season}.`);
+          return { error: `Player is already on this roster for ${league.season}.` };
         }
         const waivers = prev.waivers.map((waiver) =>
           !waiver.profile_id && agent.email && waiver.email?.toLowerCase() === agent.email.toLowerCase()
@@ -502,7 +531,7 @@ export function AppStateProvider({ children }) {
               first_name: agent.first_name || agent.name?.split(" ")[0] || "Player",
               last_name: agent.last_name || agent.name?.split(" ").slice(1).join(" ") || "",
               display_name: agent.display_name || null,
-              name: agent.display_name || agent.name,
+              name: freeAgentName(agent),
               email: agent.email || null,
               phone: agent.phone || null,
               sports: agent.sports || [],
@@ -510,12 +539,12 @@ export function AppStateProvider({ children }) {
               avatar_color: PLAYER_COLORS[prev.profiles.length % PLAYER_COLORS.length],
               eligibility_status: eligible ? "verified" : "not_verified",
             }];
-        return {
+        return { next: {
           ...prev,
           profiles,
           waivers,
           teamPlayers: [...prev.teamPlayers, {
-            id: newId("tp"),
+            id: rosterId,
             team_id: team.id,
             profile_id: profileId,
             season: league.season,
@@ -528,9 +557,19 @@ export function AppStateProvider({ children }) {
             ...patch,
             profile_id: profileId,
           } : item),
-        };
-      }
-
+        } };
+      };
+      const plan = planAssignment(stateRef.current);
+      if (plan.error) refuse(plan.error);
+      // Match the mock practice actions: reserve the new snapshot immediately
+      // so another assignment in the same turn cannot race the render/effect.
+      stateRef.current = plan.next;
+      // Apply against React's queued state so earlier edits survive. Recheck
+      // without side effects if another queued action has invalidated the plan.
+      setState((prev) => planAssignment(prev).next || prev);
+      return;
+    }
+    setState((prev) => {
       return {
         ...prev,
         [collection]: prev[collection].map((entity) => entity.id === id ? { ...entity, ...patch } : entity),

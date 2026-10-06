@@ -75,6 +75,15 @@ describe("Standings result motion", () => {
     container.remove();
   });
 
+  test("states the tiebreak order the table actually applies", async () => {
+    // computeStandings ranks by wins, then head-to-head among teams level on
+    // wins, then point differential. The public explanation must say so: a
+    // rehearsal season put a +0 team above a +6 team on head-to-head.
+    await act(async () => root.render(<Standings />));
+    expect(container.textContent).toContain("wins first, then head-to-head, then point diff");
+    expect(container.textContent).not.toContain("point diff breaks ties");
+  });
+
   test("bridges committed filters with the named opacity contract", async () => {
     await act(async () => root.render(<Standings />));
 

@@ -47,7 +47,7 @@ export default function Standings() {
   const leagues = state.leagues.filter((league) => league.kind !== "tournament" && league.sport === sport && league.season === season);
   return (
     <div className="space-y-8">
-      <SectionHeading as="h1" band title="Standings" subtitle={`${season} · Albuquerque · wins first, point diff breaks ties`} />
+      <SectionHeading as="h1" band title="Standings" subtitle={`${season} · Albuquerque · wins first, then head-to-head, then point diff`} />
       <div className="grid sm:grid-cols-2 gap-2.5">
         <Filter label="Sport" value={sport} onChange={(value) => { setSport(value); setSeason(currentSeasonForSport(state, value)); setFilterRevision((revision) => revision + 1); }} testid="standings-filter-sport">
           {SPORTS.map((item) => <SelectItem key={item.id} value={item.id}>{item.name}</SelectItem>)}
