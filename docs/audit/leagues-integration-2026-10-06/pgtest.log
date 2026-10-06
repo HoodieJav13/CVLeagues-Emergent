@@ -1,0 +1,3749 @@
+sh: locale: not found
+2026-10-06 02:45:58.679 UTC [15] WARNING:  no usable system locales were found
+initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+CREATE SCHEMA
+CREATE SCHEMA
+CREATE EXTENSION
+CREATE EXTENSION
+DO
+GRANT
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+CREATE TABLE
+CREATE FUNCTION
+GRANT
+CREATE FUNCTION
+GRANT
+psql:/repo/supabase/migrations/20260702000100_extensions_and_admin.sql:12: NOTICE:  extension "moddatetime" already exists, skipping
+CREATE EXTENSION
+CREATE TABLE
+ALTER TABLE
+REVOKE
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+CREATE TABLE
+CREATE TRIGGER
+CREATE TABLE
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+CREATE TABLE
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TABLE
+CREATE TABLE
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE TABLE
+CREATE TRIGGER
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+REVOKE
+CREATE TABLE
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+REVOKE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+GRANT
+REVOKE
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+REVOKE
+INSERT 0 1
+CREATE VIEW
+GRANT
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+INSERT 0 1
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+DROP TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+ALTER TABLE
+CREATE TABLE
+CREATE TRIGGER
+CREATE TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE INDEX
+CREATE INDEX
+DO
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+REVOKE
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+GRANT
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+ALTER FUNCTION
+ALTER FUNCTION
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE FUNCTION
+COMMENT
+COMMENT
+DROP POLICY
+DROP POLICY
+DROP POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+ALTER TABLE
+UPDATE 1
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+COMMENT
+COMMENT
+COMMENT
+CREATE TABLE
+CREATE TRIGGER
+CREATE TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE FUNCTION
+REVOKE
+GRANT
+CREATE TABLE
+CREATE TRIGGER
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+GRANT
+GRANT
+ALTER TABLE
+INSERT 0 0
+UPDATE 0
+ALTER TABLE
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+REVOKE
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+CREATE FUNCTION
+COMMENT
+COMMENT
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+REVOKE
+REVOKE
+COMMENT
+COMMENT
+REVOKE
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+COMMENT
+COMMENT
+COMMENT
+REVOKE
+REVOKE
+DROP POLICY
+DROP POLICY
+DROP POLICY
+DROP POLICY
+ALTER FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+GRANT
+GRANT
+COMMENT
+COMMENT
+COMMENT
+DROP POLICY
+DROP POLICY
+CREATE POLICY
+REVOKE
+GRANT
+CREATE VIEW
+REVOKE
+GRANT
+COMMENT
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+REVOKE
+REVOKE
+GRANT
+GRANT
+COMMENT
+COMMENT
+REVOKE
+REVOKE
+REVOKE
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+GRANT
+GRANT
+ALTER TABLE
+COMMENT
+COMMENT
+COMMENT
+CREATE FUNCTION
+REVOKE
+CREATE FUNCTION
+REVOKE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+REVOKE
+GRANT
+GRANT
+REVOKE
+REVOKE
+DROP POLICY
+DROP POLICY
+ALTER TABLE
+COMMENT
+COMMENT
+ALTER TABLE
+ALTER TABLE
+CREATE TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+GRANT
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+ALTER DEFAULT PRIVILEGES
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+ALTER TABLE
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+ALTER TABLE
+CREATE FUNCTION
+ALTER TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+DROP FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+CREATE TABLE
+CREATE INDEX
+CREATE TRIGGER
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+REVOKE
+GRANT
+GRANT
+ALTER TABLE
+DO
+INSERT 0 0
+INSERT 0 0
+UPDATE 0
+UPDATE 0
+ALTER TABLE
+ALTER TABLE
+REVOKE
+GRANT
+GRANT
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE TRIGGER
+CREATE FUNCTION
+CREATE TRIGGER
+ALTER TABLE
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+CREATE POLICY
+GRANT
+GRANT
+CREATE INDEX
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+REVOKE
+GRANT
+DROP FUNCTION
+CREATE FUNCTION
+REVOKE
+GRANT
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+REVOKE
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+GRANT
+CREATE SCHEMA
+CREATE TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+CREATE FUNCTION
+GRANT
+GRANT
+GRANT
+GRANT
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 3
+INSERT 0 1
+INSERT 0 1
+INSERT 0 4
+INSERT 0 3
+UPDATE 1
+INSERT 0 5
+INSERT 0 2
+INSERT 0 14
+INSERT 0 3
+UPDATE 1
+INSERT 0 1
+INSERT 0 2
+INSERT 0 1
+INSERT 0 1
+ as_anon 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ as_anon 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+UPDATE 1
+ as_anon 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 2
+INSERT 0 1
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ row_count_is_zero 
+-------------------
+ 
+(1 row)
+
+ row_count_is_zero 
+-------------------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ row_count_is_zero 
+-------------------
+ 
+(1 row)
+
+ row_count_is_zero 
+-------------------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ row_count_is_zero 
+-------------------
+ 
+(1 row)
+
+ row_count_is_zero 
+-------------------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+CREATE TABLE
+ ok 
+----
+ 
+(1 row)
+
+DROP TABLE
+CREATE FUNCTION
+ ok 
+----
+ 
+(1 row)
+
+DROP FUNCTION
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_admin_aal1 
+---------------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+UPDATE 0
+ eq_text 
+---------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+UPDATE 1
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+UPDATE 1
+ eq_text 
+---------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 3
+UPDATE 1
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ lock_game 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 2
+INSERT 0 1
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+UPDATE 2
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+UPDATE 1
+ set_config 
+------------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+UPDATE 1
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+DELETE 1
+ ok 
+----
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ eq_int 
+--------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+UPDATE 2
+INSERT 0 2
+CREATE TABLE
+GRANT
+ as_admin_aal1 
+---------------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ cancel_scorekeeping_session 
+-----------------------------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+                                                 append_scorekeeping_event                                                  
+----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "b53f23f6-7c3b-410a-8e3e-07ab3768bc24", "replayed": false, "sequence_number": 1, "pairing_overridden": false}
+(1 row)
+
+                                                 append_scorekeeping_event                                                  
+----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "a95aa207-af96-4795-8080-1294110a41b8", "replayed": false, "sequence_number": 2, "pairing_overridden": false}
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_admin_aal1 
+---------------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 2
+INSERT 0 4
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+                                                  append_scorekeeping_event                                                  
+-----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "1003a5fb-8f3c-48e4-8b77-7a4ac20a4a16", "replayed": false, "sequence_number": 10, "pairing_overridden": false}
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+                                                 append_scorekeeping_event                                                  
+----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "b95038af-05f1-41c0-b68a-719c71e7ada1", "replayed": false, "sequence_number": 3, "pairing_overridden": false}
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+                                                 append_scorekeeping_event                                                  
+----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "5699f842-2f0b-442c-8a58-99371aa4ef96", "replayed": false, "sequence_number": 4, "pairing_overridden": false}
+(1 row)
+
+                                                 append_scorekeeping_event                                                  
+----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "82eb5cf7-5a33-46e3-b6dc-72dc78f01db4", "replayed": false, "sequence_number": 5, "pairing_overridden": false}
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+                                                 append_scorekeeping_event                                                  
+----------------------------------------------------------------------------------------------------------------------------
+ {"event_id": "6f6008c5-74b5-436e-9333-cc98697e3368", "replayed": false, "sequence_number": 1, "pairing_overridden": false}
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin_aal1 
+---------------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_anon 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+SELECT 1
+GRANT
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+SELECT 1
+GRANT
+ as_admin 
+----------
+ 
+(1 row)
+
+ lives_ok 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ eq_text 
+---------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+SELECT 1
+GRANT
+ ok 
+----
+ 
+(1 row)
+
+ as_admin_aal1 
+---------------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ cancel_practice_session 
+-------------------------
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ set_config 
+------------
+ on
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ set_config 
+------------
+ 
+(1 row)
+
+INSERT 0 1
+ as_admin 
+----------
+ 
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ ok 
+----
+ 
+(1 row)
+
+ as_user 
+---------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_admin 
+----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+INSERT 0 1
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ throws_ok 
+-----------
+ 
+(1 row)
+
+ ok 
+----
+ 
+(1 row)
+
+ as_owner 
+----------
+ 
+(1 row)
+
+
+pgtest results
+  n  | status |                                                         name                                                          |                                                                                                                                            detail                                                                                                                                             
+-----+--------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+   1 | ok     | existing 01 anon reads games                                                                                          | expected=3 actual=3
+   2 | ok     | existing 02 anon reads teams                                                                                          | expected=5 actual=5
+   3 | ok     | existing 03 anon reads public_profiles                                                                                | expected=4 actual=4
+   4 | ok     | existing 04 anon profiles read is privilege-blocked                                                                   | permission denied for table profiles
+   5 | ok     | existing 05 anon waivers read is privilege-blocked                                                                    | permission denied for table waivers
+   6 | ok     | existing 06 anon team registrations read is privilege-blocked                                                         | permission denied for table team_registrations
+   7 | ok     | existing 07 anon free agents read is privilege-blocked                                                                | permission denied for table free_agents
+   8 | ok     | existing 08 anon direct clean team registration is blocked                                                            | permission denied for table team_registrations
+   9 | ok     | existing 09 anon pre-triaged registration is blocked                                                                  | permission denied for table team_registrations
+  10 | ok     | existing 10 anon no-consent registration is blocked                                                                   | permission denied for table team_registrations
+  11 | ok     | existing 11 anon direct clean free agent is blocked                                                                   | permission denied for table free_agents
+  12 | ok     | existing 12 anon pre-triaged free agent is blocked                                                                    | permission denied for table free_agents
+  13 | ok     | existing 13 anon no-consent free agent is blocked                                                                     | permission denied for table free_agents
+  14 | ok     | existing 14 [INV-04] direct game score update is privilege-blocked                                                    | permission denied for table games
+  15 | ok     | existing 15 [INV-30] legacy unlock RPC is retired                                                                     | permission denied for function unlock_game
+  16 | ok     | existing 16 [INV-24] final correction requires a reason                                                               | [INV-24] Correcting a final game requires a reason.
+  17 | ok     | existing 17 [INV-24][INV-32] reasoned correction preserves final lock                                                 | 
+  18 | ok     | existing 18 [INV-32][INV-39] correction writes before/after audit and stays final                                     | 
+  19 | ok     | existing 19 waiver signature fields immutable                                                                         | permission denied for table waivers
+  20 | ok     | existing 20 waiver verification update succeeds                                                                       | 
+  21 | ok     | existing 21 waiver profile_id can be set once from null                                                               | 
+  22 | ok     | existing 22 waiver profile_id relink raises                                                                           | Waiver profile linkage can only be set once (NULL -> profile), never relinked.
+  23 | ok     | existing 23 approve_registration succeeds                                                                             | 
+  24 | ok     | existing 24 approve_registration marks approved                                                                       | expected=approved actual=approved
+  25 | ok     | existing 25 approve_registration creates team                                                                         | 
+  26 | ok     | existing 26 approve_registration creates captain profile                                                              | 
+  27 | ok     | existing 27 approve_registration creates captain roster row                                                           | 
+  28 | ok     | existing 28 assign_free_agent succeeds                                                                                | 
+  29 | ok     | existing 29 assign_free_agent marks assigned                                                                          | expected=assigned actual=assigned
+  30 | ok     | existing 30 assign_free_agent creates profile                                                                         | 
+  31 | ok     | existing 31 assign_free_agent creates roster row                                                                      | 
+  32 | ok     | existing 32 verify_waiver succeeds                                                                                    | 
+  33 | ok     | existing 33 verify_waiver catches roster up                                                                           | expected=eligible actual=eligible
+  34 | ok     | existing 34 game_edit_history update is blocked                                                                       | permission denied for table game_edit_history
+  35 | ok     | existing 35 waiver delete is blocked                                                                                  | permission denied for table waivers
+  36 | ok     | season2 01 league container rejects tournament stage                                                                  | stage=tournament is reserved for standalone tournament containers; use playoff.
+  37 | ok     | season2 02 tournament container accepts tournament stage                                                              | 
+  38 | ok     | season2 03 tournament container rejects regular stage                                                                 | Games in a standalone tournament must have stage=tournament.
+  39 | ok     | season2 04 locked game stage change raises                                                                            | Game 50000000-0000-0000-0000-000000000003 is final and locked. Use its single controlled correction authority.
+  40 | ok     | season2 05 locked game stage change succeeds with bypass                                                              | 
+  41 | ok     | season2 06 bypass actually changed locked stage                                                                       | expected=playoff actual=playoff
+  42 | ok     | season2 07 unlocked game stage freely editable                                                                        | 
+  43 | ok     | season2 08 charge with both profile and team raises                                                                   | new row for relation "charges" violates check constraint "charges_check"
+  44 | ok     | season2 09 charge with neither profile nor team raises                                                                | new row for relation "charges" violates check constraint "charges_check"
+  45 | ok     | season2 10 player-only charge succeeds                                                                                | 
+  46 | ok     | season2 11 team-only charge succeeds                                                                                  | 
+  47 | ok     | season2 12 payment entry against charge succeeds                                                                      | 
+  48 | ok     | season2 13 charge delete with payment entry is restrict-blocked                                                       | update or delete on table "charges" violates foreign key constraint "payment_entries_charge_id_fkey" on table "payment_entries"
+  49 | ok     | season2 14 hof unpublished anonymous view read returns zero                                                           | expected=0 actual=0
+  50 | ok     | season2 15 hof unpublished public-role view read returns zero                                                         | expected=0 actual=0
+  51 | ok     | season2 16 hof admin read returns rows while unpublished                                                              | expected=1 actual=1
+  52 | ok     | season2 17 hof published public view read returns rows                                                                | expected=1 actual=1
+  53 | ok     | historical isolation 01 a game with stats cannot move to another league                                               | Recorded statistics lock game 50000000-0000-0000-0000-000000000001 to league 20000000-0000-0000-0000-000000000001; delete or migrate the statistics through a reviewed correction before changing league_id.
+  54 | ok     | historical isolation 02 a league with stats cannot change season                                                      | Recorded statistics lock league 20000000-0000-0000-0000-000000000001 to season Summer 2026; create a separate season enrollment instead of reclassifying history.
+  55 | ok     | historical isolation 03 a league with stats cannot change kind                                                        | Recorded statistics lock league 20000000-0000-0000-0000-000000000001 to kind league; create a separate container instead of reclassifying history.
+  56 | ok     | charge season 01 matching-season team charges succeed                                                                 | 
+  57 | ok     | charge season 02 cross-season team charge fails                                                                       | Team charge season (Fall 2026) must match the referenced team's league season (Summer 2026).
+  58 | ok     | charge season 03 changing a team charge to another season fails                                                       | Team charge season (Fall 2026) must match the referenced team's league season (Summer 2026).
+  59 | ok     | charge season 04 charged team cannot move to another-season league                                                    | Team 30000000-0000-0000-0000-000000000001 cannot move to league 20000000-0000-0000-0000-000000000101 because an existing charge belongs to another season.
+  60 | ok     | charge season 05 charged league cannot be reassigned to another season                                                | League 20000000-0000-0000-0000-000000000101 cannot change to season Spring 2027 because an existing team charge belongs to another season.
+  61 | ok     | charge season 06 profile-only charge remains valid in any existing season                                             | 
+  62 | ok     | charge season 07 upstream guard indexes exist                                                                         | 
+  63 | ok     | charge season 08 season rename cascades without false rejection                                                       | 
+  64 | ok     | charge season 09 renamed season preserves every team-charge match                                                     | 
+  65 | ok     | charge season 10 season rename can be reversed cleanly                                                                | 
+  66 | ok     | charge season 11 restored season preserves every team-charge match                                                    | 
+  67 | ok     | data api 01 public_profiles exposes the exact safe-field allowlist                                                    | expected=id,first_name,last_name,display_name,name,sports,experience,bio,avatar_color,claimed,eligibility_status,created_at actual=id,first_name,last_name,display_name,name,sports,experience,bio,avatar_color,claimed,eligibility_status,created_at
+  68 | ok     | data api 02 public_profiles remains the intentional definer-style boundary                                            | 
+  69 | ok     | data api 03 public_profiles does not expose email                                                                     | column "email" does not exist
+  70 | ok     | data api 04 public_profiles does not expose phone                                                                     | column "phone" does not exist
+  71 | ok     | data api 05 public_profiles does not expose date of birth                                                             | column "dob" does not exist
+  72 | ok     | data api 06 public_profiles does not expose emergency contact name                                                    | column "emergency_contact_name" does not exist
+  73 | ok     | data api 07 public_profiles does not expose emergency contact phone                                                   | column "emergency_contact_phone" does not exist
+  74 | ok     | data api 08 public_profiles does not expose admin notes                                                               | column "admin_notes" does not exist
+  75 | ok     | data api 09 public_profiles does not expose auth user id                                                              | column "auth_user_id" does not exist
+  76 | ok     | data api 10 public_profiles does not expose waiver details                                                            | column "waiver_version" does not exist
+  77 | ok     | data api 11 anon cannot inspect admin identities                                                                      | permission denied for table admin_users
+  78 | ok     | data api 12 anon cannot inspect game edit history                                                                     | permission denied for table game_edit_history
+  79 | ok     | data api 13 anon cannot inspect charges                                                                               | permission denied for table charges
+  80 | ok     | data api 14 anon cannot inspect payment entries                                                                       | permission denied for table payment_entries
+  81 | ok     | payments auth 01 anon cannot insert charges                                                                           | permission denied for table charges
+  82 | ok     | payments auth 02 anon cannot update charges                                                                           | permission denied for table charges
+  83 | ok     | payments auth 03 anon cannot delete charges                                                                           | permission denied for table charges
+  84 | ok     | payments auth 04 anon cannot insert payment entries                                                                   | permission denied for table payment_entries
+  85 | ok     | payments auth 05 anon cannot update payment entries                                                                   | permission denied for table payment_entries
+  86 | ok     | payments auth 06 anon cannot delete payment entries                                                                   | permission denied for table payment_entries
+  87 | ok     | data api 15 non-admin profiles read is RLS-empty                                                                      | expected=0 actual=0
+  88 | ok     | data api 16 non-admin waivers read is RLS-empty                                                                       | expected=0 actual=0
+  89 | ok     | data api 17 non-admin registrations read is RLS-empty                                                                 | expected=0 actual=0
+  90 | ok     | data api 18 non-admin free agents read is RLS-empty                                                                   | expected=0 actual=0
+  91 | ok     | data api 19 non-admin edit history read is RLS-empty                                                                  | expected=0 actual=0
+  92 | ok     | data api 20 non-admin charges read is RLS-empty                                                                       | expected=0 actual=0
+  93 | ok     | data api 21 non-admin payment entries read is RLS-empty                                                               | expected=0 actual=0
+  94 | ok     | data api 22 non-admin admin RPC call fails its authorization guard                                                    | Admin only
+  95 | ok     | payments auth 07 non-admin cannot insert charges                                                                      | new row violates row-level security policy for table "charges"
+  96 | ok     | payments auth 08 non-admin cannot update charges                                                                      | affected rows=0
+  97 | ok     | payments auth 09 non-admin cannot delete charges                                                                      | affected rows=0
+  98 | ok     | payments auth 10 non-admin cannot insert payment entries                                                              | new row violates row-level security policy for table "payment_entries"
+  99 | ok     | payments auth 11 non-admin cannot update payment entries                                                              | affected rows=0
+ 100 | ok     | payments auth 12 non-admin cannot delete payment entries                                                              | affected rows=0
+ 101 | ok     | payments auth 13 admin can insert a charge                                                                            | 
+ 102 | ok     | payments auth 14 admin can update a charge                                                                            | 
+ 103 | ok     | payments auth 15 admin can insert a payment entry                                                                     | 
+ 104 | ok     | payments auth 16 admin can update a payment entry                                                                     | 
+ 105 | ok     | payments auth 17 admin can delete a payment entry                                                                     | 
+ 106 | ok     | payments auth 18 admin can delete a charge after its entries are removed                                              | 
+ 107 | ok     | hof auth 01 public_hof_entries exposes the exact safe-field allowlist                                                 | expected=id,entry_type,game_id,profile_id,team_id,sport,season,record_scope,title,blurb,stat_key,stat_value,display_order,created_at,updated_at actual=id,entry_type,game_id,profile_id,team_id,sport,season,record_scope,title,blurb,stat_key,stat_value,display_order,created_at,updated_at
+ 108 | ok     | hof auth 02 public_hof_entries remains the intentional definer-style boundary                                         | 
+ 109 | ok     | hof auth 03 anon can select public_hof_entries but not hof_entries                                                    | 
+ 110 | ok     | hof auth 04 public_hof_entries does not expose created_by                                                             | column "created_by" does not exist
+ 111 | ok     | hof auth 05 anon cannot insert Hall of Fame entries                                                                   | permission denied for table hof_entries
+ 112 | ok     | hof auth 06 anon cannot update Hall of Fame entries                                                                   | permission denied for table hof_entries
+ 113 | ok     | hof auth 07 anon cannot delete Hall of Fame entries                                                                   | permission denied for table hof_entries
+ 114 | ok     | hof auth 08 non-admin base table read is RLS-empty                                                                    | expected=0 actual=0
+ 115 | ok     | hof auth 09 non-admin cannot insert Hall of Fame entries                                                              | new row violates row-level security policy for table "hof_entries"
+ 116 | ok     | hof auth 10 non-admin cannot update Hall of Fame entries                                                              | affected rows=0
+ 117 | ok     | hof auth 11 non-admin cannot delete Hall of Fame entries                                                              | affected rows=0
+ 118 | ok     | hof auth 12 admin can insert a Hall of Fame entry                                                                     | 
+ 119 | ok     | hof auth 13 admin can update a Hall of Fame entry                                                                     | 
+ 120 | ok     | hof auth 14 admin can delete a Hall of Fame entry                                                                     | 
+ 121 | ok     | data api 23 anon can select public_profiles                                                                           | 
+ 122 | ok     | data api 24 anon has no profiles table privilege                                                                      | 
+ 123 | ok     | data api 25 anon cannot execute an admin RPC                                                                          | 
+ 124 | ok     | data api 26 authenticated can execute an admin RPC                                                                    | 
+ 125 | ok     | data api 27 waiver table-wide update remains denied                                                                   | 
+ 126 | ok     | data api 28 waiver verification column update is allowlisted                                                          | 
+ 127 | ok     | data api 29 waiver signature column update remains denied                                                             | 
+ 128 | ok     | data api 30 trigger helpers are not client-executable                                                                 | 
+ 129 | ok     | data api 31 every public base table has RLS enabled                                                                   | 
+ 130 | ok     | data api 32 future tables are not exposed automatically                                                               | 
+ 131 | ok     | data api 33 future functions are not executable automatically                                                         | 
+ 132 | ok     | advisor 01 palette helper has an immutable search path                                                                | 
+ 133 | ok     | advisor 02 current waiver lookup uses caller privileges                                                               | 
+ 134 | ok     | advisor 03 anon still reads the current waiver version through RLS                                                    | expected=CVF-WAIVER-TEST-v1 actual=CVF-WAIVER-TEST-v1
+ 135 | ok     | advisor 04 every public foreign key has a covering index                                                              | 
+ 136 | ok     | launch 01 linked AAL1 administrator can resolve identity for MFA routing                                              | 
+ 137 | ok     | launch 02 linked AAL1 administrator is not authorized as admin                                                        | 
+ 138 | ok     | launch 03a linked AAL1 administrator cannot save a score                                                              | Admin only
+ 139 | ok     | launch 03b linked AAL1 administrator cannot lock a game                                                               | Admin only
+ 140 | ok     | launch 03c linked AAL1 administrator cannot correct a final score                                                     | Admin only
+ 141 | ok     | launch 03d linked AAL1 administrator cannot change game status                                                        | Admin only
+ 142 | ok     | launch 03e linked AAL1 administrator cannot approve a registration                                                    | Admin only
+ 143 | ok     | launch 03f linked AAL1 administrator cannot assign a free agent                                                       | Admin only
+ 144 | ok     | launch 03g linked AAL1 administrator cannot verify a waiver                                                           | Admin only
+ 145 | ok     | launch 03h linked AAL1 administrator cannot generate a bracket                                                        | Admin only
+ 146 | ok     | launch 03i linked AAL1 administrator cannot schedule a playoff match                                                  | Admin only
+ 147 | ok     | launch 03j linked AAL1 administrator cannot link a playoff game                                                       | Admin only
+ 148 | ok     | launch 03k linked AAL1 administrator cannot advance a playoff match                                                   | Admin only
+ 149 | ok     | launch 03l linked AAL1 administrator cannot enroll a team identity                                                    | Admin only
+ 150 | ok     | launch 03m linked AAL1 administrator cannot create and enroll a team identity                                         | Admin only
+ 151 | ok     | launch 03n linked AAL1 administrator cannot update a team identity                                                    | Admin only
+ 152 | ok     | launch 03o linked AAL1 administrator cannot update a team enrollment                                                  | Admin only
+ 153 | ok     | launch 04 linked AAL2 administrator is authorized as admin                                                            | 
+ 154 | ok     | launch 05 anonymous role has no direct intake or waiver insert grants                                                 | 
+ 155 | ok     | launch 06 public submission policies were removed                                                                     | 
+ 156 | ok     | launch 07 MFA identity helper is callable but admin assertion remains private                                         | 
+ 157 | ok     | season isolation 01 anonymous readers receive both sport defaults                                                     | 
+ 158 | ok     | season isolation 02 non-admin cannot change a sport default                                                           | expected=Summer 2026 actual=Summer 2026
+ 159 | ok     | season isolation 03 admin can set different current seasons by sport                                                  | 
+ 160 | ok     | season isolation 04 sport defaults are season foreign keys                                                            | insert or update on table "league_settings" violates foreign key constraint "league_settings_current_kickball_season_fkey"
+ 161 | ok     | season isolation 05 restoring one sport leaves the other default unchanged                                            | expected=Summer 2026 actual=Summer 2026
+ 162 | ok     | bracket 01 non-admin cannot generate a bracket                                                                        | Admin only
+ 163 | ok     | bracket 02 admin generates a variable-size bracket                                                                    | 
+ 164 | ok     | bracket 03 bracket expands to the next power of two                                                                   | expected=8 actual=8
+ 165 | ok     | bracket 04 all seeds are snapshotted                                                                                  | expected=6 actual=6
+ 166 | ok     | bracket 05 top seeds receive the required byes                                                                        | expected=2 actual=2
+ 167 | ok     | bracket 06 championship plus third-place paths exist                                                                  | expected=2 actual=2
+ 168 | ok     | bracket 07 a ready first-round match can be scheduled                                                                 | 
+ 169 | ok     | bracket 08 an unfinished game cannot advance                                                                          | The linked game must be completed, marked final, and locked, or carry a final locked forfeit outcome, before advancement.
+ 170 | ok     | bracket setup score and lock scheduled game                                                                           | 
+ 171 | ok     | bracket 09 final locked result advances manually                                                                      | 
+ 172 | ok     | bracket 10 winner is placed into the next match                                                                       | 
+ 173 | ok     | bracket 11 anonymous viewers can read the generated bracket                                                           | expected=1 actual=1
+ 174 | ok     | bracket 12 anonymous viewers cannot mutate bracket matches                                                            | permission denied for table playoff_matches
+ 175 | ok     | bracket 13 administrator cannot directly mutate bracket headers                                                       | permission denied for table playoff_brackets
+ 176 | ok     | bracket 14 administrator cannot directly mutate locked seeds                                                          | permission denied for table playoff_seeds
+ 177 | ok     | bracket 15 administrator cannot directly mutate match topology                                                        | permission denied for table playoff_matches
+ 178 | ok     | bracket 16 authenticated Data API role has read-only bracket table grants                                             | 
+ 179 | ok     | bracket 17 [INV-32] winner correction retracts and reapplies before downstream scheduling                             | 
+ 180 | ok     | bracket 18 [INV-32] correction replaces downstream slot and source result atomically                                  | 
+ 181 | ok     | bracket setup schedules the corrected downstream match                                                                | 
+ 182 | ok     | bracket 19 [INV-32] winner-changing correction is blocked after downstream scheduling                                 | [INV-32] Winner-changing correction is blocked because the next playoff game is scheduled or completed.
+ 183 | ok     | bracket 20 [INV-32] blocked correction preserves the source result and lock                                           | 
+ 184 | ok     | team identity 01 anonymous viewers can read persistent team brands                                                    | 
+ 185 | ok     | team identity 02 anonymous viewers cannot create an identity                                                          | permission denied for table team_identities
+ 186 | ok     | team identity 03 non-admin cannot enroll an identity                                                                  | Admin only
+ 187 | ok     | team identity 04 one identity can enroll into another sport                                                           | 
+ 188 | ok     | team identity 05 cross-sport enrollment has the target sport and same brand                                           | 
+ 189 | ok     | team identity 06 new enrollment carries no roster or payments                                                         | 
+ 190 | ok     | team identity 07 duplicate enrollment is rejected                                                                     | This team identity is already enrolled in the selected league or tournament.
+ 191 | ok     | team identity 08 canonical brand RPC propagates to every enrollment                                                   | 
+ 192 | ok     | team identity 09 every enrollment reflects the canonical brand                                                        | 
+ 193 | ok     | team identity 10 enrollment RPC supports only mutable enrollment fields                                               | 
+ 194 | ok     | team identity 11 enrollment RPC persisted captain, division, and status                                               | 
+ 195 | ok     | team identity 12 admin cannot directly insert an enrollment                                                           | permission denied for table teams
+ 196 | ok     | team identity 13 admin cannot directly update an enrollment                                                           | permission denied for table teams
+ 197 | ok     | team identity 14 admin cannot directly delete an enrollment                                                           | permission denied for table teams
+ 198 | ok     | team identity 15 admin cannot directly insert a persistent identity                                                   | permission denied for table team_identities
+ 199 | ok     | team identity 16 admin cannot directly update a persistent identity                                                   | permission denied for table team_identities
+ 200 | ok     | team identity 17 admin cannot directly delete a persistent identity                                                   | permission denied for table team_identities
+ 201 | ok     | team identity 18 authenticated Data API role has read-only identity and enrollment grants                             | 
+ 202 | ok     | team identity 19 identity lifecycle changes through its RPC                                                           | 
+ 203 | ok     | team identity 20 inactive identity cannot be enrolled through its RPC                                                 | Inactive team identities cannot be enrolled.
+ 204 | ok     | team identity 21 identity can be reactivated through its RPC                                                          | 
+ 205 | ok     | team identity 22 new identity and first enrollment are transactional                                                  | 
+ 206 | ok     | team identity 23 transactional enrollment creates only its shell                                                      | 
+ 207 | ok     | team identity 24 approved registrations own a persistent identity                                                     | 
+ 208 | ok     | aggregate 01 [INV-04][INV-38] authenticated grants expose schedule columns but no score/stat/history mutation         | 
+ 209 | ok     | aggregate 02 [INV-04] AAL2 admin direct player-stat insert is denied                                                  | permission denied for table player_stats
+ 210 | ok     | aggregate 03 [INV-38] AAL2 admin direct history insert is denied                                                      | permission denied for table game_edit_history
+ 211 | ok     | aggregate 04 [INV-19][INV-30] only hardened scoring RPCs remain client-executable                                     | 
+ 212 | ok     | aggregate 05 [INV-19] authenticated non-admin cannot submit score                                                     | Admin only
+ 213 | ok     | aggregate 06 [INV-19] anonymous caller cannot execute submit score                                                    | permission denied for function submit_score
+ 214 | ok     | aggregate 07 [INV-01][INV-03] HARD kickball period mismatch names values                                              | [INV-01] home period sum 1 does not equal entered score 2.
+ 215 | ok     | aggregate 08 [INV-08] HARD regular-season kickball tie is rejected                                                    | [INV-08] Season 1 final scores cannot be tied; received 3-3
+ 216 | ok     | aggregate 09 [INV-05] SOFT kickball mismatch requires override reason                                                 | SOFT validation requires an override reason: [INV-05] Kick B has 1 recorded player runs but an entered score of 2.
+ 217 | ok     | aggregate 10 [INV-05] SOFT kickball mismatch saves with recorded override                                             | 
+ 218 | ok     | aggregate 11 [INV-05][INV-37] override reason and warning are audit output                                            | 
+ 219 | ok     | aggregate 12 [INV-24] correction RPC rejects a blank reason                                                           | [INV-24] Correcting a final game requires a reason.
+ 220 | ok     | aggregate 13 [INV-24][INV-32] correction commits score stats history and lock atomically                              | 
+ 221 | ok     | aggregate 14 [INV-32][INV-37] completed correction exposes immutable before and after audit                           | 
+ 222 | ok     | aggregate 15 [INV-10] HARD flag period structure rejects a non-four-quarter final                                     | [INV-10] Flag football requires four quarters; received 1.
+ 223 | ok     | aggregate 16 [INV-06] SOFT flag point mismatch requires override reason                                               | SOFT validation requires an override reason: [INV-06] Flag A stat-derived points are 6 but the entered score is 8.
+ 224 | ok     | aggregate 17 [INV-06] SOFT flag mismatch saves with recorded override                                                 | 
+ 225 | ok     | aggregate 18 [INV-03][INV-13] signed yardage and player safety pass HARD validation                                   | 
+ 226 | ok     | ledger schema 01 [INV-28] existing games backfill to aggregate mode                                                   | 
+ 227 | ok     | ledger schema 02 [INV-04] authenticated clients have no ledger table writes                                           | 
+ 228 | ok     | ledger schema 03 [INV-04] ledger trigger helpers are not client executable                                            | 
+ 229 | ok     | ledger schema 04 [INV-27] anonymous sessions read is privilege-blocked                                                | permission denied for table scorekeeping_sessions
+ 230 | ok     | ledger schema 05 [INV-27] anonymous events read is privilege-blocked                                                  | permission denied for table scorekeeping_events
+ 231 | ok     | ledger schema 06 [INV-19][INV-27] non-admin ledger reads are RLS-empty                                                | expected=0 actual=0
+ 232 | ok     | ledger schema 07 [INV-29] owner cannot bypass the controlled mode flag                                                | [INV-29] Scorekeeping mode changes require the controlled server path.
+ 233 | ok     | ledger schema 08 [INV-29] scored aggregate game cannot convert                                                        | [INV-29] Only an unscored, pending, unlocked game with no ledger session can convert.
+ 234 | ok     | ledger schema 09 [INV-29] clean game converts aggregate to ledger once                                                | 
+ 235 | ok     | ledger schema 10 [INV-28][INV-29] conversion records mode and timestamp                                               | 
+ 236 | ok     | ledger schema 11 [INV-29] ledger game cannot return to aggregate                                                      | [INV-29] Scorekeeping mode conversion is aggregate-to-ledger only.
+ 237 | ok     | ledger schema 12 [INV-30][INV-39] aggregate submit RPC cannot mutate a ledger game                                    | [INV-30][INV-39] Ledger projections may change only through ledger finalization.
+ 238 | ok     | ledger schema 13 [INV-30] rejected aggregate RPC leaves ledger game unscored                                          | 
+ 239 | ok     | ledger schema 14 [INV-04] owner session insert requires controlled flag                                               | [INV-04] Scorekeeping sessions may be created only by the controlled server path.
+ 240 | ok     | ledger schema 15 [INV-10][INV-18] controlled ordinary session snapshots game rules                                    | 
+ 241 | ok     | ledger schema 16 [INV-18] a game cannot have two active sessions                                                      | duplicate key value violates unique constraint "scorekeeping_sessions_one_active_game_idx"
+ 242 | ok     | ledger schema 17 [INV-11] ordinary session snapshots both eligible rosters                                            | 
+ 243 | ok     | ledger schema 18 [INV-11] participant identity is server-copied from roster and profile                               | 
+ 244 | ok     | ledger schema 19 [INV-10] session rule snapshots cannot be rewritten                                                  | [INV-10] Session identity and rule snapshots are immutable.
+ 245 | ok     | ledger schema 20 [INV-12] participant snapshots are append-only                                                       | [INV-12][INV-36] Scorekeeping evidence is append-only.
+ 246 | ok     | ledger schema 21 [INV-04] event insert requires controlled flag                                                       | [INV-04] Ledger events may be created only by the controlled server path.
+ 247 | ok     | ledger schema 22 [INV-14] clients of the server path cannot select a sequence                                         | [INV-14] Event sequence numbers are assigned by the server.
+ 248 | ok     | ledger schema 23 [INV-14][INV-15] first event receives server sequence one                                            | 
+ 249 | ok     | ledger schema 24 [INV-14] second event receives the next game sequence                                                | 
+ 250 | ok     | ledger schema 25 [INV-14] ordinary event sequence is gapless                                                          | 
+ 251 | ok     | ledger schema 26 [INV-15] idempotency keys are unique across the game                                                 | duplicate key value violates unique constraint "scorekeeping_events_game_id_idempotency_key_key"
+ 252 | ok     | ledger schema 27 [INV-02][INV-10] event cannot exceed snapshotted regulation count                                    | [INV-02][INV-10] Regulation period 8 exceeds the snapshotted count 7.
+ 253 | ok     | ledger schema 28 [INV-16] ordinary sessions cannot void events                                                        | [INV-16] Void events require a correction session.
+ 254 | ok     | ledger schema 29 [INV-11][INV-13] event attribution uses a snapshotted participant                                    | 
+ 255 | ok     | ledger schema 30 [INV-11] event attribution rejects a non-snapshot participant                                        | [INV-11] Attribution participant is outside the event session snapshot.
+ 256 | ok     | ledger schema 31 [INV-36] original events cannot be rewritten                                                         | [INV-12][INV-36] Scorekeeping evidence is append-only.
+ 257 | ok     | ledger schema 32 [INV-36] original events cannot be deleted                                                           | [INV-12][INV-36] Scorekeeping evidence is append-only.
+ 258 | ok     | ledger schema 33 [INV-12] participants cannot be appended after the first event                                       | [INV-12] Participant snapshots cannot grow after the first event.
+ 259 | ok     | ledger schema 34 [INV-20] controlled session finalization advances version and closes                                 | 
+ 260 | ok     | ledger schema 35 [INV-20] finalized session rejects new events                                                        | [INV-20][INV-28] Events require an active ledger session.
+ 261 | ok     | ledger schema 36 [INV-30] aggregate correction cannot govern a ledger final                                           | [INV-30][INV-39] Ledger projections may change only through ledger finalization.
+ 262 | ok     | ledger schema 37 [INV-10][INV-18][INV-24] correction session preserves base snapshot                                  | 
+ 263 | ok     | ledger schema 38 [INV-12] correction participants clone the original snapshot                                         | 
+ 264 | ok     | ledger schema 39 [INV-12] later roster changes do not rewrite correction eligibility                                  | 
+ 265 | ok     | ledger schema 40 [INV-16] correction appends a void of an ordinary event                                              | 
+ 266 | ok     | ledger schema 41 [INV-17] replacement follows this session void                                                       | 
+ 267 | ok     | ledger schema 42 [INV-16] an original event cannot be voided twice                                                    | duplicate key value violates unique constraint "scorekeeping_events_one_void_idx"
+ 268 | ok     | ledger schema 43 [INV-17] replacement cannot precede its matching void                                                | [INV-17] A replacement must follow this correction session's void of the same original.
+ 269 | ok     | ledger schema 44 [INV-14][INV-16][INV-17] correction rows preserve one gapless game sequence                          | 
+ 270 | ok     | ledger schema 45 actor deletion nulls attribution without rewriting evidence                                          | 
+ 271 | ok     | ledger schema 46 [INV-19][INV-27] AAL2 admin can inspect private sessions                                             | expected=2 actual=2
+ 272 | ok     | service role 01 protected intake can insert team registrations                                                        | 
+ 273 | ok     | service role 02 protected intake can insert free agents                                                               | 
+ 274 | ok     | service role 03 protected intake has no privilege beyond insert                                                       | 
+ 275 | ok     | service role 04 every unrelated public table denies all table privileges                                              | 
+ 276 | ok     | service role 05 every public function denies execute                                                                  | 
+ 277 | ok     | service role 06 every public sequence denies all sequence privileges                                                  | 
+ 278 | ok     | ledger runtime 01 [INV-19] AAL1 admin cannot start a session                                                          | Admin only
+ 279 | ok     | ledger runtime 02 [INV-19] non-admin cannot start a session                                                           | Admin only
+ 280 | ok     | ledger runtime 03 [INV-10][INV-18][INV-20][INV-29] start converts, snapshots, and leases                              | 
+ 281 | ok     | ledger runtime 04 [INV-14][INV-15] event commands are gapless and game-idempotent                                     | 
+ 282 | ok     | ledger runtime 05 [INV-15] same command replay returns the original event                                             | 
+ 283 | ok     | ledger runtime 06 [INV-15] changed command cannot reuse an event key                                                  | [INV-15] Idempotency key was reused with a different command.
+ 284 | ok     | ledger runtime 07 [INV-20] lease renewal invalidates the old token/version                                            | [INV-20] Scorekeeping session lease is stale or invalid.
+ 285 | ok     | ledger projection 01 [INV-01][INV-22][INV-23][INV-27] finalization publishes deterministic score/stats once           | 
+ 286 | ok     | ledger projection 02 [INV-15] ambiguous finalization retry is stable                                                  | 
+ 287 | ok     | ledger correction 01 [INV-16][INV-17][INV-24][INV-37] void/replace refinalizes with one audited authority             | 
+ 288 | ok     | ledger correction 02 [INV-25] cancel leaves the published projection byte-for-byte unchanged                          | 
+ 289 | ok     | ledger forfeit 01 [INV-09][INV-26] forfeit is final W/L-only with null score and no stats                             | 
+ 290 | ok     | ledger forfeit 02 [INV-15] same-key ambiguous retry returns the stored outcome                                        | 
+ 291 | ok     | ledger forfeit 03 [INV-15] a different key cannot replay the finalized outcome                                        | [INV-15] Forfeit replay differs from the finalized outcome.
+ 292 | ok     | ledger forfeit 04 [INV-09][INV-32] scoreless playoff forfeit advances through the single bracket authority            | 
+ 293 | ok     | ledger boundary 01 [INV-04] AAL2 admin still cannot directly update outcome fields                                    | permission denied for table games
+ 294 | ok     | ledger overtime 01 [INV-08][INV-35] tied regulation continues without mutation or failure audit                       | 
+ 295 | ok     | sequence5a 00 [INV-19] new paired-stat surface preserves the function privilege boundary                              | 
+ 296 | ok     | sequence5a 00a [INV-19] AAL1 admin cannot call the new append signature                                               | Admin only
+ 297 | ok     | sequence5a 00b [INV-19] non-admin cannot call the new append signature                                                | Admin only
+ 298 | ok     | sequence5a 01 [INV-08] tied regulation requests OT1 and leaves the game live                                          | 
+ 299 | ok     | sequence5a 02 [INV-08][INV-15] period close is append-only evidence with stable replay                                | 
+ 300 | ok     | sequence5a 03 [INV-08] a complete tied extra inning requests another complete inning                                  | 
+ 301 | ok     | sequence5a 04 [INV-08] a closed overtime period rejects later scoring in that period                                  | [INV-08] Overtime period 1 is not the current open period 2.
+ 302 | ok     | sequence5a 05 [INV-08] an unequal mid-inning score cannot finalize before admin close                                 | 
+ 303 | ok     | sequence5a 06 [INV-01][INV-08][INV-22] closed unequal OT finalizes atomically with both extra innings                 | 
+ 304 | ok     | sequence5a 07 [INV-16][INV-17][INV-24] period close uses the existing void-replace correction chain                   | 
+ 305 | ok     | sequence5a 07a [INV-01][INV-08][INV-24] correction cannot publish an unequal but open OT period                       | 
+ 306 | ok     | sequence5a 08 [INV-07] an unexplained one-sided paired stat is rejected at entry                                      | [INV-07] Paired flag-football statistics must reconcile within the same event.
+ 307 | ok     | sequence5a 09 [INV-07] blank text is not a pairing override                                                           | [INV-07] Paired flag-football statistics must reconcile within the same event.
+ 308 | ok     | sequence5a 09a [INV-07] zero-delta one-sided attribution still requires counterpart presence                          | [INV-07] Paired flag-football statistics must reconcile within the same event.
+ 309 | ok     | sequence5a 10 [INV-07][INV-19][INV-36] event-specific override stores immutable actor-time evidence                   | 
+ 310 | ok     | sequence5a 11 [INV-07][INV-36] pairing override evidence cannot be rewritten by the owner                             | [INV-12][INV-36] Scorekeeping evidence is append-only.
+ 311 | ok     | sequence5a 12 [INV-07] all four paired-stat classes enter without override when exact                                 | 
+ 312 | ok     | sequence5a 13 [INV-07][INV-35] residual event override warns and blocks unexplained finalization                      | 
+ 313 | ok     | sequence5a 14 [INV-07][INV-37] final audit preserves event warning and final override reason                          | 
+ 314 | ok     | sequence5a 15 [INV-08] tied flag regulation opens round one without locking                                           | 
+ 315 | ok     | sequence5a 16 [INV-08] a defensive-score-shaped lead cannot end flag OT mid-round                                     | 
+ 316 | ok     | sequence5a 17 [INV-08] equal completed flag possessions open another identical round                                  | 
+ 317 | ok     | sequence5a 18 [INV-08][INV-22] flag OT finalizes only after the admin closes the unequal round                        | 
+ 318 | ok     | sequence5a 19 [INV-08] overtime cannot begin when regulation is not tied                                              | [INV-08] Overtime may begin only after tied regulation.
+ 319 | ok     | migration29 01 legacy game date/time/location columns are gone                                                        | 
+ 320 | ok     | migration29 02 starts_at is a required timestamptz and venue_id is required                                           | 
+ 321 | ok     | migration29 03 backfilled start times preserve the original local kickoff                                             | 
+ 322 | ok     | migration29 04 anonymous readers can see venues                                                                       | 
+ 323 | ok     | migration29 05 anonymous venue insert is denied                                                                       | permission denied for table venues
+ 324 | ok     | migration29 06 authenticated non-admin venue insert is denied                                                         | new row violates row-level security policy for table "venues"
+ 325 | ok     | migration29 07 password-only admin venue insert is denied without AAL2                                                | new row violates row-level security policy for table "venues"
+ 326 | ok     | migration29 08 AAL2 admin can create a venue                                                                          | 
+ 327 | ok     | migration29 09 no client role holds delete on venues                                                                  | 
+ 328 | ok     | migration29 10 anonymous participation insert is denied                                                               | permission denied for table game_participation
+ 329 | ok     | migration29 11 anonymous cannot execute set_game_participation                                                        | permission denied for function set_game_participation
+ 330 | ok     | migration29 12 authenticated non-admin cannot set participation                                                       | Admin only
+ 331 | ok     | migration29 13 participation naming a team outside the game is rejected                                               | Team 30000000-0000-0000-0000-000000000005 is not playing in game 50000000-0000-0000-0000-000000000001
+ 332 | ok     | migration29 14 AAL2 admin can record participation                                                                    | 
+ 333 | ok     | migration29 15 a player cannot be recorded twice for one game                                                         | duplicate key value violates unique constraint "game_participation_game_id_profile_id_key"
+ 334 | ok     | migration29 16 participation is recordable on a final locked game                                                     | 
+ 335 | ok     | migration29 17 recording participation leaves the locked result byte-for-byte unchanged                               | 
+ 336 | ok     | migration29 21 [INV-30] participation is recordable on a final locked LEDGER game                                     | 
+ 337 | ok     | migration29 22 [INV-35][INV-39] it changes no ledger projection, no event, and no audit row                           | 
+ 338 | ok     | migration29 19 the games update allowlist is exactly the schedule columns                                             | expected=away_team_id,home_team_id,league_id,sport,stage,starts_at,temp_admin_id,venue_id actual=away_team_id,home_team_id,league_id,sport,stage,starts_at,temp_admin_id,venue_id
+ 339 | ok     | migration29 20 the games insert allowlist is exactly the schedule columns plus id                                     | expected=away_team_id,home_team_id,id,league_id,sport,stage,starts_at,temp_admin_id,venue_id actual=away_team_id,home_team_id,id,league_id,sport,stage,starts_at,temp_admin_id,venue_id
+ 340 | ok     | migration29 18 replacing a participation set does not accumulate rows                                                 | 
+ 341 | ok     | practice 01 [INV-19] practice RPC privilege boundary matches the official pattern                                     | 
+ 342 | ok     | practice 02 [INV-19] AAL1 admin cannot start a practice session                                                       | Admin only
+ 343 | ok     | practice 03 [INV-19] non-admin cannot start a practice session                                                        | Admin only
+ 344 | ok     | practice 04 [INV-19] non-admin cannot finalize a practice session                                                     | Admin only
+ 345 | ok     | practice 05 [INV-10] practice teams must share one sport and league season                                            | [INV-10] Practice teams must share one sport and league season.
+ 346 | ok     | practice 06 [INV-10][INV-11][INV-27] practice start snapshots both rosters with no game and stage=practice            | 
+ 347 | ok     | practice 07 [INV-03][INV-14] practice events sequence densely from 1 and accept signed rushing yardage                | 
+ 348 | ok     | practice 08 [INV-15] same practice command replay returns the original event with no duplicate row                    | 
+ 349 | ok     | practice 09 [INV-15] changed command cannot reuse a practice event key                                                | [INV-15] Idempotency key was reused with a different command.
+ 350 | ok     | practice 10 [INV-04][INV-40] append_practice_event rejects an ordinary game session                                   | [INV-04][INV-40] append_practice_event may target only a practice session.
+ 351 | ok     | practice 11 [INV-04][INV-40] the official append path rejects a practice session                                      | [INV-20] Unknown scorekeeping session 510a6edf-39f5-4379-ba65-7b3d602fea87.
+ 352 | ok     | practice 12 [INV-04][INV-40] the official finalize path rejects a practice session                                    | [INV-20] Unknown scorekeeping session 510a6edf-39f5-4379-ba65-7b3d602fea87.
+ 353 | ok     | practice 13 [INV-08] tied practice regulation returns continue_overtime without closing the session                   | 
+ 354 | ok     | practice 14 [INV-08] practice overtime enforces the current open period                                               | [INV-08] Overtime period 2 is not the current open period 1.
+ 355 | ok     | practice 15 [INV-08] an open practice overtime period cannot finalize before the admin close                          | 
+ 356 | ok     | practice 16 [INV-01][INV-08] practice finalization returns the projection preview and closes only the private session | 
+ 357 | ok     | practice 17 [INV-25][INV-35][INV-39] practice finalization writes nothing official                                    | 
+ 358 | ok     | practice 18 [INV-15] practice finalization replay is stable                                                           | 
+ 359 | ok     | practice 19 [INV-15] a different key cannot replay the finalized practice result                                      | [INV-15] Finalized practice session cannot be replayed with a different command.
+ 360 | ok     | practice 20 [INV-16][INV-17] a practice correction rejects new record events                                          | [INV-16][INV-17] Correction sessions may only void or replace existing effective events.
+ 361 | ok     | practice 21 [INV-16][INV-17][INV-36] practice correction voids and replaces inside the private chain                  | 
+ 362 | ok     | practice 22 [INV-25][INV-35][INV-39] practice correction finalization also writes nothing official                    | 
+ 363 | ok     | practice 23 [INV-20] practice lease renewal invalidates the old token and version                                     | [INV-20] Scorekeeping session lease is stale or invalid.
+ 364 | ok     | practice 24 [INV-20] practice resume rotates the lease                                                                | 
+ 365 | ok     | practice 25 [INV-25] canceling a practice session requires a reason                                                   | [INV-25] Canceling a scorekeeping session requires a reason.
+ 366 | ok     | practice 26 [INV-25] practice cancel closes the private session and writes no official audit                          | 
+ 367 | ok     | practice 27 [INV-28] an ordinary session can never have a NULL game                                                   | [INV-28] Scorekeeping sessions require a ledger-mode game.
+ 368 | ok     | practice 28 [INV-28] a practice session can never reference a game                                                    | new row for relation "scorekeeping_sessions" violates check constraint "scorekeeping_sessions_practice_game_check"
+ 369 | ok     | practice 29 [INV-18] an open practice session never blocks a real game's ordinary session                             | 
+ 370 | ok     | practice 30 [INV-27] practice evidence is invisible to non-admin clients                                              | 
+ 371 | ok     | practice 31 [INV-27] the administrator can read practice evidence                                                     | 
+ 372 | ok     | practice 32 [INV-11][INV-36] a practice event cannot attribute a participant from an unrelated practice session       | [INV-11] Attribution participant is outside the event session snapshot.
+ 373 | ok     | practice 33 [INV-16][INV-36] a practice correction cannot void an event from an unrelated practice chain              | [INV-16] A void must reference a non-void event in the same practice chain.
+ 374 | ok     | practice 34 [INV-04][INV-40] renew_practice_session rejects an ordinary game session                                  | [INV-04][INV-40] renew_practice_session may target only a practice session.
+ 375 | ok     | practice 35 [INV-04][INV-40] resume_practice_session rejects an ordinary game session                                 | [INV-04][INV-40] resume_practice_session may target only a practice session.
+ 376 | ok     | practice 36 [INV-04][INV-40] cancel_practice_session rejects an ordinary game session                                 | [INV-04][INV-40] cancel_practice_session may target only a practice session.
+ 377 | ok     | practice 37 [INV-04][INV-40] start_practice_correction rejects an ordinary game session                               | [INV-04][INV-40] start_practice_correction may target only a practice session.
+ 378 | ok     | practice 38 [INV-04][INV-40] the official renew path rejects a practice session                                       | [INV-20] Unknown scorekeeping session 510a6edf-39f5-4379-ba65-7b3d602fea87.
+ 379 | ok     | practice 39 [INV-04][INV-40] the official resume path rejects a practice session                                      | [INV-20] Unknown scorekeeping session 510a6edf-39f5-4379-ba65-7b3d602fea87.
+ 380 | ok     | practice 40 [INV-04][INV-40] the official cancel path rejects a practice session                                      | [INV-20] Unknown scorekeeping session 510a6edf-39f5-4379-ba65-7b3d602fea87.
+ 381 | ok     | practice 41 [INV-04][INV-40] the official replace path rejects a practice session                                     | [INV-20] Unknown scorekeeping session 510a6edf-39f5-4379-ba65-7b3d602fea87.
+ 382 | ok     | practice 42 [INV-40] the official correction entry point is game-keyed, so practice is unreachable through it         | 
+(382 rows)
+
+ total | passed | failed 
+-------+--------+--------
+   382 |    382 |      0
+(1 row)
+
+DO
+ledger concurrency: PASS (two connections, one durable event, one replay)
+practice fork race: PASS (two connections, two divergent forks, one void of the base event)
+practice fork race: loser rejected by -> duplicate key value violates unique constraint "scorekeeping_events_one_void_idx"

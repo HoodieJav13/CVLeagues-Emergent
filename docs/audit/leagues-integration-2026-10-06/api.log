@@ -1,0 +1,45 @@
+
+> frontend@0.1.0 test:api
+> node --test api/intake.test.cjs api/calendar.test.mjs
+
+(node:83019) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/jav/Documents/Codex/2026-10-05/task-6/isolated/frontend/src/lib/calendar.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to /Users/jav/Documents/Codex/2026-10-05/task-6/isolated/frontend/package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+Calendar rate limiter unavailable; serving unthrottled. redis unreachable
+✔ readQuery requires exactly one selector (0.816708ms)
+✔ readQuery rejects anything that is not a well-formed id (0.164625ms)
+✔ readQuery accepts a valid team or league (0.308875ms)
+✔ readConfig fails closed when environment values are absent (0.099583ms)
+✔ readConfig never asks for the secret key (0.061625ms)
+✔ feedName uses the team's own name when it resolves (0.082125ms)
+✔ loadFeedData matches a team on either side of the fixture (0.147625ms)
+✔ loadFeedData surfaces a read failure without exposing the query (0.096042ms)
+✔ handler rejects methods other than GET and HEAD (0.217584ms)
+✔ handler reports a bad selector as a client error (0.143125ms)
+✔ handler fails closed and says nothing specific when misconfigured (0.327917ms)
+✔ the cache window is long enough that a popular feed is not re-queried per client (0.034458ms)
+✔ readLimiterConfig fails closed on a deployed platform with no store (0.040667ms)
+✔ readLimiterConfig skips limiting only where the feed is unreachable anyway (0.049459ms)
+✔ clientAddress prefers the first forwarded hop (0.052833ms)
+✔ requests under the limit pass and over the limit are limited (0.193958ms)
+✔ the store sees a per-IP, per-window key and never the raw token in the URL (0.11025ms)
+✔ a transient store failure serves unthrottled rather than taking the feed down (0.19325ms)
+✔ a limited caller gets 429 with Retry-After and no calendar body (0.228833ms)
+✔ team registration validation returns only the database allowlist (0.732208ms)
+✔ free agent validation rejects invalid enumerations and requires contact (0.250458ms)
+✔ Turnstile validation binds the token to action and hostname (0.216166ms)
+✔ Turnstile validation rejects malformed and oversized tokens before the network (0.103542ms)
+✔ Turnstile validation rejects a valid token from an unapproved hostname (0.090167ms)
+✔ Turnstile validation fails closed on a non-success Siteverify response (0.074458ms)
+✔ Turnstile validation fails closed on a Siteverify network error (0.075125ms)
+✔ Turnstile validation aborts a stalled Siteverify request and fails closed (2.302042ms)
+✔ server configuration fails closed when any secret setting is absent (0.133791ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 73.621667

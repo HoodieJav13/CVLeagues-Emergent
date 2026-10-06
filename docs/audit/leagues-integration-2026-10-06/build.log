@@ -1,0 +1,37 @@
+
+> frontend@0.1.0 prebuild
+> node scripts/validate-production-env.cjs
+
+Production public environment preflight passed (values not printed).
+
+> frontend@0.1.0 build
+> craco build
+
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  287.81 kB (+215 B)  build/static/js/main.328f591b.js
+  24.13 kB (-189 B)   build/static/js/726.56bba2a4.chunk.js
+  19.06 kB            build/static/css/main.1d1ec518.css
+  17.4 kB             build/static/js/0.715c0ab5.chunk.js
+  10.94 kB            build/static/js/605.4935c60e.chunk.js
+  4.13 kB             build/static/js/161.5984c9fb.chunk.js
+  1.36 kB             build/static/js/916.a7185681.chunk.js
+  1.01 kB             build/static/js/191.d2530313.chunk.js
+  923 B               build/static/js/238.34fa0220.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+

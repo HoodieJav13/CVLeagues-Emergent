@@ -1,0 +1,16 @@
+{
+  "opacity": "1",
+  "background": "rgb(32, 28, 24)",
+  "animation": "enter",
+  "bounds": {
+    "x": 0,
+    "y": 86,
+    "width": 360,
+    "height": 628,
+    "top": 86,
+    "right": 360,
+    "bottom": 714,
+    "left": 0
+  },
+  "animations": []
+}

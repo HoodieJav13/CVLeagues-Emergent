@@ -1,0 +1,605 @@
+{
+  "config": {
+    "configFile": "/Users/jav/Documents/Codex/2026-10-05/task-6/evidence-oct6/rehearsal.config.cjs",
+    "rootDir": "/Users/jav/Documents/Codex/2026-10-05/task-6/isolated/tests/season-rehearsal",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 2
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/jav/Documents/Codex/2026-10-05/task-6/evidence-oct6/policy-green-browser.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/jav/Documents/Codex/2026-10-05/task-6/evidence-oct6/policy-green-browser-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 2
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/Users/jav/Documents/Codex/2026-10-05/task-6/isolated/tests/season-rehearsal",
+        "testIgnore": [],
+        "testMatch": [
+          "/(rehearsal|boundaries|ux-capture|score-entry-layout|admin-teams-layout|new-game-season)\\.spec\\.js/"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 2,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "boundaries.spec.js",
+      "file": "boundaries.spec.js",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "kickoff: unchanged later fall-back time keeps its instant",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 9452,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m<launching> /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/playwright_chromiumdev_profile-yh15LB --remote-debugging-pipe --no-startup-window \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m<launched> pid=82679 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] Trying to load the allocator multiple times. This is *not* supported. \u001b[30m+497ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204319.802867:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+28ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204319.803096:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204319.804201:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204319.806491:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+2ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204319.810560:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+4ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204319.812078:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+2ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204319.812285:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204319.812324:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204319.812428:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204319.812481:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82679:1610542:1005/204323.068095:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT \u001b[30m+3s\u001b[0m\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-06T02:43:19.269Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3dc3b35d119e35eaf505-6fd1a6c9e0b116a8c7be",
+          "file": "boundaries.spec.js",
+          "line": 139,
+          "column": 1
+        },
+        {
+          "title": "kickoff: ambiguous reschedule refuses a write, then cancellation preserves the game",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 9975,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m<launching> /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=AcceptCHFrame,AvoidUnnecessaryBeforeUnloadCheckSync,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --enable-automation --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --user-data-dir=/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/playwright_chromiumdev_profile-K0Cosi --remote-debugging-pipe --no-startup-window \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m<launched> pid=82680 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] Trying to load the allocator multiple times. This is *not* supported. \u001b[30m+506ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204319.830397:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+46ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204319.830671:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204319.830914:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204319.830973:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204319.831089:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204319.831135:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204319.831273:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204319.834559:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+3ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204319.834719:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204319.834754:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-06T02:43:19.269Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3dc3b35d119e35eaf505-b09ad39d2fa1b7d96fea",
+          "file": "boundaries.spec.js",
+          "line": 154,
+          "column": 1
+        },
+        {
+          "title": "kickoff: deliberately reselecting a stored fold time refuses it rather than guessing",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 10088,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82679:1610568:1005/204329.134464:ERROR:base/process/process_mac.cc:53] task_policy_set TASK_CATEGORY_POLICY: (os/kern) invalid argument (4) \u001b[30m+6s\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82679:1610568:1005/204329.134477:ERROR:base/process/process_mac.cc:98] task_policy_set TASK_SUPPRESSION_POLICY: (os/kern) invalid argument (4) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204329.220054:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+86ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204329.220098:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204329.220919:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204329.220958:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204329.221431:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204329.221470:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204329.221578:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204329.221621:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610572:1005/204329.221744:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82690:1610712:1005/204329.221773:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] Created TensorFlow Lite XNNPACK delegate for CPU. \u001b[30m+6s\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.556871:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --wake-all --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+3s\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.557241:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 82679 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.558649:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749413376B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.558668:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749413376B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.558707:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82739:1611567:1005/204338.567359:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --crash-handler --database=/Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/Crashpad --url=https://clients2.google.com/cr/report --annotation=prod=Update4 --annotation=ver=156.0.8067.0 --handshake-fd=6 --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+9ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82739:1611567:1005/204338.568276:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 1 \u001b[30m+3ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82739:1611567:1005/204338.570262:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749380608B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82739:1611567:1005/204338.570287:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749380608B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82739:1611567:1005/204338.570357:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571004:VERBOSE1:chrome/updater/crash_reporter.cc:123] Crash handler launched and ready. \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571756:VERBOSE1:chrome/updater/crash_client.cc:108] Found 0 completed crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571833:VERBOSE1:chrome/updater/crash_client.cc:132] Found 0 pending crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571897:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/RLZ/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571909:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome for Testing/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571931:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/ChromeForTesting/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571940:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome-headless/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611560:1005/204338.571950:VERBOSE1:chrome/updater/updater.cc:105] Crash reporting initialized. \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82736:1611636:1005/204338.572158:VERBOSE1:chrome/updater/app/app_wakeall.cc:58] Launching `/Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --wake` \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.579552:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --wake --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+8ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.579993:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 82736 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.581546:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749589504B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.581569:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749589504B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.581619:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82746:1611680:1005/204338.590202:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --crash-handler --database=/Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/Crashpad --url=https://clients2.google.com/cr/report --annotation=prod=Update4 --annotation=ver=156.0.8067.0 --handshake-fd=6 --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+9ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82746:1611680:1005/204338.590716:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 1 \u001b[30m+2ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82746:1611680:1005/204338.592533:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749585408B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82746:1611680:1005/204338.592554:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749585408B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82746:1611680:1005/204338.592597:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.593127:VERBOSE1:chrome/updater/crash_reporter.cc:123] Crash handler launched and ready. \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.593844:VERBOSE1:chrome/updater/crash_client.cc:108] Found 0 completed crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.593932:VERBOSE1:chrome/updater/crash_client.cc:132] Found 0 pending crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.594011:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/RLZ/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.594025:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome for Testing/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.594062:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/ChromeForTesting/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.594070:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome-headless/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.594080:VERBOSE1:chrome/updater/updater.cc:105] Crash reporting initialized. \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82679][err] [82742:1611648:1005/204338.594234:VERBOSE1:chrome/updater/ipc/update_service_internal_proxy_mojo.cc:61] Run \u001b[30m+0ms\u001b[0m\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-06T02:43:29.127Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3dc3b35d119e35eaf505-5a2f25f7d18645eac98d",
+          "file": "boundaries.spec.js",
+          "line": 170,
+          "column": 1
+        },
+        {
+          "title": "kickoff: nonexistent spring-forward time keeps the editor open with validation",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 12783,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82680:1610567:1005/204329.657453:ERROR:base/process/process_mac.cc:53] task_policy_set TASK_CATEGORY_POLICY: (os/kern) invalid argument (4) \u001b[30m+10s\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82680:1610567:1005/204329.657468:ERROR:base/process/process_mac.cc:98] task_policy_set TASK_SUPPRESSION_POLICY: (os/kern) invalid argument (4) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204329.728686:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+71ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204329.728736:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204329.729437:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204329.729475:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204329.729831:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204329.729863:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204329.729959:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204329.732433:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+2ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610571:1005/204329.735873:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+4ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82689:1610702:1005/204329.735936:ERROR:ui/display/mac/cv_display_link_mac.mm:188] CVDisplayLinkCreateWithCGDisplay failed. CVReturn: -6670 \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.556529:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --wake-all --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+9s\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.556975:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 82680 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.558511:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749413376B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.558536:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749413376B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.558604:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82740:1611568:1005/204338.567361:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --crash-handler --database=/Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/Crashpad --url=https://clients2.google.com/cr/report --annotation=prod=Update4 --annotation=ver=156.0.8067.0 --handshake-fd=6 --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+9ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82740:1611568:1005/204338.568276:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 1 \u001b[30m+3ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82740:1611568:1005/204338.570422:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749380608B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82740:1611568:1005/204338.570442:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749380608B (706.640GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82740:1611568:1005/204338.570483:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571017:VERBOSE1:chrome/updater/crash_reporter.cc:123] Crash handler launched and ready. \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571656:VERBOSE1:chrome/updater/crash_client.cc:108] Found 0 completed crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571716:VERBOSE1:chrome/updater/crash_client.cc:132] Found 0 pending crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571792:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/RLZ/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571811:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome for Testing/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571852:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/ChromeForTesting/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571867:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome-headless/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611559:1005/204338.571877:VERBOSE1:chrome/updater/updater.cc:105] Crash reporting initialized. \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82735:1611631:1005/204338.572120:VERBOSE1:chrome/updater/app/app_wakeall.cc:58] Launching `/Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --wake` \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.579526:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --wake --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+8ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.579998:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 82735 \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.581707:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749589504B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.581726:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749589504B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.581761:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82745:1611679:1005/204338.590204:VERBOSE1:chrome/updater/updater.cc:364] Version: 156.0.8067.0, opt, ARM_64, command line: /Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/GoogleUpdater.app/Contents/MacOS/GoogleUpdater --crash-handler --database=/Users/jav/Library/Application Support/Google/GoogleUpdater/156.0.8067.0/Crashpad --url=https://clients2.google.com/cr/report --annotation=prod=Update4 --annotation=ver=156.0.8067.0 --handshake-fd=6 --enable-logging --vmodule=*/components/update_client/*=2,*/chrome/enterprise_companion/*=2,*/chrome/updater/*=2 \u001b[30m+9ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82745:1611679:1005/204338.590714:VERBOSE1:chrome/updater/updater.cc:367] OS version: 27.2.0, arch: arm64, System uptime (seconds): 89569, parent pid: 1 \u001b[30m+2ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82745:1611679:1005/204338.592291:VERBOSE1:chrome/updater/updater.cc:372] Available disk space in install directory (/Users/jav/Library/Application Support/Google/GoogleUpdater): 758749585408B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82745:1611679:1005/204338.592320:VERBOSE1:chrome/updater/updater.cc:376] Available disk space in temporary directory (/var/folders/6h/sdnxwn_x7dv3m7vq3hpx2vjh0000gn/T/): 758749585408B (706.641GiB) / 994610155520B (926.303GiB) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82745:1611679:1005/204338.592393:VERBOSE2:chrome/updater/event_history.cc:266] Emitted a UPDATER_PROCESS START event to the history log \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.592966:VERBOSE1:chrome/updater/crash_reporter.cc:123] Crash handler launched and ready. \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593515:VERBOSE1:chrome/updater/crash_client.cc:108] Found 0 completed crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593610:VERBOSE1:chrome/updater/crash_client.cc:132] Found 0 pending crash reports \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593677:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/RLZ/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593687:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome for Testing/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593816:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/ChromeForTesting/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593831:ERROR:third_party/crashpad/crashpad/util/file/file_io_posix.cc:145] open /Users/jav/Library/Application Support/Google/Chrome-headless/Crashpad/settings.dat: No such file or directory (2) \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.593845:VERBOSE1:chrome/updater/updater.cc:105] Crash reporting initialized. \u001b[30m+0ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82741:1611645:1005/204338.594038:VERBOSE1:chrome/updater/ipc/update_service_internal_proxy_mojo.cc:61] Run \u001b[30m+1ms\u001b[0m\n"
+                    },
+                    {
+                      "text": "  \u001b[30;1mpw:browser \u001b[0m[pid=82680][err] [82680:1610541:1005/204340.301177:ERROR:google_apis/gcm/engine/registration_request.cc:291] Registration response error message: DEPRECATED_ENDPOINT \u001b[30m+2s\u001b[0m\n"
+                    }
+                  ],
+                  "retry": 0,
+                  "startTime": "2026-10-06T02:43:29.650Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "3dc3b35d119e35eaf505-a05a887bb4c6e7b56db4",
+          "file": "boundaries.spec.js",
+          "line": 188,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-06T02:43:18.999Z",
+    "duration": 146714.696,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}
