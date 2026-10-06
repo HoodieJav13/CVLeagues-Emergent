@@ -217,6 +217,45 @@ describe("admin New Game insert", () => {
     expect(row).toEqual({ id: "6f1c1f9e-6c0b-4d5e-9a51-6f3f9a1b2c3d", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" });
   });
 
+  test("retry recovers a matching committed game by client id without changing it", async () => {
+    const payload = { id: "6f1c1f9e-6c0b-4d5e-9a51-6f3f9a1b2c3d", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" };
+    const insert = jest.fn().mockResolvedValue({ error: { code: "23505", message: "duplicate key" } });
+    const maybeSingle = jest.fn().mockResolvedValue({ data: { ...payload, starts_at: "2026-10-14T01:00:00+00:00" }, error: null });
+    const eq = jest.fn(() => ({ maybeSingle }));
+    const select = jest.fn(() => ({ eq }));
+    supabase.from.mockReturnValue({ insert, select });
+    await expect(createEntity("games", payload)).resolves.toBeUndefined();
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(eq).toHaveBeenCalledWith("id", payload.id);
+    expect(select).toHaveBeenCalledWith("id,league_id,sport,home_team_id,away_team_id,starts_at,venue_id,stage");
+  });
+
+  test.each([null, { venue_id: "other-venue" }, { starts_at: "2026-10-14T02:00:00Z" }])(
+    "a missing or differently scheduled existing id is never treated as a saved retry: %p", async (difference) => {
+      const payload = { id: "6f1c1f9e-6c0b-4d5e-9a51-6f3f9a1b2c3d", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" };
+      const insert = jest.fn().mockResolvedValue({ error: { code: "23505", message: "duplicate key" } });
+      const maybeSingle = jest.fn().mockResolvedValue({ data: difference ? { ...payload, ...difference } : null, error: null });
+      const select = jest.fn(() => ({ eq: () => ({ maybeSingle }) }));
+      supabase.from.mockReturnValue({ insert, select });
+      await expect(createEntity("games", payload)).rejects.toThrow("create games: duplicate key");
+      expect(insert).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  test("a failed duplicate readback remains a retryable error", async () => {
+    const payload = { id: "6f1c1f9e-6c0b-4d5e-9a51-6f3f9a1b2c3d", league_id: "l1", sport: "kickball", home_team_id: "t1", away_team_id: "t2", starts_at: "2026-10-14T01:00:00.000Z", venue_id: "v1", stage: "regular" };
+    const maybeSingle = jest.fn().mockResolvedValue({ data: null, error: { message: "network down" } });
+    supabase.from.mockReturnValue({ insert: jest.fn().mockResolvedValue({ error: { code: "23505", message: "duplicate key" } }), select: () => ({ eq: () => ({ maybeSingle }) }) });
+    await expect(createEntity("games", payload)).rejects.toThrow("confirm saved game: network down");
+  });
+
+  test("another collection's duplicate never invokes game recovery", async () => {
+    const select = jest.fn();
+    supabase.from.mockReturnValue({ insert: jest.fn().mockResolvedValue({ error: { code: "23505", message: "duplicate key" } }), select });
+    await expect(createEntity("venues", { id: "existing", name: "Park" })).rejects.toThrow("create venues: duplicate key");
+    expect(select).not.toHaveBeenCalled();
+  });
+
   test("a rejected insert surfaces through the adapter so the dialog can stay open", async () => {
     supabase.from.mockReturnValue({ insert: jest.fn().mockResolvedValue({ error: { message: "new row violates row-level security policy" } }) });
     await expect(createEntity("games", { league_id: "l1" })).rejects.toThrow("create games: new row violates row-level security policy");
