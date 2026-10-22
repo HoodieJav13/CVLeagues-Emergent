@@ -111,6 +111,9 @@ describe("replay authorship transitions", () => {
     expect(() => saveClip(state, { recording_id: rec.id, segment_id: "rec-g7-s1", in_ms: 58000, out_ms: 65000 }, ctx(JORDAN))).toThrow(/after this segment ends/);
     expect(() => saveClip(state, { recording_id: rec.id, segment_id: "rec-g7-s1", in_ms: 1000, out_ms: 3000 }, ctx(null))).toThrow(/viewing as/);
     expect(() => registerRecording(state, { index: FIXTURE_INDEX, game_id: "g7", title: "x" })).toThrow(/already has/);
+    // Review R11: a reel must belong to a registered recording at its own game.
+    expect(() => saveReel(state, { game_id: "g9", recording_id: rec.id, clip_ids: [] }, ctx(JORDAN))).toThrow(/game its recording/);
+    expect(() => saveReel(state, { game_id: "g7", recording_id: "rec-nope", clip_ids: [] }, ctx(JORDAN))).toThrow(/not registered/);
   });
 
   test("replaced footage: clips need explicit revalidation; out-of-bounds clips stay blocked", () => {

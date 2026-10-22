@@ -1,4 +1,4 @@
-import { sha256OfUrl } from "./replayIO";
+import { exportStatus, sha256OfUrl, startExport } from "./replayIO";
 
 const response = (status, type, body = "abc") => ({
   status,
@@ -34,5 +34,15 @@ describe("sha256OfUrl", () => {
     await expect(sha256OfUrl("/replay-media/x.webm")).resolves.toEqual({
       sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad", bytes: 3,
     });
+  });
+});
+
+describe("export helper client (review R3)", () => {
+  const realFetch = global.fetch;
+  afterAll(() => { global.fetch = realFetch; });
+  test("a helper that went away turns into a recoverable failure, not a stuck render", async () => {
+    global.fetch = jest.fn(async () => { throw new TypeError("Failed to fetch"); });
+    await expect(startExport({})).resolves.toMatchObject({ state: "failed", code: "HELPER" });
+    await expect(exportStatus("x")).resolves.toMatchObject({ state: "failed", code: "HELPER" });
   });
 });

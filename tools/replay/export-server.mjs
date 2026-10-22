@@ -30,11 +30,62 @@ export const ERROR_TEXT = {
 
 const sha256File = (path) => createHash("sha256").update(readFileSync(path)).digest("hex");
 
-export function validateAgainstMedia(manifest, mediaRoot) {
-  if (!manifest || manifest.schema !== "reel-manifest/v1" || !Array.isArray(manifest.items) || !manifest.items.length
-    || !["mp4", "webm"].includes(manifest.output?.container)) {
-    return { code: "SCHEMA" };
+const isInt = (v) => Number.isInteger(v);
+const inRange = (v, lo, hi) => v === undefined || (isInt(v) && v >= lo && v <= hi);
+
+// Shape and value checks on everything the client controls (no I/O).
+export function manifestShapeProblem(manifest) {
+  if (!manifest || typeof manifest !== "object" || manifest.schema !== "reel-manifest/v1") return "Not a reel-manifest/v1.";
+  if (!Array.isArray(manifest.items) || !manifest.items.length || manifest.items.length > 50) return "The reel needs 1–50 items.";
+  if (manifest.title !== undefined && typeof manifest.title !== "string") return "The reel title must be text.";
+  const out = manifest.output;
+  if (!out || typeof out !== "object" || !["mp4", "webm"].includes(out.container)) return "Unknown output container.";
+  if (!inRange(out.fps, 1, 60) || !inRange(out.width, 16, 1920) || !inRange(out.height, 16, 1080)) return "Output size or frame rate is out of range.";
+  for (const item of manifest.items) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) return "Every reel item must be an object.";
+    if (typeof item.media_path !== "string" || typeof item.media_sha256 !== "string" || !isInt(item.in_ms) || !isInt(item.out_ms)) return "A reel item is missing its media or bounds.";
   }
+  return null;
+}
+
+// Duration of a source file. The registered index is trusted only for the
+// exact registered bytes; relinked (different) footage is probed for real.
+async function sourceDurationMs(segment, file, actualSha, probeDuration) {
+  if (actualSha === segment.sha256) return segment.duration_ms;
+  return probeDuration ? probeDuration(file) : null;
+}
+
+export async function validateAgainstMediaAsync(manifest, mediaRoot, { probeDuration } = {}) {
+  const shape = manifestShapeProblem(manifest);
+  if (shape) return { code: "SCHEMA", detail: shape };
+  let index;
+  try {
+    index = JSON.parse(readFileSync(join(mediaRoot, "index.json"), "utf8"));
+  } catch {
+    return { code: "MEDIA_MISSING", detail: "The recording index (replay-media/index.json) is missing." };
+  }
+  const byPath = new Map((index.segments || []).map((s) => [s.path, s]));
+  for (const item of manifest.items) {
+    const segment = byPath.get(item.media_path);
+    if (!segment || basename(item.media_path) !== `${segment.id}.webm`) return { code: "SCHEMA", detail: `Item ${item.order}: not a registered replay file.` };
+    const file = join(mediaRoot, basename(item.media_path));
+    if (!existsSync(file)) return { code: "MEDIA_MISSING", detail: `${segment.label} (${basename(file)}) is missing.` };
+    const actual = sha256File(file);
+    if (actual !== item.media_sha256) {
+      return { code: "MEDIA_REPLACED", detail: `${segment.label} on disk is ${actual.slice(0, 12)}…, the highlights were made on ${String(item.media_sha256).slice(0, 12)}….` };
+    }
+    const duration = await sourceDurationMs(segment, file, actual, probeDuration);
+    if (!(item.in_ms >= 0 && item.out_ms - item.in_ms >= 500 && Number.isFinite(duration) && item.out_ms <= duration)) {
+      return { code: "CLIP_OUT_OF_BOUNDS", detail: `Item ${item.order}: ${item.in_ms}–${item.out_ms} ms is outside ${segment.label} (0–${duration ?? "unknown"} ms).` };
+    }
+  }
+  return null;
+}
+
+// Synchronous variant (registered footage only), kept for callers and tests.
+export function validateAgainstMedia(manifest, mediaRoot) {
+  const shape = manifestShapeProblem(manifest);
+  if (shape) return { code: "SCHEMA", detail: shape };
   let index;
   try {
     index = JSON.parse(readFileSync(join(mediaRoot, "index.json"), "utf8"));
@@ -78,7 +129,16 @@ export function createExportServer({ mediaRoot, exportDir, allowedOrigin, render
   const jobs = new Map();
   let queue = Promise.resolve();
 
+  const probeDuration = async (file) => {
+    const probed = await run(probeCmd[0], [...probeCmd.slice(1), join(HERE, "probe_media.py"), "--", file], 120000);
+    const line = probed.out.split("\n").find((l) => l.startsWith("PROBE "));
+    return line ? JSON.parse(line.slice(6)).duration_ms : null;
+  };
+
   const render = async (job) => {
+    // Re-check right before rendering: footage may have changed while queued.
+    const recheck = await validateAgainstMediaAsync(job.manifest, mediaRoot, { probeDuration });
+    if (recheck) return Object.assign(job, { state: "failed", ...recheck });
     job.state = "rendering";
     job.started_at = new Date().toISOString();
     const work = join(exportDir, `.${job.id}`);
@@ -93,6 +153,16 @@ export function createExportServer({ mediaRoot, exportDir, allowedOrigin, render
     if (rendered.code !== 0 || !existsSync(tmpOut) || statSync(tmpOut).size === 0) {
       rmSync(work, { recursive: true, force: true });
       return Object.assign(job, { state: "failed", code: "RENDER_FAILED", detail: rendered.out.split("\n").filter(Boolean).slice(-6).join("\n") });
+    }
+    // The sources must still be the verified bytes after rendering too; a file
+    // swapped mid-render could otherwise leak into the output.
+    const changed = job.manifest.items.find((item) => {
+      const file = join(mediaRoot, basename(item.media_path));
+      return !existsSync(file) || sha256File(file) !== item.media_sha256;
+    });
+    if (changed) {
+      rmSync(work, { recursive: true, force: true });
+      return Object.assign(job, { state: "failed", code: "MEDIA_REPLACED", detail: `${basename(changed.media_path)} changed while the video was being made.` });
     }
     const probed = await run(probeCmd[0], [...probeCmd.slice(1), join(HERE, "probe_media.py"), "--", tmpOut], 120000);
     const line = probed.out.split("\n").find((l) => l.startsWith("PROBE "));
@@ -139,15 +209,20 @@ export function createExportServer({ mediaRoot, exportDir, allowedOrigin, render
     if (req.method === "POST" && url.pathname === "/exports") {
       let raw = "";
       req.on("data", (chunk) => { raw += chunk; if (raw.length > 512 * 1024) req.destroy(); });
-      req.on("end", () => {
-        let manifest;
-        try { manifest = JSON.parse(raw).manifest; } catch { return send(req, res, 400, { code: "SCHEMA", message: ERROR_TEXT.SCHEMA }); }
-        const problem = validateAgainstMedia(manifest, mediaRoot);
-        if (problem) return send(req, res, 422, { ...problem, message: ERROR_TEXT[problem.code] });
-        const job = { id: randomUUID(), state: "queued", format: manifest.output.container, manifest, queued_at: new Date().toISOString() };
-        jobs.set(job.id, job);
-        queue = queue.then(() => render(job)).catch((error) => Object.assign(job, { state: "failed", code: "RENDER_FAILED", detail: String(error) }));
-        return send(req, res, 202, publicJob(job));
+      req.on("end", async () => {
+        try {
+          let manifest;
+          try { manifest = JSON.parse(raw).manifest; } catch { return send(req, res, 400, { code: "SCHEMA", message: ERROR_TEXT.SCHEMA }); }
+          const problem = await validateAgainstMediaAsync(manifest, mediaRoot, { probeDuration });
+          if (problem) return send(req, res, 422, { ...problem, message: ERROR_TEXT[problem.code] });
+          const job = { id: randomUUID(), state: "queued", format: manifest.output.container, manifest, queued_at: new Date().toISOString() };
+          jobs.set(job.id, job);
+          queue = queue.then(() => render(job)).catch((error) => Object.assign(job, { state: "failed", code: "RENDER_FAILED", detail: String(error) }));
+          return send(req, res, 202, publicJob(job));
+        } catch (error) {
+          // Never let one malformed request take the helper down.
+          return send(req, res, 422, { code: "SCHEMA", message: ERROR_TEXT.SCHEMA, detail: String(error.message || error) });
+        }
       });
       return undefined;
     }
@@ -157,7 +232,7 @@ export function createExportServer({ mediaRoot, exportDir, allowedOrigin, render
       if (!job) return send(req, res, 404, { error: "unknown export" });
       if (!match[2]) return send(req, res, 200, publicJob(job));
       if (job.state !== "done") return send(req, res, 409, { error: "not ready" });
-      const safe = (job.manifest.title || "reel").replace(/[^\w -]+/g, "").trim().slice(0, 60) || "reel";
+      const safe = String(job.manifest.title || "reel").replace(/[^\w -]+/g, "").trim().slice(0, 60) || "reel";
       const headers = {
         "Content-Type": job.format === "mp4" ? "video/mp4" : "video/webm",
         "Content-Length": String(job.bytes),

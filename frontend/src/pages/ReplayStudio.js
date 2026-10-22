@@ -103,6 +103,8 @@ export default function ReplayStudio() {
     publish: async (id) => app.publishReplayReel(id, viewer_id),
     unpublish: async (id) => app.unpublishReplayReel(id, viewer_id),
     recordExport: async (id, info) => app.recordReplayExport(id, info, viewer_id),
+    // Statuses let previews skip footage that is missing or needs relinking.
+    statusOf: (clip) => clipStatus(recording, clip, mediaStatus),
   };
 
   const viewer = REPLAY_VIEWERS.find((v) => v.id === viewer_id);
@@ -159,7 +161,7 @@ export default function ReplayStudio() {
 
           <SegmentTimeline recording={recording} activeSegmentId={activeSegmentId} onSelect={setActiveSegmentId} mediaStatus={mediaStatus} />
           {segment && (
-            <ClipEditor recording={recording} segment={segment} state={state} game={game} editing={editing && editing.segment_id === segment.id ? editing : null}
+            <ClipEditor key={`${viewer_id}-${segment.id}`} recording={recording} segment={segment} state={state} game={game} editing={editing && editing.segment_id === segment.id && editing.owner_id === viewer_id ? editing : null}
               onSave={saveClip} onCancelEdit={() => setEditing(null)} segmentStatus={mediaStatus[segment.id]} seekTo={seekTo} />
           )}
 
@@ -180,7 +182,7 @@ export default function ReplayStudio() {
                     {status.state !== "ok" && <p className="text-micro text-gold" data-testid={`replay-clip-status-${clip.id}`}>{status.reason}</p>}
                     <div className="flex gap-1.5 pt-1">
                       <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={() => { setActiveSegmentId(clip.segment_id); setEditing(clip); }} data-testid={`replay-edit-${clip.id}`}>Edit</Button>
-                      <Button type="button" variant="ghost" size="sm" className="min-h-10" onClick={() => app.deleteReplayClip(clip.id, viewer_id).then(() => toast.success("Highlight deleted")).catch(() => {})} data-testid={`replay-delete-${clip.id}`}>Delete</Button>
+                      <Button type="button" variant="ghost" size="sm" className="min-h-10" onClick={async () => { try { await app.deleteReplayClip(clip.id, viewer_id); toast.success("Highlight deleted"); } catch { /* refusal shown */ } }} data-testid={`replay-delete-${clip.id}`}>Delete</Button>
                     </div>
                   </li>
                 );
@@ -196,11 +198,11 @@ export default function ReplayStudio() {
             </div>
           )}
           {mine.length > 0 && <Button type="button" variant="ghost" size="sm" className="min-h-10" onClick={() => setActiveReelId("new")} data-testid="replay-new-reel">Start another reel</Button>}
-          <ReelPanel state={state} recording={recording} reel={activeReel} myClips={myClips} viewer_id={viewer_id} mediaStatus={mediaStatus} actions={reelActions} />
+          <ReelPanel key={viewer_id} state={state} recording={recording} reel={activeReel} myClips={myClips} viewer_id={viewer_id} mediaStatus={mediaStatus} actions={reelActions} />
 
           <section className="space-y-2" aria-label="Shared reels">
             <p className="font-display uppercase tracking-tight text-foreground">Shared by others</p>
-            <SharedReels state={state} recording={recording} shared={shared} viewer_id={viewer_id} />
+            <SharedReels state={state} recording={recording} shared={shared} viewer_id={viewer_id} statusOf={reelActions.statusOf} />
           </section>
 
           <section className="bg-card border border-border rounded-xl p-3 space-y-2" data-testid="replay-events" aria-label="Season two preview">

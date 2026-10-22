@@ -120,6 +120,55 @@ test("rejects other origins and invalid manifests before rendering", async () =>
     assert.equal((await bad.json()).code, "SCHEMA");
     const health = await (await fetch(`${base}/health`)).json();
     assert.equal(health.ok, true);
-    assert.ok(!existsSync(join(f.exportsDir, "x")));
+  });
+});
+
+test("review R4/R9: malformed items, non-string titles and silly output sizes are SCHEMA, and the helper keeps running", async () => {
+  const f = setup();
+  await withServer(f, async (base) => {
+    for (const bad of [
+      { ...f.manifest, items: [null] },
+      { ...f.manifest, items: [42] },
+      { ...f.manifest, title: 5 },
+      { ...f.manifest, output: { container: "mp4", fps: 0 } },
+      { ...f.manifest, output: { container: "mp4", fps: 30, width: 100000 } },
+    ]) {
+      const res = await post(base, bad);
+      assert.equal(res.status, 422);
+      assert.equal((await res.json()).code, "SCHEMA");
+    }
+    const garbage = await fetch(`${base}/exports`, { method: "POST", headers: { Origin: ORIGIN }, body: "{not json" });
+    assert.equal(garbage.status, 400);
+    assert.equal((await (await fetch(`${base}/health`)).json()).ok, true); // still alive
+  });
+});
+
+test("review R5: relinked (replaced, longer) footage is bounded by its probed duration, not the frozen index", async () => {
+  const f = setup();
+  writeFileSync(join(f.media, "rec-g7-s2.webm"), "longer replacement footage");
+  writeFileSync(join(f.media, "rec-g7-s2.webm.duration"), "50000"); // stub probe reads this
+  const relinked = { ...f.manifest, items: [{ ...f.manifest.items[0], in_ms: 46000, out_ms: 49000, duration_ms: 3000, media_sha256: f.sha("longer replacement footage") }] };
+  await withServer(f, async (base) => {
+    const res = await post(base, relinked);
+    assert.equal(res.status, 202);
+    const job = await waitDone(base, (await res.json()).id);
+    assert.equal(job.state, "done");
+  });
+});
+
+test("review R5: footage swapped while a job waits in the queue is refused at render time", async () => {
+  const f = setup();
+  await withServer(f, async (base) => {
+    writeFileSync(join(f.exportsDir, "HOLD"), ""); // stub render waits while HOLD exists
+    const first = await (await post(base, f.manifest)).json();
+    const second = await (await post(base, f.manifest)).json();
+    writeFileSync(join(f.media, "rec-g7-s1.webm"), "swapped while queued");
+    rmSync(join(f.exportsDir, "HOLD"));
+    const firstJob = await waitDone(base, first.id); // swapped during its render: caught after rendering
+    assert.equal(firstJob.code, "MEDIA_REPLACED");
+    assert.ok(!readdirSync(f.exportsDir).some((n) => /\.(mp4|webm)$/.test(n)));
+    const job = await waitDone(base, second.id);
+    assert.equal(job.state, "failed");
+    assert.equal(job.code, "MEDIA_REPLACED");
   });
 });

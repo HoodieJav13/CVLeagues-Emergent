@@ -80,6 +80,9 @@ export function saveReel(state, input, { now, makeId, viewer_id }) {
   const existing = input.id ? list(state, "replayReels").find((r) => r.id === input.id) : null;
   if (input.id && !existing) throw new Error("That reel no longer exists.");
   if (existing && existing.owner_id !== viewer_id) throw new Error("You can only edit your own reels.");
+  const recording = list(state, "replayRecordings").find((r) => r.id === input.recording_id);
+  if (!recording) throw new Error("This recording is not registered.");
+  if (recording.game_id !== input.game_id) throw new Error("A reel belongs to the game its recording was made at.");
   const clips = list(state, "replayClips");
   const clip_ids = [...new Set(input.clip_ids || [])];
   clip_ids.forEach((id) => {

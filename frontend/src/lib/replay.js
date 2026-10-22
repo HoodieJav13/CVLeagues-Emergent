@@ -207,7 +207,7 @@ export function buildReelManifest(state, reel, { format = "mp4", owner_id, now }
     manifest: {
       schema: MANIFEST_SCHEMA,
       reel_id: reel.id,
-      title: reel.title || "Untitled reel",
+      title: (reel.owner_id === owner_id ? reel.title : reel.published?.title) || "Untitled reel",
       game_id: reel.game_id,
       recording_id: recording.id,
       source_revision: recording.source_revision,

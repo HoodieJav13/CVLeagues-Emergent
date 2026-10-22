@@ -136,4 +136,50 @@ describe("Replay Studio (mock mode)", () => {
     expect(q("replay-attach-error").textContent).toMatch(/isn't on this computer yet/);
     expect(app.state.replayRecordings || []).toEqual([]);
   });
+
+  test("review R1: deleting a highlight works and reports success without throwing", async () => {
+    const { toast } = require("sonner");
+    await click("replay-attach");
+    await flush();
+    await makeClip("rec-g7-s1", 12000, 18000, "To delete");
+    const id = app.state.replayClips[0].id;
+    toast.success.mockClear();
+    await click(`replay-delete-${id}`);
+    await flush();
+    expect(app.state.replayClips).toEqual([]);
+    expect(toast.success).toHaveBeenCalledWith("Highlight deleted");
+  });
+
+  test("review R2: switching viewers mid-edit does not carry unsaved highlight or reel work across", async () => {
+    await click("replay-attach");
+    await flush();
+    await makeClip("rec-g7-s1", 12000, 18000, "Jordan saved");
+    await type("replay-in", 30000);
+    await type("replay-clip-title", "Jordan unsaved draft");
+    await click("replay-tag-team-t4");
+    await click(`replay-add-${app.state.replayClips[0].id}`);
+    await type("replay-reel-title", "Jordan unsaved reel");
+    await click("replay-viewer-viewer-rachel");
+    expect(q("replay-clip-title").value).toBe("");
+    expect(q("replay-in").value).toBe("");
+    expect(q("replay-tag-team-t4").getAttribute("aria-pressed")).toBe("false");
+    expect(q("replay-reel-title").value).toBe("My highlights");
+    expect(q("replay-reel-order").textContent).toMatch(/Add highlights/);
+  });
+
+  test("review R6: preview skips highlights whose footage is not available, and says so", async () => {
+    await click("replay-attach");
+    await flush();
+    await makeClip("rec-g7-s1", 12000, 18000, "A ok");
+    await makeClip("rec-g7-s2", 22000, 26000, "B gone");
+    for (const c of app.state.replayClips) await click(`replay-add-${c.id}`);
+    await click("replay-save-reel");
+    await flush();
+    global.__missing = ["rec-g7-s2"];
+    await click("replay-viewer-viewer-rachel");
+    await click("replay-viewer-viewer-jordan"); // re-render with the new media state
+    await click("replay-preview-reel");
+    expect(q("replay-reel-preview-position").textContent).toMatch(/Clip 1 of 1: A ok/);
+    expect(q("replay-reel-preview-skipped").textContent).toMatch(/1 highlight skipped/);
+  });
 });

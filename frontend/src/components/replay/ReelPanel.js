@@ -11,16 +11,24 @@ import { downloadJson, exportDownloadUrl, exportStatus, helperHealth, mediaUrl, 
 
 /* Sequential reel preview: plays each clip's in→out from its own segment file.
  * Clips never cross a gap, so the preview never bridges missing footage. */
-export function ReelPreview({ recording, clips, onClose, testid = "replay-reel-preview" }) {
+export function ReelPreview({ recording, clips: allClips, statusOf, onClose, testid = "replay-reel-preview" }) {
   const videoRef = useRef(null);
+  const armed = useRef(false); // true once the current clip's seek has landed
   const [index, setIndex] = useState(0);
+  // Only footage that is present and unchanged plays; the rest is named, not guessed.
+  const clips = statusOf ? allClips.filter((c) => statusOf(c).state === "ok") : allClips;
+  const skipped = allClips.length - clips.length;
   const clip = clips[index];
   const segment = clip ? segmentById(recording, clip.segment_id) : null;
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !clip || !segment) return undefined;
-    const start = () => { video.currentTime = clip.in_ms / 1000; video.play().catch(() => {}); };
+    armed.current = false;
+    const start = () => {
+      video.addEventListener("seeked", () => { armed.current = true; video.play().catch(() => {}); }, { once: true });
+      video.currentTime = clip.in_ms / 1000;
+    };
     if (video.readyState >= 1 && video.dataset.src === segment.media.path) start();
     else {
       video.dataset.src = segment.media.path;
@@ -30,26 +38,33 @@ export function ReelPreview({ recording, clips, onClose, testid = "replay-reel-p
     return undefined;
   }, [clip, segment]);
 
-  if (!clips.length) return null;
+  const next = () => { armed.current = false; setIndex((i) => i + 1); };
+  if (!allClips.length) return null;
   return (
     <div className="bg-card border border-primary/40 rounded-xl p-3 space-y-2" data-testid={testid}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-foreground font-semibold" data-testid={`${testid}-position`}>
-          {clip ? `Clip ${index + 1} of ${clips.length}: ${clip.title || "Untitled"}` : "Reel finished"}
+          {clip ? `Clip ${index + 1} of ${clips.length}: ${clip.title || "Untitled"}` : clips.length ? "Reel finished" : "Nothing playable right now"}
         </p>
         <Button type="button" variant="ghost" size="sm" onClick={onClose} aria-label="Close preview"><X size={16} weight="bold" /></Button>
       </div>
+      {skipped > 0 && (
+        <p className="text-micro text-gold" data-testid={`${testid}-skipped`}>{skipped} highlight{skipped === 1 ? "" : "s"} skipped: footage missing or needs relinking.</p>
+      )}
       <video
         ref={videoRef}
         controls
         playsInline
         className="w-full rounded-lg bg-black aspect-video"
         onTimeUpdate={(e) => {
-          if (clip && e.currentTarget.currentTime * 1000 >= clip.out_ms) {
+          // Ignore stale events from the previous clip until this clip's seek lands.
+          if (armed.current && clip && e.currentTarget.currentTime * 1000 >= clip.out_ms) {
             e.currentTarget.pause();
-            setIndex((i) => i + 1);
+            next();
           }
         }}
+        onEnded={() => clip && next()}
+        onError={() => clip && next()}
       />
       {clip && <p className="text-micro text-muted-foreground">{segment?.label} · {formatMs(clip.in_ms)}–{formatMs(clip.out_ms)}</p>}
     </div>
@@ -64,7 +79,12 @@ function ExportPanel({ state, reel, viewer_id, onRecordExport }) {
   const [health, setHealth] = useState(null);
   const poll = useRef(null);
 
-  useEffect(() => { helperHealth().then(setHealth); return () => clearTimeout(poll.current); }, []);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    helperHealth().then((h) => mounted.current && setHealth(h));
+    return () => { mounted.current = false; clearTimeout(poll.current); };
+  }, []);
 
   const manifestResult = () => buildReelManifest(state, reel, { format, owner_id: viewer_id, now: new Date().toISOString() });
 
@@ -77,6 +97,7 @@ function ExportPanel({ state, reel, viewer_id, onRecordExport }) {
   const follow = (id) => {
     poll.current = setTimeout(async () => {
       const next = await exportStatus(id);
+      if (!mounted.current) return; // panel closed (e.g. viewer switched): stop following
       setJob(next);
       if (next.state === "done" || next.state === "failed") {
         onRecordExport({ state: next.state, format, code: next.code || null, render_ms: next.render_ms || null, at: new Date().toISOString(), job_id: id });
@@ -216,13 +237,13 @@ export function ReelPanel({ state, recording, reel, myClips, viewer_id, mediaSta
         )}
       </div>
       {dirty && reel && <p className="text-micro text-gold" data-testid="replay-reel-dirty">Unsaved changes. Save before sharing or downloading.</p>}
-      {previewing && <ReelPreview recording={recording} clips={ordered} onClose={() => setPreviewing(false)} />}
+      {previewing && <ReelPreview recording={recording} clips={ordered} statusOf={actions.statusOf} onClose={() => setPreviewing(false)} />}
       {reel && !dirty && <ExportPanel key={reel.id} state={state} reel={reel} viewer_id={viewer_id} onRecordExport={(info) => actions.recordExport(reel.id, info).catch(() => {})} />}
     </section>
   );
 }
 
-export function SharedReels({ state, recording, shared, viewer_id }) {
+export function SharedReels({ state, recording, shared, viewer_id, statusOf }) {
   const [watching, setWatching] = useState(null);
   if (!shared.length) return <p className="text-sm text-muted-foreground" data-testid="replay-shared-empty">No one has shared a reel for this game yet.</p>;
   return (
@@ -239,7 +260,7 @@ export function SharedReels({ state, recording, shared, viewer_id }) {
               <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={() => setWatching(reel.id)} data-testid={`replay-watch-${reel.id}`}>Watch</Button>
             </div>
             <ol className="text-micro text-muted-foreground list-decimal pl-4">{clips.map((c) => <li key={c.id}>{c.title || "Untitled"} · {formatMs(c.in_ms)}–{formatMs(c.out_ms)}</li>)}</ol>
-            {watching === reel.id && <ReelPreview recording={recording} clips={clips} onClose={() => setWatching(null)} testid={`replay-shared-preview-${reel.id}`} />}
+            {watching === reel.id && <ReelPreview recording={recording} clips={clips} statusOf={statusOf} onClose={() => setWatching(null)} testid={`replay-shared-preview-${reel.id}`} />}
           </li>
         );
       })}

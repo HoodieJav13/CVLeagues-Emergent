@@ -74,19 +74,31 @@ export async function helperHealth() {
   }
 }
 
+const HELPER_GONE = { state: "failed", code: "HELPER", message: "The local export helper stopped responding. Start it again with the preview launcher, then retry." };
+
 export async function startExport(manifest) {
-  const res = await fetch(`${EXPORT_HELPER_URL}/exports`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ manifest }),
-  });
+  let res;
+  try {
+    res = await fetch(`${EXPORT_HELPER_URL}/exports`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ manifest }),
+    });
+  } catch {
+    return HELPER_GONE;
+  }
   const body = await res.json().catch(() => ({}));
   if (!res.ok) return { state: "failed", code: body.code || "SCHEMA", message: body.message || "The export was refused.", detail: body.detail };
   return body;
 }
 
 export async function exportStatus(id) {
-  const res = await fetch(`${EXPORT_HELPER_URL}/exports/${id}`, { cache: "no-store" });
+  let res;
+  try {
+    res = await fetch(`${EXPORT_HELPER_URL}/exports/${id}`, { cache: "no-store" });
+  } catch {
+    return HELPER_GONE;
+  }
   if (!res.ok) return { state: "failed", code: "RENDER_FAILED", message: "The export helper lost this job (was it restarted?)." };
   return res.json();
 }

@@ -4,10 +4,11 @@ Usage (always through blender.sh, which applies the scratch boundary):
   blender.sh render_reel.py -- <manifest.json> <media_root> <out_file> <mp4|webm>
 Each manifest item becomes a trimmed movie strip plus its matching sound strip,
 placed back to back in manifest order. Clip bounds are converted to frames at
-the source frame rate (round to nearest; one frame = 33 ms at 30 fps). The
+the source frame rate (half-up, same as the helper; one frame = 33 ms at 30 fps). The
 original segment files are only read. Prints one JSON line: RESULT {...}.
 """
 import json
+import math
 import os
 import sys
 
@@ -40,8 +41,9 @@ def main():
     for item in manifest["items"]:
         # media_path is "replay-media/<file>"; media_root is that folder.
         src = os.path.join(media_root, os.path.basename(item["media_path"]))
-        in_f = round(item["in_ms"] * fps / 1000)
-        out_f = round(item["out_ms"] * fps / 1000)
+        # Half-up rounding, identical to the helper's Math.round frame check.
+        in_f = math.floor(item["in_ms"] * fps / 1000 + 0.5)
+        out_f = math.floor(item["out_ms"] * fps / 1000 + 0.5)
         dur = out_f - in_f
         movie = strips.new_movie(name=f"v{item['order']}", filepath=src, channel=1, frame_start=cursor - in_f)
         total = movie.frame_duration
