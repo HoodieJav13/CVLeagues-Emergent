@@ -31,6 +31,10 @@ const AdminRecovery = lazy(() => import("./pages/AdminRecovery"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
 const AdminSecurity = lazy(() => import("./pages/AdminSecurity"));
 const ScoreEntry = lazy(() => import("./pages/ScoreEntry"));
+// Local rehearsal (development mock mode only): player-facing replay authorship.
+// Behind the same NODE_ENV gate as the mock store, so optimized builds carry
+// neither the route nor its fictional personas and demo events.
+const ReplayStudio = process.env.NODE_ENV === "production" ? null : lazy(() => import("./pages/ReplayStudio"));
 
 // Agentation: click-to-annotate for design feedback (owner + partner mark up
 // the live UI; the output pastes straight to a coding agent). Development
@@ -84,6 +88,7 @@ function App() {
               <Route path="/admin/reset-password" element={<AdminResetPassword />} />
               <Route path="/admin/security" element={<AdminSecurity />} />
               <Route path="/score-entry" element={<ScoreEntry />} />
+              {ReplayStudio && <Route path="/replay/:gameId" element={<ReplayStudio />} />}
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

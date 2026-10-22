@@ -1,0 +1,48 @@
+"""Write replay-media/index.json for the generated fixture segments.
+
+Plain python3 (no Blender). Hashes each segment file and records the fictional
+recording metadata: Segment A starts 20:03:00, runs 60 s; Segment B starts
+20:09:00 — a five-minute recording gap after A ends at 20:04:00. Clock anchors
+are fictional hints (period 1, running clock) and assume no period length.
+Usage: python3 tools/replay/write_index.py frontend/public/replay-media
+"""
+import hashlib
+import json
+import os
+import sys
+
+SEGMENTS = [
+    {"id": "rec-g7-s1", "label": "Segment A", "duration_ms": 60000,
+     "recorded_start": "2026-06-07T20:03:00-06:00",
+     "anchors": [{"media_ms": 0, "period": 1, "clock_ms": 600000, "clock_direction": "down", "running_clock": True,
+                  "note": "Fictional anchor: 10:00 left in period 1 when Segment A starts"}]},
+    {"id": "rec-g7-s2", "label": "Segment B", "duration_ms": 45000,
+     "recorded_start": "2026-06-07T20:09:00-06:00",
+     "anchors": [{"media_ms": 0, "period": 1, "clock_ms": 210000, "clock_direction": "down", "running_clock": True,
+                  "note": "Fictional anchor: 3:30 left in period 1 when Segment B starts"}]},
+]
+
+
+def main():
+    folder = sys.argv[1]
+    out = []
+    for seg in SEGMENTS:
+        path = os.path.join(folder, f"{seg['id']}.webm")
+        with open(path, "rb") as fh:
+            data = fh.read()
+        out.append({
+            **seg,
+            "path": f"replay-media/{seg['id']}.webm",
+            "sha256": hashlib.sha256(data).hexdigest(),
+            "bytes": len(data),
+            "width": 640, "height": 360, "fps": 30, "has_audio": True,
+        })
+    index = {"schema": "replay-media-index/v1", "generator": "tools/replay/make_fixture_media.py",
+             "note": "Original synthetic fictional footage generated locally with Blender; no real people or games.",
+             "segments": out}
+    with open(os.path.join(folder, "index.json"), "w") as fh:
+        json.dump(index, fh, indent=2)
+    print(json.dumps({s["id"]: s["sha256"][:12] for s in out}))
+
+
+main()

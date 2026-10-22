@@ -93,3 +93,8 @@ frontend/node_modules/.cache/default-development/3.pack
 # Third-party design tooling — reinstall via `npx impeccable install`
 # (documented in docs/direction/DESIGN_TOOLBOX.md); not vendored.
 .claude/skills/impeccable/
+
+# L1 replay: generated fixture media, exports and Blender scratch (never committed)
+/.replay-scratch/
+/frontend/public/replay-media/
+/tools/replay/exports/
