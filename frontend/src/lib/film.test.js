@@ -171,4 +171,36 @@ describe("film-composition/v1 → film-sequence/v1", () => {
   test("the context card shows the record's own year in league time", () => {
     expect(contextLines({ starts_at: "2027-06-08T01:30:00Z", home_team: "A", away_team: "B", home_score: 1, away_score: 2 }, null)[1].text).toBe("Jun 7, 2027");
   });
+
+  test("a recording gap is never bridged: moments either side stay separate clips inside their own segments", () => {
+    const w = world();
+    const before = saveClip(w.s, { recording_id: "rec-g7", segment_id: "rec-g7-s1", in_ms: 55500, out_ms: 59800, title: "Right before the gap" }, ctx());
+    w.s = before.next;
+    const after = saveClip(w.s, { recording_id: "rec-g7", segment_id: "rec-g7-s2", in_ms: 0, out_ms: 4000, title: "Right after the gap" }, ctx());
+    w.s = after.next;
+    w.s = createFilm(w.s, { title: "Gap" }, ctx()).next;
+    const film = w.s.filmCompositions[0];
+    w.s = saveFilm(w.s, { ...film, chapters: [{ ...film.chapters[0], items: [
+      { id: "g1", kind: "moment", clip_id: before.result.id, audio: "source" },
+      { id: "g2", kind: "moment", clip_id: after.result.id, audio: "source" },
+    ] }] }, ctx()).next;
+    const seq = buildFilmSequence(w.s, w.s.filmCompositions[0]);
+    const clips = seq.items.filter((i) => i.kind === "clip");
+    expect(clips.map((c) => [c.media.path, c.media.in_ms, c.media.out_ms, c.ms])).toEqual([
+      ["replay-media/rec-g7-s1.webm", 55500, 59800, 4300],
+      ["replay-media/rec-g7-s2.webm", 0, 4000, 4000],
+    ]);
+    // Consecutive in the film, but nothing claims the five unrecorded minutes.
+    expect(seq.items.indexOf(clips[1])).toBe(seq.items.indexOf(clips[0]) + 1);
+    expect(seq.total_ms).toBe(seq.items.reduce((n, i) => n + i.ms, 0));
+    expect(seq.problems).toEqual([]);
+    // A pin that no longer fits its segment (e.g. reaching into the gap) is blocked, not rendered.
+    const stored = w.s.filmCompositions[0];
+    const stretched = { ...stored, chapters: stored.chapters.map((ch) => ({ ...ch, items: ch.items.map((it) => (it.id === "g1" ? { ...it, clip_ref: { ...it.clip_ref, out_ms: 61000 } } : it)) })) };
+    const blocked = buildFilmSequence(w.s, stretched);
+    expect(blocked.problems.find((p) => p.item_id === "g1")).toMatchObject({ code: "bounds" });
+    expect(blockingProblems(blocked).length).toBeGreaterThan(0);
+    expect(blocked.items.filter((i) => i.kind === "clip").map((c) => c.media.path)).toEqual(["replay-media/rec-g7-s2.webm"]);
+  });
 });
+
