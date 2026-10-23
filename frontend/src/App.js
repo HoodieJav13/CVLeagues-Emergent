@@ -35,6 +35,8 @@ const ScoreEntry = lazy(() => import("./pages/ScoreEntry"));
 // Behind the same NODE_ENV gate as the mock store, so optimized builds carry
 // neither the route nor its fictional personas and demo events.
 const ReplayStudio = process.env.NODE_ENV === "production" ? null : lazy(() => import("./pages/ReplayStudio"));
+// FW3 Season Film: private personal film authoring, same development-only gate.
+const SeasonFilm = process.env.NODE_ENV === "production" ? null : lazy(() => import("./pages/SeasonFilm"));
 
 // Agentation: click-to-annotate for design feedback (owner + partner mark up
 // the live UI; the output pastes straight to a coding agent). Development
@@ -89,6 +91,7 @@ function App() {
               <Route path="/admin/security" element={<AdminSecurity />} />
               <Route path="/score-entry" element={<ScoreEntry />} />
               {ReplayStudio && <Route path="/replay/:gameId" element={<ReplayStudio />} />}
+              {SeasonFilm && <Route path="/film" element={<SeasonFilm />} />}
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

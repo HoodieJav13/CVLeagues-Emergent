@@ -98,3 +98,7 @@ frontend/node_modules/.cache/default-development/3.pack
 /.replay-scratch/
 /frontend/public/replay-media/
 /tools/replay/exports/
+
+# FW3 Season Film: rendered editions and locally copied system fonts (never committed)
+/tools/film/editions/
+/tools/film/.fonts/

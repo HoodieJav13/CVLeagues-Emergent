@@ -63,9 +63,20 @@ export default function ReplayStudio() {
   const attach = async () => {
     setAttachError(null);
     try {
-      const res = await fetch(mediaUrl("replay-media/index.json"), { cache: "no-store" });
-      if (!res.ok) throw new Error("missing");
-      const index = await res.json();
+      // Per-game recording index first (FW3 multi-game footage); the original
+      // index.json is accepted only when its segments belong to this game.
+      let index = null;
+      const perGame = await fetch(mediaUrl(`replay-media/index-${game.id}.json`), { cache: "no-store" });
+      const perGameType = perGame.headers?.get?.("content-type") || "";
+      if (perGame.ok && !perGameType.includes("text/html")) index = await perGame.json();
+      else {
+        const res = await fetch(mediaUrl("replay-media/index.json"), { cache: "no-store" });
+        if (!res.ok) throw new Error("missing");
+        const fallback = await res.json();
+        if (!(fallback.segments || []).every((s) => String(s.id).startsWith(`rec-${game.id}-`))) throw new Error("missing");
+        index = fallback;
+      }
+      if (index.game_id && index.game_id !== game.id) throw new Error("missing");
       await app.registerReplayRecording({ index, game_id: game.id, title: `${away.name} @ ${home.name}` });
       toast.success("Recording attached");
     } catch (error) {
@@ -120,6 +131,7 @@ export default function ReplayStudio() {
         <h1 className="font-display uppercase text-display-lg text-foreground">{away.name} @ {home.name}</h1>
         <p className="text-sm text-muted-foreground">{formatGameDateTime(game)} · Final {game.away_score}–{game.home_score}</p>
         <p className="text-micro text-muted-foreground">Local rehearsal on fictional footage and fictional viewers. Nothing is uploaded or sent.</p>
+        <Link to="/film" className="inline-flex min-h-10 items-center text-sm text-primary hover:underline" data-testid="replay-to-film">Make a season film from your highlights</Link>
       </header>
 
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Viewing as">

@@ -15,6 +15,7 @@ import {
   startPracticeSessionMock,
 } from "../lib/practiceLedger";
 import { deleteClip, publishReel, recordExport, registerRecording, revalidateSegment, saveClip, saveReel, unpublishReel } from "../lib/replayMock";
+import { createFilm, recordEdition, saveFilm, updateContext, adoptUpdatedHighlight } from "../lib/filmMock";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -805,6 +806,14 @@ export function AppStateProvider({ children }) {
   const unpublishReplayReel = useCallback((id, viewer_id) => runReplayMock((s, ctx) => unpublishReel(s, id, { ...ctx, viewer_id })), [runReplayMock]);
   const revalidateReplaySegment = useCallback((input, viewer_id) => runReplayMock((s) => revalidateSegment(s, input, { viewer_id })), [runReplayMock]);
   const recordReplayExport = useCallback((reel_id, info, viewer_id) => runReplayMock((s) => recordExport(s, reel_id, info, { viewer_id })), [runReplayMock]);
+  /* ---------------- SEASON FILM (local rehearsal, mock only) ------------ */
+  // Composition owner's surface above the pinned L1 media contracts. Same
+  // whole-or-nothing transition pattern as Replay Studio.
+  const createFilmComposition = useCallback((input, viewer_id) => runReplayMock((s, ctx) => createFilm(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const saveFilmComposition = useCallback((film, viewer_id) => runReplayMock((s, ctx) => saveFilm(s, film, { ...ctx, viewer_id })), [runReplayMock]);
+  const adoptUpdatedFilmHighlight = useCallback((input, viewer_id) => runReplayMock((s, ctx) => adoptUpdatedHighlight(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const updateFilmContext = useCallback((input, viewer_id) => runReplayMock((s, ctx) => updateContext(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const recordFilmEdition = useCallback((input, viewer_id) => runReplayMock((s, ctx) => recordEdition(s, input, { ...ctx, viewer_id })), [runReplayMock]);
   const replayMockOnly = useCallback(async () => {
     throw new Error("Replay Studio is a local rehearsal and runs only in development mock mode.");
   }, []);
@@ -877,6 +886,11 @@ export function AppStateProvider({ children }) {
     cancelPracticeSession: act(backend.cancelPracticeSession),
     finalizePracticeSession: act(backend.finalizePracticeSession),
     startPracticeCorrection: act(backend.startPracticeCorrection),
+    createFilmComposition: replayMockOnly,
+    saveFilmComposition: replayMockOnly,
+    adoptUpdatedFilmHighlight: replayMockOnly,
+    updateFilmContext: replayMockOnly,
+    recordFilmEdition: replayMockOnly,
     registerReplayRecording: replayMockOnly,
     saveReplayClip: replayMockOnly,
     deleteReplayClip: replayMockOnly,
@@ -935,6 +949,11 @@ export function AppStateProvider({ children }) {
         cancelPracticeSession,
         finalizePracticeSession,
         startPracticeCorrection,
+        createFilmComposition,
+        saveFilmComposition,
+        adoptUpdatedFilmHighlight,
+        updateFilmContext,
+        recordFilmEdition,
         registerReplayRecording,
         saveReplayClip,
         deleteReplayClip,

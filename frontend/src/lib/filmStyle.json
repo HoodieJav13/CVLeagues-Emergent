@@ -1,0 +1,12 @@
+{
+  "note": "One typography/colour table for the browser preview AND the FFmpeg render (sizes and y are fractions of frame height).",
+  "cardStyles": {
+    "title": { "size": 0.075, "y": 0.40, "color": "F2EFE8", "font": "bold" },
+    "sub": { "size": 0.036, "y": 0.52, "color": "C9C4B8", "font": "regular" },
+    "body": { "size": 0.040, "y": 0.60, "color": "F2EFE8", "font": "regular" },
+    "fine": { "size": 0.026, "y": 0.88, "color": "9C978C", "font": "regular" }
+  },
+  "caption": { "size": 0.042, "bottom": 0.80, "box": "000000", "boxAlpha": 0.55 },
+  "cardBackground": "1D1C1A",
+  "padBackground": "111111"
+}

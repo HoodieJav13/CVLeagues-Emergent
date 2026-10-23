@@ -6,8 +6,10 @@ checked after export:
   * top band colour  = whole second index (12-hue palette, s % 12)
   * bottom band grey = tenth of a second (10 levels, evenly spaced in sRGB)
   * audio: a short beep at every whole 5 s (segment A 880 Hz, B 660 Hz)
-Run: tools/replay/blender.sh tools/replay/make_fixture_media.py -- <out_dir>
-Writes rec-g7-s1.webm (60 s) and rec-g7-s2.webm (45 s), VP9 + Opus, 640x360 @ 30.
+Run: tools/replay/blender.sh tools/replay/make_fixture_media.py -- <out_dir> [spec.json]
+Without a spec: rec-g7-s1.webm (60 s) and rec-g7-s2.webm (45 s), VP9 + Opus, 640x360 @ 30.
+A spec ({"title": ..., "segments": [{id, label, seconds, tone, width, height}]}) makes
+other fictional games' recordings, including portrait (phone-shaped) ones.
 """
 import math
 import os
@@ -30,12 +32,17 @@ SEGMENTS = [
 ]
 
 
-def out_dir():
+def cli():
     args = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     if not args:
-        raise SystemExit("usage: blender.sh make_fixture_media.py -- <out_dir>")
+        raise SystemExit("usage: blender.sh make_fixture_media.py -- <out_dir> [spec.json]")
     os.makedirs(args[0], exist_ok=True)
-    return os.path.abspath(args[0])
+    spec = None
+    if len(args) > 1:
+        import json
+        with open(args[1]) as fh:
+            spec = json.load(fh)
+    return os.path.abspath(args[0]), spec
 
 
 def write_wav(path, seconds, tone):
@@ -76,7 +83,9 @@ def text_strip(strips, name, channel, start, length, text, size, y, color=(1, 1,
     return s
 
 
-def build(segment, folder):
+def build(segment, folder, title):
+    global W, H
+    W, H = segment.get("width", 640), segment.get("height", 360)
     scene = bpy.data.scenes.new(segment["id"])
     bpy.context.window_manager.windows[0].scene = scene if bpy.context.window_manager.windows else None
     frames = segment["seconds"] * FPS
@@ -93,24 +102,24 @@ def build(segment, folder):
     color_strip(strips, "field", 1, 1, frames, (0.10, 0.42, 0.18))
     # Yard lines.
     for k in range(-4, 5):
-        color_strip(strips, f"line{k}", 2, 1, frames, (0.92, 0.95, 0.92), scale=(0.006, 0.62), offset=(k * 64, -10))
+        color_strip(strips, f"line{k}", 2, 1, frames, (0.92, 0.95, 0.92), scale=(0.006 * 640 / W, 0.62), offset=(k * W / 10, -10))
     # Moving ball marker (crosses the field every 6 s).
     ball = color_strip(strips, "ball", 3, 1, frames, (0.55, 0.30, 0.12), scale=(0.035, 0.06))
     for f in range(1, frames + 1, FPS * 6):
-        ball.transform.offset_x = -260
+        ball.transform.offset_x = -0.4 * W
         ball.transform.keyframe_insert("offset_x", frame=f)
-        ball.transform.offset_x = 260
+        ball.transform.offset_x = 0.4 * W
         ball.transform.keyframe_insert("offset_x", frame=min(frames, f + FPS * 6 - 1))
     # Machine-readable markers: per-second hue band (top) and per-tenth grey band (bottom).
     for s in range(segment["seconds"]):
         color_strip(strips, f"sec{s}", 4, 1 + s * FPS, FPS, PALETTE[s % 12], scale=(1.0, 0.12), offset=(0, H / 2 - 0.06 * H))
         text_strip(strips, f"lbl{s}", 6, 1 + s * FPS, FPS,
-                   f"{segment['label']}  ·  REC {s // 60:02d}:{s % 60:02d}", 34, 0.62)
+                   f"{segment['label']}  ·  REC {s // 60:02d}:{s % 60:02d}", 34 if W >= H else 24, 0.62)
         for d in range(10):
             # VSE colour-strip values are display (sRGB) values: evenly spaced ~13..242.
             g = (d + 0.5) / 10.0
             color_strip(strips, f"ds{s}_{d}", 5, 1 + s * FPS + d * 3, 3, (g, g, g), scale=(1.0, 0.10), offset=(0, -H / 2 + 0.05 * H))
-    text_strip(strips, "title", 7, 1, frames, "FICTIONAL FLAG FOOTBALL · BOSQUE BLITZ v MESA MAVERICKS", 18, 0.30, (1, 1, 1, 0.85))
+    text_strip(strips, "title", 7, 1, frames, title, 18 if W >= H else 14, 0.30, (1, 1, 1, 0.85))
     wav = os.path.join(folder, f"{segment['id']}.wav")
     write_wav(wav, segment["seconds"], segment["tone"])
     strips.new_sound(name="audio", filepath=wav, channel=8, frame_start=1)
@@ -138,9 +147,11 @@ def build(segment, folder):
 
 
 def main():
-    folder = out_dir()
-    for segment in SEGMENTS:
-        build(segment, folder)
+    folder, spec = cli()
+    segments = spec["segments"] if spec else SEGMENTS
+    title = spec.get("title") if spec else "FICTIONAL FLAG FOOTBALL · BOSQUE BLITZ v MESA MAVERICKS"
+    for segment in segments:
+        build(segment, folder, title)
 
 
 main()
