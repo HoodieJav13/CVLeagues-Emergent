@@ -113,6 +113,13 @@ export default function FilmPreview({ sequence, specHash, onClose }) {
               setIndex((i) => i + 1);
             }
           }}
+          // A clip ending at its segment's end may decode a hair short of out_ms.
+          onEnded={() => {
+            if (armed.current && item?.kind === "clip") {
+              armed.current = false;
+              setIndex((i) => i + 1);
+            }
+          }}
           onError={() => item && item.kind !== "card" && setIndex((i) => i + 1)}
         />
         {item?.kind === "card" && <CardFace item={item} />}

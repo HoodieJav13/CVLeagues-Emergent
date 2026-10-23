@@ -135,10 +135,13 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
   const render = async (job) => {
     if (job.state === "canceled") return job;
     const pre = await checkSources(job.sequence, job.id);
+    if (job.state === "canceled") return job; // cancelled during the source check
     if (pre) return Object.assign(job, { state: "failed", ...pre });
     job.state = "rendering";
     job.started_at = new Date().toISOString();
     const work = join(editionsDir, job.film_id, `.work-${job.id}`);
+    // A cancel can land after any await: stop, remove the work dir, publish nothing.
+    const stopped = () => { if (job.state !== "canceled") return false; rmSync(work, { recursive: true, force: true }); return true; };
     mkdirSync(join(work, "text"), { recursive: true });
     const { args, texts } = buildFfmpegArgs(job.sequence, {
       mediaDir: "/m", textDir: "/w/text", fonts: { regular: "/f/regular.ttf", bold: "/f/bold.ttf" }, output: "/w/film.mp4",
@@ -153,7 +156,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
       },
     });
     job.render_ms = Date.now() - t0;
-    if (job.state === "canceled") { rmSync(work, { recursive: true, force: true }); return job; }
+    if (stopped()) return job;
     const out = join(work, "film.mp4");
     if (res.code !== 0 || !existsSync(out) || statSync(out).size === 0) {
       rmSync(work, { recursive: true, force: true });
@@ -169,6 +172,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
       return Object.assign(job, { state: "failed", code: "MEDIA_REPLACED", detail: `${basename(post.media.path)} changed while the film was rendering.` });
     }
     const probe = await probeDurationMs(out, `fw3-film-verify-${job.id}`);
+    if (stopped()) return job;
     const frame = 1000 / job.sequence.settings.fps;
     if (!probe || Math.abs(probe.duration_ms - total) > 2 * frame + 30 || !probe.has_audio) {
       rmSync(work, { recursive: true, force: true });
@@ -177,6 +181,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
     const name = `edition-${job.edition_number}-${job.id.slice(0, 8)}`;
     const final = join(editionsDir, job.film_id, `${name}.mp4`);
     if (existsSync(final)) { rmSync(work, { recursive: true, force: true }); return Object.assign(job, { state: "failed", code: "RENDER_FAILED", detail: "An edition file with this name already exists; nothing was overwritten." }); }
+    if (stopped()) return job;
     renameSync(out, final);
     const manifest = {
       schema: "film-manifest/v1", film_id: job.film_id, edition_number: job.edition_number, title: job.title,
@@ -223,7 +228,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
           const pre = await checkSources(body.sequence, id);
           if (pre) return send(req, res, 422, { ...pre, message: MESSAGES[pre.code] });
           const spec_sha256 = sha256(canonicalSpec(body.sequence));
-          if (body.spec_sha256 && body.spec_sha256 !== spec_sha256) return send(req, res, 422, { code: "SCHEMA", message: MESSAGES.SCHEMA, detail: "The preview's sequence hash does not match the submitted sequence." });
+          if (typeof body.spec_sha256 !== "string" || body.spec_sha256 !== spec_sha256) return send(req, res, 422, { code: "SCHEMA", message: MESSAGES.SCHEMA, detail: "The preview's sequence hash does not match the submitted sequence." });
           const job = { id, container: `fw3-film-${id}`, film_id: body.film_id, edition_number: body.edition_number, title: String(body.title || "Untitled film").slice(0, 80), sequence: body.sequence, spec_sha256, state: "queued", progress: 0 };
           renders.set(id, job);
           queue = queue.then(() => render(job)).catch((e) => Object.assign(job, { state: "failed", code: "RENDER_FAILED", detail: String(e) }));
@@ -243,7 +248,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
       const headers = { "Content-Type": isVideo ? "video/mp4" : "application/json", "Content-Length": String(statSync(path).size), "Content-Disposition": `attachment; filename="${saved[2]}"`, "Cache-Control": "no-store" };
       if (req.headers.origin === allowedOrigin) headers["Access-Control-Allow-Origin"] = allowedOrigin;
       res.writeHead(200, headers);
-      createReadStream(path).pipe(res);
+      createReadStream(path).on("error", () => res.destroy()).pipe(res);
       return undefined;
     }
     const m = url.pathname.match(/^\/films\/renders\/([0-9a-f-]{36})(\/file|\/manifest|\/cancel)?$/);
@@ -260,6 +265,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
     if (job && req.method === "GET" && (m[2] === "/file" || m[2] === "/manifest")) {
       if (job.state !== "done") return send(req, res, 409, { error: "not ready" });
       const path = m[2] === "/file" ? job.file : join(dirname(job.file), job.manifest_file);
+      if (!existsSync(path)) return send(req, res, 404, { error: "edition file is no longer on this computer" });
       const safe = job.title.replace(/[^\w -]+/g, "").trim().slice(0, 60) || "film";
       const headers = {
         "Content-Type": m[2] === "/file" ? "video/mp4" : "application/json",
@@ -269,7 +275,7 @@ export function createFilmHelper({ mediaRoot, editionsDir, allowedOrigin, docker
       };
       if (req.headers.origin === allowedOrigin) headers["Access-Control-Allow-Origin"] = allowedOrigin;
       res.writeHead(200, headers);
-      createReadStream(path).pipe(res);
+      createReadStream(path).on("error", () => res.destroy()).pipe(res);
       return undefined;
     }
     return send(req, res, 404, { error: "not found" });

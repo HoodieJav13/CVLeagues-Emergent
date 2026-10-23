@@ -35,32 +35,40 @@ export function createFilm(state, { title }, { now, makeId, viewer_id }) {
 }
 
 // Validates and stores the whole authoring state. Editions are carried over
-// from the stored film untouched: only recordEdition may change them.
-export function saveFilm(state, composition, { now, viewer_id }) {
+// from the stored film untouched: only recordEdition may change them. Pinned
+// highlight refs and context snapshots are never taken from the client: an
+// existing item keeps its stored value, a new one is built from the record.
+// Only the deliberate adopt/update actions pass fresh values (`fresh`).
+export function saveFilm(state, composition, { now, viewer_id }, fresh = {}) {
   const stored = films(state).find((f) => f.id === composition?.id);
   if (!stored) throw new Error("That film no longer exists.");
   if (stored.owner_id !== viewer_id) throw new Error("You can only edit your own films.");
   const clips = state.replayClips || [];
+  const storedItems = new Map(stored.chapters.flatMap((ch) => ch.items).map((it) => [it.id, it]));
   const chapters = (composition.chapters || []).map((chapter) => {
     if (!chapter.id) throw new Error("A chapter is missing its id.");
     const items = (chapter.items || []).map((item) => {
       if (item.kind === "moment") {
         const clip = clips.find((c) => c.id === item.clip_id);
-        if (!clip && !item.clip_ref) throw new Error("A moment's highlight no longer exists.");
+        const before = storedItems.get(item.id);
+        const pinned = fresh[item.id] || (before?.kind === "moment" && before.clip_id === item.clip_id ? before.clip_ref : null);
+        if (!clip && !pinned) throw new Error("A moment's highlight no longer exists.");
         if (clip && clip.owner_id !== viewer_id) throw new Error("A film can only use your own highlights.");
         const hold = item.hold ? { at: "end", ms: Math.max(HOLD_LIMITS.min, Math.min(HOLD_LIMITS.max, Math.round(Number(item.hold.ms) || 1500))), comment: text(item.hold.comment) } : null;
         return {
           id: item.id, kind: "moment", clip_id: item.clip_id,
-          clip_ref: item.clip_ref || clipRef(state, clip),
+          clip_ref: pinned || clipRef(state, clip),
           caption: text(item.caption?.text) ? { text: text(item.caption.text), authored: true } : null,
           hold, audio: item.audio === "mute" ? "mute" : "source",
         };
       }
       if (item.kind === "context") {
         if (!(state.games || []).some((g) => g.id === item.game_id)) throw new Error("A context card's game no longer exists.");
+        const before = storedItems.get(item.id);
+        const snapshot = fresh[item.id] || (before?.kind === "context" && before.game_id === item.game_id ? before.record : null);
         return {
           id: item.id, kind: "context", game_id: item.game_id, ms: Math.max(1500, Math.min(6000, Math.round(Number(item.ms) || 3000))),
-          record: item.record || contextRecord(state, item.game_id, now),
+          record: snapshot || contextRecord(state, item.game_id, now),
           note: text(item.note?.text) ? { text: text(item.note.text), authored: true } : null,
         };
       }
@@ -89,25 +97,20 @@ export function saveFilm(state, composition, { now, viewer_id }) {
 export function adoptUpdatedHighlight(state, { film_id, item_id }, { now, viewer_id }) {
   const film = films(state).find((f) => f.id === film_id);
   if (!film || film.owner_id !== viewer_id) throw new Error("You can only edit your own films.");
-  let found = false;
-  const chapters = film.chapters.map((ch) => ({ ...ch, items: ch.items.map((item) => {
-    if (item.id !== item_id || item.kind !== "moment") return item;
-    const clip = (state.replayClips || []).find((c) => c.id === item.clip_id);
-    if (!clip || clip.owner_id !== viewer_id) throw new Error("That highlight no longer exists in Replay Studio.");
-    found = true;
-    return { ...item, clip_ref: clipRef(state, clip) };
-  }) }));
-  if (!found) throw new Error("That moment no longer exists.");
-  return saveFilm(state, { ...film, chapters }, { now, viewer_id });
+  const item = film.chapters.flatMap((ch) => ch.items).find((it) => it.id === item_id && it.kind === "moment");
+  if (!item) throw new Error("That moment no longer exists.");
+  const clip = (state.replayClips || []).find((c) => c.id === item.clip_id);
+  if (!clip || clip.owner_id !== viewer_id) throw new Error("That highlight no longer exists in Replay Studio.");
+  return saveFilm(state, film, { now, viewer_id }, { [item_id]: clipRef(state, clip) });
 }
 
 // Deliberate refresh of a context card from the current game record.
 export function updateContext(state, { film_id, item_id }, { now, viewer_id }) {
   const film = films(state).find((f) => f.id === film_id);
   if (!film || film.owner_id !== viewer_id) throw new Error("You can only edit your own films.");
-  const chapters = film.chapters.map((ch) => ({ ...ch, items: ch.items.map((item) =>
-    item.id === item_id && item.kind === "context" ? { ...item, record: contextRecord(state, item.game_id, now) } : item) }));
-  return saveFilm(state, { ...film, chapters }, { now, viewer_id });
+  const item = film.chapters.flatMap((ch) => ch.items).find((it) => it.id === item_id && it.kind === "context");
+  if (!item) throw new Error("That context card no longer exists.");
+  return saveFilm(state, film, { now, viewer_id }, { [item_id]: contextRecord(state, item.game_id, now) });
 }
 
 // Edition records: create (queued) and advance; done ones are immutable.

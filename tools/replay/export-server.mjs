@@ -13,7 +13,7 @@
 
 import { createServer } from "node:http";
 import { createHash, randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync, createReadStream } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, statSync, writeFileSync, createReadStream } from "node:fs";
 import { spawn } from "node:child_process";
 import { dirname, join, resolve, basename } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -55,16 +55,22 @@ async function sourceDurationMs(segment, file, actualSha, probeDuration) {
   return probeDuration ? probeDuration(file) : null;
 }
 
+// index.json (required) plus any per-game index-<game>.json (FW3: g8, g10).
+function registeredSegments(mediaRoot) {
+  let index;
+  try { index = JSON.parse(readFileSync(join(mediaRoot, "index.json"), "utf8")); } catch { return null; }
+  const byPath = new Map((index.segments || []).map((s) => [s.path, s]));
+  for (const name of readdirSync(mediaRoot).filter((n) => /^index-[\w-]+\.json$/.test(n))) {
+    try { (JSON.parse(readFileSync(join(mediaRoot, name), "utf8")).segments || []).forEach((s) => byPath.set(s.path, s)); } catch { /* unreadable: not registered */ }
+  }
+  return byPath;
+}
+
 export async function validateAgainstMediaAsync(manifest, mediaRoot, { probeDuration } = {}) {
   const shape = manifestShapeProblem(manifest);
   if (shape) return { code: "SCHEMA", detail: shape };
-  let index;
-  try {
-    index = JSON.parse(readFileSync(join(mediaRoot, "index.json"), "utf8"));
-  } catch {
-    return { code: "MEDIA_MISSING", detail: "The recording index (replay-media/index.json) is missing." };
-  }
-  const byPath = new Map((index.segments || []).map((s) => [s.path, s]));
+  const byPath = registeredSegments(mediaRoot);
+  if (!byPath) return { code: "MEDIA_MISSING", detail: "The recording index (replay-media/index.json) is missing." };
   for (const item of manifest.items) {
     const segment = byPath.get(item.media_path);
     if (!segment || basename(item.media_path) !== `${segment.id}.webm`) return { code: "SCHEMA", detail: `Item ${item.order}: not a registered replay file.` };
@@ -86,13 +92,8 @@ export async function validateAgainstMediaAsync(manifest, mediaRoot, { probeDura
 export function validateAgainstMedia(manifest, mediaRoot) {
   const shape = manifestShapeProblem(manifest);
   if (shape) return { code: "SCHEMA", detail: shape };
-  let index;
-  try {
-    index = JSON.parse(readFileSync(join(mediaRoot, "index.json"), "utf8"));
-  } catch {
-    return { code: "MEDIA_MISSING", detail: "The recording index (replay-media/index.json) is missing." };
-  }
-  const byPath = new Map((index.segments || []).map((s) => [s.path, s]));
+  const byPath = registeredSegments(mediaRoot);
+  if (!byPath) return { code: "MEDIA_MISSING", detail: "The recording index (replay-media/index.json) is missing." };
   for (const item of manifest.items) {
     const segment = byPath.get(item.media_path);
     if (typeof item.media_path !== "string" || !segment || basename(item.media_path) !== `${segment.id}.webm`) {

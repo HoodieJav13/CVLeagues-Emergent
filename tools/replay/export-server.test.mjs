@@ -172,3 +172,18 @@ test("review R5: footage swapped while a job waits in the queue is refused at re
     assert.equal(job.code, "MEDIA_REPLACED");
   });
 });
+
+test("per-game indexes (index-<game>.json) register their footage alongside index.json", () => {
+  const f = setup();
+  writeFileSync(join(f.media, "rec-g8-s1.webm"), "game-two");
+  const g8 = { id: "rec-g8-s1", label: "Game 2 · Segment A", path: "replay-media/rec-g8-s1.webm", duration_ms: 40000, sha256: f.sha("game-two") };
+  const item = { order: 1, segment_id: "rec-g8-s1", media_path: g8.path, media_sha256: g8.sha256, in_ms: 10000, out_ms: 13000, duration_ms: 3000 };
+  const m = { ...f.manifest, items: [item] };
+  assert.equal(validateAgainstMedia(m, f.media).code, "SCHEMA"); // not registered yet
+  writeFileSync(join(f.media, "index-g8.json"), JSON.stringify({ schema: "replay-media-index/v1", game_id: "g8", segments: [g8] }));
+  assert.equal(validateAgainstMedia(m, f.media), null);
+  assert.equal(validateAgainstMedia(f.manifest, f.media), null); // g7 unchanged
+  rmSync(join(f.media, "index.json"));
+  assert.equal(validateAgainstMedia(m, f.media).code, "MEDIA_MISSING"); // index.json stays required
+  rmSync(f.root, { recursive: true, force: true });
+});

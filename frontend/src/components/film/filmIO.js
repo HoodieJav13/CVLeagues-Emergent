@@ -7,9 +7,10 @@ import { mediaUrl, sha256OfUrl } from "../replay/replayIO";
  * recording a film uses. Network failures become recoverable states. */
 
 export const FILM_HELPER_URL = (process.env.REACT_APP_FILM_HELPER_URL || "").replace(/\/$/, "");
-const GONE = { state: "failed", code: "HELPER", message: "The local film helper is not responding. Start it with the preview launcher, then retry. Your film is unchanged." };
+const GONE = { state: "failed", code: "HELPER", message: "The local film helper is not responding. Start it with the preview launcher, then retry." };
 
 export async function specSha256(sequence) {
+  if (!globalThis.crypto?.subtle) throw new Error("This browser blocks hashing on an insecure address. Open the preview at http://127.0.0.1 to render.");
   const bytes = new TextEncoder().encode(canonicalSpec(sequence));
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");

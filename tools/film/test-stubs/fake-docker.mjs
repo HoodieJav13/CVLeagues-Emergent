@@ -2,7 +2,9 @@
 // Test-only stand-in for `docker`: emulates `run … ffmpeg …`, `run … ffprobe …`
 // and `kill <name>` for the film helper's contract tests. Markers in the
 // editions root steer it: FAIL (ffmpeg exits 1), HOLD (ffmpeg waits until the
-// marker is removed or it is killed), SILENT (probe reports no audio).
+// marker is removed or it is killed), SILENT (probe reports no audio). A
+// PROBE_HOLD marker beside the log holds each ffprobe whose container name
+// contains the marker's text, until the marker is removed.
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 const argv = process.argv.slice(2);
@@ -15,6 +17,10 @@ const name = argv[argv.indexOf("--name") + 1];
 const tool = argv.find((a) => a === "ffmpeg" || a === "ffprobe");
 const rest = argv.slice(argv.indexOf(tool) + 1);
 if (tool === "ffprobe") {
+  if (log) appendFileSync(log, `probe ${name}\n`);
+  const hold = log && join(dirname(log), "PROBE_HOLD");
+  const held = () => { try { return name.includes(readFileSync(hold, "utf8")); } catch { return false; } };
+  while (hold && held()) Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 20);
   const file = host(rest[rest.length - 1]);
   const meta = existsSync(file + ".json") ? JSON.parse(readFileSync(file + ".json", "utf8")) : { duration: Number(readFileSync(file + ".duration", "utf8")) / 1000, audio: true };
   const streams = [{ codec_type: "video" }, ...(meta.audio ? [{ codec_type: "audio" }] : [])];

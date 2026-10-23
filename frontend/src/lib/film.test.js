@@ -108,13 +108,19 @@ describe("film-composition/v1 → film-sequence/v1", () => {
     expect(seq.problems).toEqual([]);
   });
 
-  test("a corrected game record flags the context card; updating it is deliberate", () => {
+  test("a corrected game record blocks the context card until it is deliberately updated", () => {
     const w = world();
     const film = storyFilm(w);
     w.s = { ...w.s, games: w.s.games.map((g) => (g.id === "g7" ? { ...g, away_score: 13 } : g)) };
     let seq = buildFilmSequence(w.s, film);
-    expect(seq.problems[0]).toMatchObject({ code: "context-outdated", soft: true, item_id: "i1" });
-    expect(seq.items[2].lines[2].text).toBe("Final 14–21"); // old card stays until updated
+    expect(seq.problems[0]).toMatchObject({ code: "context-outdated", item_id: "i1" });
+    expect(seq.problems[0].soft).toBeUndefined();
+    expect(blockingProblems(seq)).toHaveLength(1); // the render is refused, not silently wrong
+    expect(seq.items.some((i) => i.role === "context")).toBe(false); // the stale card is left out
+    // A client cannot slip in a hand-made record: saves keep the stored snapshot.
+    const forged = { ...film, chapters: film.chapters.map((ch) => ({ ...ch, items: ch.items.map((it) => (it.id === "i1" ? { ...it, record: { ...it.record, away_score: 99 } } : it)) })) };
+    w.s = saveFilm(w.s, forged, ctx()).next;
+    expect(w.s.filmCompositions[0].chapters[0].items[0].record.away_score).toBe(14);
     w.s = updateContext(w.s, { film_id: film.id, item_id: "i1" }, ctx()).next;
     seq = buildFilmSequence(w.s, w.s.filmCompositions[0]);
     expect(seq.items[2].lines[2].text).toBe("Final 13–21");
@@ -148,5 +154,21 @@ describe("film-composition/v1 → film-sequence/v1", () => {
     // Saving the authoring state never touches editions.
     const saved = saveFilm(e.next, { ...film, editions: [] }, ctx()).next.filmCompositions[0];
     expect(saved.editions.map((x) => [x.number, x.state])).toEqual([[1, "done"], [2, "canceled"]]);
+  });
+
+  test("pinned highlights are never taken from the client; a new moment pins the current highlight", () => {
+    const w = world();
+    const film = storyFilm(w);
+    const pinned = film.chapters[0].items[1].clip_ref;
+    const forged = { ...film, chapters: film.chapters.map((ch) => ({ ...ch, items: ch.items.map((it) => (it.id === "i2" ? { ...it, clip_ref: { ...it.clip_ref, in_ms: 0, out_ms: 40000, segment_id: "rec-g8-s1" } } : it)) })) };
+    w.s = saveFilm(w.s, forged, ctx()).next;
+    expect(w.s.filmCompositions[0].chapters[0].items[1].clip_ref).toEqual(pinned);
+    const added = { ...film, chapters: [{ ...film.chapters[0], items: [{ id: "new", kind: "moment", clip_id: w.c8.id, clip_ref: { recording_id: "rec-g7", in_ms: 0, out_ms: 1 }, audio: "source" }] }] };
+    const ref = saveFilm(w.s, added, ctx()).next.filmCompositions[0].chapters[0].items[0].clip_ref;
+    expect(ref).toMatchObject({ recording_id: "rec-g8", segment_id: "rec-g8-s1", in_ms: 10000, out_ms: 13000 });
+  });
+
+  test("the context card shows the record's own year in league time", () => {
+    expect(contextLines({ starts_at: "2027-06-08T01:30:00Z", home_team: "A", away_team: "B", home_score: 1, away_score: 2 }, null)[1].text).toBe("Jun 7, 2027");
   });
 });

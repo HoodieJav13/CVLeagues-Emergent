@@ -1,6 +1,6 @@
 import { clipStatus, segmentById } from "./replay";
 import { getTeam } from "./selectors";
-import { formatGameShortDate } from "./gameTime";
+import { LEAGUE_TIME_ZONE } from "./gameTime";
 import STYLE from "./filmStyle.json";
 
 /* ============================================================================
@@ -59,10 +59,11 @@ export function contextDrift(state, item) {
 export function contextLines(record, note) {
   if (!record) return [{ text: "Game record unavailable", style: "body" }];
   const lines = [];
-  const date = record.starts_at ? formatGameShortDate({ starts_at: record.starts_at }) : null;
+  // League-time "Jun 7, 2026" (the record's own year, never assumed).
+  const date = record.starts_at ? new Date(record.starts_at).toLocaleString("en-US", { timeZone: LEAGUE_TIME_ZONE, month: "short", day: "numeric", year: "numeric" }) : null;
   const matchup = record.away_team && record.home_team ? `${record.away_team} @ ${record.home_team}` : record.away_team || record.home_team || "Teams not recorded";
   lines.push({ text: matchup, style: "title" });
-  lines.push({ text: date ? `${date}, 2026` : "Date not recorded", style: "sub" });
+  lines.push({ text: date || "Date not recorded", style: "sub" });
   if (Number.isFinite(record.home_score) && Number.isFinite(record.away_score)) {
     lines.push({ text: `Final ${record.away_score}–${record.home_score}`, style: "body" });
   } else {
@@ -148,7 +149,8 @@ export function buildFilmSequence(state, composition, mediaStatus = {}) {
       const where = { chapter_id: chapter.id, item_id: item.id };
       if (item.kind === "context") {
         const drift = contextDrift(state, item);
-        if (drift.length) problems.push({ ...where, code: "context-outdated", soft: true, text: `Context card is out of date: ${drift.join("; ")}.` });
+        // A corrected game record blocks the card until it is deliberately updated.
+        if (drift.length) { problems.push({ ...where, code: "context-outdated", text: `Context card is out of date: ${drift.join("; ")}.` }); return; }
         push({ kind: "card", role: "context", ms: item.ms || CONTEXT_MS, lines: contextLines(item.record, item.note), ref: where });
         return;
       }

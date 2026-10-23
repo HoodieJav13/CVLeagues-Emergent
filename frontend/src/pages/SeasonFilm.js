@@ -30,6 +30,40 @@ const uid = (p) => `${p}_${Date.now().toString(36)}_${Math.random().toString(36)
 const clone = (x) => JSON.parse(JSON.stringify(x));
 // Mock actions return (or throw) synchronously; always treat them as promises.
 const later = (fn) => Promise.resolve().then(fn);
+const PENDING = ["queued", "rendering"];
+const FINISHED = ["done", "failed", "canceled"];
+// Editions this page is sending to the helper right now (no render_id yet).
+const starting = new Set();
+const finishedEdition = (st, id, render_id) => ({ id, state: st.state, render_id, file: st.file_name || null, manifest_file: st.manifest_file || null, bytes: st.bytes || null, duration_ms: st.duration_ms || null, error_code: st.code || null, error_detail: st.detail || null, finished_at: new Date().toISOString() });
+
+// Every queued/rendering edition of the viewer's films is resolved from the
+// helper whichever film is open (page left, viewer switched, reload, helper
+// restart), so nothing stays stuck and a finished file is always linked.
+function usePendingEditions(films, app, viewer_id) {
+  const pending = films.flatMap((f) => f.editions.filter((e) => PENDING.includes(e.state)).map((e) => ({ film_id: f.id, e })));
+  const key = pending.map(({ film_id, e }) => `${film_id}:${e.id}:${e.render_id || ""}`).join("|");
+  useEffect(() => {
+    if (!key) return undefined;
+    let live = true;
+    const record = (film_id, edition) => later(() => app.recordFilmEdition({ film_id, edition }, viewer_id)).catch(() => {});
+    const tick = async () => {
+      for (const { film_id, e } of pending) {
+        if (!live) return;
+        if (!e.render_id) {
+          if (!starting.has(e.id)) await record(film_id, { id: e.id, state: "failed", error_code: "HELPER", error_detail: "The render never started (the page was left while it was being sent)." });
+          continue;
+        }
+        const st = await filmRenderStatus(e.render_id);
+        if (!live) return;
+        if (FINISHED.includes(st.state) && st.id) await record(film_id, finishedEdition(st, e.id, e.render_id));
+        else if (!PENDING.includes(st.state)) await record(film_id, { id: e.id, state: "failed", error_code: "HELPER", error_detail: "The film helper no longer knows this render (it was restarted or is not running). Render again; earlier editions are kept." });
+      }
+    };
+    tick();
+    const timer = setInterval(tick, 1500);
+    return () => { live = false; clearInterval(timer); };
+  }, [key, viewer_id]); // eslint-disable-line react-hooks/exhaustive-deps
+}
 
 // Text field that saves on blur/Enter (each save is a durable project write).
 function CommitInput({ value, onCommit, testid, ...props }) {
@@ -49,6 +83,7 @@ export default function SeasonFilm() {
   const [selected, setSelected] = useState(null); // { chapter_id, item_id? }
   const [previewing, setPreviewing] = useState(false);
   const [specHash, setSpecHash] = useState(null);
+  const [specError, setSpecError] = useState(null);
   const [newTitle, setNewTitle] = useState("");
   useEffect(() => { try { window.sessionStorage.setItem(VIEWER_KEY, viewer_id); } catch { /* optional */ } }, [viewer_id]);
   useEffect(() => { setActiveId(null); setSelected(null); setPreviewing(false); }, [viewer_id]);
@@ -57,8 +92,9 @@ export default function SeasonFilm() {
   const [mediaStatus, recheck] = useRecordingsMediaCheck(recordings);
   const films = filmsOwnedBy(state, viewer_id);
   const film = films.find((f) => f.id === activeId) || null;
+  usePendingEditions(films, app, viewer_id);
   const sequence = useMemo(() => (film ? buildFilmSequence(state, film, mediaStatus) : null), [state, film, mediaStatus]);
-  useEffect(() => { let live = true; if (sequence) specSha256(sequence).then((h) => live && setSpecHash(h)); return () => { live = false; }; }, [sequence]);
+  useEffect(() => { let live = true; if (sequence) specSha256(sequence).then((h) => { if (live) { setSpecHash(h); setSpecError(null); } }).catch((e) => { if (live) { setSpecHash(null); setSpecError(e.message); } }); return () => { live = false; }; }, [sequence]);
 
   if (BACKEND_ENABLED) return <p className="text-sm text-muted-foreground">Season Film is a local rehearsal and runs only in development demo mode.</p>;
 
@@ -303,14 +339,14 @@ export default function SeasonFilm() {
             </section>
           )}
 
-          <Editions film={film} sequence={sequence} specHash={specHash} app={app} viewer_id={viewer_id} />
+          <Editions key={film.id} film={film} sequence={sequence} specHash={specHash} specError={specError} app={app} viewer_id={viewer_id} />
         </>
       )}
     </div>
   );
 }
 
-function Editions({ film, sequence, specHash, app, viewer_id }) {
+function Editions({ film, sequence, specHash, specError, app, viewer_id }) {
   const [active, setActive] = useState(null); // live render record
   const poll = useRef(null);
   const mounted = useRef(true);
@@ -320,32 +356,50 @@ function Editions({ film, sequence, specHash, app, viewer_id }) {
   }, []);
 
   const record = (edition) => later(() => app.recordFilmEdition({ film_id: film.id, edition }, viewer_id));
+  // Records the helper's final word on a render exactly as reported.
+  const finish = (st, edition_id, render_id) => record(finishedEdition(st, edition_id, render_id)).catch(() => {});
   const follow = (render_id, edition_id) => {
     poll.current = setTimeout(async () => {
       const st = await filmRenderStatus(render_id);
       if (!mounted.current) return;
       setActive({ ...st, edition_id });
-      if (["done", "failed", "canceled"].includes(st.state)) {
-        await record({ id: edition_id, state: st.state, render_id, file: st.file_name || null, manifest_file: st.manifest_file || null, bytes: st.bytes || null, duration_ms: st.duration_ms || null, error_code: st.code || null, error_detail: st.detail || null, finished_at: new Date().toISOString() }).catch(() => {});
+      if (FINISHED.includes(st.state)) {
+        await finish(st, edition_id, render_id);
         if (st.state === "done") toast.success(`Edition rendered`);
       } else follow(render_id, edition_id);
     }, 700);
   };
+
+  // Reopening a film mid-render shows its progress and Cancel again
+  // (usePendingEditions records the outcome either way).
+  const attached = useRef(false);
+  useEffect(() => {
+    if (attached.current) return;
+    attached.current = true;
+    const running = film.editions.find((e) => PENDING.includes(e.state) && e.render_id);
+    if (!running) return;
+    filmRenderStatus(running.render_id).then((st) => {
+      if (mounted.current && PENDING.includes(st.state)) { setActive({ ...st, edition_id: running.id }); follow(running.render_id, running.id); }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const render = async () => {
     const blocked = blockingProblems(sequence);
     if (blocked.length) { toast.error("Fix the parts that need attention first."); return; }
     const edition_id = `ed_${Date.now().toString(36)}`;
     let ed;
-    try { ed = await record({ id: edition_id, state: "queued", created_at: new Date().toISOString(), spec_sha256: specHash }); } catch { return; }
+    starting.add(edition_id);
+    try { ed = await record({ id: edition_id, state: "queued", created_at: new Date().toISOString(), spec_sha256: specHash }); } catch { starting.delete(edition_id); return; }
     const health = await filmHelperHealth();
     const started = health.ok ? await startFilmRender({ film_id: film.id, edition_number: ed.number, title: film.title, sequence, spec_sha256: specHash }) : health;
     if (started.state === "failed" || !started.id) {
       setActive({ ...started, edition_id });
       await record({ id: edition_id, state: "failed", error_code: started.code || "HELPER", error_detail: started.detail || started.message }).catch(() => {});
+      starting.delete(edition_id);
       return;
     }
     await record({ id: edition_id, state: "rendering", render_id: started.id }).catch(() => {});
+    starting.delete(edition_id);
     setActive({ ...started, edition_id });
     follow(started.id, edition_id);
   };
@@ -355,10 +409,14 @@ function Editions({ film, sequence, specHash, app, viewer_id }) {
     clearTimeout(poll.current);
     const res = await cancelFilmRender(active.id);
     setActive({ ...active, ...res });
-    await record({ id: active.edition_id, state: res.state === "canceled" ? "canceled" : "failed", error_code: res.code || "CANCELED" }).catch(() => {});
+    // The render may have finished just before the cancel arrived: keep what really happened.
+    if (FINISHED.includes(res.state) && res.id) {
+      await finish(res, active.edition_id, active.id);
+      if (res.state === "done") toast.success("The render had already finished; edition kept");
+    } else await record({ id: active.edition_id, state: "failed", error_code: res.code || "HELPER", error_detail: res.message || null }).catch(() => {});
   };
 
-  const busy = active && ["queued", "rendering"].includes(active.state);
+  const busy = active && PENDING.includes(active.state);
   const editions = [...film.editions].sort((a, b) => b.number - a.number);
   return (
     <section className="bg-card border border-border rounded-xl p-3 space-y-3" aria-label="Render and editions" data-testid="film-editions">
@@ -370,6 +428,7 @@ function Editions({ film, sequence, specHash, app, viewer_id }) {
         </div>
       </div>
       <p className="text-micro text-muted-foreground">Renders on this computer with the existing FFmpeg container (no network). 1280×720 H.264/AAC, re-encoded. Each render becomes a new edition; earlier editions are kept.</p>
+      {specError && <p className="text-sm text-gold" role="status" data-testid="film-spec-error">{specError}</p>}
       {busy && (
         <div className="space-y-1" role="status" data-testid="film-render-busy">
           <div className="h-2 rounded bg-surface-sunken overflow-hidden"><div className="h-full bg-primary transition-[width]" style={{ width: `${Math.round((active.progress || 0) * 100)}%` }} /></div>

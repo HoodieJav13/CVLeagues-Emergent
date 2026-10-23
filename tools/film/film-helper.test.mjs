@@ -48,7 +48,12 @@ async function settle(base, id, states = ["done", "failed", "canceled"]) {
   for (let i = 0; i < 300; i += 1) { const j = await get(base, id); if (states.includes(j.state)) return j; await new Promise((r) => setTimeout(r, 20)); }
   throw new Error("timeout");
 }
-const req = (f, n = 1, extra = {}) => ({ film_id: "film_a", edition_number: n, title: "Jordan's season", sequence: f.sequence, ...extra });
+const req = (f, n = 1, extra = {}) => {
+  const sequence = extra.sequence || f.sequence;
+  return { film_id: "film_a", edition_number: n, title: "Jordan's season", sequence, spec_sha256: sha(canonicalSpec(sequence)), ...extra };
+};
+const cancel = (base, id) => fetch(`${base}/films/renders/${id}/cancel`, { method: "POST", headers: { Origin: ORIGIN } }).then((r) => r.json());
+const until = async (fn) => { for (let i = 0; i < 300; i += 1) { if (await fn()) return; await new Promise((r) => setTimeout(r, 20)); } throw new Error("timeout"); };
 
 test("drawtext padding: one trailing space per extra UTF-8 byte", () => {
   assert.equal(padForDrawtext("Final 28–20"), "Final 28–20  ");
@@ -174,5 +179,58 @@ test("footage swapped during a render is caught after rendering and nothing is p
     const j = await settle(base, id);
     assert.equal(j.code, "MEDIA_REPLACED");
     assert.ok(!readdirSync(join(f.editions, "film_a")).some((n) => n.endsWith(".mp4")));
+  });
+});
+
+test("the preview's sequence hash is required and must match", async () => {
+  const f = setup();
+  await withHelper(f, async (base) => {
+    const { spec_sha256: _omit, ...bare } = req(f, 1);
+    const r = await post(base, bare);
+    assert.equal(r.status, 422);
+    assert.equal((await r.json()).code, "SCHEMA");
+  });
+});
+
+test("cancel during the pre-render source check never starts the render", async () => {
+  const f = setup();
+  await withHelper(f, async (base) => {
+    // Relinked footage (pinned bytes differ from the index) is probed before rendering.
+    writeFileSync(join(f.media, "rec-g8-s1.webm"), "relinked game two footage");
+    writeFileSync(join(f.media, "rec-g8-s1.webm.duration"), "40000");
+    const relinked = JSON.parse(JSON.stringify(f.sequence));
+    relinked.items.filter((i) => i.media?.path.endsWith("rec-g8-s1.webm")).forEach((i) => { i.media.sha256 = sha("relinked game two footage"); });
+    writeFileSync(join(f.editions, "HOLD"), "");
+    const first = (await (await post(base, req(f, 1, { sequence: relinked }))).json()).id;
+    await settle(base, first, ["rendering"]);
+    const second = (await (await post(base, req(f, 2, { sequence: relinked }))).json()).id;
+    const probes = () => readFileSync(f.log, "utf8").split("\n").filter((l) => l === `probe fw3-film-probe-${second}`).length;
+    const atSubmit = probes();
+    writeFileSync(join(f.root, "PROBE_HOLD"), `fw3-film-probe-${second}`);
+    rmSync(join(f.editions, "HOLD")); // first finishes; second starts its own source probe and waits
+    await until(() => probes() > atSubmit);
+    assert.equal((await cancel(base, second)).state, "canceled");
+    rmSync(join(f.root, "PROBE_HOLD"));
+    assert.equal((await settle(base, first)).state, "done");
+    await new Promise((r) => setTimeout(r, 300));
+    assert.equal((await get(base, second)).state, "canceled");
+    assert.ok(!readFileSync(f.log, "utf8").includes(`run fw3-film-${second}`));
+  });
+});
+
+test("cancel while the finished file is being verified publishes no edition file or manifest", async () => {
+  const f = setup();
+  await withHelper(f, async (base) => {
+    writeFileSync(join(f.root, "PROBE_HOLD"), "fw3-film-verify-");
+    const id = (await (await post(base, req(f, 1))).json()).id;
+    await until(() => existsSync(f.log) && readFileSync(f.log, "utf8").includes(`probe fw3-film-verify-${id}`));
+    assert.equal((await cancel(base, id)).state, "canceled");
+    rmSync(join(f.root, "PROBE_HOLD"));
+    await new Promise((r) => setTimeout(r, 300));
+    const j = await get(base, id);
+    assert.equal(j.state, "canceled");
+    assert.equal(j.download, undefined);
+    const names = existsSync(join(f.editions, "film_a")) ? readdirSync(join(f.editions, "film_a")) : [];
+    assert.ok(!names.some((n) => n.startsWith("edition-") || n.startsWith(".work-")), names.join(","));
   });
 });
