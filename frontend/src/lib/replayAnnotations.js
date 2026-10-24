@@ -25,7 +25,8 @@ export const SEEK_TOLERANCE_MS = 100;
 const raw = (state) => (Array.isArray(state.replayAnnotations) ? state.replayAnnotations : []);
 const list = (state) => raw(state).filter((a) => a && typeof a === "object");
 // v1 with a readable link; anything else is kept unchanged and read-only.
-export const isSupported = (a) => a?.schema === ANNOTATION_SCHEMA && (a.link?.state === "linked" || a.link?.state === "unlinked");
+export const isSupported = (a) => a?.schema === ANNOTATION_SCHEMA && (a.link?.state === "linked" || a.link?.state === "unlinked")
+  && Array.isArray(a.tags?.team_ids) && Array.isArray(a.tags?.profile_ids);
 const upsert = (items, item) => (items.some((x) => x?.id === item.id) ? items.map((x) => (x?.id === item.id ? item : x)) : [...items, item]);
 const isInt = (n) => Number.isInteger(n);
 
@@ -45,7 +46,7 @@ function rosterFor(state, game) {
 // changes later, so editing an old entry's text never fails on it.
 function cleanTags(state, game, tags, kept = { team_ids: [], profile_ids: [] }) {
   const { teams, profiles } = rosterFor(state, game);
-  if ((tags?.team_ids !== undefined && !Array.isArray(tags.team_ids)) || (tags?.profile_ids !== undefined && !Array.isArray(tags.profile_ids))) {
+  if ((tags !== undefined && tags !== null && typeof tags !== "object") || (tags?.team_ids !== undefined && !Array.isArray(tags.team_ids)) || (tags?.profile_ids !== undefined && !Array.isArray(tags.profile_ids))) {
     throw new Error("Tags could not be read.");
   }
   const team_ids = [...new Set((tags?.team_ids || []).filter(Boolean))];

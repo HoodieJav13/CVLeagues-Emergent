@@ -221,5 +221,15 @@ describe("replay-annotation/v1: manual recording-time game log", () => {
     const kept = saveAnnotation(unl.next, { id: unl.result.id, link: { state: "unlinked", reason: "in-gap", gap: { after_segment_id: "rec-g7-s1", before_segment_id: "rec-g7-s2" } }, text: "gap note" }, ctx());
     expect(kept.result.link).toBe(unl.result.link);
   });
+
+  test("re-check residuals: entries without tag lists are read-only; non-object tags are refused", () => {
+    let s = world();
+    const tagless = { schema: ANNOTATION_SCHEMA, id: "ann_tagless", game_id: "g7", recording_id: "rec-g7", author_id: JORDAN, created_at: "2026-10-24T18:00:00.000Z", link: { state: "unlinked", reason: "unknown", gap: null }, text: "x" };
+    s = { ...s, replayAnnotations: [tagless] };
+    const rec = s.replayRecordings.find((r) => r.id === "rec-g7");
+    expect(annotationStatus(rec, tagless).state).toBe("unsupported");
+    expect(() => saveAnnotation(s, { id: "ann_tagless", text: "y" }, ctx())).toThrow(/unsupported/);
+    expect(() => log(world(), { link: at("rec-g7-s1", 10), text: "x", tags: "t4" })).toThrow(/Tags could not be read/);
+  });
 });
 

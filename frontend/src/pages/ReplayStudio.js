@@ -190,7 +190,7 @@ export default function ReplayStudio() {
                   return saved;
                 } catch { return null; }
               },
-              remove: async (id) => { try { await app.deleteReplayAnnotation(id, viewer_id); toast.success("Logged moment deleted"); } catch { /* refusal shown */ } },
+              remove: async (id) => { try { await app.deleteReplayAnnotation(id, viewer_id); toast.success("Logged moment deleted"); return true; } catch { return false; } },
               relink: async (id) => { try { await app.relinkReplayAnnotation(id, viewer_id); toast.success("Kept at the same time on the new footage"); } catch { /* refusal shown */ } },
             }} />
 

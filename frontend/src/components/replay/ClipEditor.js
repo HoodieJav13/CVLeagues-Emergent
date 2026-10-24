@@ -70,10 +70,13 @@ export function ClipEditor({ recording, segment, state, game, editing, onSave, o
   }, [editing]);
 
   useEffect(() => {
-    if (seekTo && seekTo.segment_id === segment.id && videoRef.current) {
-      videoRef.current.currentTime = seekTo.media_ms / 1000;
-      setNow(seekTo.media_ms);
-      onSeekApplied?.(); // applied once; re-selecting the segment later doesn't re-seek
+    if (seekTo && seekTo.segment_id === segment.id) {
+      if (videoRef.current) {
+        videoRef.current.currentTime = seekTo.media_ms / 1000;
+        setNow(seekTo.media_ms);
+      }
+      // Applied (or not playable now) exactly once: a later remount never re-seeks.
+      onSeekApplied?.();
     }
   }, [seekTo, segment.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

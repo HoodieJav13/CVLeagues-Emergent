@@ -179,7 +179,7 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
                 )}
                 {confirmDelete === a.id ? (
                   <>
-                    <Button type="button" variant="destructive" size="sm" className="min-h-10" onClick={async () => { await actions.remove(a.id); setConfirmDelete(null); if (draft.id === a.id) close(); }} data-testid={`gamelog-delete-confirm-${a.id}`}>Delete this note</Button>
+                    <Button type="button" variant="destructive" size="sm" className="min-h-10" onClick={async () => { if (await actions.remove(a.id)) { setConfirmDelete(null); if (draft.id === a.id) close(); } }} data-testid={`gamelog-delete-confirm-${a.id}`}>Delete this note</Button>
                     <Button type="button" variant="ghost" size="sm" className="min-h-10" onClick={() => setConfirmDelete(null)}>Keep</Button>
                   </>
                 ) : (
