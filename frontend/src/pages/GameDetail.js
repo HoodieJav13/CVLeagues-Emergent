@@ -1,5 +1,9 @@
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, CalendarPlus, PencilSimpleLine } from "@phosphor-icons/react";
+import { ArrowLeft, MapPin, Clock, CalendarBlank, CalendarX, CalendarPlus, PencilSimpleLine, VideoCamera } from "@phosphor-icons/react";
+import { BACKEND_ENABLED } from "../lib/supabase";
+
+// Replay Studio is a development mock-mode rehearsal (see App.js).
+const REPLAY_AVAILABLE = !BACKEND_ENABLED && process.env.NODE_ENV !== "production";
 import { useApp } from "../context/AppStateContext";
 import { useRole } from "../context/RoleContext";
 import { getTeam, getProfile, isFinalOutcome, isForfeitOutcome } from "../lib/selectors";
@@ -171,6 +175,15 @@ export default function GameDetail() {
           </Button>
         )}
 
+        {/* Replay Studio: local rehearsal on fictional footage (mock mode, flag football). */}
+        {REPLAY_AVAILABLE && completed && !forfeit && game.sport === "flag_football" && (
+          <Button asChild variant="outline" className="mt-5 h-11 md:h-11">
+            <Link to={`/replay/${game.id}`} data-testid="game-open-replay">
+              <VideoCamera data-icon="inline-start" weight="bold" /> Replay Studio
+            </Link>
+          </Button>
+        )}
+
         {canScore && !forfeit && (
           <Button asChild className="mt-5 h-11 md:h-11">
             <Link
@@ -223,6 +236,11 @@ export default function GameDetail() {
       {/* Player box score */}
       {completed && gameStats.length > 0 && (
         <div className="space-y-4">
+          {REPLAY_AVAILABLE && !forfeit && game.sport === "flag_football" && (
+            <Link to={`/replay/${game.id}`} data-testid="boxscore-open-replay" className="inline-flex items-center gap-1.5 min-h-11 text-sm text-primary hover:underline">
+              <VideoCamera size={16} weight="bold" /> Watch and clip this game's footage
+            </Link>
+          )}
           {[away, home].map((t) => {
             const rows = gameStats.filter((s) => s.team_id === t.id);
             if (!rows.length) return null;

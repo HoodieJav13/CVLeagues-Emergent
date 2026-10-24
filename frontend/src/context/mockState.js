@@ -54,6 +54,12 @@ export const migrateMockState = (state) => ({
   hofEntries: state.hofEntries || initialState.hofEntries,
   teamIdentities: state.teamIdentities || initialState.teamIdentities,
   waivers: state.waivers || initialState.waivers,
+  // Replay Studio collections (additive; absent in older v11 stores).
+  replayRecordings: Array.isArray(state.replayRecordings) ? state.replayRecordings : [],
+  replayClips: Array.isArray(state.replayClips) ? state.replayClips : [],
+  replayReels: Array.isArray(state.replayReels) ? state.replayReels : [],
+  // Season Film compositions (additive; private to their fictional author).
+  filmCompositions: Array.isArray(state.filmCompositions) ? state.filmCompositions : [],
   registrations: (state.registrations || []).map((record) => ({
     ...record,
     status: REG_STATUS_MAP[record.status] || record.status,
