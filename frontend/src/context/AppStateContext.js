@@ -17,6 +17,7 @@ import {
 } from "../lib/practiceLedger";
 import { deleteClip, publishReel, recordExport, registerRecording, revalidateSegment, saveClip, saveReel, unpublishReel } from "../lib/replayMock";
 import { createFilm, recordEdition, saveFilm, updateContext, adoptUpdatedHighlight } from "../lib/filmMock";
+import { deleteAnnotation, relinkAnnotation, saveAnnotation } from "../lib/replayAnnotations";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -853,6 +854,10 @@ export function AppStateProvider({ children }) {
   const adoptUpdatedFilmHighlight = useCallback((input, viewer_id) => runReplayMock((s, ctx) => adoptUpdatedHighlight(s, input, { ...ctx, viewer_id })), [runReplayMock]);
   const updateFilmContext = useCallback((input, viewer_id) => runReplayMock((s, ctx) => updateContext(s, input, { ...ctx, viewer_id })), [runReplayMock]);
   const recordFilmEdition = useCallback((input, viewer_id) => runReplayMock((s, ctx) => recordEdition(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  // Manual recording-time game log: annotations only, never score/stat writes.
+  const saveReplayAnnotation = useCallback((input, viewer_id) => runReplayMock((s, ctx) => saveAnnotation(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const deleteReplayAnnotation = useCallback((id, viewer_id) => runReplayMock((s) => deleteAnnotation(s, id, { viewer_id })), [runReplayMock]);
+  const relinkReplayAnnotation = useCallback((id, viewer_id) => runReplayMock((s, ctx) => relinkAnnotation(s, id, { ...ctx, viewer_id })), [runReplayMock]);
   const replayMockOnly = useCallback(async () => {
     throw new Error("Replay Studio is a local rehearsal and runs only in development mock mode.");
   }, []);
@@ -938,6 +943,9 @@ export function AppStateProvider({ children }) {
     unpublishReplayReel: replayMockOnly,
     revalidateReplaySegment: replayMockOnly,
     recordReplayExport: replayMockOnly,
+    saveReplayAnnotation: replayMockOnly,
+    deleteReplayAnnotation: replayMockOnly,
+    relinkReplayAnnotation: replayMockOnly,
     resetState: () => toast.info("Demo reset is mock-mode only."),
   };
 
@@ -1001,6 +1009,9 @@ export function AppStateProvider({ children }) {
         unpublishReplayReel,
         revalidateReplaySegment,
         recordReplayExport,
+        saveReplayAnnotation,
+        deleteReplayAnnotation,
+        relinkReplayAnnotation,
         resetState,
       };
 
