@@ -13,6 +13,7 @@ import {
 import { DEMO_EVENTS, mapEventToMedia } from "../lib/replayEvents";
 import { ClipEditor, SegmentTimeline } from "../components/replay/ClipEditor";
 import { ReelPanel, SharedReels } from "../components/replay/ReelPanel";
+import { GameLog } from "../components/replay/GameLog";
 import { measureDurationMs, mediaUrl, useMediaCheck } from "../components/replay/replayIO";
 
 /* ============================================================================
@@ -40,12 +41,13 @@ export default function ReplayStudio() {
   const [activeReelId, setActiveReelId] = useState(null);
   const [seekTo, setSeekTo] = useState(null);
   const [attachError, setAttachError] = useState(null);
+  const [pendingAt, setPendingAt] = useState(null); // { segment_id, media_ms } from "Log a moment here"
 
   const recording = game ? recordingFor(state, game.id) : null;
   const [mediaStatus, recheck] = useMediaCheck(recording);
   useEffect(() => { try { window.sessionStorage.setItem(VIEWER_KEY, viewer_id); } catch { /* optional */ } }, [viewer_id]);
   useEffect(() => { if (recording && !activeSegmentId) setActiveSegmentId(orderedSegments(recording)[0].id); }, [recording, activeSegmentId]);
-  useEffect(() => { setEditing(null); setActiveReelId(null); }, [viewer_id]);
+  useEffect(() => { setEditing(null); setActiveReelId(null); setPendingAt(null); }, [viewer_id]);
 
   const myClips = useMemo(() => (recording ? clipsOwnedBy(state, recording.id, viewer_id) : []), [state, recording, viewer_id]);
   const { mine, shared } = game ? reelsVisibleTo(state, game.id, viewer_id) : { mine: [], shared: [] };
@@ -174,8 +176,23 @@ export default function ReplayStudio() {
           <SegmentTimeline recording={recording} activeSegmentId={activeSegmentId} onSelect={setActiveSegmentId} mediaStatus={mediaStatus} />
           {segment && (
             <ClipEditor key={`${viewer_id}-${segment.id}`} recording={recording} segment={segment} state={state} game={game} editing={editing && editing.segment_id === segment.id && editing.owner_id === viewer_id ? editing : null}
-              onSave={saveClip} onCancelEdit={() => setEditing(null)} segmentStatus={mediaStatus[segment.id]} seekTo={seekTo} />
+              onSave={saveClip} onCancelEdit={() => setEditing(null)} segmentStatus={mediaStatus[segment.id]} seekTo={seekTo} onLogMoment={setPendingAt} />
           )}
+
+          <GameLog key={`gamelog-${viewer_id}`} state={state} game={game} recording={recording} viewer_id={viewer_id} mediaStatus={mediaStatus}
+            pendingAt={pendingAt} onClearPending={() => setPendingAt(null)}
+            onJump={(link) => { setActiveSegmentId(link.segment_id); setSeekTo({ segment_id: link.segment_id, media_ms: link.media_ms, at: Date.now() }); }}
+            actions={{
+              save: async (input) => {
+                try {
+                  const saved = await app.saveReplayAnnotation(input, viewer_id);
+                  toast.success(input.id ? "Logged moment updated" : "Moment logged");
+                  return saved;
+                } catch { return null; }
+              },
+              remove: async (id) => { try { await app.deleteReplayAnnotation(id, viewer_id); toast.success("Logged moment deleted"); } catch { /* refusal shown */ } },
+              relink: async (id) => { try { await app.relinkReplayAnnotation(id, viewer_id); toast.success("Kept at the same time on the new footage"); } catch { /* refusal shown */ } },
+            }} />
 
           <section className="space-y-2" aria-label="My highlights">
             <p className="font-display uppercase tracking-tight text-foreground">My highlights ({myClips.length})</p>

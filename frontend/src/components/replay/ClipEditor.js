@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Play, Pause, ArrowCounterClockwise, ArrowClockwise, FlagBanner, FlagCheckered } from "@phosphor-icons/react";
+import { Play, Pause, ArrowCounterClockwise, ArrowClockwise, FlagBanner, FlagCheckered, NotePencil } from "@phosphor-icons/react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -56,7 +56,7 @@ export function SegmentTimeline({ recording, activeSegmentId, onSelect, mediaSta
 
 const BLANK = { id: null, in_ms: null, out_ms: null, title: "", team_ids: [], profile_ids: [] };
 
-export function ClipEditor({ recording, segment, state, game, editing, onSave, onCancelEdit, segmentStatus, seekTo }) {
+export function ClipEditor({ recording, segment, state, game, editing, onSave, onCancelEdit, segmentStatus, seekTo, onLogMoment }) {
   const videoRef = useRef(null);
   const [now, setNow] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -140,6 +140,10 @@ export function ClipEditor({ recording, segment, state, game, editing, onSave, o
         <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => seek(at() + NUDGE_MS)} disabled={unavailable} data-testid="replay-fwd"><ArrowClockwise size={16} weight="bold" /> 0.5 s</Button>
         <Button type="button" size="sm" className="min-h-11" onClick={() => setDraft((d) => ({ ...d, in_ms: at() }))} disabled={unavailable} data-testid="replay-mark-in"><FlagBanner size={16} weight="bold" /> Mark start</Button>
         <Button type="button" size="sm" className="min-h-11" onClick={() => setDraft((d) => ({ ...d, out_ms: at() }))} disabled={unavailable} data-testid="replay-mark-out"><FlagCheckered size={16} weight="bold" /> Mark end</Button>
+        {onLogMoment && (
+          // Pauses first so the logged recording time is the frame on screen.
+          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => { videoRef.current?.pause(); onLogMoment({ segment_id: segment.id, media_ms: at() }); }} disabled={unavailable} data-testid="replay-log-moment"><NotePencil size={16} weight="bold" /> Log a moment here</Button>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">

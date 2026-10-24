@@ -182,4 +182,77 @@ describe("Replay Studio (mock mode)", () => {
     expect(q("replay-reel-preview-position").textContent).toMatch(/Clip 1 of 1: A ok/);
     expect(q("replay-reel-preview-skipped").textContent).toMatch(/1 highlight skipped/);
   });
+
+  test("game log: log at the paused video time, edit, honest gap entry, refused clock, jump back, delete — scores and stats untouched", async () => {
+    const choose = async (id, value) => {
+      const el = q(id);
+      await act(async () => {
+        Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, value);
+        el.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    };
+    await click("replay-attach");
+    await flush();
+    const scoring = () => JSON.stringify([app.state.games, app.state.playerStats, app.state.scorekeepingEvents, app.state.gameParticipation]);
+    const before = scoring();
+    expect(q("gamelog-empty")).not.toBeNull();
+
+    // Log at the frame on screen: Segment A, 12.345 s recording time.
+    await click("replay-segment-rec-g7-s1");
+    const video = q("replay-video");
+    let current = 12.345;
+    Object.defineProperty(video, "currentTime", { configurable: true, get: () => current, set: (v) => { current = v; } });
+    video.pause = () => {};
+    await click("replay-log-moment");
+    expect(q("gamelog-form-where").textContent).toMatch(/Segment A 0:12\.3/);
+    await type("gamelog-text", "Flag pull on 3rd down");
+    await click("gamelog-tag-team-t4");
+    await click("gamelog-save");
+    await flush();
+    const [entry] = app.state.replayAnnotations;
+    expect(entry).toMatchObject({ link: { state: "linked", segment_id: "rec-g7-s1", media_ms: 12345 }, text: "Flag pull on 3rd down", tags: { team_ids: ["t4"] }, game_clock: null, author_id: "viewer-jordan" });
+
+    // Edit the note only: the time stays where it was logged.
+    await click(`gamelog-edit-${entry.id}`);
+    await type("gamelog-text", "Flag pull on 3rd down, sideline");
+    await click("gamelog-save");
+    await flush();
+    expect(app.state.replayAnnotations[0]).toMatchObject({ revision: 2, text: "Flag pull on 3rd down, sideline", link: { media_ms: 12345 } });
+
+    // Something that happened while nothing was recorded.
+    await click("gamelog-add-unlinked");
+    await choose("gamelog-reason", "in-gap");
+    await choose("gamelog-gap", "rec-g7-s1|rec-g7-s2");
+    await type("gamelog-text", "Touchdown during the camera swap");
+    await click("gamelog-save");
+    await flush();
+    const gapEntry = app.state.replayAnnotations[1];
+    expect(gapEntry.link).toEqual({ state: "unlinked", reason: "in-gap", gap: { after_segment_id: "rec-g7-s1", before_segment_id: "rec-g7-s2" } });
+    expect(q(`gamelog-status-${gapEntry.id}`).textContent).toMatch(/recording gap between Segment A and Segment B/);
+    expect(q(`gamelog-jump-${gapEntry.id}`)).toBeNull();
+
+    // A typed clock that isn't a real clock is refused; nothing is stored.
+    await click("gamelog-add-unlinked");
+    await type("gamelog-text", "Bad clock");
+    await type("gamelog-period", "1");
+    await type("gamelog-clock", "99:99");
+    await click("gamelog-save");
+    await flush();
+    expect(app.state.replayAnnotations).toHaveLength(2);
+    expect(q("gamelog-form")).not.toBeNull();
+    await click("gamelog-cancel");
+
+    // Go to: the player seeks back to the logged recording time.
+    current = 40;
+    await click(`gamelog-jump-${entry.id}`);
+    expect(current).toBeCloseTo(12.345, 3);
+
+    // Delete needs a confirmation step.
+    await click(`gamelog-delete-${entry.id}`);
+    expect(app.state.replayAnnotations).toHaveLength(2);
+    await click(`gamelog-delete-confirm-${entry.id}`);
+    await flush();
+    expect(app.state.replayAnnotations.map((a) => a.id)).toEqual([gapEntry.id]);
+    expect(scoring()).toBe(before);
+  });
 });
