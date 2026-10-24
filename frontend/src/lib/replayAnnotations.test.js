@@ -230,6 +230,7 @@ describe("replay-annotation/v1: manual recording-time game log", () => {
     expect(annotationStatus(rec, tagless).state).toBe("unsupported");
     expect(() => saveAnnotation(s, { id: "ann_tagless", text: "y" }, ctx())).toThrow(/unsupported/);
     expect(() => log(world(), { link: at("rec-g7-s1", 10), text: "x", tags: "t4" })).toThrow(/Tags could not be read/);
+    expect(() => log(world(), { link: at("rec-g7-s1", 10), text: "x", tags: ["t4"] })).toThrow(/Tags could not be read/);
   });
 });
 

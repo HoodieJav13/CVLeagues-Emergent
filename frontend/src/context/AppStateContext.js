@@ -821,7 +821,6 @@ export function AppStateProvider({ children }) {
     [runPracticeMock]
   );
 
-  // Restore the original seed data (clears any demo edits).
   /* ---------------- REPLAY STUDIO (local rehearsal, mock only) ---------- */
   // Player-facing media authorship on fictional footage. Every transition is
   // computed from the CURRENT state and applies whole or refuses (toast plus
@@ -862,6 +861,7 @@ export function AppStateProvider({ children }) {
     throw new Error("Replay Studio is a local rehearsal and runs only in development mock mode.");
   }, []);
 
+  // Restore the original seed data (clears any demo edits).
   const resetState = useCallback(() => {
     setState(mockState.resetMockState());
   }, []);

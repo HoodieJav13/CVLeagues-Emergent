@@ -46,7 +46,7 @@ function rosterFor(state, game) {
 // changes later, so editing an old entry's text never fails on it.
 function cleanTags(state, game, tags, kept = { team_ids: [], profile_ids: [] }) {
   const { teams, profiles } = rosterFor(state, game);
-  if ((tags !== undefined && tags !== null && typeof tags !== "object") || (tags?.team_ids !== undefined && !Array.isArray(tags.team_ids)) || (tags?.profile_ids !== undefined && !Array.isArray(tags.profile_ids))) {
+  if ((tags !== undefined && tags !== null && (typeof tags !== "object" || Array.isArray(tags))) || (tags?.team_ids !== undefined && !Array.isArray(tags.team_ids)) || (tags?.profile_ids !== undefined && !Array.isArray(tags.profile_ids))) {
     throw new Error("Tags could not be read.");
   }
   const team_ids = [...new Set((tags?.team_ids || []).filter(Boolean))];
