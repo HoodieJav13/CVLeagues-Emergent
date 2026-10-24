@@ -58,7 +58,9 @@ describe("backend mode storage isolation", () => {
       await Promise.resolve();
       await Promise.resolve();
     });
-    for (const action of ["registerReplayRecording", "saveReplayClip", "deleteReplayClip", "saveReplayReel", "publishReplayReel", "unpublishReplayReel", "revalidateReplaySegment", "recordReplayExport"]) {
+    for (const action of ["registerReplayRecording", "saveReplayClip", "deleteReplayClip", "saveReplayReel", "publishReplayReel", "unpublishReplayReel", "revalidateReplaySegment", "recordReplayExport",
+      "saveReplayAnnotation", "deleteReplayAnnotation", "relinkReplayAnnotation",
+      "createFilmComposition", "saveFilmComposition", "adoptUpdatedFilmHighlight", "updateFilmContext", "recordFilmEdition"]) {
       await expect(app[action]({})).rejects.toThrow(/local rehearsal and runs only in development mock mode/);
     }
     expect(setItem).not.toHaveBeenCalled();

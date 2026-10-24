@@ -255,4 +255,85 @@ describe("Replay Studio (mock mode)", () => {
     expect(app.state.replayAnnotations.map((a) => a.id)).toEqual([gapEntry.id]);
     expect(scoring()).toBe(before);
   });
+
+  test("game log review fixes: re-marking keeps the note, viewer switch drops a pending time, cross-segment Go to, relink, damaged entry", async () => {
+    await click("replay-attach");
+    await flush();
+    const setVideoTime = (t) => {
+      const v = q("replay-video");
+      let current = t;
+      Object.defineProperty(v, "currentTime", { configurable: true, get: () => current, set: (x) => { current = x; } });
+      v.pause = () => {};
+      return () => current;
+    };
+    // Re-pressing "Log a moment here" while writing keeps the note, takes the new time.
+    await click("replay-segment-rec-g7-s1");
+    setVideoTime(5);
+    await click("replay-log-moment");
+    await type("gamelog-text", "Kept note");
+    setVideoTime(6.5);
+    await click("replay-log-moment");
+    expect(q("gamelog-text").value).toBe("Kept note");
+    expect(q("gamelog-form-where").textContent).toMatch(/0:06\.5/);
+    await click("gamelog-save");
+    await flush();
+    const first = app.state.replayAnnotations[0];
+    expect(first.link.media_ms).toBe(6500);
+
+    // A pending time never follows the viewer switch.
+    await click("replay-log-moment");
+    expect(q("gamelog-form")).not.toBeNull();
+    await click("replay-viewer-viewer-rachel");
+    expect(q("gamelog-form")).toBeNull();
+    expect(q(`gamelog-entry-${first.id}`)).toBeNull();
+    await click("replay-viewer-viewer-jordan");
+    expect(q("gamelog-form")).toBeNull();
+
+    // Go to from another segment lands in the logged segment at the logged time.
+    await click("replay-segment-rec-g7-s2");
+    expect(q("replay-segment-rec-g7-s2").getAttribute("aria-pressed")).toBe("true");
+    let seekedTo = null;
+    const realDesc = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
+    Object.defineProperty(HTMLMediaElement.prototype, "currentTime", { configurable: true, get() { return seekedTo ?? 0; }, set(x) { seekedTo = x; } });
+    try {
+      await click(`gamelog-jump-${first.id}`);
+      expect(q("replay-segment-rec-g7-s1").getAttribute("aria-pressed")).toBe("true");
+      expect(seekedTo).toBeCloseTo(6.5, 3);
+      // Re-selecting the segment later does not replay the old seek.
+      seekedTo = null;
+      await click("replay-segment-rec-g7-s2");
+      await click("replay-segment-rec-g7-s1");
+      expect(seekedTo).toBeNull();
+    } finally {
+      if (realDesc) Object.defineProperty(HTMLMediaElement.prototype, "currentTime", realDesc);
+    }
+
+    // Footage revalidated in Replay Studio: the entry needs a deliberate relink at the same time.
+    await act(async () => { await app.revalidateReplaySegment({ recording_id: "rec-g7", segment_id: "rec-g7-s1", sha256: "c".repeat(64), duration_ms: 60000 }, "viewer-jordan"); });
+    expect(q(`gamelog-jump-${first.id}`)).toBeNull();
+    expect(q(`gamelog-status-${first.id}`).textContent).toMatch(/replaced after this was logged/);
+    await click(`gamelog-relink-${first.id}`);
+    await flush();
+    expect(app.state.replayAnnotations[0].link).toMatchObject({ media_ms: 6500, source_revision: "c".repeat(64) });
+    expect(q(`gamelog-status-${first.id}`).textContent).toMatch(/Confirmed on replaced/);
+  });
+
+  test("a damaged or future-version entry in the store renders read-only and never takes the page down", async () => {
+    await click("replay-attach");
+    await flush();
+    const stored = JSON.parse(window.localStorage.getItem("cvf_app_state_v11"));
+    stored.state.replayAnnotations = [null, { schema: "replay-annotation/v9", id: "ann_v9", game_id: "g7", recording_id: "rec-g7", author_id: "viewer-jordan", created_at: "2026-10-24T18:00:00.000Z", text: "from the future", game_clock: { period: 1, clock_ms: 571000 }, link: { state: "unlinked", reason: "future" } }];
+    window.localStorage.setItem("cvf_app_state_v11", JSON.stringify(stored));
+    await act(async () => root.unmount());
+    root = createRoot(container);
+    await act(async () => root.render(<AppStateProvider><Harness /></AppStateProvider>));
+    await flush();
+    expect(q("replay-studio")).not.toBeNull();
+    expect(q("gamelog-entry-ann_v9").textContent).toMatch(/Unsupported entry/);
+    expect(q("gamelog-edit-ann_v9")).toBeNull();
+    expect(q("gamelog-jump-ann_v9")).toBeNull();
+    expect(q("gamelog-jump-suggested-ann_v9")).toBeNull();
+    expect(q("gamelog-delete-ann_v9")).not.toBeNull();
+  });
 });
+

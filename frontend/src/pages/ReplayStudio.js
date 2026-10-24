@@ -139,7 +139,7 @@ export default function ReplayStudio() {
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Viewing as">
         <span className="text-micro uppercase tracking-widest text-muted-foreground">Viewing as</span>
         {REPLAY_VIEWERS.map((v) => (
-          <button key={v.id} type="button" aria-pressed={v.id === viewer_id} onClick={() => setViewer(v.id)} data-testid={`replay-viewer-${v.id}`}
+          <button key={v.id} type="button" aria-pressed={v.id === viewer_id} onClick={() => { setPendingAt(null); setViewer(v.id); }} data-testid={`replay-viewer-${v.id}`}
             className={`min-h-10 px-3 rounded-full border text-xs ${v.id === viewer_id ? "border-primary bg-primary/15 text-foreground" : "border-border text-muted-foreground"}`}>{v.name}</button>
         ))}
       </div>
@@ -176,7 +176,7 @@ export default function ReplayStudio() {
           <SegmentTimeline recording={recording} activeSegmentId={activeSegmentId} onSelect={setActiveSegmentId} mediaStatus={mediaStatus} />
           {segment && (
             <ClipEditor key={`${viewer_id}-${segment.id}`} recording={recording} segment={segment} state={state} game={game} editing={editing && editing.segment_id === segment.id && editing.owner_id === viewer_id ? editing : null}
-              onSave={saveClip} onCancelEdit={() => setEditing(null)} segmentStatus={mediaStatus[segment.id]} seekTo={seekTo} onLogMoment={setPendingAt} />
+              onSave={saveClip} onCancelEdit={() => setEditing(null)} segmentStatus={mediaStatus[segment.id]} seekTo={seekTo} onSeekApplied={() => setSeekTo(null)} onLogMoment={setPendingAt} />
           )}
 
           <GameLog key={`gamelog-${viewer_id}`} state={state} game={game} recording={recording} viewer_id={viewer_id} mediaStatus={mediaStatus}

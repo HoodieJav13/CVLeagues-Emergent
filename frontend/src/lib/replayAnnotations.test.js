@@ -128,8 +128,9 @@ describe("replay-annotation/v1: manual recording-time game log", () => {
     expect(() => relinkAnnotation(s, a.result.id, { now: "2026-10-24T18:00:00.000Z", viewer_id: RACHEL })).toThrow(/your own/);
     const relinked = relinkAnnotation(s, a.result.id, { now: "2026-10-24T18:30:00.000Z", viewer_id: JORDAN });
     expect(relinked.result.link).toMatchObject({ segment_id: "rec-g7-s1", media_ms: 20000, source_revision: hex("c"), relinked_from: { source_revision: H1, at: "2026-10-24T18:30:00.000Z" } });
-    expect(annotationStatus(rec, relinked.result).state).toBe("relinked");
-    expect(canJump(annotationStatus(rec, relinked.result))).toBe(true);
+    const ok = { "rec-g7-s1": { state: "ok" } };
+    expect(annotationStatus(rec, relinked.result, ok).state).toBe("relinked");
+    expect(canJump(annotationStatus(rec, relinked.result, ok))).toBe(true);
   });
 
   test("shorter replacement footage leaves a late moment blocked, never moved", () => {
@@ -172,4 +173,53 @@ describe("replay-annotation/v1: manual recording-time game log", () => {
     expect(() => deleteAnnotation(s, "ann_future", { viewer_id: RACHEL })).toThrow(/your own/);
     expect(deleteAnnotation(s, "ann_future", { viewer_id: JORDAN }).next.replayAnnotations).toEqual([]);
   });
+
+  test("review 3: only footage this device has verified can be jumped to (checking, error, unchecked)", () => {
+    let s = world();
+    const a = log(s, { link: at("rec-g7-s1", 3000), text: "x" });
+    s = a.next;
+    const rec = s.replayRecordings.find((r) => r.id === "rec-g7");
+    expect(annotationStatus(rec, a.result, {}).state).toBe("checking");
+    expect(annotationStatus(rec, a.result, { "rec-g7-s1": { state: "checking" } }).state).toBe("checking");
+    expect(annotationStatus(rec, a.result, { "rec-g7-s1": { state: "error", reason: "decode failed" } })).toMatchObject({ state: "unavailable" });
+    for (const m of [{}, { "rec-g7-s1": { state: "checking" } }, { "rec-g7-s1": { state: "error" } }]) expect(canJump(annotationStatus(rec, a.result, m))).toBe(false);
+    expect(canJump(annotationStatus(rec, a.result, { "rec-g7-s1": { state: "ok" } }))).toBe(true);
+  });
+
+  test("review 4/5: damaged, linkless or non-object entries never crash and stay read-only", () => {
+    let s = world();
+    const linkless = { schema: ANNOTATION_SCHEMA, id: "ann_linkless", game_id: "g7", recording_id: "rec-g7", author_id: JORDAN, created_at: "2026-10-24T18:00:00.000Z", text: "x" };
+    s = { ...s, replayAnnotations: [null, 7, linkless] };
+    const rec = s.replayRecordings.find((r) => r.id === "rec-g7");
+    expect(annotationsFor(s, "g7", JORDAN).map((a) => a.id)).toEqual(["ann_linkless"]);
+    expect(annotationStatus(rec, linkless).state).toBe("unsupported");
+    expect(() => saveAnnotation(s, { id: "ann_linkless", text: "y" }, ctx())).toThrow(/unsupported/);
+    // Writes keep whatever else is stored, untouched.
+    const added = log(s, { link: at("rec-g7-s1", 10), text: "new" });
+    expect(added.next.replayAnnotations.slice(0, 3)).toEqual([null, 7, linkless]);
+    expect(deleteAnnotation(added.next, added.result.id, { viewer_id: JORDAN }).next.replayAnnotations).toEqual([null, 7, linkless]);
+  });
+
+  test("review 8/9: period cap, non-string notes and non-array tags are refused cleanly", () => {
+    const s = world();
+    expect(() => log(s, { link: at("rec-g7-s1", 10), text: "x", game_clock: { period: 1e21, clock_ms: 0 } })).toThrow(/game clock/);
+    expect(log(s, { link: at("rec-g7-s1", 10), text: "x", game_clock: { period: 20, clock_ms: 0 } }).result.game_clock).toEqual({ period: 20, clock_ms: 0 });
+    expect(() => log(s, { link: at("rec-g7-s1", 10), text: { evil: true } })).toThrow(/note could not be read/);
+    expect(() => log(s, { link: at("rec-g7-s1", 10), text: "x", tags: { team_ids: "t4" } })).toThrow(/Tags could not be read/);
+  });
+
+  test("re-timing: same time keeps the stored revision; an unlinked entry can be linked to a time later", () => {
+    let s = world();
+    const a = log(s, { link: { state: "unlinked", reason: "unknown" }, text: "Not sure when" });
+    s = a.next;
+    const linked = saveAnnotation(s, { id: a.result.id, link: at("rec-g7-s2", 4200) }, ctx());
+    expect(linked.result.link).toMatchObject({ state: "linked", segment_id: "rec-g7-s2", media_ms: 4200 });
+    s = linked.next;
+    const same = saveAnnotation(s, { id: a.result.id, link: at("rec-g7-s2", 4200), text: "Found it" }, ctx());
+    expect(same.result.link).toBe(linked.result.link);
+    const unl = log(s, { link: { state: "unlinked", reason: "in-gap", gap: { after_segment_id: "rec-g7-s1", before_segment_id: "rec-g7-s2" } }, text: "gap" });
+    const kept = saveAnnotation(unl.next, { id: unl.result.id, link: { state: "unlinked", reason: "in-gap", gap: { after_segment_id: "rec-g7-s1", before_segment_id: "rec-g7-s2" } }, text: "gap note" }, ctx());
+    expect(kept.result.link).toBe(unl.result.link);
+  });
 });
+

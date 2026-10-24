@@ -56,7 +56,7 @@ export function SegmentTimeline({ recording, activeSegmentId, onSelect, mediaSta
 
 const BLANK = { id: null, in_ms: null, out_ms: null, title: "", team_ids: [], profile_ids: [] };
 
-export function ClipEditor({ recording, segment, state, game, editing, onSave, onCancelEdit, segmentStatus, seekTo, onLogMoment }) {
+export function ClipEditor({ recording, segment, state, game, editing, onSave, onCancelEdit, segmentStatus, seekTo, onSeekApplied, onLogMoment }) {
   const videoRef = useRef(null);
   const [now, setNow] = useState(0);
   const [playing, setPlaying] = useState(false);
@@ -73,8 +73,9 @@ export function ClipEditor({ recording, segment, state, game, editing, onSave, o
     if (seekTo && seekTo.segment_id === segment.id && videoRef.current) {
       videoRef.current.currentTime = seekTo.media_ms / 1000;
       setNow(seekTo.media_ms);
+      onSeekApplied?.(); // applied once; re-selecting the segment later doesn't re-seek
     }
-  }, [seekTo, segment.id]);
+  }, [seekTo, segment.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const teams = [game.home_team_id, game.away_team_id].map((id) => (state.teams || []).find((t) => t.id === id)).filter(Boolean);
   const players = useMemo(() => teams.flatMap((team) => (state.teamPlayers || [])
@@ -142,7 +143,7 @@ export function ClipEditor({ recording, segment, state, game, editing, onSave, o
         <Button type="button" size="sm" className="min-h-11" onClick={() => setDraft((d) => ({ ...d, out_ms: at() }))} disabled={unavailable} data-testid="replay-mark-out"><FlagCheckered size={16} weight="bold" /> Mark end</Button>
         {onLogMoment && (
           // Pauses first so the logged recording time is the frame on screen.
-          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => { videoRef.current?.pause(); onLogMoment({ segment_id: segment.id, media_ms: at() }); }} disabled={unavailable} data-testid="replay-log-moment"><NotePencil size={16} weight="bold" /> Log a moment here</Button>
+          <Button type="button" variant="outline" size="sm" className="min-h-11" onClick={() => { videoRef.current?.pause(); onLogMoment({ segment_id: segment.id, media_ms: at() }); }} disabled={segmentStatus?.state !== "ok"} data-testid="replay-log-moment"><NotePencil size={16} weight="bold" /> Log a moment here</Button>
         )}
       </div>
 

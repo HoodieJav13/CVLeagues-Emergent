@@ -16,12 +16,17 @@ export const ANNOTATION_SCHEMA = "replay-annotation/v1";
 export const MAX_ANNOTATION_TEXT = 140;
 export const UNLINKED_REASONS = ["not-recorded", "in-gap", "unknown"];
 export const MAX_CLOCK_MS = 3600000;
+export const MAX_PERIOD = 20; // regulation plus any overtime periods, with room to spare
 // Declared, measured seek tolerance for "Go to" on the fixture media in
 // headless Chromium (see Lane B CONTRACT/RETURN); not a frame-exact promise.
 export const SEEK_TOLERANCE_MS = 100;
 
-const list = (state) => (Array.isArray(state.replayAnnotations) ? state.replayAnnotations : []);
-const upsert = (items, item) => (items.some((x) => x.id === item.id) ? items.map((x) => (x.id === item.id ? item : x)) : [...items, item]);
+// Reads skip anything that isn't an object; writes keep the stored array as is.
+const raw = (state) => (Array.isArray(state.replayAnnotations) ? state.replayAnnotations : []);
+const list = (state) => raw(state).filter((a) => a && typeof a === "object");
+// v1 with a readable link; anything else is kept unchanged and read-only.
+export const isSupported = (a) => a?.schema === ANNOTATION_SCHEMA && (a.link?.state === "linked" || a.link?.state === "unlinked");
+const upsert = (items, item) => (items.some((x) => x?.id === item.id) ? items.map((x) => (x?.id === item.id ? item : x)) : [...items, item]);
 const isInt = (n) => Number.isInteger(n);
 
 export const annotationsFor = (state, game_id, viewer_id) =>
@@ -40,6 +45,9 @@ function rosterFor(state, game) {
 // changes later, so editing an old entry's text never fails on it.
 function cleanTags(state, game, tags, kept = { team_ids: [], profile_ids: [] }) {
   const { teams, profiles } = rosterFor(state, game);
+  if ((tags?.team_ids !== undefined && !Array.isArray(tags.team_ids)) || (tags?.profile_ids !== undefined && !Array.isArray(tags.profile_ids))) {
+    throw new Error("Tags could not be read.");
+  }
   const team_ids = [...new Set((tags?.team_ids || []).filter(Boolean))];
   const profile_ids = [...new Set((tags?.profile_ids || []).filter(Boolean))];
   if (team_ids.some((id) => !teams.includes(id) && !kept.team_ids.includes(id))) throw new Error("Tag only the two teams in this game.");
@@ -50,8 +58,8 @@ function cleanTags(state, game, tags, kept = { team_ids: [], profile_ids: [] }) 
 function cleanClock(clock) {
   if (clock === null || clock === undefined) return null;
   const { period, clock_ms } = clock;
-  if (!isInt(period) || period < 1 || !isInt(clock_ms) || clock_ms < 0 || clock_ms > MAX_CLOCK_MS) {
-    throw new Error("Enter the game clock as a period (1 or more) and a time between 0:00 and 60:00, or leave it blank.");
+  if (!isInt(period) || period < 1 || period > MAX_PERIOD || !isInt(clock_ms) || clock_ms < 0 || clock_ms > MAX_CLOCK_MS) {
+    throw new Error(`Enter the game clock as a period (1–${MAX_PERIOD}) and a time between 0:00 and 60:00, or leave it blank.`);
   }
   return { period, clock_ms };
 }
@@ -88,7 +96,7 @@ export function saveAnnotation(state, input, { now, makeId, viewer_id }) {
   const existing = input.id ? list(state).find((a) => a.id === input.id) : null;
   if (input.id && !existing) throw new Error("That logged moment no longer exists.");
   if (existing && existing.author_id !== viewer_id) throw new Error("You can only edit your own logged moments.");
-  if (existing && existing.schema !== ANNOTATION_SCHEMA) throw new Error("This logged moment uses an unsupported version and is kept read-only.");
+  if (existing && !isSupported(existing)) throw new Error("This logged moment uses an unsupported version and is kept read-only.");
   const game_id = existing ? existing.game_id : input.game_id;
   const game = (state.games || []).find((g) => g.id === game_id);
   if (!game) throw new Error("That game no longer exists.");
@@ -100,7 +108,9 @@ export function saveAnnotation(state, input, { now, makeId, viewer_id }) {
   // changed footage); a new time re-binds to the footage as registered now.
   const keepLink = existing && (input.link === undefined || sameLinkTarget(existing.link, input.link) || sameUnlinked(existing.link, input.link));
   const link = keepLink ? existing.link : cleanLink(recording, input.link);
-  const text = String(input.text ?? existing?.text ?? "").trim();
+  const rawText = input.text ?? existing?.text ?? "";
+  if (typeof rawText !== "string") throw new Error("The note could not be read.");
+  const text = rawText.trim();
   if (text.length > MAX_ANNOTATION_TEXT) throw new Error(`Keep a logged moment to ${MAX_ANNOTATION_TEXT} characters.`);
   const tags = cleanTags(state, game, input.tags ?? existing?.tags, existing?.tags);
   if (!text && !tags.team_ids.length && !tags.profile_ids.length) throw new Error("Write what happened or tag a team or player.");
@@ -119,14 +129,14 @@ export function saveAnnotation(state, input, { now, makeId, viewer_id }) {
     tags,
     text,
   };
-  return { next: { ...state, replayAnnotations: upsert(list(state), annotation) }, result: annotation };
+  return { next: { ...state, replayAnnotations: upsert(raw(state), annotation) }, result: annotation };
 }
 
 export function deleteAnnotation(state, id, { viewer_id }) {
   const existing = list(state).find((a) => a.id === id);
   if (!existing) throw new Error("That logged moment no longer exists.");
   if (existing.author_id !== viewer_id) throw new Error("You can only delete your own logged moments.");
-  return { next: { ...state, replayAnnotations: list(state).filter((a) => a.id !== id) }, result: existing };
+  return { next: { ...state, replayAnnotations: raw(state).filter((a) => a?.id !== id) }, result: existing };
 }
 
 // After the footage was replaced and revalidated in Replay Studio: confirm the
@@ -135,7 +145,7 @@ export function relinkAnnotation(state, id, { now, viewer_id }) {
   const existing = list(state).find((a) => a.id === id);
   if (!existing) throw new Error("That logged moment no longer exists.");
   if (existing.author_id !== viewer_id) throw new Error("You can only relink your own logged moments.");
-  if (existing.schema !== ANNOTATION_SCHEMA) throw new Error("This logged moment uses an unsupported version and is kept read-only.");
+  if (!isSupported(existing)) throw new Error("This logged moment uses an unsupported version and is kept read-only.");
   if (existing.link?.state !== "linked") throw new Error("Only a moment logged at a recording time can be relinked.");
   const recording = (state.replayRecordings || []).find((r) => r.id === existing.recording_id);
   const segment = segmentById(recording, existing.link.segment_id);
@@ -148,12 +158,12 @@ export function relinkAnnotation(state, id, { now, viewer_id }) {
     revision: existing.revision + 1,
     link: { ...existing.link, source_revision: segment.media.sha256, relinked_from: { source_revision: existing.link.source_revision, at: now } },
   };
-  return { next: { ...state, replayAnnotations: upsert(list(state), annotation) }, result: annotation };
+  return { next: { ...state, replayAnnotations: upsert(raw(state), annotation) }, result: annotation };
 }
 
 // mediaStatus[segment_id] = { state: "ok"|"missing"|"replaced"|"checking"|"error" } (replayIO).
 export function annotationStatus(recording, annotation, mediaStatus = {}) {
-  if (annotation?.schema !== ANNOTATION_SCHEMA) return { state: "unsupported", reason: "Saved by an unsupported version; kept unchanged and read-only." };
+  if (!isSupported(annotation)) return { state: "unsupported", reason: "Saved by an unsupported version; kept unchanged and read-only." };
   const { link } = annotation;
   if (link.state === "unlinked") {
     if (link.reason === "in-gap") {
@@ -172,6 +182,9 @@ export function annotationStatus(recording, annotation, mediaStatus = {}) {
   }
   if (media?.state === "replaced") return { state: "needs-relink", reason: `${segment.label} footage on this device differs from the registered recording. Relink it in Replay Studio first.` };
   if (link.media_ms > segment.media.duration_ms) return { state: "out-of-bounds", reason: `This time is past the end of ${segment.label}.` };
+  // Only footage this device has verified can be jumped to.
+  if (media?.state === "error") return { state: "unavailable", reason: `${segment.label} footage could not be checked: ${media.reason || "unreadable"}.` };
+  if (media?.state !== "ok") return { state: "checking", reason: `Checking ${segment.label} footage on this device…` };
   if (link.relinked_from) return { state: "relinked", reason: `Confirmed on replaced ${segment.label} footage.` };
   return { state: "ok", reason: "" };
 }

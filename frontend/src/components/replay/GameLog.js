@@ -5,7 +5,7 @@ import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { formatMs, recordingGaps, segmentById } from "../../lib/replay";
 import { mapEventToMedia } from "../../lib/replayEvents";
-import { MAX_ANNOTATION_TEXT, annotationStatus, annotationsFor, canJump } from "../../lib/replayAnnotations";
+import { MAX_ANNOTATION_TEXT, annotationStatus, annotationsFor, canJump, isSupported } from "../../lib/replayAnnotations";
 
 /* Game log: private manual notes at RECORDING time (replay-annotation/v1).
  * Logging, editing or deleting never changes the score, stats or history.
@@ -26,9 +26,14 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
   const entries = annotationsFor(state, game.id, viewer_id);
   const gaps = recordingGaps(recording);
 
-  // "Log a moment here" in the player opens a new entry at that exact time.
+  // "Log a moment here" in the player opens a new entry at that exact time. A
+  // new entry already being written keeps its note and only takes the new
+  // time; an entry being edited offers "Move to the time you just marked".
   useEffect(() => {
-    if (pendingAt && !draft.id) { setDraft({ ...BLANK, link: { state: "linked", ...pendingAt } }); setOpen(true); }
+    if (!pendingAt || draft.id) return;
+    const link = { state: "linked", ...pendingAt };
+    if (open) setDraft((d) => ({ ...d, link }));
+    else { setDraft({ ...BLANK, link }); setOpen(true); }
   }, [pendingAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const teams = [game.home_team_id, game.away_team_id].map((id) => (state.teams || []).find((t) => t.id === id)).filter(Boolean);
@@ -60,7 +65,7 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
   };
 
   const where = (a) => {
-    if (a.link.state !== "linked") return null;
+    if (!isSupported(a) || a.link.state !== "linked") return null;
     return `${segmentById(recording, a.link.segment_id)?.label || "Missing segment"} · ${formatMs(a.link.media_ms)}`;
   };
 
@@ -80,7 +85,7 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
             {draft.id ? "Edit logged moment" : "New logged moment"}
             {draft.link?.state === "linked" ? ` at ${segmentById(recording, draft.link.segment_id)?.label} ${formatMs(draft.link.media_ms)} (recording time)` : " · not on video"}
           </p>
-          {draft.id && draft.link?.state === "linked" && pendingAt && (pendingAt.segment_id !== draft.link.segment_id || pendingAt.media_ms !== draft.link.media_ms) && (
+          {draft.id && pendingAt && (draft.link?.state !== "linked" || pendingAt.segment_id !== draft.link.segment_id || pendingAt.media_ms !== draft.link.media_ms) && (
             <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={() => setDraft((d) => ({ ...d, link: { state: "linked", ...pendingAt } }))} data-testid="gamelog-retime">
               Move to the time you just marked ({segmentById(recording, pendingAt.segment_id)?.label} {formatMs(pendingAt.media_ms)})
             </Button>
@@ -126,6 +131,10 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
               ))}
             </div>
             <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+              {draft.profile_ids.filter((id) => !players.some((p) => p.id === id)).map((id) => (
+                <button key={`saved-${id}`} type="button" aria-pressed onClick={() => toggle("profile_ids", id)} data-testid={`gamelog-tag-player-${id}`}
+                  className="min-h-9 px-2.5 rounded-full border text-xs border-primary bg-primary/15 text-foreground">{nameOf("player", id)} (no longer on roster)</button>
+              ))}
               {players.map((p) => (
                 <button key={`${p.team.id}-${p.id}`} type="button" aria-pressed={draft.profile_ids.includes(p.id)} onClick={() => toggle("profile_ids", p.id)} data-testid={`gamelog-tag-player-${p.id}`}
                   className={`min-h-9 px-2.5 rounded-full border text-xs ${draft.profile_ids.includes(p.id) ? "border-primary bg-primary/15 text-foreground" : "border-border text-muted-foreground"}`}>#{p.jersey ?? "–"} {p.name}</button>
@@ -143,7 +152,7 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
       <ol className="space-y-2" data-testid="gamelog-list">
         {entries.map((a) => {
           const status = annotationStatus(recording, a, mediaStatus);
-          const suggestion = a.link?.state === "unlinked" && a.game_clock ? mapEventToMedia(recording, { period: a.game_clock.period, clock_ms: a.game_clock.clock_ms }) : null;
+          const suggestion = isSupported(a) && a.link.state === "unlinked" && a.game_clock ? mapEventToMedia(recording, { period: a.game_clock.period, clock_ms: a.game_clock.clock_ms }) : null;
           const supported = status.state !== "unsupported";
           return (
             <li key={a.id} className="rounded-lg border border-border p-3 space-y-1" data-testid={`gamelog-entry-${a.id}`}>
@@ -162,12 +171,15 @@ export function GameLog({ state, game, recording, viewer_id, mediaStatus, pendin
                 {canJump(status) && <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={() => onJump(a.link)} data-testid={`gamelog-jump-${a.id}`}><Crosshair size={16} weight="bold" /> Go to</Button>}
                 {suggestion?.status === "mapped" && <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={() => onJump(suggestion)} data-testid={`gamelog-jump-suggested-${a.id}`}><Crosshair size={16} weight="bold" /> Look there</Button>}
                 {supported && <Button type="button" variant="outline" size="sm" className="min-h-10" onClick={() => startEdit(a)} data-testid={`gamelog-edit-${a.id}`}><NotePencil size={16} weight="bold" /> Edit</Button>}
-                {status.state === "needs-relink" && segmentById(recording, a.link.segment_id)?.media.sha256 !== a.link.source_revision && mediaStatus?.[a.link.segment_id]?.state !== "replaced" && (
+                {status.state === "needs-relink" && segmentById(recording, a.link.segment_id)?.media.sha256 !== a.link.source_revision && mediaStatus?.[a.link.segment_id]?.state !== "replaced" && a.link.media_ms > segmentById(recording, a.link.segment_id).media.duration_ms && (
+                  <p className="text-micro text-gold" data-testid={`gamelog-shorter-${a.id}`}>The replacement footage is shorter than this time. Log it again at the right place.</p>
+                )}
+                {status.state === "needs-relink" && segmentById(recording, a.link.segment_id)?.media.sha256 !== a.link.source_revision && mediaStatus?.[a.link.segment_id]?.state !== "replaced" && a.link.media_ms <= segmentById(recording, a.link.segment_id).media.duration_ms && (
                   <Button type="button" size="sm" className="min-h-10" onClick={() => actions.relink(a.id)} data-testid={`gamelog-relink-${a.id}`}><LinkSimple size={16} weight="bold" /> Keep this time on the new footage</Button>
                 )}
                 {confirmDelete === a.id ? (
                   <>
-                    <Button type="button" variant="destructive" size="sm" className="min-h-10" onClick={async () => { await actions.remove(a.id); setConfirmDelete(null); }} data-testid={`gamelog-delete-confirm-${a.id}`}>Delete this note</Button>
+                    <Button type="button" variant="destructive" size="sm" className="min-h-10" onClick={async () => { await actions.remove(a.id); setConfirmDelete(null); if (draft.id === a.id) close(); }} data-testid={`gamelog-delete-confirm-${a.id}`}>Delete this note</Button>
                     <Button type="button" variant="ghost" size="sm" className="min-h-10" onClick={() => setConfirmDelete(null)}>Keep</Button>
                   </>
                 ) : (
