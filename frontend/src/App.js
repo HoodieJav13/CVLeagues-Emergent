@@ -26,6 +26,7 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 // payments ledger, and Hall of Fame curation — which together are most of the
 // bundle. Public pages stay eager: they are the product and must not flash a
 // loading state on first paint.
+const Commissioner = lazy(() => import("./pages/Commissioner"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminRecovery = lazy(() => import("./pages/AdminRecovery"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
@@ -86,6 +87,7 @@ function App() {
               <Route path="/free-agent-signup" element={<FreeAgentSignup />} />
               <Route path="/free-agents" element={<FreeAgentPool />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/commissioner" element={<Commissioner />} />
               <Route path="/admin/recover" element={<AdminRecovery />} />
               <Route path="/admin/reset-password" element={<AdminResetPassword />} />
               <Route path="/admin/security" element={<AdminSecurity />} />

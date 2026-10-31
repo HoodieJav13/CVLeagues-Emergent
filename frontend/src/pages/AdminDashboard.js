@@ -84,6 +84,7 @@ function Dashboard() {
           <span className="text-micro uppercase tracking-widest text-muted-foreground border border-border rounded-md px-2 py-1 whitespace-nowrap">
             {BACKEND_ENABLED ? "Season 1 · Live Data" : "Season 1 · Demo Data"}
           </span>
+          <Link to="/admin/commissioner" data-testid="admin-commissioner" className="text-micro uppercase tracking-widest text-primary border border-border rounded-md px-2 py-2">Commissioner</Link>
           {BACKEND_ENABLED && (
             <Link
               to="/admin/security"
