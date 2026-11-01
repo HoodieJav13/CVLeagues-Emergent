@@ -15,6 +15,9 @@ import {
   startPracticeCorrectionMock,
   startPracticeSessionMock,
 } from "../lib/practiceLedger";
+import { deleteClip, publishReel, recordExport, registerRecording, revalidateSegment, saveClip, saveReel, unpublishReel } from "../lib/replayMock";
+import { createFilm, recordEdition, saveFilm, updateContext, adoptUpdatedHighlight } from "../lib/filmMock";
+import { deleteAnnotation, relinkAnnotation, saveAnnotation } from "../lib/replayAnnotations";
 
 /* ============================================================================
  * AppStateContext — THE SINGLE SHARED SOURCE OF TRUTH.
@@ -818,6 +821,46 @@ export function AppStateProvider({ children }) {
     [runPracticeMock]
   );
 
+  /* ---------------- REPLAY STUDIO (local rehearsal, mock only) ---------- */
+  // Player-facing media authorship on fictional footage. Every transition is
+  // computed from the CURRENT state and applies whole or refuses (toast plus
+  // rejection) with the last-good state untouched.
+  const runReplayMock = useCallback((fn) => {
+    let outcome;
+    try {
+      outcome = fn(stateRef.current, { now: new Date().toISOString(), makeId: newId });
+    } catch (error) {
+      toast.error(error.message);
+      throw error;
+    }
+    stateRef.current = outcome.next;
+    setState(outcome.next);
+    return outcome.result;
+  }, []);
+  const registerReplayRecording = useCallback((input) => runReplayMock((s) => registerRecording(s, input)), [runReplayMock]);
+  const saveReplayClip = useCallback((input, viewer_id) => runReplayMock((s, ctx) => saveClip(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const deleteReplayClip = useCallback((id, viewer_id) => runReplayMock((s) => deleteClip(s, id, { viewer_id })), [runReplayMock]);
+  const saveReplayReel = useCallback((input, viewer_id) => runReplayMock((s, ctx) => saveReel(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const publishReplayReel = useCallback((id, viewer_id) => runReplayMock((s, ctx) => publishReel(s, id, { ...ctx, viewer_id })), [runReplayMock]);
+  const unpublishReplayReel = useCallback((id, viewer_id) => runReplayMock((s, ctx) => unpublishReel(s, id, { ...ctx, viewer_id })), [runReplayMock]);
+  const revalidateReplaySegment = useCallback((input, viewer_id) => runReplayMock((s) => revalidateSegment(s, input, { viewer_id })), [runReplayMock]);
+  const recordReplayExport = useCallback((reel_id, info, viewer_id) => runReplayMock((s) => recordExport(s, reel_id, info, { viewer_id })), [runReplayMock]);
+  /* ---------------- SEASON FILM (local rehearsal, mock only) ------------ */
+  // Composition owner's surface above the pinned L1 media contracts. Same
+  // whole-or-nothing transition pattern as Replay Studio.
+  const createFilmComposition = useCallback((input, viewer_id) => runReplayMock((s, ctx) => createFilm(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const saveFilmComposition = useCallback((film, viewer_id) => runReplayMock((s, ctx) => saveFilm(s, film, { ...ctx, viewer_id })), [runReplayMock]);
+  const adoptUpdatedFilmHighlight = useCallback((input, viewer_id) => runReplayMock((s, ctx) => adoptUpdatedHighlight(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const updateFilmContext = useCallback((input, viewer_id) => runReplayMock((s, ctx) => updateContext(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const recordFilmEdition = useCallback((input, viewer_id) => runReplayMock((s, ctx) => recordEdition(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  // Manual recording-time game log: annotations only, never score/stat writes.
+  const saveReplayAnnotation = useCallback((input, viewer_id) => runReplayMock((s, ctx) => saveAnnotation(s, input, { ...ctx, viewer_id })), [runReplayMock]);
+  const deleteReplayAnnotation = useCallback((id, viewer_id) => runReplayMock((s) => deleteAnnotation(s, id, { viewer_id })), [runReplayMock]);
+  const relinkReplayAnnotation = useCallback((id, viewer_id) => runReplayMock((s, ctx) => relinkAnnotation(s, id, { ...ctx, viewer_id })), [runReplayMock]);
+  const replayMockOnly = useCallback(async () => {
+    throw new Error("Replay Studio is a local rehearsal and runs only in development mock mode.");
+  }, []);
+
   // Restore the original seed data (clears any demo edits).
   const resetState = useCallback(() => {
     setState(mockState.resetMockState());
@@ -887,6 +930,22 @@ export function AppStateProvider({ children }) {
     cancelPracticeSession: act(backend.cancelPracticeSession),
     finalizePracticeSession: act(backend.finalizePracticeSession),
     startPracticeCorrection: act(backend.startPracticeCorrection),
+    createFilmComposition: replayMockOnly,
+    saveFilmComposition: replayMockOnly,
+    adoptUpdatedFilmHighlight: replayMockOnly,
+    updateFilmContext: replayMockOnly,
+    recordFilmEdition: replayMockOnly,
+    registerReplayRecording: replayMockOnly,
+    saveReplayClip: replayMockOnly,
+    deleteReplayClip: replayMockOnly,
+    saveReplayReel: replayMockOnly,
+    publishReplayReel: replayMockOnly,
+    unpublishReplayReel: replayMockOnly,
+    revalidateReplaySegment: replayMockOnly,
+    recordReplayExport: replayMockOnly,
+    saveReplayAnnotation: replayMockOnly,
+    deleteReplayAnnotation: replayMockOnly,
+    relinkReplayAnnotation: replayMockOnly,
     resetState: () => toast.info("Demo reset is mock-mode only."),
   };
 
@@ -937,6 +996,22 @@ export function AppStateProvider({ children }) {
         cancelPracticeSession,
         finalizePracticeSession,
         startPracticeCorrection,
+        createFilmComposition,
+        saveFilmComposition,
+        adoptUpdatedFilmHighlight,
+        updateFilmContext,
+        recordFilmEdition,
+        registerReplayRecording,
+        saveReplayClip,
+        deleteReplayClip,
+        saveReplayReel,
+        publishReplayReel,
+        unpublishReplayReel,
+        revalidateReplaySegment,
+        recordReplayExport,
+        saveReplayAnnotation,
+        deleteReplayAnnotation,
+        relinkReplayAnnotation,
         resetState,
       };
 

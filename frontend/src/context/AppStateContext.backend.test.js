@@ -49,4 +49,20 @@ describe("backend mode storage isolation", () => {
     expect(getItem).not.toHaveBeenCalled();
     expect(setItem).not.toHaveBeenCalled();
   });
+
+  test("Replay Studio actions refuse in backend mode and touch no storage", async () => {
+    let app;
+    function Grab() { app = useApp(); return null; }
+    await act(async () => {
+      root.render(<AppStateProvider><Grab /></AppStateProvider>);
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    for (const action of ["registerReplayRecording", "saveReplayClip", "deleteReplayClip", "saveReplayReel", "publishReplayReel", "unpublishReplayReel", "revalidateReplaySegment", "recordReplayExport",
+      "saveReplayAnnotation", "deleteReplayAnnotation", "relinkReplayAnnotation",
+      "createFilmComposition", "saveFilmComposition", "adoptUpdatedFilmHighlight", "updateFilmContext", "recordFilmEdition"]) {
+      await expect(app[action]({})).rejects.toThrow(/local rehearsal and runs only in development mock mode/);
+    }
+    expect(setItem).not.toHaveBeenCalled();
+  });
 });

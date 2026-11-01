@@ -26,11 +26,18 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 // payments ledger, and Hall of Fame curation — which together are most of the
 // bundle. Public pages stay eager: they are the product and must not flash a
 // loading state on first paint.
+const Commissioner = lazy(() => import("./pages/Commissioner"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminRecovery = lazy(() => import("./pages/AdminRecovery"));
 const AdminResetPassword = lazy(() => import("./pages/AdminResetPassword"));
 const AdminSecurity = lazy(() => import("./pages/AdminSecurity"));
 const ScoreEntry = lazy(() => import("./pages/ScoreEntry"));
+// Local rehearsal (development mock mode only): player-facing replay authorship.
+// Behind the same NODE_ENV gate as the mock store, so optimized builds carry
+// neither the route nor its fictional personas and demo events.
+const ReplayStudio = process.env.NODE_ENV === "production" ? null : lazy(() => import("./pages/ReplayStudio"));
+// FW3 Season Film: private personal film authoring, same development-only gate.
+const SeasonFilm = process.env.NODE_ENV === "production" ? null : lazy(() => import("./pages/SeasonFilm"));
 
 // Agentation: click-to-annotate for design feedback (owner + partner mark up
 // the live UI; the output pastes straight to a coding agent). Development
@@ -80,10 +87,13 @@ function App() {
               <Route path="/free-agent-signup" element={<FreeAgentSignup />} />
               <Route path="/free-agents" element={<FreeAgentPool />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/commissioner" element={<Commissioner />} />
               <Route path="/admin/recover" element={<AdminRecovery />} />
               <Route path="/admin/reset-password" element={<AdminResetPassword />} />
               <Route path="/admin/security" element={<AdminSecurity />} />
               <Route path="/score-entry" element={<ScoreEntry />} />
+              {ReplayStudio && <Route path="/replay/:gameId" element={<ReplayStudio />} />}
+              {SeasonFilm && <Route path="/film" element={<SeasonFilm />} />}
               <Route path="*" element={<NotFound />} />
             </Route>
           </Routes>

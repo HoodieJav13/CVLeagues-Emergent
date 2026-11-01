@@ -27,7 +27,7 @@ jest.mock("../common/TurnstileWidget", () => ({
 
 jest.mock("react-router-dom", () => ({
   Link: ({ children }) => <span>{children}</span>,
-}), { virtual: true });
+}));
 
 jest.mock("@/lib/utils", () => ({
   cn: (...classes) => classes.filter(Boolean).join(" "),
