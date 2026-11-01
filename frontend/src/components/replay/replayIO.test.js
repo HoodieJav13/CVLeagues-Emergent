@@ -4,7 +4,11 @@ const response = (status, type, body = "abc") => ({
   status,
   ok: status >= 200 && status < 300,
   headers: { get: (h) => (h.toLowerCase() === "content-type" ? type : null) },
-  arrayBuffer: async () => Uint8Array.from(Buffer.from(body)).buffer,
+  arrayBuffer: async () => {
+    // Node WebCrypto needs the Node realm's ArrayBuffer when jsdom supplies globals.
+    const bytes = Buffer.from(body);
+    return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+  },
 });
 
 describe("sha256OfUrl", () => {
